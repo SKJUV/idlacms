@@ -21,12 +21,13 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: AdminSidebarProps) {
   const isCandidateDashboard = activeTab === 'candidate-dashboard';
-  
+
+  const sharedClasses = 'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all lg:w-full lg:px-6 lg:py-3 lg:gap-3 lg:text-left';
+
   if (isCandidateDashboard) {
-    // Custom sidebar for Candidate
     return (
-      <aside className="bg-[#1a1d1f] text-[#006c49] fixed left-0 top-0 h-full w-[280px] border-r border-[#c6c6cf] flex flex-col py-6 z-50">
-        <div className="px-6 mb-10">
+      <aside className="w-full border-b border-[#c6c6cf]/10 bg-[#1a1d1f] text-[#006c49] lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50">
+        <div className="px-4 py-4 lg:px-6 lg:mb-10 lg:py-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center shadow-lg">
               <GraduationCap className="w-6 h-6 text-[#00020e]" />
@@ -38,12 +39,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:space-y-1 lg:overflow-y-auto lg:px-0 lg:pb-0">
           <button 
             onClick={() => setActiveTab('candidate-dashboard')}
-            className={`w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left ${
+            className={`${sharedClasses} whitespace-nowrap ${
               activeTab === 'candidate-dashboard' 
-                ? 'bg-white/10 text-[#6ffbbe] border-l-4 border-[#6ffbbe]' 
+                ? 'bg-white/10 text-[#6ffbbe] lg:border-l-4 lg:border-[#6ffbbe]' 
                 : 'text-white/60 hover:bg-white/5 hover:text-white'
             }`}
           >
@@ -51,7 +52,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
             <span>Dashboard</span>
           </button>
           <button 
-            className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left text-[#6ffbbe]/40 cursor-not-allowed"
+            className={`${sharedClasses} whitespace-nowrap text-[#6ffbbe]/40 cursor-not-allowed`}
             disabled
           >
             <UserCheck className="w-4 h-4" />
@@ -59,30 +60,30 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
           </button>
           <button 
             onClick={() => setActiveTab('programmes')}
-            className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left text-white/60 hover:bg-white/5 hover:text-white"
+            className={`${sharedClasses} whitespace-nowrap text-white/60 hover:bg-white/5 hover:text-white`}
           >
             <BookOpen className="w-4 h-4" />
             <span>Programmes</span>
           </button>
           <button 
             onClick={() => setActiveTab('actualites')}
-            className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left text-white/60 hover:bg-white/5 hover:text-white"
+            className={`${sharedClasses} whitespace-nowrap text-white/60 hover:bg-white/5 hover:text-white`}
           >
             <Newspaper className="w-4 h-4" />
             <span>Actualités</span>
           </button>
         </nav>
 
-        <div className="mt-auto px-4 border-t border-white/10 pt-6 space-y-1">
+        <div className="mt-0 flex flex-wrap gap-2 border-t border-white/10 p-3 lg:mt-auto lg:flex-col lg:px-4 lg:pt-6 lg:space-y-1">
           <button 
-            className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all text-left"
+            className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
           >
             <Settings className="w-4 h-4" />
             <span>Paramètres</span>
           </button>
           <button 
             onClick={onLogout}
-            className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all text-left"
+            className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
           >
             <LogOut className="w-4 h-4 text-red-400" />
             <span>Déconnexion</span>
@@ -92,13 +93,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
     );
   }
 
-  // Admin CMS Sidebar
   const isAdminTab = ['admin-dashboard', 'admin-users', 'admin-add-user'].includes(activeTab);
   if (!isAdminTab) return null;
 
   return (
-    <aside className="bg-[#1a1d1f] text-white fixed left-0 top-0 h-full w-[280px] border-r border-[#c6c6cf]/10 flex flex-col py-6 z-50">
-      <div className="px-6 mb-8">
+    <aside className="w-full border-b border-[#c6c6cf]/10 bg-[#1a1d1f] text-white lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50">
+      <div className="px-4 py-4 lg:px-6 lg:mb-8 lg:py-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center text-white shadow-lg">
             <GraduationCap className="w-6 h-6 text-[#00020e]" />
@@ -110,12 +110,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto">
+      <nav className="flex overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:space-y-1 lg:overflow-y-auto lg:px-0 lg:pb-0">
         <button 
           onClick={() => setActiveTab('admin-dashboard')}
-          className={`w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left ${
+          className={`${sharedClasses} whitespace-nowrap ${
             activeTab === 'admin-dashboard' 
-              ? 'bg-white/10 text-[#6ffbbe] border-l-4 border-[#6ffbbe]' 
+              ? 'bg-white/10 text-[#6ffbbe] lg:border-l-4 lg:border-[#6ffbbe]' 
               : 'text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
@@ -125,9 +125,9 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
 
         <button 
           onClick={() => setActiveTab('admin-users')}
-          className={`w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm transition-all text-left ${
+          className={`${sharedClasses} whitespace-nowrap ${
             activeTab === 'admin-users' || activeTab === 'admin-add-user'
-              ? 'bg-white/10 text-[#6ffbbe] border-l-4 border-[#6ffbbe]' 
+              ? 'bg-white/10 text-[#6ffbbe] lg:border-l-4 lg:border-[#6ffbbe]' 
               : 'text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
@@ -135,47 +135,52 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
           <span>Utilisateurs</span>
         </button>
 
-
-
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button 
+          onClick={() => setActiveTab('admin-programmes')}
+          className={`${sharedClasses} whitespace-nowrap ${
+            activeTab === 'admin-programmes'
+              ? 'bg-white/10 text-[#6ffbbe] lg:border-l-4 lg:border-[#6ffbbe]' 
+              : 'text-white/60 hover:bg-white/5 hover:text-white'
+          }`}
+        >
           <BookOpen className="w-4 h-4" />
           <span>Programmes</span>
         </button>
 
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button className={`${sharedClasses} whitespace-nowrap text-white/40 hover:bg-white/5 hover:text-white/80 cursor-not-allowed`} disabled>
           <Quote className="w-4 h-4" />
           <span>Témoignages</span>
         </button>
 
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button className={`${sharedClasses} whitespace-nowrap text-white/40 hover:bg-white/5 hover:text-white/80 cursor-not-allowed`} disabled>
           <Newspaper className="w-4 h-4" />
           <span>Actualités</span>
         </button>
 
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button className={`${sharedClasses} whitespace-nowrap text-white/40 hover:bg-white/5 hover:text-white/80 cursor-not-allowed`} disabled>
           <HeartHandshake className="w-4 h-4" />
           <span>Soutien & Dons</span>
         </button>
 
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button className={`${sharedClasses} whitespace-nowrap text-white/40 hover:bg-white/5 hover:text-white/80 cursor-not-allowed`} disabled>
           <UserCheck className="w-4 h-4" />
           <span>Pré-inscriptions</span>
         </button>
 
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/40 hover:bg-white/5 hover:text-white/80 transition-all text-left cursor-not-allowed" disabled>
+        <button className={`${sharedClasses} whitespace-nowrap text-white/40 hover:bg-white/5 hover:text-white/80 cursor-not-allowed`} disabled>
           <Megaphone className="w-4 h-4" />
           <span>Marketer</span>
         </button>
       </nav>
 
-      <div className="px-4 pt-4 border-t border-white/10 mt-auto space-y-1">
-        <button className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all text-left">
+      <div className="mt-0 flex flex-wrap gap-2 border-t border-white/10 p-3 lg:mt-auto lg:flex-col lg:px-4 lg:pt-4 lg:space-y-1">
+        <button className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}>
           <Settings className="w-4 h-4" />
           <span>Paramètres</span>
         </button>
         <button 
           onClick={onLogout}
-          className="w-full px-6 py-3 flex items-center gap-3 font-semibold text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all text-left"
+          className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
         >
           <LogOut className="w-4 h-4 text-red-400" />
           <span>Déconnexion</span>

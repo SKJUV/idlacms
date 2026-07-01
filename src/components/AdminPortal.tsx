@@ -21,14 +21,16 @@ import {
   Sparkles,
   Award
 } from 'lucide-react';
-import { User, PreRegistration, ActivityLog } from '../types';
+import { Program, User, PreRegistration, ActivityLog } from '../types';
 import { initialUsers, preRegistrationsData, activityLogsData } from '../data/mockData';
 
 interface AdminPortalProps {
-  activeTab: 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user';
+  activeTab: 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes';
   setActiveTab: (tab: any) => void;
   isLoggedIn: boolean;
   onLoginSuccess: () => void;
+  programs: Program[];
+  setPrograms: React.Dispatch<React.SetStateAction<Program[]>>;
 }
 
 export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLoginSuccess }: AdminPortalProps) {
@@ -48,6 +50,15 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC'>('Admin');
   const [newUserStatus, setNewUserStatus] = useState<'Actif' | 'Inactif' | 'Bloqué'>('Actif');
+
+  // New Program creation Form States
+  const [newProgramTitle, setNewProgramTitle] = useState('');
+  const [newProgramDescription, setNewProgramDescription] = useState('');
+  const [newProgramType, setNewProgramType] = useState<'Master' | 'Doctorat' | 'Certification' | 'Bachelor'>('Master');
+  const [newProgramCategory, setNewProgramCategory] = useState<'Sciences' | 'Management' | 'Tech' | 'Droit' | 'Santé' | 'Communication'>('Tech');
+  const [newProgramDuration, setNewProgramDuration] = useState('2 ans (Full-time)');
+  const [newProgramImage, setNewProgramImage] = useState('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
+  const [newProgramIsNew, setNewProgramIsNew] = useState(true);
 
   // New Alumni Form States
   const [alumniName, setAlumniName] = useState('Jean-Pierre Mvogo');
@@ -109,6 +120,42 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
     setNewUserName('');
     setNewUserEmail('');
     setActiveTab('admin-users');
+  };
+
+  const handleCreateProgram = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProgramTitle || !newProgramDescription) return;
+
+    const newProgram: Program = {
+      id: `prog-${Math.floor(1000 + Math.random() * 9000)}`,
+      title: newProgramTitle,
+      description: newProgramDescription,
+      type: newProgramType,
+      category: newProgramCategory,
+      duration: newProgramDuration,
+      image: newProgramImage,
+      isNew: newProgramIsNew
+    };
+
+    setPrograms((curr) => [newProgram, ...curr]);
+
+    const newLog: ActivityLog = {
+      id: Math.random().toString(),
+      type: 'article',
+      user: 'Super Admin',
+      text: `a ajouté un nouveau programme : ${newProgramTitle}.`,
+      time: 'À l\'instant'
+    };
+    setActivityLogs((curr) => [newLog, ...curr]);
+
+    setNewProgramTitle('');
+    setNewProgramDescription('');
+    setNewProgramType('Master');
+    setNewProgramCategory('Tech');
+    setNewProgramDuration('2 ans (Full-time)');
+    setNewProgramImage('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
+    setNewProgramIsNew(true);
+    setActiveTab('admin-programmes');
   };
 
   const handleDeleteUser = (id: string) => {

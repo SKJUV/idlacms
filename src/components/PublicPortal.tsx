@@ -256,7 +256,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
 
         {/* Footer */}
         <footer className="bg-[#00020e] text-white border-t border-white/10 py-12 px-6 md:px-12">
-          <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="max-w-[1440px] mx-auto grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
               <div className="text-xl font-bold text-[#6ffbbe]">IDLA CMS</div>
               <p className="text-xs text-white/60 leading-relaxed">
@@ -264,28 +264,28 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
               </p>
             </div>
             <div>
-              <h4 class="font-bold text-sm text-white uppercase tracking-wider mb-4">Filières</h4>
-              <ul class="space-y-2 text-sm text-white/60">
-                <li><a href="#" class="hover:text-white transition-colors">Ingénierie & Tech</a></li>
-                <li><a href="#" class="hover:text-white transition-colors">Business & Management</a></li>
-                <li><a href="#" class="hover:text-white transition-colors">Santé & Administration</a></li>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Filières</h4>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li><a href="#" className="hover:text-white transition-colors">Ingénierie & Tech</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Business & Management</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Santé & Administration</a></li>
               </ul>
             </div>
             <div>
-              <h4 class="font-bold text-sm text-white uppercase tracking-wider mb-4">Admissions</h4>
-              <ul class="space-y-2 text-sm text-white/60">
-                <li><a href="#" class="hover:text-white transition-colors">Dossier de candidature</a></li>
-                <li><a href="#" class="hover:text-white transition-colors">Dates clés</a></li>
-                <li><a href="#" class="hover:text-white transition-colors">Financement & Bourses</a></li>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Admissions</h4>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li><a href="#" className="hover:text-white transition-colors">Dossier de candidature</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Dates clés</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Financement & Bourses</a></li>
               </ul>
             </div>
             <div>
-              <h4 class="font-bold text-sm text-white uppercase tracking-wider mb-4">Contact</h4>
-              <p class="text-sm text-white/60">Douala, Cameroun</p>
-              <p class="text-sm text-white/60 mt-1">contact@idla.edu</p>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Contact</h4>
+              <p className="text-sm text-white/60">Douala, Cameroun</p>
+              <p className="text-sm text-white/60 mt-1">contact@idla.edu</p>
             </div>
           </div>
-          <div class="max-w-[1440px] mx-auto border-t border-white/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-white/40 gap-2">
+          <div className="max-w-[1440px] mx-auto border-t border-white/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-white/40 gap-2">
             <p>© 2024 IDLA CMS. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique Centrale</p>
           </div>

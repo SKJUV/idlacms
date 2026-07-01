@@ -6,8 +6,8 @@ import ApplicationForm from './components/ApplicationForm';
 import ApplicationSuccess from './components/ApplicationSuccess';
 import CandidatePortal from './components/CandidatePortal';
 import AdminPortal from './components/AdminPortal';
-import DemoToolbar from './components/DemoToolbar';
-
+import { Program } from './types';
+import { programsData } from './data/mockData';
 export type ActiveTab = 
   | 'home' 
   | 'programmes' 
@@ -20,12 +20,14 @@ export type ActiveTab =
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
-  | 'admin-add-user';
+  | 'admin-add-user'
+  | 'admin-programmes';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [candidateLoggedIn, setCandidateLoggedIn] = useState(false);
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [programs, setPrograms] = useState<Program[]>(programsData);
 
   // Registered Candidate Info
   const [candidateName, setCandidateName] = useState('Jean Dupont');
@@ -43,11 +45,10 @@ export default function App() {
     setActiveTab('home');
   };
 
-  const isCMSorDashboard = ['admin-dashboard', 'admin-users', 'admin-add-user', 'candidate-dashboard'].includes(activeTab);
+  const isCMSorDashboard = ['admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes', 'candidate-dashboard'].includes(activeTab);
 
   return (
-    <div className={`min-h-screen ${isCMSorDashboard ? 'bg-[#f8f9ff]' : 'bg-[#00020e]'}`}>
-      
+    <div className={`min-h-screen overflow-x-hidden ${isCMSorDashboard ? 'bg-[#f8f9ff]' : 'bg-[#00020e]'}`}>
       {/* Dynamic Header for Visiteur/Visitor pages */}
       <Header 
         activeTab={activeTab} 
@@ -69,13 +70,14 @@ export default function App() {
       )}
 
       {/* Dynamic view router switch */}
-      <main className="transition-all duration-300">
+      <main className={`transition-all duration-300 w-full ${isCMSorDashboard ? 'lg:pl-[280px]' : ''}`}>
         {/* PUBLIC PORTAL VIEWS */}
         {['home', 'programmes', 'actualites', 'temoignages'].includes(activeTab) && (
           <PublicPortal 
             activeTab={activeTab as any} 
             setActiveTab={setActiveTab}
             onApplyNow={() => setActiveTab('candidature')}
+            programs={programs}
           />
         )}
 
@@ -113,23 +115,17 @@ export default function App() {
         )}
 
         {/* ADMIN CMS PORTAL VIEWS */}
-        {['admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user'].includes(activeTab) && (
+        {['admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes'].includes(activeTab) && (
           <AdminPortal 
             activeTab={activeTab as any}
             setActiveTab={setActiveTab}
             isLoggedIn={adminLoggedIn}
             onLoginSuccess={() => setAdminLoggedIn(true)}
+            programs={programs}
+            setPrograms={setPrograms}
           />
         )}
       </main>
-
-      {/* Interactive floating screen chooser console for grading */}
-      <DemoToolbar 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        setCandidateLoggedIn={setCandidateLoggedIn}
-        setAdminLoggedIn={setAdminLoggedIn}
-      />
 
     </div>
   );
