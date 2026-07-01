@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# IDLA CMS
 
-# Run and deploy your AI Studio app
+Un portail React/Vite pour la gestion des candidatures, des programmes et des espaces administrateur / candidat pour IDLA.
 
-This contains everything you need to run your app locally.
+## Description
 
-View your app in AI Studio: https://ai.studio/apps/d1ba42c7-8d2a-4a04-bca0-18b1db5822f5
+Ce projet inclut :
 
-## Run Locally
+- une interface publique responsive pour découvrir les programmes, actualités et témoignages
+- un formulaire de candidature multi-étapes
+- un espace candidat de suivi
+- un espace administrateur simple pour gérer le contenu
 
-**Prerequisites:**  Node.js
+## Exécution locale
 
+**Prérequis**
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- Node.js 18+ installé
+
+### Installer les dépendances
+
+```bash
+npm install
+```
+
+### Démarrer le serveur de développement
+
+```bash
+npm run dev
+```
+
+Le site sera accessible sur `http://localhost:3000`.
+
+## Branche
+
+La branche de travail actuelle s'appelle `manuel`.
+
+## Structure principale
+
+- `src/App.tsx` : routeur interne et état principal
+- `src/components/` : composants de l'application
+- `src/data/mockData.ts` : données factices pour les programmes, actualités et témoignages
+
+## Build de production
+
+```bash
+npm run build
+```
+
+## Notes
+
+Le projet utilise Vite, React et Tailwind CSS.
