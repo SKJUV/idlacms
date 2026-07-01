@@ -9,15 +9,17 @@ import {
   GraduationCap 
 } from 'lucide-react';
 import { programsData } from '../data/mockData';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../lib/appwrite';
 
 interface ApplicationFormProps {
-  onSuccess: (candidateName: string, selectedProgram: string) => void;
+  onSuccess: (candidateName: string, selectedProgram: string, email: string) => void;
   onBackToHome: () => void;
 }
 
 export default function ApplicationForm({ onSuccess, onBackToHome }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [firstName, setFirstName] = useState('Jean');
@@ -30,7 +32,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
   const [highestDegree, setHighestDegree] = useState('Master 1 en Sciences de Gestion');
   const [graduationYear, setGraduationYear] = useState('2023');
 
-  const [files, setFiles] = useState<{ name: string; size: string; type: string }[]>([]);
+  const [files, setFiles] = useState<{ name: string; size: string; type: string; fileId: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,18 +50,36 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setIsDragging(false);
   };
 
-  const simulateUpload = (fileName: string) => {
+  const simulateUpload = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
+
+    let appwriteFileId = '';
+    if (isAppwriteStorageConfigured()) {
+      try {
+        const response = await storage.createFile(
+          APPWRITE_CONFIG.buckets.documents,
+          ID.unique(),
+          file
+        );
+        appwriteFileId = response.$id;
+        console.log("Fichier téléversé dans le bucket Appwrite:", response);
+      } catch (err) {
+        console.error("Échec du téléversement sur Appwrite. Poursuite avec l'upload simulé.", err);
+      }
+    }
+
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsUploading(false);
+          const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
           setFiles((current) => [...current, { 
-            name: fileName, 
-            size: '1.2 MB', 
-            type: 'application/pdf' 
+            name: file.name, 
+            size: `${sizeInMb} MB`, 
+            type: file.type,
+            fileId: appwriteFileId
           }]);
           return 100;
         }
@@ -73,14 +93,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setIsDragging(false);
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles.length > 0) {
-      simulateUpload(droppedFiles[0].name);
+      simulateUpload(droppedFiles[0]);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
-      simulateUpload(selectedFiles[0].name);
+      simulateUpload(selectedFiles[0]);
     }
   };
 
@@ -116,13 +136,70 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setStep((s) => s - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!declarationChecked) {
       setErrorMessage('Vous devez accepter les conditions de déclaration sur l\'honneur pour soumettre.');
       return;
     }
-    onSuccess(`${firstName} ${lastName}`, selectedProgram);
+    
+    setIsSubmitting(true);
+    const candidateName = `${firstName} ${lastName}`;
+    const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
+
+    if (isAppwriteDbConfigured()) {
+      try {
+        const application = await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications,
+          ID.unique(),
+          {
+            firstName,
+            lastName,
+            name: candidateName,
+            email,
+            phone,
+            program: selectedProgram,
+            nationality,
+            highestDegree,
+            graduationYear: Number(graduationYear) || undefined,
+            status: 'New',
+            dateApplied: new Date().toISOString(),
+            declarationChecked,
+            files: JSON.stringify(files),
+            initials,
+          }
+        );
+        console.log("Candidature enregistrée sur Appwrite Database avec succès !");
+
+        if (APPWRITE_CONFIG.collections.candidateDocuments && files.length > 0) {
+          for (const file of files) {
+            try {
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.candidateDocuments,
+                ID.unique(),
+                {
+                  applicationId: application.$id,
+                  fileId: file.fileId,
+                  name: file.name,
+                  mimeType: file.type,
+                  uploadedBy: 'candidate',
+                  uploadedAt: new Date().toISOString(),
+                }
+              );
+            } catch (err) {
+              console.error("Échec de l'enregistrement d'un document de candidature:", err);
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error("Échec de l'enregistrement de la candidature sur Appwrite Database:", err);
+      }
+    }
+
+    setIsSubmitting(false);
+    onSuccess(candidateName, selectedProgram, email);
   };
 
   const stepsList = [
@@ -451,9 +528,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
             ) : (
               <button 
                 type="submit"
-                className="bg-[#006c49] hover:bg-[#6cf8bb] hover:text-[#00020e] text-white flex items-center gap-1.5 px-8 py-3 rounded-lg text-xs font-bold transition-all ml-auto shadow-md"
+                disabled={isSubmitting}
+                className="bg-[#006c49] hover:bg-[#6cf8bb] hover:text-[#00020e] text-white flex items-center gap-1.5 px-8 py-3 rounded-lg text-xs font-bold transition-all ml-auto shadow-md disabled:opacity-55 disabled:cursor-not-allowed"
               >
-                Soumettre ma Candidature
+                {isSubmitting ? 'Envoi en cours...' : 'Soumettre ma Candidature'}
                 <CheckCircle2 className="w-4 h-4" />
               </button>
             )}

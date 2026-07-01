@@ -16,15 +16,17 @@ import {
   BookOpen
 } from 'lucide-react';
 import { Program, NewsArticle, Testimonial } from '../types';
-import { programsData, newsData, testimonialsData } from '../data/mockData';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
   setActiveTab: (tab: any) => void;
   onApplyNow: () => void;
+  programs: Program[];
+  news: NewsArticle[];
+  testimonials: Testimonial[];
 }
 
-export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: PublicPortalProps) {
+export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials }: PublicPortalProps) {
   // Programs View States
   const [programSearch, setProgramSearch] = useState('');
   const [selectedProgramType, setSelectedProgramType] = useState<string>('Tous');
@@ -37,32 +39,32 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
 
   // FILTER PROGRAMS
   const filteredPrograms = useMemo(() => {
-    return programsData.filter(p => {
+    return programs.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(programSearch.toLowerCase()) || 
                             p.description.toLowerCase().includes(programSearch.toLowerCase());
       const matchesType = selectedProgramType === 'Tous' || p.type === selectedProgramType;
       return matchesSearch && matchesType;
     });
-  }, [programSearch, selectedProgramType]);
+  }, [programs, programSearch, selectedProgramType]);
 
   // FILTER NEWS
   const filteredNews = useMemo(() => {
-    return newsData.filter(n => {
+    return news.filter(n => {
       if (selectedNewsCategory === 'Tous') return true;
       return n.category === selectedNewsCategory;
     });
-  }, [selectedNewsCategory]);
+  }, [news, selectedNewsCategory]);
 
   // FILTER TESTIMONIALS
   const filteredTestimonials = useMemo(() => {
-    return testimonialsData.filter(t => {
+    return testimonials.filter(t => {
       if (selectedTestimonialType === 'Tous') return true;
       if (selectedTestimonialType === 'Programmes Masters' && t.category === 'Master') return true;
       if (selectedTestimonialType === 'Executive Education' && t.category === 'Executive') return true;
       if (selectedTestimonialType === 'Alumni Stories' && t.category === 'Alumni') return true;
       return false;
     });
-  }, [selectedTestimonialType]);
+  }, [testimonials, selectedTestimonialType]);
 
   if (activeTab === 'home') {
     return (
@@ -198,7 +200,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {programsData.slice(0, 3).map((p, idx) => (
+              {programs.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
                   className={`rounded-2xl overflow-hidden relative group min-h-[350px] shadow-sm border border-[#c6c6cf]/30 cursor-pointer ${
@@ -400,7 +402,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
   }
 
   if (activeTab === 'actualites') {
-    const featuredNewsArticle = newsData.find(n => n.isFeatured);
+    const featuredNewsArticle = news.find(n => n.isFeatured);
     const regularNewsArticles = filteredNews.filter(n => !n.isFeatured || selectedNewsCategory !== 'Tous');
 
     return (
@@ -433,8 +435,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
                       <span>{cat === 'Tous' ? 'Toutes les news' : cat}</span>
                       <span className="text-[10px] px-2 py-0.5 bg-white/60 rounded">
                         {cat === 'Tous' 
-                          ? newsData.length 
-                          : newsData.filter(n => n.category === cat).length
+                          ? news.length 
+                          : news.filter(n => n.category === cat).length
                         }
                       </span>
                     </button>

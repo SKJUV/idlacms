@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Program, User, PreRegistration, ActivityLog } from '../types';
 import { initialUsers, preRegistrationsData, activityLogsData } from '../data/mockData';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
 
 interface AdminPortalProps {
   activeTab: 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes';
@@ -33,7 +34,7 @@ interface AdminPortalProps {
   setPrograms: React.Dispatch<React.SetStateAction<Program[]>>;
 }
 
-export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLoginSuccess }: AdminPortalProps) {
+export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLoginSuccess, programs, setPrograms }: AdminPortalProps) {
   // Login Form States
   const [email, setEmail] = useState('admin@idla.edu');
   const [password, setPassword] = useState('admin123');
@@ -44,6 +45,108 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
   const [usersList, setUsersList] = useState<User[]>(initialUsers);
   const [preRegistrations, setPreRegistrations] = useState<PreRegistration[]>(preRegistrationsData);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(activityLogsData);
+
+  // Appwrite activity logger helper
+  const logActivity = async (type: 'registration' | 'article' | 'error' | 'alumni', user: string, text: string) => {
+    const newLog: ActivityLog = {
+      id: Math.random().toString(),
+      type,
+      user,
+      text,
+      time: 'À l\'instant'
+    };
+    setActivityLogs((curr) => [newLog, ...curr]);
+
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.logs) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.logs,
+          ID.unique(),
+          {
+            type,
+            user,
+            text,
+            time: 'À l\'instant'
+          }
+        );
+      } catch (err) {
+        console.error("Impossible de sauvegarder le log d'activité sur Appwrite:", err);
+      }
+    }
+  };
+
+  // Chargement des données Appwrite au montage
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (!isAppwriteDbConfigured()) {
+        console.log("Appwrite DB n'est pas configurée dans le fichier .env (variables vides). Utilisation du mode mock.");
+        return;
+      }
+      try {
+        // Charger les utilisateurs CMS (les programmes sont déjà chargés au niveau de App.tsx)
+        if (APPWRITE_CONFIG.collections.cmsUsers) {
+          const usersRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.cmsUsers
+          );
+          if (usersRes.documents.length > 0) {
+            setUsersList(usersRes.documents.map((doc: any) => ({
+              id: doc.$id,
+              name: doc.name,
+              email: doc.email,
+              role: doc.role,
+              status: doc.status,
+              lastLogin: doc.lastLogin ? new Date(doc.lastLogin).toLocaleString('fr-FR') : 'Jamais',
+              initials: doc.initials || doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+              avatar: doc.avatar,
+            })));
+          }
+        }
+
+        // Charger les candidatures/pré-inscriptions
+        const appsRes = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications
+        );
+        if (appsRes.documents.length > 0) {
+          const loadedApps = appsRes.documents.map((doc: any) => ({
+            id: doc.$id,
+            name: doc.name,
+            email: doc.email,
+            program: doc.program,
+            dateApplied: doc.dateApplied || 'Récemment',
+            status: doc.status || 'New',
+            initials: doc.initials || doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+          }));
+          setPreRegistrations(loadedApps);
+        }
+
+        // Charger les logs d'activités
+        if (APPWRITE_CONFIG.collections.logs) {
+          const logsRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.logs
+          );
+          if (logsRes.documents.length > 0) {
+            const loadedLogs = logsRes.documents.map((doc: any) => ({
+              id: doc.$id,
+              type: doc.type,
+              user: doc.user,
+              text: doc.text,
+              time: doc.time || 'À l\'instant'
+            }));
+            setActivityLogs(loadedLogs);
+          }
+        }
+      } catch (err) {
+        console.warn("Échec du chargement de la base de données Appwrite. Vérifiez la configuration de la console.", err);
+      }
+    };
+    if (isLoggedIn) {
+      fetchData();
+    }
+  }, [isLoggedIn]);
 
   // New User creation Form States
   const [newUserName, setNewUserName] = useState('');
@@ -70,24 +173,35 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUserStatusFilter, setSelectedUserStatusFilter] = useState<string>('Tous');
 
+  // Programmes panel toggle
+  const [showAddProgramForm, setShowAddProgramForm] = useState(false);
+
   // Handlers
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Tenter une connexion session Admin via Appwrite Account SDK
+      await account.createEmailPasswordSession(email, password);
+      onLoginSuccess();
+      setActiveTab('admin-dashboard');
+    } catch (err: any) {
+      console.warn("Connexion administrateur Appwrite échouée, repli vers les données simulées (mock).", err);
+      // Fallback vers les credentials mockés
       if (email === 'admin@idla.edu' && password === 'admin123') {
         onLoginSuccess();
         setActiveTab('admin-dashboard');
       } else {
-        setLoginError('Accès refusé. Utilisez admin@idla.edu / admin123');
+        setLoginError(err.message || 'Accès refusé. Utilisez admin@idla.edu / admin123');
       }
+    } finally {
       setIsLoading(false);
-    }, 700);
+    }
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
 
@@ -105,16 +219,29 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
     };
 
     setUsersList((curr) => [newUser, ...curr]);
-    
-    // Add activity log
-    const newLog: ActivityLog = {
-      id: Math.random().toString(),
-      type: 'registration',
-      user: 'Super Admin',
-      text: `a créé l'utilisateur CMS : ${newUserName} (${newUserRole}).`,
-      time: 'À l\'instant'
-    };
-    setActivityLogs((curr) => [newLog, ...curr]);
+
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.cmsUsers,
+          newUser.id,
+          {
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            status: newUser.status,
+            initials: newUser.initials,
+            lastLogin: new Date().toISOString(),
+          }
+        );
+      } catch (err) {
+        console.error("Échec de la création de l'utilisateur sur Appwrite:", err);
+      }
+    }
+
+    // Add activity log with Appwrite support
+    logActivity('registration', 'Super Admin', `a créé l'utilisateur CMS : ${newUserName} (${newUserRole}).`);
 
     // Reset Form
     setNewUserName('');
@@ -122,12 +249,13 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
     setActiveTab('admin-users');
   };
 
-  const handleCreateProgram = (e: React.FormEvent) => {
+  const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProgramTitle || !newProgramDescription) return;
 
+    const progId = `prog-${Math.floor(1000 + Math.random() * 9500)}`;
     const newProgram: Program = {
-      id: `prog-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: progId,
       title: newProgramTitle,
       description: newProgramDescription,
       type: newProgramType,
@@ -139,14 +267,28 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
 
     setPrograms((curr) => [newProgram, ...curr]);
 
-    const newLog: ActivityLog = {
-      id: Math.random().toString(),
-      type: 'article',
-      user: 'Super Admin',
-      text: `a ajouté un nouveau programme : ${newProgramTitle}.`,
-      time: 'À l\'instant'
-    };
-    setActivityLogs((curr) => [newLog, ...curr]);
+    if (isAppwriteDbConfigured()) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.programs,
+          progId,
+          {
+            title: newProgram.title,
+            description: newProgram.description,
+            type: newProgram.type,
+            category: newProgram.category,
+            duration: newProgram.duration,
+            image: newProgram.image,
+            isNew: newProgram.isNew
+          }
+        );
+      } catch (err) {
+        console.error("Échec de création du programme sur Appwrite:", err);
+      }
+    }
+
+    logActivity('article', 'Super Admin', `a ajouté un nouveau programme : ${newProgramTitle}.`);
 
     setNewProgramTitle('');
     setNewProgramDescription('');
@@ -155,49 +297,91 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
     setNewProgramDuration('2 ans (Full-time)');
     setNewProgramImage('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
     setNewProgramIsNew(true);
+    setShowAddProgramForm(false);
     setActiveTab('admin-programmes');
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     const targetUser = usersList.find(u => u.id === id);
     setUsersList((curr) => curr.filter((u) => u.id !== id));
-    
-    // Add activity log
+
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      try {
+        await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.cmsUsers, id);
+      } catch (err) {
+        console.error("Échec de la suppression de l'utilisateur sur Appwrite:", err);
+      }
+    }
+
     if (targetUser) {
-      const newLog: ActivityLog = {
-        id: Math.random().toString(),
-        type: 'error',
-        user: 'Super Admin',
-        text: `a supprimé l'utilisateur CMS : ${targetUser.name}.`,
-        time: 'À l\'instant'
-      };
-      setActivityLogs((curr) => [newLog, ...curr]);
+      logActivity('error', 'Super Admin', `a supprimé l'utilisateur CMS : ${targetUser.name}.`);
     }
   };
 
-  const handleApprovePreRegistration = (id: string) => {
+  const handleDeleteProgram = async (id: string) => {
+    const targetProgram = programs.find(p => p.id === id);
+    setPrograms((curr) => curr.filter((p) => p.id !== id));
+
+    if (isAppwriteDbConfigured()) {
+      try {
+        await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs, id);
+      } catch (err) {
+        console.error("Échec de la suppression du programme sur Appwrite:", err);
+      }
+    }
+
+    if (targetProgram) {
+      logActivity('article', 'Super Admin', `a supprimé le programme : ${targetProgram.title}.`);
+    }
+  };
+
+  const handleApprovePreRegistration = async (id: string) => {
     setPreRegistrations((curr) => 
       curr.map((p) => p.id === id ? { ...p, status: 'Accepted' } : p)
     );
+
+    if (isAppwriteDbConfigured()) {
+      try {
+        await databases.updateDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications,
+          id,
+          { status: 'Accepted' }
+        );
+        logActivity('registration', 'Admin', `a approuvé la candidature ID #${id}.`);
+      } catch (err) {
+        console.error("Failed to approve application on Appwrite:", err);
+      }
+    } else {
+      logActivity('registration', 'Admin', `a approuvé la candidature ID #${id}.`);
+    }
   };
 
-  const handleDenyPreRegistration = (id: string) => {
+  const handleDenyPreRegistration = async (id: string) => {
     setPreRegistrations((curr) => 
       curr.map((p) => p.id === id ? { ...p, status: 'Rejected' } : p)
     );
+
+    if (isAppwriteDbConfigured()) {
+      try {
+        await databases.updateDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications,
+          id,
+          { status: 'Rejected' }
+        );
+        logActivity('error', 'Admin', `a rejeté la candidature ID #${id}.`);
+      } catch (err) {
+        console.error("Failed to reject application on Appwrite:", err);
+      }
+    } else {
+      logActivity('error', 'Admin', `a rejeté la candidature ID #${id}.`);
+    }
   };
 
   const handleSaveAlumniProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newLog: ActivityLog = {
-      id: Math.random().toString(),
-      type: 'alumni',
-      user: 'Super Admin',
-      text: `a mis à jour la success story de l'Alumni : ${alumniName}.`,
-      time: 'À l\'instant'
-    };
-    setActivityLogs((curr) => [newLog, ...curr]);
+    logActivity('alumni', 'Super Admin', `a mis à jour la success story de l'Alumni : ${alumniName}.`);
     
     alert(`Success Story de l'Alumni ${alumniName} enregistrée avec succès !`);
   };
@@ -659,7 +843,175 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
         </div>
       )}
 
+      {/* PROGRAMMES MANAGEMENT MODULE */}
+      {activeTab === 'admin-programmes' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="font-sans font-bold text-lg text-[#00020e]">Programmes académiques IDLA</h3>
+            <button
+              onClick={() => setShowAddProgramForm((v) => !v)}
+              className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow"
+            >
+              <Plus className="w-4 h-4" />
+              {showAddProgramForm ? 'Fermer le formulaire' : 'Ajouter un programme'}
+            </button>
+          </div>
 
+          {showAddProgramForm && (
+            <form onSubmit={handleCreateProgram} className="bg-white border border-[#c6c6cf] rounded-2xl p-6 space-y-4 shadow-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">Titre du programme *</label>
+                <input
+                  type="text"
+                  value={newProgramTitle}
+                  onChange={(e) => setNewProgramTitle(e.target.value)}
+                  placeholder="ex: Master en Cybersécurité"
+                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">Description *</label>
+                <textarea
+                  value={newProgramDescription}
+                  onChange={(e) => setNewProgramDescription(e.target.value)}
+                  placeholder="Description courte du programme"
+                  rows={3}
+                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Type *</label>
+                  <select
+                    value={newProgramType}
+                    onChange={(e) => setNewProgramType(e.target.value as any)}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                  >
+                    <option value="Master">Master</option>
+                    <option value="Doctorat">Doctorat</option>
+                    <option value="Certification">Certification</option>
+                    <option value="Bachelor">Bachelor</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Catégorie *</label>
+                  <select
+                    value={newProgramCategory}
+                    onChange={(e) => setNewProgramCategory(e.target.value as any)}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                  >
+                    <option value="Sciences">Sciences</option>
+                    <option value="Management">Management</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Droit">Droit</option>
+                    <option value="Santé">Santé</option>
+                    <option value="Communication">Communication</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Durée *</label>
+                  <input
+                    type="text"
+                    value={newProgramDuration}
+                    onChange={(e) => setNewProgramDuration(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">URL Image *</label>
+                  <input
+                    type="text"
+                    value={newProgramImage}
+                    onChange={(e) => setNewProgramImage(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
+                <input
+                  type="checkbox"
+                  checked={newProgramIsNew}
+                  onChange={(e) => setNewProgramIsNew(e.target.checked)}
+                  className="w-4 h-4 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49]"
+                />
+                Marquer comme "Nouveau"
+              </label>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-[#c6c6cf]/30">
+                <button
+                  type="button"
+                  onClick={() => setShowAddProgramForm(false)}
+                  className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all"
+                >
+                  Enregistrer le programme
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+                  <th className="p-4">Programme</th>
+                  <th className="p-4">Type</th>
+                  <th className="p-4">Catégorie</th>
+                  <th className="p-4">Durée</th>
+                  <th className="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#c6c6cf]/20">
+                {programs.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/40">
+                    <td className="p-4 font-semibold text-[#00020e]">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-3.5 h-3.5 text-[#006c49] shrink-0" />
+                        <span>{p.title}</span>
+                        {p.isNew && (
+                          <span className="bg-[#006c49]/10 text-[#006c49] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Nouveau</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 font-medium text-slate-600">{p.type}</td>
+                    <td className="p-4 font-medium text-slate-600">{p.category}</td>
+                    <td className="p-4 text-slate-400">{p.duration}</td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => handleDeleteProgram(p.id)}
+                        className="mx-auto block text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all"
+                        title="Supprimer le programme"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {programs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">Aucun programme enregistré.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
     </div>
   );
