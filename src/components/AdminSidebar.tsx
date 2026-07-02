@@ -1,17 +1,12 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  GraduationCap, 
-  BookOpen, 
-  Quote, 
-  Newspaper, 
-  HeartHandshake, 
-  UserCheck, 
-  Megaphone, 
-  Settings, 
-  LogOut 
-} from 'lucide-react';
 import { ActiveTab } from '../App';
+
+type IconProps = { className?: string };
+const Quote = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Newspaper = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const HeartHandshake = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Megaphone = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const UserCheck = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Settings = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 
 interface AdminSidebarProps {
   activeTab: ActiveTab;
@@ -26,15 +21,15 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
 
   if (isCandidateDashboard) {
     return (
-      <aside className="w-full border-b border-[#c6c6cf]/10 bg-[#1a1d1f] text-[#006c49] lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50">
+      <aside className="w-full border-b border-[#c6c6cf]/10 bg-[#1a1d1f] text-[#6ffbbe] lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50">
         <div className="px-4 py-4 lg:px-6 lg:mb-10 lg:py-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-6 h-6 text-[#00020e]" />
+            <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center shadow-lg text-[#00020e] font-bold">
+              
             </div>
             <div>
-              <h1 className="font-sans font-bold text-lg text-white leading-none">IDLA Admin</h1>
-              <p className="text-white/60 text-[11px] uppercase tracking-wider mt-1">CMS Portal</p>
+              <h1 className="font-sans font-bold text-lg text-white leading-none">Espace Candidat</h1>
+              <p className="text-white/60 text-[11px] uppercase tracking-wider mt-1">Portail Étudiant</p>
             </div>
           </div>
         </div>
@@ -48,28 +43,24 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
                 : 'text-white/60 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Dashboard</span>
+            <span>Tableau de bord</span>
           </button>
           <button 
             className={`${sharedClasses} whitespace-nowrap text-[#6ffbbe]/40 cursor-not-allowed`}
             disabled
           >
-            <UserCheck className="w-4 h-4" />
-            <span>Ma Candidature</span>
+            <span>Ma candidature</span>
           </button>
           <button 
             onClick={() => setActiveTab('programmes')}
             className={`${sharedClasses} whitespace-nowrap text-white/60 hover:bg-white/5 hover:text-white`}
           >
-            <BookOpen className="w-4 h-4" />
             <span>Programmes</span>
           </button>
           <button 
             onClick={() => setActiveTab('actualites')}
             className={`${sharedClasses} whitespace-nowrap text-white/60 hover:bg-white/5 hover:text-white`}
           >
-            <Newspaper className="w-4 h-4" />
             <span>Actualités</span>
           </button>
         </nav>
@@ -78,14 +69,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
           <button 
             className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
           >
-            <Settings className="w-4 h-4" />
             <span>Paramètres</span>
           </button>
           <button 
             onClick={onLogout}
             className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
           >
-            <LogOut className="w-4 h-4 text-red-400" />
             <span>Déconnexion</span>
           </button>
         </div>
@@ -100,8 +89,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
     <aside className="w-full border-b border-[#c6c6cf]/10 bg-[#1a1d1f] text-white lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50">
       <div className="px-4 py-4 lg:px-6 lg:mb-8 lg:py-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center text-white shadow-lg">
-            <GraduationCap className="w-6 h-6 text-[#00020e]" />
+          <div className="w-10 h-10 rounded-xl bg-[#6ffbbe] flex items-center justify-center text-[#00020e] shadow-lg font-bold">
+            ID
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg text-white leading-none">IDLA Admin</h1>
@@ -119,7 +108,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
               : 'text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4" />
           <span>Dashboard</span>
         </button>
 
@@ -131,7 +119,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
               : 'text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
-          <Users className="w-4 h-4" />
           <span>Utilisateurs</span>
         </button>
 
@@ -143,7 +130,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
               : 'text-white/60 hover:bg-white/5 hover:text-white'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
           <span>Programmes</span>
         </button>
 
@@ -182,7 +168,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }: Admi
           onClick={onLogout}
           className={`${sharedClasses} text-white/60 hover:bg-white/5 hover:text-white`}
         >
-          <LogOut className="w-4 h-4 text-red-400" />
           <span>Déconnexion</span>
         </button>
       </div>

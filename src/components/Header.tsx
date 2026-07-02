@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { LogIn, Menu, X } from 'lucide-react';
 import { ActiveTab } from '../App';
 
 interface HeaderProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onLoginClick: () => void;
+  onAdminLoginClick: () => void;
   onSignUpClick: () => void;
 }
 
-export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUpClick }: HeaderProps) {
+export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminLoginClick, onSignUpClick }: HeaderProps) {
   const isPublicTab = ['home', 'programmes', 'actualites', 'temoignages', 'candidature', 'success'].includes(activeTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -32,8 +32,8 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUp
           }} 
           className="font-sans font-bold text-xl sm:text-2xl tracking-tight text-white hover:opacity-90 transition-opacity flex items-center gap-2"
         >
-          <span className="w-8 h-8 rounded-lg bg-[#6ffbbe] text-[#00020e] flex items-center justify-center">
-            🎓
+          <span className="w-8 h-8 rounded-lg bg-[#6ffbbe] text-[#00020e] flex items-center justify-center text-sm font-bold">
+            
           </span>
           IDLA CMS
         </button>
@@ -57,8 +57,15 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUp
             onClick={onLoginClick}
             className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white px-3 py-1.5 transition-colors"
           >
-            <LogIn className="w-4 h-4 text-[#6ffbbe]" />
-            Connexion
+            <span className="text-sm text-[#6ffbbe]">↪</span>
+            Connexion candidat
+          </button>
+          <button 
+            onClick={onAdminLoginClick}
+            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white px-3 py-1.5 transition-colors"
+          >
+            <span className="text-sm text-[#6ffbbe]">🛡</span>
+            Connexion admin
           </button>
           <button 
             onClick={onSignUpClick}
@@ -71,7 +78,7 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUp
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-white/80 hover:bg-white/10 hover:text-white md:hidden"
             aria-label="Ouvrir le menu"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span className="text-sm font-semibold">{mobileMenuOpen ? '×' : '☰'}</span>
           </button>
         </div>
 
@@ -92,6 +99,15 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUp
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  onAdminLoginClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white"
+              >
+                Connexion admin
+              </button>
             </div>
           </div>
         )}
