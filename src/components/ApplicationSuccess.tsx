@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Check, ClipboardList, Mail, ArrowRight, Home } from 'lucide-react';
+
+type IconProps = { className?: string };
+const Check = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ClipboardList = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Mail = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Home = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 
 interface ApplicationSuccessProps {
   candidateName: string;

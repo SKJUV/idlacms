@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { Sparkles, Eye, Code, ChevronDown, ChevronUp, Layers, HelpCircle } from 'lucide-react';
 import { ActiveTab } from '../App';
+
+type IconProps = { className?: string };
+const Sparkles = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Eye = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ChevronDown = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ChevronUp = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 
 interface DemoToolbarProps {
   activeTab: ActiveTab;

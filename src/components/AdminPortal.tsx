@@ -1,44 +1,57 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Lock, 
-  Mail, 
-  Search, 
-  UserPlus, 
-  Trash2, 
-  Filter, 
-  TrendingUp, 
-  Users, 
-  GraduationCap, 
-  ShieldAlert, 
-  CheckCircle2, 
-  XCircle, 
-  UserCheck, 
-  BookOpen, 
-  Plus, 
-  ArrowLeft,
-  Settings,
-  Bell,
-  Sparkles,
-  Award
-} from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { ActiveTab } from '../App';
 import { Program, User, PreRegistration, ActivityLog } from '../types';
+
+type IconProps = { className?: string };
+const Lock = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Mail = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Search = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const UserPlus = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Trash2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Filter = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const TrendingUp = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Users = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const GraduationCap = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ShieldAlert = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const CheckCircle2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const XCircle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const UserCheck = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const BookOpen = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Plus = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ArrowLeft = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Settings = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Bell = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Sparkles = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Award = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Eye = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 import { initialUsers, preRegistrationsData, activityLogsData } from '../data/mockData';
 
 interface AdminPortalProps {
   activeTab: 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes';
-  setActiveTab: (tab: any) => void;
+  setActiveTab: (tab: ActiveTab) => void;
   isLoggedIn: boolean;
   onLoginSuccess: () => void;
+  adminPassword: string;
+  setAdminPassword: React.Dispatch<React.SetStateAction<string>>;
   programs: Program[];
   setPrograms: React.Dispatch<React.SetStateAction<Program[]>>;
 }
 
-export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLoginSuccess }: AdminPortalProps) {
+export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLoginSuccess, adminPassword, setAdminPassword, programs, setPrograms }: AdminPortalProps) {
   // Login Form States
   const [email, setEmail] = useState('admin@idla.edu');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState(adminPassword);
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('admin@idla.edu');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [showChangePasswordPanel, setShowChangePasswordPanel] = useState(false);
+  const [currentAdminPassword, setCurrentAdminPassword] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState(adminPassword);
+  const [newAdminPasswordConfirm, setNewAdminPasswordConfirm] = useState('');
+  const [passwordUpdateMessage, setPasswordUpdateMessage] = useState('');
 
   // CMS database records states (with persistent in-memory session changes)
   const [usersList, setUsersList] = useState<User[]>(initialUsers);
@@ -70,21 +83,55 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUserStatusFilter, setSelectedUserStatusFilter] = useState<string>('Tous');
 
+  useEffect(() => {
+    setPassword(adminPassword);
+    setNewAdminPassword(adminPassword);
+  }, [adminPassword]);
+
+  const handleResetPasswordRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail) {
+      setRecoveryMessage('Veuillez indiquer une adresse email valide.');
+      return;
+    }
+    setRecoveryMessage(`Un email de récupération a été envoyé à ${recoveryEmail}.`);
+  };
+
+  const handlePasswordUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentAdminPassword || !newAdminPassword || !newAdminPasswordConfirm) {
+      setPasswordUpdateMessage('Tous les champs sont requis.');
+      return;
+    }
+    if (currentAdminPassword !== adminPassword) {
+      setPasswordUpdateMessage('Le mot de passe actuel est incorrect.');
+      return;
+    }
+    if (newAdminPassword !== newAdminPasswordConfirm) {
+      setPasswordUpdateMessage('La confirmation ne correspond pas.');
+      return;
+    }
+    setAdminPassword(newAdminPassword);
+    setPassword(newAdminPassword);
+    setCurrentAdminPassword('');
+    setNewAdminPasswordConfirm('');
+    setPasswordUpdateMessage('Mot de passe mis à jour avec succès.');
+  };
+
   // Handlers
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      if (email === 'admin@idla.edu' && password === 'admin123') {
-        onLoginSuccess();
-        setActiveTab('admin-dashboard');
-      } else {
-        setLoginError('Accès refusé. Utilisez admin@idla.edu / admin123');
-      }
-      setIsLoading(false);
-    }, 700);
+    if (email === 'admin@idla.edu' && password === adminPassword) {
+      onLoginSuccess();
+      setActiveTab('admin-dashboard');
+    } else {
+      setLoginError(`Accès refusé. Utilisez admin@idla.edu / ${adminPassword}`);
+    }
+
+    setIsLoading(false);
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -213,7 +260,7 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
   }, [usersList, userSearchQuery, selectedUserStatusFilter]);
 
   // LOGIN SCREEN VIEW
-  if (!isLoggedIn && activeTab === 'admin-login') {
+  if (!isLoggedIn) {
     return (
       <div className="bg-[#00020e] min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden text-white">
         
@@ -238,47 +285,107 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Compte Administrateur</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
-                  required
-                />
+          {showForgotPassword ? (
+            <form onSubmit={handleResetPasswordRequest} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Adresse email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type="email" 
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Clé de sécurité</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white"
-                  required
-                />
+              <button 
+                type="submit"
+                className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all"
+              >
+                Envoyer un lien de récupération
+              </button>
+
+              {recoveryMessage && (
+                <div className="text-sm text-[#6ffbbe] text-center">{recoveryMessage}</div>
+              )}
+
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setRecoveryMessage('');
+                }}
+                className="w-full text-[#6ffbbe] text-sm font-semibold hover:underline"
+              >
+                Retour à la page de connexion
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Compte Administrateur</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
-            >
-              {isLoading ? 'Authentification...' : 'Valider les privilèges'}
-            </button>
-          </form>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Clé de sécurité</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setLoginError('');
+                    }}
+                    className="text-[10px] text-[#6ffbbe] hover:underline font-semibold"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-12 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-xs font-semibold"
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Voir le mot de passe'}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
+              >
+                {isLoading ? 'Authentification...' : 'Valider les privilèges'}
+              </button>
+            </form>
+          )}
 
           <div className="text-center pt-2">
             <p className="text-[11px] text-white/40">
-              Indentifiants Démo : <span className="text-[#6ffbbe] font-semibold">admin@idla.edu / admin123</span>
+              Indentifiants Démo : <span className="text-[#6ffbbe] font-semibold">admin@idla.edu / {adminPassword}</span>
             </p>
           </div>
         </div>
@@ -301,6 +408,16 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
             <Bell className="w-4 h-4" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></span>
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowChangePasswordPanel((value) => !value);
+              setPasswordUpdateMessage('');
+            }}
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#c6c6cf] text-sm font-semibold text-[#0b1c30] bg-white hover:bg-slate-50 transition-all"
+          >
+            Changer le mot de passe
+          </button>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#00020e] text-white flex items-center justify-center font-bold text-xs">
               JS
@@ -312,6 +429,57 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
           </div>
         </div>
       </header>
+      {showChangePasswordPanel && (
+        <section className="bg-white border border-[#c6c6cf] rounded-2xl p-6 mb-8 shadow-sm max-w-3xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="font-sans font-bold text-base text-[#00020e]">Changer le mot de passe administrateur</h3>
+              <p className="text-xs text-slate-500">Mettez à jour votre mot de passe de connexion CMS.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowChangePasswordPanel(false)}
+              className="text-[#6ffbbe] text-xs font-semibold hover:underline"
+            >
+              Fermer
+            </button>
+          </div>
+          <form onSubmit={handlePasswordUpdate} className="mt-6 grid gap-4 md:grid-cols-3">
+            <input
+              type="password"
+              placeholder="Mot de passe actuel"
+              value={currentAdminPassword}
+              onChange={(e) => setCurrentAdminPassword(e.target.value)}
+              className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+            />
+            <input
+              type="password"
+              placeholder="Nouveau mot de passe"
+              value={newAdminPassword}
+              onChange={(e) => setNewAdminPassword(e.target.value)}
+              className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+            />
+            <input
+              type="password"
+              placeholder="Confirmer le mot de passe"
+              value={newAdminPasswordConfirm}
+              onChange={(e) => setNewAdminPasswordConfirm(e.target.value)}
+              className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+            />
+            <div className="md:col-span-3 flex flex-col gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center w-full rounded-lg bg-[#006c49] text-white px-4 py-3 text-sm font-bold hover:bg-[#00593a] transition-all"
+              >
+                Mettre à jour le mot de passe
+              </button>
+              {passwordUpdateMessage && (
+                <p className="text-sm text-[#006c49]">{passwordUpdateMessage}</p>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
 
       {/* DASHBOARD VIEW MODULE */}
       {activeTab === 'admin-dashboard' && (
@@ -460,8 +628,20 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
       {/* USERS MANAGEMENT MODULE */}
       {activeTab === 'admin-users' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="font-sans font-bold text-lg text-[#00020e]">Comptes d'accès IDLA CMS</h3>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('admin-dashboard')}
+                className="p-2 rounded-lg border border-[#c6c6cf]/50 text-slate-500 hover:bg-slate-100 transition-colors"
+                aria-label="Retour au dashboard"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <h3 className="font-sans font-bold text-lg text-[#00020e]">Comptes d'accès IDLA CMS</h3>
+                <p className="text-[11px] text-slate-400">Gérez les accès et les rôles des administrateurs.</p>
+              </div>
+            </div>
             <button 
               onClick={() => setActiveTab('admin-add-user')}
               className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow"
@@ -659,7 +839,131 @@ export default function AdminPortal({ activeTab, setActiveTab, isLoggedIn, onLog
         </div>
       )}
 
+      {/* PROGRAMMES MANAGEMENT MODULE */}
+      {activeTab === 'admin-programmes' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setActiveTab('admin-dashboard')}
+              className="p-2 rounded-lg border border-[#c6c6cf]/50 text-slate-500 hover:bg-slate-100 transition-colors"
+              aria-label="Retour au dashboard"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <h3 className="font-sans font-bold text-lg text-[#00020e]">Programmes IDLA</h3>
+              <p className="text-sm text-slate-500">Gérez les formations et leurs descriptions.</p>
+            </div>
+          </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {programs.map((program) => (
+              <article key={program.id} className="bg-white border border-[#c6c6cf] rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-4 mb-4">
+                  <img src={program.image} alt={program.title} className="w-16 h-16 rounded-2xl object-cover" />
+                  <div>
+                    <h4 className="font-bold text-[#00020e]">{program.title}</h4>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">{program.type} • {program.category}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed">{program.description}</p>
+                <div className="mt-4 text-xs text-slate-500">Durée : {program.duration}</div>
+              </article>
+            ))}
+          </div>
+
+          <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm">
+            <h4 className="font-sans font-bold text-base text-[#00020e] mb-4">Ajouter un programme</h4>
+            <form onSubmit={handleCreateProgram} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Titre du programme *</label>
+                  <input
+                    type="text"
+                    value={newProgramTitle}
+                    onChange={(e) => setNewProgramTitle(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Durée *</label>
+                  <input
+                    type="text"
+                    value={newProgramDuration}
+                    onChange={(e) => setNewProgramDuration(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">Description *</label>
+                <textarea
+                  value={newProgramDescription}
+                  onChange={(e) => setNewProgramDescription(e.target.value)}
+                  rows={4}
+                  className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs resize-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Type</label>
+                  <select
+                    value={newProgramType}
+                    onChange={(e) => setNewProgramType(e.target.value as any)}
+                    className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                  >
+                    <option value="Master">Master</option>
+                    <option value="Doctorat">Doctorat</option>
+                    <option value="Certification">Certification</option>
+                    <option value="Bachelor">Bachelor</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Catégorie</label>
+                  <select
+                    value={newProgramCategory}
+                    onChange={(e) => setNewProgramCategory(e.target.value as any)}
+                    className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                  >
+                    <option value="Sciences">Sciences</option>
+                    <option value="Management">Management</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Droit">Droit</option>
+                    <option value="Santé">Santé</option>
+                    <option value="Communication">Communication</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Image URL</label>
+                  <input
+                    type="url"
+                    value={newProgramImage}
+                    onChange={(e) => setNewProgramImage(e.target.value)}
+                    className="w-full p-3 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-[#c6c6cf]/30">
+                <button
+                  type="submit"
+                  className="bg-[#006c49] hover:bg-[#004a34] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-all"
+                >
+                  Enregistrer le programme
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

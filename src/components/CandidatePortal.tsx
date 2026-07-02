@@ -1,33 +1,50 @@
-import React, { useState, useRef } from 'react';
-import { 
-  Lock, 
-  Mail, 
-  Send, 
-  User, 
-  GraduationCap, 
-  CheckCircle2, 
-  Clock, 
-  Upload, 
-  AlertCircle, 
-  FileText, 
-  ChevronRight, 
-  ArrowLeft,
-  ChevronUp,
-  MessageSquare
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+
+type IconProps = { className?: string };
+const Lock = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Mail = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Send = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const User = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const GraduationCap = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const CheckCircle2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Clock = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Upload = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const AlertCircle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const FileText = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ChevronRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ArrowLeft = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ChevronUp = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const MessageSquare = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 
 interface CandidatePortalProps {
   onBackToHome: () => void;
   onLoginSuccess: () => void;
   isLoggedIn: boolean;
+  candidateName?: string;
+  selectedProgram?: string;
 }
 
-export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLoggedIn }: CandidatePortalProps) {
+export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLoggedIn, candidateName: propCandidateName, selectedProgram: propSelectedProgram }: CandidatePortalProps) {
+  // Resolve display name and program from props or localStorage fallback
+  const storedName = localStorage.getItem('candidateName') || 'Jean Dupont';
+  const storedProgram = localStorage.getItem('candidateProgram') || 'Executive MBA';
+  const displayName = propCandidateName || storedName;
+  const displayProgram = propSelectedProgram || storedProgram;
+
   // Login Form States
-  const [email, setEmail] = useState('jean.dupont@email.com');
-  const [password, setPassword] = useState('password123');
+  const [storedCandidatePassword, setStoredCandidatePassword] = useState(() => localStorage.getItem('candidatePassword') || 'password123');
+  const [email, setEmail] = useState(() => localStorage.getItem('candidateEmail') || 'jean.dupont@email.com');
+  const [password, setPassword] = useState(storedCandidatePassword);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('jean.dupont@email.com');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [showChangePasswordPanel, setShowChangePasswordPanel] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [passwordUpdateMessage, setPasswordUpdateMessage] = useState('');
 
   // Dashboard / Interactive states
   const [chatMessage, setChatMessage] = useState('');
@@ -41,19 +58,58 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
   const [isUploading, setIsUploading] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    localStorage.setItem('candidatePassword', storedCandidatePassword);
+  }, [storedCandidatePassword]);
+
+  useEffect(() => {
+    setPassword(storedCandidatePassword);
+  }, [storedCandidatePassword]);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     setIsLoading(true);
 
     setTimeout(() => {
-      if (email === 'jean.dupont@email.com' && password === 'password123') {
+      const storedEmail = localStorage.getItem('candidateEmail') || 'jean.dupont@email.com';
+      if (email === storedEmail && password === storedCandidatePassword) {
         onLoginSuccess();
       } else {
-        setLoginError('Identifiants incorrects. Utilisez jean.dupont@email.com / password123');
+        setLoginError(`Identifiants incorrects. Utilisez ${storedEmail} / ${storedCandidatePassword}`);
       }
       setIsLoading(false);
     }, 800);
+  };
+
+  const handleResetPasswordRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail) {
+      setRecoveryMessage('Veuillez renseigner une adresse email valide.');
+      return;
+    }
+    setRecoveryMessage(`Un lien de récupération a été envoyé à ${recoveryEmail}.`);
+  };
+
+  const handlePasswordChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !newPasswordConfirm) {
+      setPasswordUpdateMessage('Tous les champs sont requis.');
+      return;
+    }
+    if (currentPassword !== storedCandidatePassword) {
+      setPasswordUpdateMessage('Mot de passe actuel incorrect.');
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      setPasswordUpdateMessage('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    setStoredCandidatePassword(newPassword);
+    setCurrentPassword('');
+    setNewPassword('');
+    setNewPasswordConfirm('');
+    setPasswordUpdateMessage('Mot de passe mis à jour avec succès.');
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -121,47 +177,93 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Adresse email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
-                  required
-                />
+          {showForgotPassword ? (
+            <form onSubmit={handleResetPasswordRequest} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Adresse email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type="email" 
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Mot de passe</label>
-                <a href="#" className="text-[10px] text-[#6ffbbe] hover:underline font-bold">Oublié ?</a>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white"
-                  required
-                />
-              </div>
-            </div>
+              <button 
+                type="submit"
+                className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all"
+              >
+                Envoyer un lien de récupération
+              </button>
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
-            >
-              {isLoading ? 'Identification en cours...' : 'Se connecter'}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </form>
+              {recoveryMessage && (
+                <div className="text-sm text-[#6ffbbe] text-center">{recoveryMessage}</div>
+              )}
+
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setRecoveryMessage('');
+                }}
+                className="w-full text-[#6ffbbe] text-sm font-semibold hover:underline"
+              >
+                Retour à la page de connexion
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Adresse email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] uppercase font-bold text-white/60 tracking-wider">Mot de passe</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-[10px] text-[#6ffbbe] hover:underline font-bold"
+                  >
+                    Oublié ?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 w-4 h-4" />
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#6ffbbe] outline-none text-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
+              >
+                {isLoading ? 'Identification en cours...' : 'Se connecter'}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </form>
+          )}
 
           <div className="text-center pt-2">
             <p className="text-xs text-white/40">
@@ -184,23 +286,83 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
         {/* Welcome Top Banner */}
         <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#00020e] overflow-hidden border border-[#c6c6cf] shrink-0">
-              <img 
-                className="w-full h-full object-cover" 
-                alt="Jean Dupont" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1LfFMF59IxhCwXU86Z9pk3WrYDugQvF0DDQbPehsSHoM43Xatn_WNeCx3m1Y2uV-YMNrk-PazsuEv026pjveC8nHINIJdcvTAjCdA2Ul-pzy1-1X3f8qWlR-6thU-yiwdIOV8Wgv5LTuU6aZG5FtoJfZJKzsoedrXakIIKQWjXhMzcp3H_cws91qBL9fONgHLkpxnXs2cjLbIN3vj-yDum-JiwnSgDgBNtLCC4a3UdRQ8ejIbRQKco1PUNyz9RHSMcnYjUOO7bhI"
-              />
+            <div className="w-16 h-16 rounded-full bg-[#00020e] overflow-hidden border border-[#c6c6cf] shrink-0 flex items-center justify-center text-[#6ffbbe] font-bold text-xl">
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="font-sans font-bold text-2xl text-[#00020e]">Bonjour, Jean Dupont !</h1>
-              <p className="text-sm text-[#45464e] font-semibold mt-0.5">Dossier #IDLA-2024-8931</p>
+              <h1 className="font-sans font-bold text-2xl text-[#00020e]">Bonjour, {displayName} !</h1>
+              <p className="text-sm text-[#45464e] font-semibold mt-0.5">Programme : {displayProgram}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 bg-amber-500/10 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-500/20">
-            <Clock className="w-4 h-4 shrink-0" />
-            <span>Statut : Dossier en cours d'évaluation par l'administration académique</span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2.5 bg-amber-500/10 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-500/20">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span>Statut : Dossier en cours d'évaluation par l'administration académique</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowChangePasswordPanel((value) => !value);
+                setPasswordUpdateMessage('');
+              }}
+              className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-[#00020e] border border-[#c6c6cf] bg-white hover:bg-slate-50 transition-all"
+            >
+              Modifier le mot de passe
+            </button>
           </div>
         </div>
+
+        {showChangePasswordPanel && (
+          <section className="bg-white border border-[#c6c6cf] rounded-2xl p-6 md:p-8 shadow-sm space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 className="font-sans font-bold text-base text-[#00020e]">Modifier votre mot de passe</h3>
+                <p className="text-sm text-slate-500">Mettez à jour le mot de passe de votre compte candidat.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChangePasswordPanel(false)}
+                className="text-[#6ffbbe] text-sm font-semibold hover:underline"
+              >
+                Fermer
+              </button>
+            </div>
+            <form onSubmit={handlePasswordChange} className="grid gap-4 md:grid-cols-3">
+              <input
+                type="password"
+                placeholder="Mot de passe actuel"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+              />
+              <input
+                type="password"
+                placeholder="Nouveau mot de passe"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+              />
+              <input
+                type="password"
+                placeholder="Confirmer le mot de passe"
+                value={newPasswordConfirm}
+                onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                className="w-full border border-[#c6c6cf] rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-[#006c49]"
+              />
+              <div className="md:col-span-3 flex flex-col gap-3">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center w-full rounded-lg bg-[#006c49] text-white px-4 py-3 text-sm font-bold hover:bg-[#00593a] transition-all"
+                >
+                  Mettre à jour le mot de passe
+                </button>
+                {passwordUpdateMessage && (
+                  <p className="text-sm text-[#006c49]">{passwordUpdateMessage}</p>
+                )}
+              </div>
+            </form>
+          </section>
+        )}
 
         {/* Stepper Progress tracking timeline */}
         <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">

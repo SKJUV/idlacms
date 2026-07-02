@@ -1,21 +1,21 @@
 import { useState, useMemo } from 'react';
-import { 
-  Search, 
-  Clock, 
-  ArrowRight, 
-  MapPin, 
-  AlertTriangle, 
-  ShieldAlert, 
-  Flame, 
-  Compass, 
-  Quote, 
-  Globe, 
-  Users, 
-  Share2,
-  Calendar,
-  BookOpen
-} from 'lucide-react';
 import { Program, NewsArticle, Testimonial } from '../types';
+
+type IconProps = { className?: string };
+const Search = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Clock = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const MapPin = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const AlertTriangle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ShieldAlert = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Flame = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Compass = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Quote = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Globe = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Users = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Share2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const Calendar = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const BookOpen = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
 import { programsData, newsData, testimonialsData } from '../data/mockData';
 
 interface PublicPortalProps {

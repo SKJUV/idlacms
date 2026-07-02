@@ -1,17 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  UploadCloud, 
-  CheckCircle2, 
-  FileText, 
-  AlertCircle, 
-  GraduationCap 
-} from 'lucide-react';
 import { programsData } from '../data/mockData';
 
+type IconProps = { className?: string };
+const ArrowLeft = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const UploadCloud = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const CheckCircle2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const FileText = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+const AlertCircle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+
 interface ApplicationFormProps {
-  onSuccess: (candidateName: string, selectedProgram: string) => void;
+  onSuccess: (candidateName: string, selectedProgram: string, email: string) => void;
   onBackToHome: () => void;
 }
 
@@ -122,7 +121,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
       setErrorMessage('Vous devez accepter les conditions de déclaration sur l\'honneur pour soumettre.');
       return;
     }
-    onSuccess(`${firstName} ${lastName}`, selectedProgram);
+    onSuccess(`${firstName} ${lastName}`, selectedProgram, email);
   };
 
   const stepsList = [

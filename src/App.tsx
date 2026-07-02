@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import PublicPortal from './components/PublicPortal';
@@ -25,17 +25,22 @@ export type ActiveTab =
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
-  const [candidateLoggedIn, setCandidateLoggedIn] = useState(false);
-  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [candidateLoggedIn, setCandidateLoggedIn] = useState(() => localStorage.getItem('candidateLoggedIn') === 'true');
+  const [adminLoggedIn, setAdminLoggedIn] = useState(() => localStorage.getItem('adminLoggedIn') === 'true');
+  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('adminPassword') || 'Admin2026!');
   const [programs, setPrograms] = useState<Program[]>(programsData);
 
   // Registered Candidate Info
   const [candidateName, setCandidateName] = useState('Jean Dupont');
   const [selectedProgram, setSelectedProgram] = useState('Executive MBA Stratégie Digitale');
 
-  const handleApplicationSuccess = (name: string, prog: string) => {
+  const handleApplicationSuccess = (name: string, prog: string, email: string) => {
     setCandidateName(name);
     setSelectedProgram(prog);
+    // Persist candidate info so CandidatePortal can read it
+    localStorage.setItem('candidateName', name);
+    localStorage.setItem('candidateProgram', prog);
+    localStorage.setItem('candidateEmail', email);
     setActiveTab('success');
   };
 
@@ -45,10 +50,45 @@ export default function App() {
     setActiveTab('home');
   };
 
+  const handleCandidateLoginSuccess = () => {
+    setCandidateLoggedIn(true);
+    setActiveTab('candidate-dashboard');
+  };
+
+  const handleAdminLoginSuccess = () => {
+    setAdminLoggedIn(true);
+    setActiveTab('admin-dashboard');
+  };
+
+  useEffect(() => {
+    localStorage.setItem('candidateLoggedIn', String(candidateLoggedIn));
+  }, [candidateLoggedIn]);
+
+  useEffect(() => {
+    localStorage.setItem('adminLoggedIn', String(adminLoggedIn));
+  }, [adminLoggedIn]);
+
+  useEffect(() => {
+    localStorage.setItem('adminPassword', adminPassword);
+  }, [adminPassword]);
+
+  useEffect(() => {
+    const adminPaths: ActiveTab[] = ['admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes'];
+    const candidatePaths: ActiveTab[] = ['candidate-dashboard'];
+
+    if (adminPaths.includes(activeTab) && !adminLoggedIn) {
+      setActiveTab('admin-login');
+    }
+    if (candidatePaths.includes(activeTab) && !candidateLoggedIn) {
+      setActiveTab('candidate-login');
+    }
+  }, [activeTab, adminLoggedIn, candidateLoggedIn]);
+
   const isCMSorDashboard = ['admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes', 'candidate-dashboard'].includes(activeTab);
+  const isLightPage = isCMSorDashboard || ['programmes', 'actualites', 'temoignages'].includes(activeTab);
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${isCMSorDashboard ? 'bg-[#f8f9ff]' : 'bg-[#00020e]'}`}>
+    <div className={`min-h-screen overflow-x-hidden ${isLightPage ? 'bg-[#f8f9ff]' : 'bg-[#00020e]'}`}>
       {/* Dynamic Header for Visiteur/Visitor pages */}
       <Header 
         activeTab={activeTab} 
@@ -56,6 +96,10 @@ export default function App() {
         onLoginClick={() => {
           setCandidateLoggedIn(false);
           setActiveTab('candidate-login');
+        }}
+        onAdminLoginClick={() => {
+          setAdminLoggedIn(false);
+          setActiveTab('admin-login');
         }}
         onSignUpClick={() => setActiveTab('candidature')}
       />
@@ -106,11 +150,10 @@ export default function App() {
         {(activeTab === 'candidate-login' || activeTab === 'candidate-dashboard') && (
           <CandidatePortal 
             isLoggedIn={candidateLoggedIn}
-            onLoginSuccess={() => {
-              setCandidateLoggedIn(true);
-              setActiveTab('candidate-dashboard');
-            }}
+            onLoginSuccess={handleCandidateLoginSuccess}
             onBackToHome={() => setActiveTab('home')}
+            candidateName={candidateName}
+            selectedProgram={selectedProgram}
           />
         )}
 
@@ -120,7 +163,9 @@ export default function App() {
             activeTab={activeTab as any}
             setActiveTab={setActiveTab}
             isLoggedIn={adminLoggedIn}
-            onLoginSuccess={() => setAdminLoggedIn(true)}
+            onLoginSuccess={handleAdminLoginSuccess}
+            adminPassword={adminPassword}
+            setAdminPassword={setAdminPassword}
             programs={programs}
             setPrograms={setPrograms}
           />
