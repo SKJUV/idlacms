@@ -1,0 +1,12 @@
+# Configuration Netlify pour IDLA CMS (SPA Vite + React)
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Fallback SPA : toutes les routes (/admin, /candidat, /programmes…) sont servies
+# par index.html — le routage est géré côté client via l'API History.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

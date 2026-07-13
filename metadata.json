@@ -1,0 +1,6 @@
+{
+  "name": "IDLA CMS",
+  "description": "Institut de Leadership et d'Administration - Portail d'Admission et de Gestion de Contenu",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
