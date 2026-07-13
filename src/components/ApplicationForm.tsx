@@ -6,7 +6,10 @@ import {
   CheckCircle2, 
   FileText, 
   AlertCircle, 
-  GraduationCap 
+  GraduationCap,
+  Mail,
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { programsData } from '../data/mockData';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../lib/appwrite';
@@ -39,6 +42,13 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
 
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // OTP State
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpError, setOtpError] = useState('');
 
   // Handle Drag & Drop Events
   const handleDragOver = (e: React.DragEvent) => {
@@ -108,6 +118,84 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     fileInputRef.current?.click();
   };
 
+  // Generate & send a simulated 6-digit OTP
+  const handleSendOtp = () => {
+    setOtpError('');
+    if (!declarationChecked) {
+      setErrorMessage('Vous devez accepter la déclaration sur l\'honneur avant de recevoir le code.');
+      return;
+    }
+    const generated = Math.floor(100000 + Math.random() * 900000).toString();
+    setOtpCode(generated);
+    setOtpSent(true);
+    setOtpVerified(false);
+    setOtpInput('');
+
+    const fullName = `${firstName} ${lastName}`.trim() || 'Candidat(e)';
+
+    // ================================================================
+    // ✏️  MODIFIEZ LE MESSAGE EMAIL ICI — chaque ligne est libre
+    // ================================================================
+    const emailMessage =
+`Objet : 🔐 Votre code de vérification — Candidature IDLA
+
+──────────────────────────────────────────────
+  INSTITUT DE LEADERSHIP ET D'ADMINISTRATION
+              Service des Admissions
+──────────────────────────────────────────────
+
+Bonjour ${fullName},
+
+Nous avons bien enregistré votre demande de soumission
+de candidature à l'IDLA pour le programme :
+  ▸ ${selectedProgram}
+
+Afin de confirmer votre identité et sécuriser votre
+dossier, veuillez utiliser le code de vérification
+unique ci-dessous :
+
+┌─────────────────────────────────┐
+│                                 │
+│         🔐  ${generated}  🔐          │
+│                                 │
+│    Valable pendant 10 minutes   │
+└─────────────────────────────────┘
+
+⚠️  Ne partagez jamais ce code avec quiconque.
+   L'IDLA ne vous demandera jamais ce code par
+   téléphone ou par un autre canal.
+
+Si vous n'êtes pas à l'origine de cette demande,
+ignorez ce message et contactez-nous immédiatement
+à : admissions@idla.edu
+
+──────────────────────────────────────────────
+Cordialement,
+
+Le Service des Admissions — IDLA
+Institut de Leadership et d'Administration
+📍 Yaoundé, Cameroun  |  🌐 www.idla.edu
+📞 +237 6 00 00 00 00  |  ✉️  admissions@idla.edu
+──────────────────────────────────────────────
+
+[MODE DÉMONSTRATION — En production, ce message
+ serait envoyé à : ${email}]`;
+    // ================================================================
+
+    // En production : envoyer via Appwrite Functions / SMTP
+    console.log(`[IDLA OTP]\n${emailMessage}`);
+    setTimeout(() => alert(emailMessage), 200);
+  };
+
+  const handleVerifyOtp = () => {
+    setOtpError('');
+    if (otpInput.trim() === otpCode) {
+      setOtpVerified(true);
+    } else {
+      setOtpError('Code incorrect. Veuillez vérifier le code reçu et réessayer.');
+    }
+  };
+
   const handleNextStep = () => {
     setErrorMessage('');
     if (step === 1) {
@@ -140,6 +228,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     e.preventDefault();
     if (!declarationChecked) {
       setErrorMessage('Vous devez accepter les conditions de déclaration sur l\'honneur pour soumettre.');
+      return;
+    }
+    if (!otpVerified) {
+      setErrorMessage('Vous devez vérifier votre identité par code OTP avant de soumettre votre candidature.');
       return;
     }
     
@@ -497,12 +589,84 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                 </label>
               </div>
 
-              <div className="p-4 border border-[#c6c6cf] rounded-xl space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Signature électronique *</label>
-                <div className="bg-slate-50 h-20 rounded-lg border border-dashed border-[#c6c6cf] flex items-center justify-center text-slate-400 italic text-sm">
-                  {firstName && lastName ? `${firstName} ${lastName}` : 'Signature manuscrite simulée'}
+              {/* OTP Verification Block */}
+              <div className="p-4 border border-[#c6c6cf] rounded-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#006c49]" />
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Vérification d'identité par Code OTP *</label>
                 </div>
-                <p className="text-[10px] text-slate-400">Généré automatiquement à partir de votre identité.</p>
+                <p className="text-[11px] text-slate-500">
+                  Un code à 6 chiffres sera envoyé à <span className="font-bold text-[#00020e]">{email || 'votre adresse email'}</span>. Saisissez-le ci-dessous pour valider votre candidature.
+                </p>
+
+                {!otpVerified ? (
+                  <div className="space-y-3">
+                    {/* Send OTP Button */}
+                    {!otpSent ? (
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        className="w-full flex items-center justify-center gap-2 bg-[#00020e] hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Envoyer le code OTP par email
+                      </button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                          <Mail className="w-3.5 h-3.5 shrink-0" />
+                          <span>Code envoyé à <strong>{email}</strong>. Vérifiez votre boîte mail.</span>
+                        </div>
+
+                        {/* OTP Input */}
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={otpInput}
+                            onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="_ _ _ _ _ _"
+                            maxLength={6}
+                            className="flex-1 text-center text-lg font-bold tracking-[0.5em] p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyOtp}
+                            className="bg-[#006c49] hover:bg-[#005a3d] text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Vérifier
+                          </button>
+                        </div>
+
+                        {/* Resend */}
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          className="text-[10px] text-[#006c49] hover:underline flex items-center gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Renvoyer un nouveau code
+                        </button>
+
+                        {otpError && (
+                          <p className="text-[11px] text-red-600 font-semibold flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            {otpError}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Verified State */
+                  <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg px-4 py-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Identité vérifiée avec succès !</p>
+                      <p className="text-[10px] text-emerald-600">Votre code OTP a été validé. Vous pouvez maintenant soumettre votre candidature.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
