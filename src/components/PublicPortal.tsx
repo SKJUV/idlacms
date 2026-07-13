@@ -265,8 +265,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Philanthropy CTA */}
-        <section className="py-16 px-6 md:px-12 bg-[#eff4ff]">
-          <div className="max-w-[1200px] mx-auto bg-[#00020e] rounded-3xl overflow-hidden relative border border-white/10">
+        <section className="py-16 px-6 md:px-12 bg-bg-primary">
+          <div className="max-w-[1200px] mx-auto bg-bg-secondary rounded-3xl overflow-hidden relative border border-border-primary">
             <div className="absolute top-0 right-0 w-1/2 h-full opacity-35 pointer-events-none">
               <img 
                 className="object-cover w-full h-full" 
@@ -275,21 +275,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               />
             </div>
             <div className="relative z-10 p-8 md:p-12 lg:p-16 max-w-2xl space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-text-primary leading-tight">
                 Investissez dans le Capital Humain de l'Afrique
               </h2>
-              <p className="text-white/70 text-base leading-relaxed">
+              <p className="text-text-secondary text-base leading-relaxed">
                 Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
               </p>
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="bg-[#006c49] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all flex items-center gap-2"
+                  className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <HeartHandshake className="w-4 h-4" />
                   Faire un don de soutien
                 </button>
-                <button className="text-white border border-white/20 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-white/10 transition-all">
+                <button className="text-text-primary border border-border-primary px-6 py-3 rounded-lg text-sm font-semibold hover:bg-bg-primary transition-all cursor-pointer">
                   Devenir Partenaire académique
                 </button>
               </div>
@@ -298,37 +298,37 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Footer */}
-        <footer className="bg-[#00020e] text-white border-t border-white/10 py-12 px-6 md:px-12">
+        <footer className="bg-bg-secondary text-text-primary border-t border-border-primary py-12 px-6 md:px-12">
           <div className="max-w-[1440px] mx-auto grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
-              <div className="text-xl font-bold text-[#6ffbbe]">IDLA</div>
-              <p className="text-xs text-white/60 leading-relaxed">
+              <div className="text-xl font-bold text-brand-primary">IDLA</div>
+              <p className="text-xs text-text-secondary leading-relaxed">
                 L'Institut de Leadership et d'Administration est dédié à l'émergence d'une nouvelle génération de leaders africains d'élite.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Filières</h4>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li><a href="#" className="hover:text-white transition-colors">Ingénierie & Tech</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Business & Management</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Santé & Administration</a></li>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Filières</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Ingénierie & Tech</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Business & Management</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Santé & Administration</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Admissions</h4>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li><a href="#" className="hover:text-white transition-colors">Dossier de candidature</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Dates clés</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Financement & Bourses</a></li>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Admissions</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Dossier de candidature</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Dates clés</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Financement & Bourses</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Contact</h4>
-              <p className="text-sm text-white/60">Douala, Cameroun</p>
-              <p className="text-sm text-white/60 mt-1">contact@idla.edu</p>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Contact</h4>
+              <p className="text-sm text-text-secondary">Douala, Cameroun</p>
+              <p className="text-sm text-text-secondary mt-1">contact@idla.edu</p>
             </div>
           </div>
-          <div className="max-w-[1440px] mx-auto border-t border-white/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-white/40 gap-2">
+          <div className="max-w-[1440px] mx-auto border-t border-border-primary/60 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-text-secondary/60 gap-2">
             <p>© {new Date().getFullYear()} IDLA — Institut de Leadership et d'Administration. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique Centrale</p>
           </div>
@@ -337,10 +337,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         {/* MODALE — Formulaire public de don */}
         {showDonationModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeDonationModal}>
-            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
-                <h3 className="font-bold text-base flex items-center gap-2"><HeartHandshake className="w-5 h-5 text-[#6ffbbe]" /> Faire un don</h3>
-                <button onClick={closeDonationModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-primary" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary/40 bg-bg-primary text-text-primary">
+                <h3 className="font-bold text-base flex items-center gap-2"><HeartHandshake className="w-5 h-5 text-brand-primary" /> Faire un don</h3>
+                <button onClick={closeDonationModal} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               {donationSent ? (
                 <div className="p-8 text-center space-y-3">
@@ -412,10 +412,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <button 
                   key={type}
                   onClick={() => setSelectedProgramType(type)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     selectedProgramType === type 
-                      ? 'bg-[#00020e] text-white shadow-sm' 
-                      : 'bg-slate-100 hover:bg-slate-200 text-[#45464e]'
+                      ? 'bg-brand-primary text-white shadow-sm' 
+                      : 'bg-bg-primary hover:bg-border-primary/50 text-text-secondary border border-border-primary/60'
                   }`}
                 >
                   {type === 'Tous' ? 'Tous les types' : type}
@@ -640,15 +640,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
 
           {/* Quick Category filter pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#c6c6cf]/30">
+          <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border-primary/30">
             {['Tous', 'Programmes Masters', 'Executive Education', 'Alumni Stories'].map((pill) => (
               <button 
                 key={pill}
                 onClick={() => setSelectedTestimonialType(pill)}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   selectedTestimonialType === pill 
-                    ? 'bg-[#00020e] text-white' 
-                    : 'bg-white hover:bg-slate-100 text-[#45464e] border border-[#c6c6cf]/60'
+                    ? 'bg-brand-primary text-white shadow-sm' 
+                    : 'bg-bg-secondary hover:bg-bg-primary text-text-secondary border border-border-primary/60'
                 }`}
               >
                 {pill}
@@ -691,10 +691,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         {/* MODALE — Formulaire public de témoignage */}
         {showTestimonialModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeTestimonialModal}>
-            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
-                <h3 className="font-bold text-base flex items-center gap-2"><Quote className="w-5 h-5 text-[#6ffbbe]" /> Partager mon témoignage</h3>
-                <button onClick={closeTestimonialModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-primary" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary/40 bg-bg-primary text-text-primary">
+                <h3 className="font-bold text-base flex items-center gap-2"><Quote className="w-5 h-5 text-brand-primary" /> Partager mon témoignage</h3>
+                <button onClick={closeTestimonialModal} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               {testimonialSent ? (
                 <div className="p-8 text-center space-y-3">

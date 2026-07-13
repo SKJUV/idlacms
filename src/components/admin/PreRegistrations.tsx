@@ -1,5 +1,11 @@
 import React from 'react';
-import { ArrowLeft, CheckCircle2, XCircle, FileText, Eye } from 'lucide-react';
+import {
+  ArrowLeftIcon as ArrowLeft,
+  CheckCircle2Icon as CheckCircle2,
+  XCircleIcon as XCircle,
+  FileTextIcon as FileText,
+  EyeIcon as Eye,
+} from '../Icons';
 import { PreRegistration } from '../../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
 
@@ -77,19 +83,19 @@ export default function PreRegistrations({
       <div className="space-y-6 max-w-4xl">
         <button
           onClick={() => setSelectedPreRegId(null)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#00020e] border border-[#c6c6cf]/50 px-3 py-1.5 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-text-primary border border-border-primary/60 hover:bg-bg-primary px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Retour à la liste
         </button>
 
-        <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-[#c6c6cf]/30">
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-border-primary/40">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[#00020e] text-white flex items-center justify-center font-bold text-lg shrink-0">
+              <div className="w-14 h-14 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-lg shrink-0">
                 {selected.initials}
               </div>
               <div>
-                <h3 className="font-sans font-bold text-xl text-[#00020e]">{selected.name}</h3>
+                <h3 className="font-sans font-bold text-xl text-text-primary">{selected.name}</h3>
                 <p className="text-xs text-slate-400">
                   {selected.email}
                   {selected.phone ? ` • ${selected.phone}` : ''}
