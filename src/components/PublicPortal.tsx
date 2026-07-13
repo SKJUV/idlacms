@@ -357,7 +357,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="space-y-4">
               <div className="text-xl font-bold text-brand-primary">IDLA</div>
               <p className="text-xs text-text-secondary leading-relaxed">
-                L'Institut de Leadership et d'Administration est dédié à l'émergence d'une nouvelle génération de leaders africains d'élite.
+                L'International Distance Learning Academy est dédiée à l'enseignement d'excellence et à distance pour les futurs leaders.
               </p>
             </div>
             <div>
@@ -383,7 +383,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
           <div className="max-w-[1440px] mx-auto border-t border-border-primary/60 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-text-secondary/60 gap-2">
-            <p>© {new Date().getFullYear()} IDLA — Institut de Leadership et d'Administration. Tous droits réservés.</p>
+            <p>© {new Date().getFullYear()} IDLA — International Distance Learning Academy. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique Centrale</p>
           </div>
         </footer>

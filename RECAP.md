@@ -1,6 +1,6 @@
 # IDLA — Plateforme d'Admissions & CMS Académique
 
-> **Institut de Leadership et d'Administration** — Portail public, espace candidat et console d'administration réunis dans une application web unique, moderne et responsive.
+> **International Distance Learning Academy** — Portail public, espace candidat et console d'administration réunis dans une application web unique, moderne et responsive.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 1. Présentation
 
-IDLA CMS est la plateforme numérique de l'Institut de Leadership et d'Administration. Elle couvre l'intégralité du cycle d'admission d'un établissement d'enseignement supérieur :
+IDLA CMS est la plateforme numérique de l'International Distance Learning Academy. Elle couvre l'intégralité du cycle d'admission d'un établissement d'enseignement supérieur :
 
 - **Vitrine publique** : présentation de l'institut, de ses programmes, de ses actualités et des témoignages d'alumni.
 - **Recrutement** : dépôt de candidature en ligne via un formulaire multi-étapes avec téléversement de pièces justificatives.

@@ -43,9 +43,7 @@ export default function Header({
           }}
           className="font-sans font-bold text-xl sm:text-2xl tracking-tight text-text-primary hover:opacity-80 transition-opacity flex items-center gap-2"
         >
-          <span className="w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center shadow-sm">
-            🎓
-          </span>
+          <img src="/logo.png" alt="IDLA Logo" className="w-8 h-8 object-contain" />
           IDLA
         </button>
 

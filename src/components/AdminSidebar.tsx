@@ -58,8 +58,8 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout }
     <aside className="w-full border-b border-border-primary bg-bg-secondary text-text-primary lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50 shadow-sm">
       <div className="px-4 py-4 lg:px-6 lg:mb-8 lg:py-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-md">
-            <GraduationCapIcon className="w-6 h-6 text-white" size={24} />
+          <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md">
+            <img src="/logo.png" alt="IDLA Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg text-text-primary leading-none">{title}</h1>

@@ -145,7 +145,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
 `Objet : 🔐 Votre code de vérification — Candidature IDLA
 
 ──────────────────────────────────────────────
-  INSTITUT DE LEADERSHIP ET D'ADMINISTRATION
+  INTERNATIONAL DISTANCE LEARNING ACADEMY
               Service des Admissions
 ──────────────────────────────────────────────
 
@@ -178,7 +178,7 @@ ignorez ce message et contactez-nous immédiatement
 Cordialement,
 
 Le Service des Admissions — IDLA
-Institut de Leadership et d'Administration
+International Distance Learning Academy
 📍 Yaoundé, Cameroun  |  🌐 www.idla.edu
 📞 +237 6 00 00 00 00  |  ✉️  admissions@idla.edu
 ──────────────────────────────────────────────
@@ -312,12 +312,12 @@ Institut de Leadership et d'Administration
         {/* Banner with logo & back option */}
         <div className="bg-bg-primary text-text-primary p-6 md:p-8 flex items-center justify-between border-b border-border-primary">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-brand-primary text-white flex items-center justify-center font-bold text-xl shadow">
-              🎓
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shadow">
+              <img src="/logo.png" alt="IDLA Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-sans font-bold text-xl leading-none text-text-primary">Admissions IDLA</h1>
-              <p className="text-text-secondary text-xs mt-1">Institut de Leadership et d'Administration</p>
+              <p className="text-text-secondary text-xs mt-1">International Distance Learning Academy</p>
             </div>
           </div>
           <button 
