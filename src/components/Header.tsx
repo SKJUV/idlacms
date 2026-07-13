@@ -77,14 +77,7 @@ export default function Header({
             )}
           </button>
 
-          <button
-            onClick={onAdminLoginClick}
-            title="Espace Administration"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-brand-primary px-2 py-1.5 transition-colors"
-          >
-            <ShieldCheckIcon className="w-3.5 h-3.5" />
-            Admin
-          </button>
+
           <button
             onClick={() => {
               onLoginClick();
@@ -133,16 +126,6 @@ export default function Header({
                 </button>
               ))}
               <div className="flex items-center justify-between border-t border-border-primary pt-2 mt-2 px-3">
-                <button
-                  onClick={() => {
-                    onAdminLoginClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-xs font-semibold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1"
-                >
-                  <ShieldCheckIcon className="w-4 h-4" />
-                  Espace Admin
-                </button>
                 <button
                   onClick={() => {
                     onLoginClick();
