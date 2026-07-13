@@ -12,7 +12,7 @@ const originalLookup = dns.lookup;
   return originalLookup(hostname, options, callback);
 };
 
-import { Client, Databases, Users, ID, Query } from 'node-appwrite';
+import { Client, Databases, Users, Teams, ID, Query } from 'node-appwrite';
 import {
   programsData,
   newsData,
@@ -39,6 +39,7 @@ const client = new Client()
 
 const databases = new Databases(client);
 const users = new Users(client);
+const teams = new Teams(client);
 
 // Helper function to retry failed requests with a delay
 async function retryCall<T>(fn: () => Promise<T>, retries = 5, delayMs = 3000): Promise<T> {
@@ -171,25 +172,31 @@ async function run() {
     const adminEmail = 'admin@idla.edu';
     const adminPassword = 'admin123';
     
-    // Check if user already exists
+    // Clear existing to ensure correct password
     const usersList = await retryCall(() => users.list([Query.equal('email', adminEmail)]));
-    if (usersList.total > 0) {
-      console.log(`Compte Auth Administrateur (${adminEmail}) existe déjà.`);
-    } else {
-      await retryCall(() => users.create({
-        userId: ID.unique(),
-        email: adminEmail,
-        password: adminPassword,
-        name: 'Jean-Sebastien Dupont'
-      }));
-      console.log(`Créé Compte Auth Administrateur : email: "${adminEmail}" / password: "${adminPassword}"`);
+    for (const u of usersList.users) {
+      console.log(`Suppression du compte existant ${adminEmail} (id: ${u.$id})...`);
+      await retryCall(() => users.delete(u.$id));
     }
+
+    const createdAdmin = await retryCall(() => users.create({
+      userId: ID.unique(),
+      email: adminEmail,
+      password: adminPassword,
+      name: 'Jean-Sebastien Dupont'
+    }));
+    console.log(`Créé Compte Auth Administrateur : email: "${adminEmail}" / password: "${adminPassword}" (id: ${createdAdmin.$id})`);
+
+    // Add admin user to 'admins' team to grant database permissions
+    await retryCall(() => teams.createMembership({
+      teamId: 'admins',
+      roles: ['admin'],
+      userId: createdAdmin.$id,
+      url: 'https://appwrite.io'
+    }));
+    console.log(`  [OK] Administrateur ajouté à l'équipe 'admins'.`);
   } catch (err: any) {
-    if (err.message?.includes('already exists')) {
-      console.log("Compte Auth Administrateur existe déjà.");
-    } else {
-      console.warn("Remarque Compte Administrateur Auth :", err.message || err);
-    }
+    console.warn("Remarque Compte Administrateur Auth :", err.message || err);
   }
 
   // Create Demo Candidate Auth Account
@@ -197,24 +204,22 @@ async function run() {
     const candidateEmail = 'jean.dupont@email.com';
     const candidatePassword = 'password123';
     
+    // Clear existing to ensure correct password
     const usersList = await retryCall(() => users.list([Query.equal('email', candidateEmail)]));
-    if (usersList.total > 0) {
-      console.log(`Compte Auth Candidat (${candidateEmail}) existe déjà.`);
-    } else {
-      await retryCall(() => users.create({
-        userId: ID.unique(),
-        email: candidateEmail,
-        password: candidatePassword,
-        name: 'Jean Dupont'
-      }));
-      console.log(`Créé Compte Auth Candidat : email: "${candidateEmail}" / password: "${candidatePassword}"`);
+    for (const u of usersList.users) {
+      console.log(`Suppression du compte existant ${candidateEmail} (id: ${u.$id})...`);
+      await retryCall(() => users.delete(u.$id));
     }
+
+    await retryCall(() => users.create({
+      userId: ID.unique(),
+      email: candidateEmail,
+      password: candidatePassword,
+      name: 'Jean Dupont'
+    }));
+    console.log(`Créé Compte Auth Candidat : email: "${candidateEmail}" / password: "${candidatePassword}"`);
   } catch (err: any) {
-    if (err.message?.includes('already exists')) {
-      console.log("Compte Auth Candidat existe déjà.");
-    } else {
-      console.warn("Remarque Compte Candidat Auth :", err.message || err);
-    }
+    console.warn("Remarque Compte Candidat Auth :", err.message || err);
   }
 
   console.log("\n=== NETTOYAGE ET PEUPLAGE TERMINÉ AVEC SUCCÈS ===");

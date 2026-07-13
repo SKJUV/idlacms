@@ -28,6 +28,24 @@ interface PublicPortalProps {
 }
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
+  // Newsletter Subscription States
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [subscribedNewsletter, setSubscribedNewsletter] = useState(false);
+
+  const handleNewsletterSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    
+    const currentSubscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    if (!currentSubscribers.includes(newsletterEmail)) {
+      currentSubscribers.push(newsletterEmail);
+      localStorage.setItem('newsletter_subscribers', JSON.stringify(currentSubscribers));
+    }
+    
+    setSubscribedNewsletter(true);
+    setNewsletterEmail('');
+  };
+
   // Programs View States
   const [programSearch, setProgramSearch] = useState('');
   const [selectedProgramType, setSelectedProgramType] = useState<string>('Tous');
@@ -294,6 +312,42 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </button>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Newsletter Subscription */}
+        <section className="py-12 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
+          <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 max-w-lg">
+              <h3 className="text-xl font-bold text-text-primary">Restez connecté avec l'IDLA</h3>
+              <p className="text-sm text-text-secondary">
+                Inscrivez-vous à notre newsletter d'élite pour recevoir en exclusivité les nouveaux programmes et actualités académiques.
+              </p>
+            </div>
+            <form onSubmit={handleNewsletterSubmit} className="flex w-full md:w-auto max-w-md gap-2 shrink-0">
+              {subscribedNewsletter ? (
+                <div className="bg-brand-light text-brand-primary text-xs font-bold px-6 py-3.5 rounded-lg flex items-center gap-1.5 border border-brand-primary/20">
+                  Inscription réussie ! Vous recevrez nos e-mails d'actualité.
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Votre adresse email d'excellence"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    className="flex-grow md:w-64 p-3 rounded-lg border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all cursor-pointer shadow-sm"
+                  >
+                    S'abonner
+                  </button>
+                </>
+              )}
+            </form>
           </div>
         </section>
 

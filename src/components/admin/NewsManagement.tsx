@@ -103,6 +103,16 @@ export default function NewsManagement({
     }
 
     logActivity('article', 'Super Admin', `a publié l'actualité : ${newNewsTitle}.`);
+    
+    const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    if (subscribers.length > 0) {
+      logActivity(
+        'registration',
+        'Système Mailer',
+        `a envoyé une notification email de réussite à ${subscribers.length} abonnés pour : "${newNewsTitle}".`
+      );
+    }
+
     resetNewsForm();
   };
 

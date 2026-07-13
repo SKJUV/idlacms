@@ -120,6 +120,16 @@ export default function ProgramsManagement({
     }
 
     logActivity('article', 'Super Admin', `a ajouté un nouveau programme : ${newProgramTitle}.`);
+    
+    const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    if (subscribers.length > 0) {
+      logActivity(
+        'registration',
+        'Système Mailer',
+        `a envoyé une notification email de réussite à ${subscribers.length} abonnés pour : "${newProgramTitle}".`
+      );
+    }
+
     resetProgramForm();
   };
 
