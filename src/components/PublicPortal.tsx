@@ -1,19 +1,19 @@
 import { useState, useMemo, type FormEvent } from 'react';
 import {
-  Search,
-  Clock,
-  ArrowRight,
-  AlertTriangle,
-  ShieldAlert,
-  Flame,
-  Compass,
-  Quote,
-  BookOpen,
-  X,
-  Send,
-  HeartHandshake,
-  CheckCircle2,
-} from 'lucide-react';
+  SearchIcon as Search,
+  ClockIcon as Clock,
+  ArrowRightIcon as ArrowRight,
+  AlertTriangleIcon as AlertTriangle,
+  ShieldAlertIcon as ShieldAlert,
+  FlameIcon as Flame,
+  CompassIcon as Compass,
+  QuoteIcon as Quote,
+  BookOpenIcon as BookOpen,
+  XIcon as X,
+  SendIcon as Send,
+  HeartHandshakeIcon as HeartHandshake,
+  CheckCircle2Icon as CheckCircle2,
+} from './Icons';
 import { Program, NewsArticle, Testimonial } from '../types';
 
 interface PublicPortalProps {
@@ -105,9 +105,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'home') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30]">
+      <div className="bg-bg-primary text-text-primary">
         {/* Hero Section */}
-        <section className="relative min-h-[700px] flex items-center overflow-hidden bg-[#00020e] px-6 md:px-16 py-16">
+        <section className="relative min-h-[700px] flex items-center overflow-hidden bg-bg-secondary border-b border-border-primary px-6 md:px-16 py-16">
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#006c49] blur-[120px] rounded-full -mr-40 -mt-40"></div>
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6cf8bb] blur-[100px] rounded-full -ml-20 -mb-20"></div>
@@ -120,25 +120,25 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
               </div>
               
-              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight">
-                L'Éducation d'Élite <span className="text-[#6ffbbe]">Accessible</span> en Afrique Centrale
+              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-text-primary leading-tight">
+                L'Éducation d'Élite <span className="text-brand-primary">Accessible</span> en Afrique Centrale
               </h1>
               
-              <p className="font-sans text-lg text-white/70 max-w-lg leading-relaxed">
+              <p className="font-sans text-lg text-text-secondary max-w-lg leading-relaxed">
                 IDLA forme les leaders de demain à travers des programmes d'excellence, une infrastructure de pointe et un réseau alumni d'influence.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="bg-[#006c49] text-white px-8 py-4 rounded-lg font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#006c49]/20"
+                  className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20 cursor-pointer"
                 >
                   Explorer les programmes 
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={onApplyNow}
-                  className="border border-white/20 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-all text-center"
+                  className="border border-border-primary text-text-primary px-8 py-4 rounded-lg font-semibold hover:bg-bg-primary transition-all text-center cursor-pointer"
                 >
                   Je pose ma candidature
                 </button>
@@ -385,11 +385,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-[#00020e]">Nos Programmes d'Excellence</h1>
+            <h1 className="font-sans font-bold text-4xl text-text-primary">Nos Programmes d'Excellence</h1>
             <p className="text-[#45464e] text-lg max-w-2xl">
               Découvrez des parcours académiques d'élite conçus pour propulser votre carrière. Des formations rigoureuses encadrées par des experts internationaux.
             </p>
@@ -493,11 +493,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     const regularNewsArticles = filteredNews.filter(n => !n.isFeatured || selectedNewsCategory !== 'Tous');
 
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-[#00020e]">Actualités</h1>
+            <h1 className="font-sans font-bold text-4xl text-text-primary">Actualités</h1>
             <p className="text-[#45464e] text-lg max-w-2xl">
               Restez informé des derniers événements, des réussites académiques et des nouveaux partenariats d'élite de l'IDLA.
             </p>
@@ -618,15 +618,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'temoignages') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 bg-[#6cf8bb]/20 text-[#00714d] text-xs font-bold rounded-full uppercase tracking-wider">
+              <span className="inline-block px-3 py-1 bg-brand-light text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">
                 Nos Réussites
               </span>
-              <h1 className="font-sans font-bold text-4xl text-[#00020e]">Des parcours d'alumni inspirants.</h1>
+              <h1 className="font-sans font-bold text-4xl text-text-primary">Des parcours d'alumni inspirants.</h1>
               <p className="text-[#45464e] text-lg max-w-2xl">
                 Découvrez comment nos diplômés transforment leurs ambitions en projets d'envergure. Leurs histoires sont le reflet de notre exigence.
               </p>
