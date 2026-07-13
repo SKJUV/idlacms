@@ -19,9 +19,6 @@
 11. [Sécurité & bonnes pratiques](#11-sécurité--bonnes-pratiques-appliquées)
 12. [État du projet](#12-état-du-projet)
 
-> Les diagrammes de ce document sont écrits en **Mermaid** : ils se rendent automatiquement sur GitHub, GitLab et dans VS Code (aperçu Markdown).
-
----
 
 ## 1. Présentation
 
