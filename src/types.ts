@@ -1,19 +1,5 @@
 export type RoleType = 'visitor' | 'candidate' | 'admin';
 
-export type ActiveTab = 
-  | 'home' 
-  | 'programs' 
-  | 'news' 
-  | 'testimonials' 
-  | 'apply' 
-  | 'apply-success'
-  | 'candidate-login'
-  | 'candidate-dashboard'
-  | 'admin-login'
-  | 'admin-dashboard'
-  | 'admin-users'
-  | 'admin-add-user';
-
 export interface Program {
   id: string;
   title: string;
@@ -65,6 +51,13 @@ export interface PreRegistration {
   dateApplied: string;
   status: 'In Review' | 'New' | 'Accepted' | 'Rejected';
   initials: string;
+  // Détails du dossier (facultatifs — présents pour l'examen approfondi).
+  phone?: string;
+  nationality?: string;
+  highestDegree?: string;
+  graduationYear?: string | number;
+  motivation?: string;
+  documents?: string[];
 }
 
 export interface ActivityLog {
@@ -73,4 +66,24 @@ export interface ActivityLog {
   user: string;
   text: string;
   time: string;
+}
+
+// Don soumis par un visiteur via le formulaire public de soutien.
+export interface Donation {
+  id: string;
+  donor: string;
+  email: string;
+  amount: number;
+  message?: string;
+  date: string;
+  status: 'Nouveau' | 'Confirmé';
+}
+
+// Campagne marketing (gérée en CRUD complet côté admin).
+export interface Campaign {
+  id: string;
+  name: string;
+  channel: string;
+  status: 'Active' | 'En pause';
+  reach: number;
 }

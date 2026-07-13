@@ -1,13 +1,15 @@
 import React, { useState, useRef } from 'react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  UploadCloud, 
+  CheckCircle2, 
+  FileText, 
+  AlertCircle, 
+  GraduationCap 
+} from 'lucide-react';
 import { programsData } from '../data/mockData';
-
-type IconProps = { className?: string };
-const ArrowLeft = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const UploadCloud = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const CheckCircle2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const FileText = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const AlertCircle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../lib/appwrite';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, selectedProgram: string, email: string) => void;
@@ -17,19 +19,20 @@ interface ApplicationFormProps {
 export default function ApplicationForm({ onSuccess, onBackToHome }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
-  const [firstName, setFirstName] = useState('Jean');
-  const [lastName, setLastName] = useState('Dupont');
-  const [email, setEmail] = useState('jean.dupont@email.com');
-  const [phone, setPhone] = useState('+237 6 99 88 77 66');
-  const [nationality, setNationality] = useState('Camerounaise');
-  
-  const [selectedProgram, setSelectedProgram] = useState(programsData[1].title);
-  const [highestDegree, setHighestDegree] = useState('Master 1 en Sciences de Gestion');
-  const [graduationYear, setGraduationYear] = useState('2023');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [nationality, setNationality] = useState('');
 
-  const [files, setFiles] = useState<{ name: string; size: string; type: string }[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState(programsData[0]?.title ?? '');
+  const [highestDegree, setHighestDegree] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
+
+  const [files, setFiles] = useState<{ name: string; size: string; type: string; fileId: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -47,18 +50,36 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setIsDragging(false);
   };
 
-  const simulateUpload = (fileName: string) => {
+  const simulateUpload = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
+
+    let appwriteFileId = '';
+    if (isAppwriteStorageConfigured()) {
+      try {
+        const response = await storage.createFile(
+          APPWRITE_CONFIG.buckets.documents,
+          ID.unique(),
+          file
+        );
+        appwriteFileId = response.$id;
+        console.log("Fichier téléversé dans le bucket Appwrite:", response);
+      } catch (err) {
+        console.error("Échec du téléversement sur Appwrite. Poursuite avec l'upload simulé.", err);
+      }
+    }
+
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsUploading(false);
+          const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
           setFiles((current) => [...current, { 
-            name: fileName, 
-            size: '1.2 MB', 
-            type: 'application/pdf' 
+            name: file.name, 
+            size: `${sizeInMb} MB`, 
+            type: file.type,
+            fileId: appwriteFileId
           }]);
           return 100;
         }
@@ -72,14 +93,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setIsDragging(false);
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles.length > 0) {
-      simulateUpload(droppedFiles[0].name);
+      simulateUpload(droppedFiles[0]);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
-      simulateUpload(selectedFiles[0].name);
+      simulateUpload(selectedFiles[0]);
     }
   };
 
@@ -115,13 +136,70 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     setStep((s) => s - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!declarationChecked) {
       setErrorMessage('Vous devez accepter les conditions de déclaration sur l\'honneur pour soumettre.');
       return;
     }
-    onSuccess(`${firstName} ${lastName}`, selectedProgram, email);
+    
+    setIsSubmitting(true);
+    const candidateName = `${firstName} ${lastName}`;
+    const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
+
+    if (isAppwriteDbConfigured()) {
+      try {
+        const application = await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications,
+          ID.unique(),
+          {
+            firstName,
+            lastName,
+            name: candidateName,
+            email,
+            phone,
+            program: selectedProgram,
+            nationality,
+            highestDegree,
+            graduationYear: Number(graduationYear) || undefined,
+            status: 'New',
+            dateApplied: new Date().toISOString(),
+            declarationChecked,
+            files: JSON.stringify(files),
+            initials,
+          }
+        );
+        console.log("Candidature enregistrée sur Appwrite Database avec succès !");
+
+        if (APPWRITE_CONFIG.collections.candidateDocuments && files.length > 0) {
+          for (const file of files) {
+            try {
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.candidateDocuments,
+                ID.unique(),
+                {
+                  applicationId: application.$id,
+                  fileId: file.fileId,
+                  name: file.name,
+                  mimeType: file.type,
+                  uploadedBy: 'candidate',
+                  uploadedAt: new Date().toISOString(),
+                }
+              );
+            } catch (err) {
+              console.error("Échec de l'enregistrement d'un document de candidature:", err);
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error("Échec de l'enregistrement de la candidature sur Appwrite Database:", err);
+      }
+    }
+
+    setIsSubmitting(false);
+    onSuccess(candidateName, selectedProgram, email);
   };
 
   const stepsList = [
@@ -141,8 +219,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
               🎓
             </div>
             <div>
-              <h1 className="font-sans font-bold text-xl leading-none">Admission IDLA CMS</h1>
-              <p className="text-white/60 text-xs mt-1">Portail de Recrutement d'Élite</p>
+              <h1 className="font-sans font-bold text-xl leading-none">Admissions IDLA</h1>
+              <p className="text-white/60 text-xs mt-1">Institut de Leadership et d'Administration</p>
             </div>
           </div>
           <button 
@@ -216,6 +294,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     type="text" 
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Votre prénom"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                     required 
                   />
@@ -226,6 +305,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     type="text" 
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Votre nom de famille"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                     required 
                   />
@@ -238,6 +318,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="prenom.nom@exemple.com"
                   className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                   required 
                 />
@@ -250,6 +331,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     type="tel" 
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+237 6 00 00 00 00"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                     required 
                   />
@@ -260,6 +342,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     type="text" 
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
+                    placeholder="Votre nationalité"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                   />
                 </div>
@@ -306,6 +389,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     type="number" 
                     value={graduationYear}
                     onChange={(e) => setGraduationYear(e.target.value)}
+                    placeholder="2024"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] focus:border-[#006c49] outline-none text-sm font-medium" 
                     required 
                   />
@@ -409,7 +493,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                   className="w-4 h-4 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49] mt-0.5" 
                 />
                 <label htmlFor="declaration-checkbox" className="text-xs text-slate-600 leading-relaxed cursor-pointer font-medium select-none">
-                  J'accepte d'enregistrer mes coordonnées et d'envoyer électroniquement mon dossier d'admissions pour examen auprès du comité académique d'IDLA CMS.
+                  J'accepte d'enregistrer mes coordonnées et d'envoyer électroniquement mon dossier d'admissions pour examen auprès du comité académique de l'IDLA.
                 </label>
               </div>
 
@@ -450,9 +534,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
             ) : (
               <button 
                 type="submit"
-                className="bg-[#006c49] hover:bg-[#6cf8bb] hover:text-[#00020e] text-white flex items-center gap-1.5 px-8 py-3 rounded-lg text-xs font-bold transition-all ml-auto shadow-md"
+                disabled={isSubmitting}
+                className="bg-[#006c49] hover:bg-[#6cf8bb] hover:text-[#00020e] text-white flex items-center gap-1.5 px-8 py-3 rounded-lg text-xs font-bold transition-all ml-auto shadow-md disabled:opacity-55 disabled:cursor-not-allowed"
               >
-                Soumettre ma Candidature
+                {isSubmitting ? 'Envoi en cours...' : 'Soumettre ma Candidature'}
                 <CheckCircle2 className="w-4 h-4" />
               </button>
             )}

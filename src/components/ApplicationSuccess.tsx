@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-
-type IconProps = { className?: string };
-const Check = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const ClipboardList = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Mail = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Home = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
+import { Check, ClipboardList, Mail, ArrowRight, Home } from 'lucide-react';
 
 interface ApplicationSuccessProps {
   candidateName: string;
@@ -73,11 +67,11 @@ export default function ApplicationSuccess({ candidateName, selectedProgram, onG
 
         <div className="space-y-2">
           <h1 className="font-sans font-bold text-3xl text-[#00020e]">Candidature Reçue !</h1>
-          <p className="text-[#006c49] font-bold text-sm tracking-wide uppercase">Dossier enregistré sous le #IDLA-2024-8931</p>
+          <p className="text-[#006c49] font-bold text-sm tracking-wide uppercase">Votre dossier a bien été enregistré — Session {new Date().getFullYear()}</p>
         </div>
 
         <p className="text-sm text-[#45464e] leading-relaxed max-w-sm mx-auto">
-          Félicitations <span className="font-bold text-[#00020e]">{candidateName || 'Jean Dupont'}</span>, votre dossier d'admissions pour le <span className="font-bold text-[#00020e]">{selectedProgram || 'Executive MBA'}</span> a été envoyé avec succès auprès de notre comité d'étude.
+          Félicitations{candidateName ? <> <span className="font-bold text-[#00020e]">{candidateName}</span></> : ''}, votre dossier d'admission{selectedProgram ? <> pour le programme <span className="font-bold text-[#00020e]">{selectedProgram}</span></> : ''} a été transmis avec succès à notre comité d'étude.
         </p>
 
         {/* Informational Tracking Card */}
@@ -119,7 +113,7 @@ export default function ApplicationSuccess({ candidateName, selectedProgram, onG
 
         <div className="flex items-center justify-center gap-1 text-xs text-slate-400 font-semibold pt-4 border-t border-[#c6c6cf]/30">
           <Mail className="w-3.5 h-3.5" />
-          <span>Un mail récapitulatif a été envoyé à {candidateName ? 'votre adresse' : 'jean.dupont@email.com'}</span>
+          <span>Un mail récapitulatif a été envoyé à votre adresse.</span>
         </div>
 
       </div>

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -)",
+      "Bash(zsh -ic 'npm run lint && npm run build')",
+      "Bash(grep -v \"zsh-config\\\\|gitstatus\\\\|GITSTATUS\\\\|exec zsh\\\\|can't change option\\\\|Add the following\\\\|^$\\\\|ERROR]:\")"
+    ]
+  }
+}

@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { LogIn, Menu, ShieldCheck, X } from 'lucide-react';
 import { ActiveTab } from '../App';
 
 interface HeaderProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onLoginClick: () => void;
-  onAdminLoginClick: () => void;
   onSignUpClick: () => void;
+  onAdminLoginClick: () => void;
 }
 
-export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminLoginClick, onSignUpClick }: HeaderProps) {
+export default function Header({ activeTab, setActiveTab, onLoginClick, onSignUpClick, onAdminLoginClick }: HeaderProps) {
   const isPublicTab = ['home', 'programmes', 'actualites', 'temoignages', 'candidature', 'success'].includes(activeTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -32,10 +33,10 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminL
           }} 
           className="font-sans font-bold text-xl sm:text-2xl tracking-tight text-white hover:opacity-90 transition-opacity flex items-center gap-2"
         >
-          <span className="w-8 h-8 rounded-lg bg-[#6ffbbe] text-[#00020e] flex items-center justify-center text-sm font-bold">
-            
+          <span className="w-8 h-8 rounded-lg bg-[#6ffbbe] text-[#00020e] flex items-center justify-center">
+            🎓
           </span>
-          IDLA CMS
+          IDLA
         </button>
 
         <div className="hidden md:flex items-center gap-8">
@@ -53,22 +54,23 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminL
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
-            onClick={onLoginClick}
-            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white px-3 py-1.5 transition-colors"
-          >
-            <span className="text-sm text-[#6ffbbe]">↪</span>
-            Connexion candidat
-          </button>
-          <button 
+          <button
             onClick={onAdminLoginClick}
+            title="Espace Administration"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/40 hover:text-[#6ffbbe] px-2 py-1.5 transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Admin
+          </button>
+          <button
+            onClick={() => { onLoginClick(); setMobileMenuOpen(false); }}
             className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white px-3 py-1.5 transition-colors"
           >
-            <span className="text-sm text-[#6ffbbe]">🛡</span>
-            Connexion admin
+            <LogIn className="w-4 h-4 text-[#6ffbbe]" />
+            Connexion
           </button>
-          <button 
-            onClick={onSignUpClick}
+          <button
+            onClick={() => { onSignUpClick(); setMobileMenuOpen(false); }}
             className="bg-[#006c49] hover:bg-[#6ffbbe] hover:text-[#00020e] text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all"
           >
             Je m'inscris
@@ -78,7 +80,7 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminL
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-white/80 hover:bg-white/10 hover:text-white md:hidden"
             aria-label="Ouvrir le menu"
           >
-            <span className="text-sm font-semibold">{mobileMenuOpen ? '×' : '☰'}</span>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
@@ -100,13 +102,11 @@ export default function Header({ activeTab, setActiveTab, onLoginClick, onAdminL
                 </button>
               ))}
               <button
-                onClick={() => {
-                  onAdminLoginClick();
-                  setMobileMenuOpen(false);
-                }}
-                className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white"
+                onClick={() => { onAdminLoginClick(); setMobileMenuOpen(false); }}
+                className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-white/50 hover:bg-white/10 hover:text-white transition-all flex items-center gap-1.5"
               >
-                Connexion admin
+                <ShieldCheck className="w-4 h-4 text-[#6ffbbe]" />
+                Espace Administration
               </button>
             </div>
           </div>

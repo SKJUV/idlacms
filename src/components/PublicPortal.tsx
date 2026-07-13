@@ -1,33 +1,72 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type FormEvent } from 'react';
+import {
+  Search,
+  Clock,
+  ArrowRight,
+  AlertTriangle,
+  ShieldAlert,
+  Flame,
+  Compass,
+  Quote,
+  BookOpen,
+  X,
+  Send,
+  HeartHandshake,
+  CheckCircle2,
+} from 'lucide-react';
 import { Program, NewsArticle, Testimonial } from '../types';
-
-type IconProps = { className?: string };
-const Search = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Clock = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const ArrowRight = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const MapPin = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const AlertTriangle = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const ShieldAlert = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Flame = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Compass = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Quote = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Globe = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Users = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Share2 = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const Calendar = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-const BookOpen = ({ className }: IconProps) => <span aria-hidden="true" className={className} />;
-import { programsData, newsData, testimonialsData } from '../data/mockData';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
   setActiveTab: (tab: any) => void;
   onApplyNow: () => void;
+  programs: Program[];
+  news: NewsArticle[];
+  testimonials: Testimonial[];
+  onSubmitTestimonial: (t: Omit<Testimonial, 'id' | 'image'>) => void;
+  onSubmitDonation: (d: { donor: string; email: string; amount: number; message?: string }) => void;
 }
 
-export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: PublicPortalProps) {
+export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
   // Programs View States
   const [programSearch, setProgramSearch] = useState('');
   const [selectedProgramType, setSelectedProgramType] = useState<string>('Tous');
+
+  // Formulaire public de témoignage
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false);
+  const [testimonialSent, setTestimonialSent] = useState(false);
+  const [tName, setTName] = useState('');
+  const [tRole, setTRole] = useState('');
+  const [tPromo, setTPromo] = useState('');
+  const [tText, setTText] = useState('');
+
+  // Formulaire public de don
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [donationSent, setDonationSent] = useState(false);
+  const [dDonor, setDDonor] = useState('');
+  const [dEmail, setDEmail] = useState('');
+  const [dAmount, setDAmount] = useState('');
+  const [dMessage, setDMessage] = useState('');
+
+  const submitTestimonial = (e: FormEvent) => {
+    e.preventDefault();
+    if (!tName || !tText) return;
+    onSubmitTestimonial({ name: tName, role: tRole || 'Alumni IDLA', text: tText, promo: tPromo, category: 'Alumni' });
+    setTestimonialSent(true);
+    setTName(''); setTRole(''); setTText(''); setTPromo('');
+  };
+
+  const submitDonation = (e: FormEvent) => {
+    e.preventDefault();
+    const amount = Number(dAmount);
+    if (!dDonor || !dEmail || !amount || amount <= 0) return;
+    onSubmitDonation({ donor: dDonor, email: dEmail, amount, message: dMessage || undefined });
+    setDonationSent(true);
+    setDDonor(''); setDEmail(''); setDAmount(''); setDMessage('');
+  };
+
+  const closeTestimonialModal = () => { setShowTestimonialModal(false); setTestimonialSent(false); };
+  const closeDonationModal = () => { setShowDonationModal(false); setDonationSent(false); };
 
   // News View States
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('Tous');
@@ -37,32 +76,32 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
 
   // FILTER PROGRAMS
   const filteredPrograms = useMemo(() => {
-    return programsData.filter(p => {
+    return programs.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(programSearch.toLowerCase()) || 
                             p.description.toLowerCase().includes(programSearch.toLowerCase());
       const matchesType = selectedProgramType === 'Tous' || p.type === selectedProgramType;
       return matchesSearch && matchesType;
     });
-  }, [programSearch, selectedProgramType]);
+  }, [programs, programSearch, selectedProgramType]);
 
   // FILTER NEWS
   const filteredNews = useMemo(() => {
-    return newsData.filter(n => {
+    return news.filter(n => {
       if (selectedNewsCategory === 'Tous') return true;
       return n.category === selectedNewsCategory;
     });
-  }, [selectedNewsCategory]);
+  }, [news, selectedNewsCategory]);
 
   // FILTER TESTIMONIALS
   const filteredTestimonials = useMemo(() => {
-    return testimonialsData.filter(t => {
+    return testimonials.filter(t => {
       if (selectedTestimonialType === 'Tous') return true;
       if (selectedTestimonialType === 'Programmes Masters' && t.category === 'Master') return true;
       if (selectedTestimonialType === 'Executive Education' && t.category === 'Executive') return true;
       if (selectedTestimonialType === 'Alumni Stories' && t.category === 'Alumni') return true;
       return false;
     });
-  }, [selectedTestimonialType]);
+  }, [testimonials, selectedTestimonialType]);
 
   if (activeTab === 'home') {
     return (
@@ -78,7 +117,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-[#6cf8bb]/10 border border-[#006c49]/20 px-4 py-1.5 rounded-full">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#6ffbbe] animate-pulse"></span>
-                <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session 2024 Ouverte</span>
+                <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
               </div>
               
               <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight">
@@ -198,7 +237,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {programsData.slice(0, 3).map((p, idx) => (
+              {programs.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
                   className={`rounded-2xl overflow-hidden relative group min-h-[350px] shadow-sm border border-[#c6c6cf]/30 cursor-pointer ${
@@ -243,7 +282,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
                 Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button className="bg-[#006c49] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all">
+                <button
+                  onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
+                  className="bg-[#006c49] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all flex items-center gap-2"
+                >
+                  <HeartHandshake className="w-4 h-4" />
                   Faire un don de soutien
                 </button>
                 <button className="text-white border border-white/20 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-white/10 transition-all">
@@ -258,7 +301,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
         <footer className="bg-[#00020e] text-white border-t border-white/10 py-12 px-6 md:px-12">
           <div className="max-w-[1440px] mx-auto grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
-              <div className="text-xl font-bold text-[#6ffbbe]">IDLA CMS</div>
+              <div className="text-xl font-bold text-[#6ffbbe]">IDLA</div>
               <p className="text-xs text-white/60 leading-relaxed">
                 L'Institut de Leadership et d'Administration est dédié à l'émergence d'une nouvelle génération de leaders africains d'élite.
               </p>
@@ -286,10 +329,56 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
             </div>
           </div>
           <div className="max-w-[1440px] mx-auto border-t border-white/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-white/40 gap-2">
-            <p>© 2024 IDLA CMS. Tous droits réservés.</p>
+            <p>© {new Date().getFullYear()} IDLA — Institut de Leadership et d'Administration. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique Centrale</p>
           </div>
         </footer>
+
+        {/* MODALE — Formulaire public de don */}
+        {showDonationModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeDonationModal}>
+            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
+                <h3 className="font-bold text-base flex items-center gap-2"><HeartHandshake className="w-5 h-5 text-[#6ffbbe]" /> Faire un don</h3>
+                <button onClick={closeDonationModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+              {donationSent ? (
+                <div className="p-8 text-center space-y-3">
+                  <CheckCircle2 className="w-12 h-12 text-[#006c49] mx-auto" />
+                  <h4 className="font-bold text-lg">Merci pour votre générosité !</h4>
+                  <p className="text-sm text-[#45464e]">Votre don a bien été transmis à notre équipe. Nous vous recontacterons pour finaliser la contribution.</p>
+                  <button onClick={closeDonationModal} className="mt-2 bg-[#006c49] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
+                </div>
+              ) : (
+                <form onSubmit={submitDonation} className="p-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Votre nom / organisation *</label>
+                    <input type="text" value={dDonor} onChange={(e) => setDDonor(e.target.value)} placeholder="ex: Fondation Total"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Email *</label>
+                    <input type="email" value={dEmail} onChange={(e) => setDEmail(e.target.value)} placeholder="ex: contact@exemple.com"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Montant du don (FCFA) *</label>
+                    <input type="number" min="1" value={dAmount} onChange={(e) => setDAmount(e.target.value)} placeholder="ex: 100000"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Message (facultatif)</label>
+                    <textarea value={dMessage} onChange={(e) => setDMessage(e.target.value)} rows={2} placeholder="Affectation souhaitée, mot d'encouragement…"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                  </div>
+                  <button type="submit" className="w-full bg-[#006c49] text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" /> Envoyer mon don
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -319,7 +408,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
               />
             </div>
             <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              {['Tous', 'Master', 'Doctorat', 'Bachelors'].map((type) => (
+              {['Tous', 'Master', 'Doctorat', 'Bachelor', 'Certification'].map((type) => (
                 <button 
                   key={type}
                   onClick={() => setSelectedProgramType(type)}
@@ -400,7 +489,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
   }
 
   if (activeTab === 'actualites') {
-    const featuredNewsArticle = newsData.find(n => n.isFeatured);
+    const featuredNewsArticle = news.find(n => n.isFeatured);
     const regularNewsArticles = filteredNews.filter(n => !n.isFeatured || selectedNewsCategory !== 'Tous');
 
     return (
@@ -433,8 +522,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
                       <span>{cat === 'Tous' ? 'Toutes les news' : cat}</span>
                       <span className="text-[10px] px-2 py-0.5 bg-white/60 rounded">
                         {cat === 'Tous' 
-                          ? newsData.length 
-                          : newsData.filter(n => n.category === cat).length
+                          ? news.length 
+                          : news.filter(n => n.category === cat).length
                         }
                       </span>
                     </button>
@@ -532,14 +621,22 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
       <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
-          <div className="space-y-2">
-            <span className="inline-block px-3 py-1 bg-[#6cf8bb]/20 text-[#00714d] text-xs font-bold rounded-full uppercase tracking-wider">
-              Nos Réussites
-            </span>
-            <h1 className="font-sans font-bold text-4xl text-[#00020e]">Des parcours d'alumni inspirants.</h1>
-            <p className="text-[#45464e] text-lg max-w-2xl">
-              Découvrez comment nos diplômés transforment leurs ambitions en projets d'envergure. Leurs histoires sont le reflet de notre exigence.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 bg-[#6cf8bb]/20 text-[#00714d] text-xs font-bold rounded-full uppercase tracking-wider">
+                Nos Réussites
+              </span>
+              <h1 className="font-sans font-bold text-4xl text-[#00020e]">Des parcours d'alumni inspirants.</h1>
+              <p className="text-[#45464e] text-lg max-w-2xl">
+                Découvrez comment nos diplômés transforment leurs ambitions en projets d'envergure. Leurs histoires sont le reflet de notre exigence.
+              </p>
+            </div>
+            <button
+              onClick={() => { setTestimonialSent(false); setShowTestimonialModal(true); }}
+              className="shrink-0 bg-[#006c49] text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
+            >
+              <Quote className="w-4 h-4" /> Partager mon témoignage
+            </button>
           </div>
 
           {/* Quick Category filter pills */}
@@ -590,6 +687,54 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow }: Pu
             ))}
           </div>
         </div>
+
+        {/* MODALE — Formulaire public de témoignage */}
+        {showTestimonialModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeTestimonialModal}>
+            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
+                <h3 className="font-bold text-base flex items-center gap-2"><Quote className="w-5 h-5 text-[#6ffbbe]" /> Partager mon témoignage</h3>
+                <button onClick={closeTestimonialModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+              {testimonialSent ? (
+                <div className="p-8 text-center space-y-3">
+                  <CheckCircle2 className="w-12 h-12 text-[#006c49] mx-auto" />
+                  <h4 className="font-bold text-lg">Merci pour votre témoignage !</h4>
+                  <p className="text-sm text-[#45464e]">Il sera publié après validation par notre équipe. Merci de contribuer au rayonnement de l'IDLA.</p>
+                  <button onClick={closeTestimonialModal} className="mt-2 bg-[#006c49] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
+                </div>
+              ) : (
+                <form onSubmit={submitTestimonial} className="p-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Nom complet *</label>
+                    <input type="text" value={tName} onChange={(e) => setTName(e.target.value)} placeholder="ex: Aïcha Diallo"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase">Fonction</label>
+                      <input type="text" value={tRole} onChange={(e) => setTRole(e.target.value)} placeholder="ex: Data Analyst"
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase">Promotion</label>
+                      <input type="text" value={tPromo} onChange={(e) => setTPromo(e.target.value)} placeholder="ex: Promo 2022"
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Votre témoignage *</label>
+                    <textarea value={tText} onChange={(e) => setTText(e.target.value)} rows={4} placeholder="Racontez votre expérience à l'IDLA…"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                  </div>
+                  <button type="submit" className="w-full bg-[#006c49] text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" /> Soumettre mon témoignage
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

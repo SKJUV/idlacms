@@ -1,4 +1,4 @@
-import { Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog } from '../types';
+import { Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog, Donation, Campaign } from '../types';
 
 export const programsData: Program[] = [
   {
@@ -209,7 +209,13 @@ export const preRegistrationsData: PreRegistration[] = [
     program: 'Master en Management Digital',
     dateApplied: '24 Oct 2024',
     status: 'In Review',
-    initials: 'AL'
+    initials: 'AL',
+    phone: '+221 77 123 45 67',
+    nationality: 'Sénégalaise',
+    highestDegree: 'Licence en Économie',
+    graduationYear: 2022,
+    motivation: "Je souhaite approfondir mes compétences en transformation digitale pour piloter l'innovation dans le secteur bancaire ouest-africain.",
+    documents: ['CV_Amadou_Loum.pdf', 'Diplome_Licence.pdf', 'Lettre_motivation.pdf'],
   },
   {
     id: 'pre-2',
@@ -218,8 +224,70 @@ export const preRegistrationsData: PreRegistration[] = [
     program: 'Bachelor Communication',
     dateApplied: '23 Oct 2024',
     status: 'New',
-    initials: 'CB'
+    initials: 'CB',
+    phone: '+237 6 55 44 33 22',
+    nationality: 'Camerounaise',
+    highestDegree: 'Baccalauréat série A',
+    graduationYear: 2024,
+    motivation: "Passionnée par la communication digitale, je veux acquérir les fondamentaux du storytelling de marque.",
+    documents: ['CV_Catherine.pdf', 'Releve_notes_Bac.pdf'],
   }
+];
+
+export const pendingTestimonialsData: Testimonial[] = [
+  {
+    id: 'pending-1',
+    name: 'Nadia Belkacem',
+    role: 'Consultante en Stratégie',
+    text: "Mon passage à l'IDLA a été déterminant : le réseau et la rigueur académique m'ont ouvert les portes du conseil international.",
+    image: 'https://ui-avatars.com/api/?name=Nadia+Belkacem&background=006c49&color=fff',
+    promo: 'Promo 2022',
+    category: 'Alumni',
+  },
+  {
+    id: 'pending-2',
+    name: 'Thomas Nkeng',
+    role: 'Ingénieur Logiciel, Google',
+    text: "Les projets pratiques et l'accompagnement des professeurs m'ont préparé aux entretiens des plus grandes entreprises tech.",
+    image: 'https://ui-avatars.com/api/?name=Thomas+Nkeng&background=006c49&color=fff',
+    promo: 'Promo 2021',
+    category: 'Master',
+  },
+];
+
+export const donationsData: Donation[] = [
+  {
+    id: 'don-1',
+    donor: 'Fondation Orange',
+    email: 'contact@fondationorange.org',
+    amount: 5000000,
+    message: 'Pour le programme de bourses d\'excellence.',
+    date: '28 Juin 2026',
+    status: 'Confirmé',
+  },
+  {
+    id: 'don-2',
+    donor: 'Association Alumni Promo 2018',
+    email: 'alumni2018@idla.edu',
+    amount: 1200000,
+    message: 'Contribution annuelle des anciens.',
+    date: '21 Juin 2026',
+    status: 'Nouveau',
+  },
+  {
+    id: 'don-3',
+    donor: 'Donateur anonyme',
+    email: 'anonyme@email.com',
+    amount: 750000,
+    date: '12 Juin 2026',
+    status: 'Nouveau',
+  },
+];
+
+export const campaignsData: Campaign[] = [
+  { id: 'camp-1', name: 'Rentrée 2026 — Admissions', channel: 'Email + Réseaux', status: 'Active', reach: 12500 },
+  { id: 'camp-2', name: 'Webinaire Executive MBA', channel: 'LinkedIn Ads', status: 'Active', reach: 4200 },
+  { id: 'camp-3', name: 'Journée Portes Ouvertes', channel: 'Instagram', status: 'En pause', reach: 8800 },
 ];
 
 export const activityLogsData: ActivityLog[] = [
