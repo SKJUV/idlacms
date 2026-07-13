@@ -44,8 +44,6 @@ interface AdminPortalProps {
   setDonations: React.Dispatch<React.SetStateAction<Donation[]>>;
 }
 
-const DEMO_ADMIN = { email: 'admin@idla.edu', password: 'admin123' };
-
 export default function AdminPortal({
   activeTab,
   setActiveTab,
@@ -197,7 +195,7 @@ export default function AdminPortal({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const matchesLocalFallback = email === DEMO_ADMIN.email && password === DEMO_ADMIN.password;
+
 
     if (!isAppwriteDbConfigured()) {
       setLoginError("La base de données Appwrite n'est pas configurée.");

@@ -283,12 +283,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen overflow-x-hidden bg-bg-primary text-text-primary`}>
-      {/* Premium Notification Banner for Database/Appwrite errors */}
-      {dbError && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2 relative z-50">
-          <span>⚠️ {dbError}</span>
-        </div>
-      )}
+
 
       {/* Public Header with Theme Controls */}
       {showPublicHeader && (
