@@ -47,6 +47,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
   const [otpInput, setOtpInput] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
 
   // Initialize selected program when programs are loaded
   useEffect(() => {
@@ -123,8 +124,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     fileInputRef.current?.click();
   };
 
-  // Generate & send a simulated 6-digit OTP
-  const handleSendOtp = () => {
+  // Generate & send a 6-digit OTP via Resend Serverless API
+  const handleSendOtp = async () => {
     setOtpError('');
     if (!declarationChecked) {
       setErrorMessage('Vous devez accepter la déclaration sur l\'honneur avant de recevoir le code.');
@@ -138,58 +139,31 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
 
     const fullName = `${firstName} ${lastName}`.trim() || 'Candidat(e)';
 
-    // ================================================================
-    // ✏️  MODIFIEZ LE MESSAGE EMAIL ICI — chaque ligne est libre
-    // ================================================================
-    const emailMessage =
-`Objet : 🔐 Votre code de vérification — Candidature IDLA
+    setIsSendingOtp(true);
+    try {
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          fullName,
+          selectedProgram,
+          otpCode: generated,
+        }),
+      });
 
-──────────────────────────────────────────────
-  INTERNATIONAL DISTANCE LEARNING ACADEMY
-              Service des Admissions
-──────────────────────────────────────────────
-
-Bonjour ${fullName},
-
-Nous avons bien enregistré votre demande de soumission
-de candidature à l'IDLA pour le programme :
-  ▸ ${selectedProgram}
-
-Afin de confirmer votre identité et sécuriser votre
-dossier, veuillez utiliser le code de vérification
-unique ci-dessous :
-
-┌─────────────────────────────────┐
-│                                 │
-│         🔐  ${generated}  🔐          │
-│                                 │
-│    Valable pendant 10 minutes   │
-└─────────────────────────────────┘
-
-⚠️  Ne partagez jamais ce code avec quiconque.
-   L'IDLA ne vous demandera jamais ce code par
-   téléphone ou par un autre canal.
-
-Si vous n'êtes pas à l'origine de cette demande,
-ignorez ce message et contactez-nous immédiatement
-à : admissions@idla.edu
-
-──────────────────────────────────────────────
-Cordialement,
-
-Le Service des Admissions — IDLA
-International Distance Learning Academy
-📍 Yaoundé, Cameroun  |  🌐 www.idla.edu
-📞 +237 6 00 00 00 00  |  ✉️  admissions@idla.edu
-──────────────────────────────────────────────
-
-[MODE DÉMONSTRATION — En production, ce message
- serait envoyé à : ${email}]`;
-    // ================================================================
-
-    // En production : envoyer via Appwrite Functions / SMTP
-    console.log(`[IDLA OTP]\n${emailMessage}`);
-    setTimeout(() => alert(emailMessage), 200);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setOtpError(errorData.error || "Impossible d'envoyer le code de vérification.");
+      }
+    } catch (err) {
+      console.error("Échec de l'envoi de l'OTP :", err);
+      setOtpError("Erreur réseau. Impossible de contacter le serveur d'envoi d'e-mail.");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerifyOtp = () => {
@@ -614,10 +588,13 @@ International Distance Learning Academy
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        className="w-full flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all"
+                        disabled={isSendingOtp}
+                        className={`w-full flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all ${
+                          isSendingOtp ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                       >
                         <Mail className="w-4 h-4" />
-                        Envoyer le code OTP par email
+                        {isSendingOtp ? 'Envoi en cours...' : 'Envoyer le code OTP par email'}
                       </button>
                     ) : (
                       <div className="space-y-3">
@@ -646,10 +623,13 @@ International Distance Learning Academy
                         <button
                           type="button"
                           onClick={handleSendOtp}
-                          className="text-[10px] text-brand-primary hover:underline flex items-center gap-1"
+                          disabled={isSendingOtp}
+                          className={`text-[10px] text-brand-primary hover:underline flex items-center gap-1 ${
+                            isSendingOtp ? 'opacity-60 cursor-not-allowed' : ''
+                          }`}
                         >
-                          <RefreshCw className="w-3 h-3" />
-                          Renvoyer un nouveau code
+                          <RefreshCw className={`w-3 h-3 ${isSendingOtp ? 'animate-spin' : ''}`} />
+                          {isSendingOtp ? 'Envoi du nouveau code...' : 'Renvoyer un nouveau code'}
                         </button>
                         {otpError && (
                           <p className="text-[11px] text-red-600 font-semibold flex items-center gap-1">
