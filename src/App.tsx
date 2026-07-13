@@ -7,7 +7,6 @@ import ApplicationSuccess from './components/ApplicationSuccess';
 import CandidatePortal from './components/CandidatePortal';
 import AdminPortal from './components/AdminPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { programsData, newsData, testimonialsData, donationsData, pendingTestimonialsData } from './data/mockData';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from './lib/appwrite';
 
 export type ActiveTab =
@@ -31,7 +30,6 @@ export type ActiveTab =
   | 'admin-marketing'
   | 'admin-settings';
 
-// Rôle authentifié — source de vérité unique pour l'espace affiché.
 export type Role = 'guest' | 'candidate' | 'admin';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
@@ -41,12 +39,8 @@ const ADMIN_TABS: ActiveTab[] = [
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
   'admin-settings',
 ];
-// Contenus publics consultables par un candidat connecté sans quitter son espace.
 const CANDIDATE_BROWSE_TABS: ActiveTab[] = ['programmes', 'actualites'];
 
-// Routage par URL (deep-linking + persistance au rafraîchissement).
-// Chaque vue interne correspond à un chemin ; les vues protégées affichent
-// automatiquement leur écran de connexion tant que le rôle requis n'est pas actif.
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
   programmes: '/programmes',
@@ -70,8 +64,11 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
 };
 
 const PATH_TO_TAB: Record<string, ActiveTab> = Object.entries(TAB_TO_PATH).reduce(
-  (acc, [tab, path]) => { acc[path] = tab as ActiveTab; return acc; },
-  {} as Record<string, ActiveTab>,
+  (acc, [tab, path]) => {
+    acc[path] = tab as ActiveTab;
+    return acc;
+  },
+  {} as Record<string, ActiveTab>
 );
 
 const tabFromPath = (pathname: string): ActiveTab => {
@@ -85,7 +82,27 @@ export default function App() {
   );
   const [role, setRole] = useState<Role>('guest');
 
-  // Synchronise l'URL avec la vue courante (et normalise l'URL initiale).
+  // Theme management (Dark / Light)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      return 'dark'; // Default to dark theme
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // Synchronise URL with current view
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
     if (window.location.pathname !== target) {
@@ -93,86 +110,113 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // Prend en charge les boutons Précédent / Suivant du navigateur.
+  // Back/Forward browser navigation support
   useEffect(() => {
     const onPopState = () => setActiveTab(tabFromPath(window.location.pathname));
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
-  const [programs, setPrograms] = useState<Program[]>(programsData);
-  const [news, setNews] = useState<NewsArticle[]>(newsData);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(testimonialsData);
-  // Contenus soumis par le public, en attente de traitement par l'admin.
-  const [pendingTestimonials, setPendingTestimonials] = useState<Testimonial[]>(pendingTestimonialsData);
-  const [donations, setDonations] = useState<Donation[]>(donationsData);
 
-  // Informations du candidat issues du formulaire de candidature
+  // Database Real Records States (Removed default MockData initialization)
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [pendingTestimonials, setPendingTestimonials] = useState<Testimonial[]>([]);
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [dbError, setDbError] = useState<string | null>(null);
+
+  // Candidate identity from ApplicationForm
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
 
-  // Chargement des contenus publics depuis Appwrite (avec repli sur les données mock)
+  // Fetch data directly from Appwrite (Strict Database, no silent mock fallback)
   useEffect(() => {
-    if (!isAppwriteDbConfigured()) return;
+    if (!isAppwriteDbConfigured()) {
+      setDbError("Configuration Appwrite manquante. Veuillez renseigner le fichier .env.");
+      return;
+    }
+
     const loadPublicContent = async () => {
       try {
+        setDbError(null);
+
+        // Fetch Programs
         if (APPWRITE_CONFIG.collections.programs) {
           const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs);
           if (res.documents.length > 0) {
-            setPrograms(res.documents.map((doc: any) => ({
-              id: doc.$id,
-              title: doc.title,
-              description: doc.description,
-              type: doc.type,
-              category: doc.category,
-              duration: doc.duration,
-              image: doc.image,
-              isNew: doc.isNew,
-            })));
+            setPrograms(
+              res.documents.map((doc: any) => ({
+                id: doc.$id,
+                title: doc.title,
+                description: doc.description,
+                type: doc.type,
+                category: doc.category,
+                duration: doc.duration,
+                image: doc.image,
+                isNew: doc.isNew,
+              }))
+            );
           }
         }
+
+        // Fetch News
         if (APPWRITE_CONFIG.collections.news) {
           const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.news);
           if (res.documents.length > 0) {
-            setNews(res.documents.map((doc: any) => ({
-              id: doc.$id,
-              title: doc.title,
-              description: doc.description,
-              date: new Date(doc.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
-              category: doc.category,
-              image: doc.image,
-              isFeatured: doc.isFeatured,
-            })));
+            setNews(
+              res.documents.map((doc: any) => ({
+                id: doc.$id,
+                title: doc.title,
+                description: doc.description,
+                date: new Date(doc.date).toLocaleDateString('fr-FR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                }),
+                category: doc.category,
+                image: doc.image,
+                isFeatured: doc.isFeatured,
+              }))
+            );
           }
         }
+
+        // Fetch Testimonials
         if (APPWRITE_CONFIG.collections.testimonials) {
           const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.testimonials);
           if (res.documents.length > 0) {
-            setTestimonials(res.documents.map((doc: any) => ({
-              id: doc.$id,
-              name: doc.name,
-              role: doc.role,
-              text: doc.text,
-              image: doc.image,
-              promo: doc.promo,
-              category: doc.category,
-              isFeatured: doc.isFeatured,
-            })));
+            setTestimonials(
+              res.documents.map((doc: any) => ({
+                id: doc.$id,
+                name: doc.name,
+                role: doc.role,
+                text: doc.text,
+                image: doc.image,
+                promo: doc.promo,
+                category: doc.category,
+                isFeatured: doc.isFeatured,
+              }))
+            );
           }
         }
-      } catch (err) {
-        console.warn("Échec du chargement des contenus publics depuis Appwrite, utilisation des données mock.", err);
+      } catch (err: any) {
+        console.error("Impossible d'accéder au serveur Appwrite:", err);
+        if (err.type === 'project_paused' || err.code === 403) {
+          setDbError(
+            "Le projet Appwrite est suspendu pour inactivité. Veuillez restaurer le projet depuis la console Appwrite Cloud (https://cloud.appwrite.io) pour réactiver la base de données."
+          );
+        } else {
+          setDbError("Erreur de connexion à la base de données Appwrite. Vérifiez votre configuration réseau.");
+        }
       }
     };
+
     loadPublicContent();
   }, []);
 
-  // Supprime toute session Appwrite résiduelle pour éviter qu'un rôle hérite
-  // de la session d'un autre (ex : l'admin héritant de la session candidat).
   const clearAppwriteSession = () => {
-    account.deleteSession({ sessionId: 'current' }).catch(() => {
-      /* aucune session active — rien à nettoyer (mode démo/mock) */
-    });
+    account.deleteSession({ sessionId: 'current' }).catch(() => {});
   };
 
   const handleApplicationSuccess = (name: string, prog: string, email: string) => {
@@ -182,19 +226,17 @@ export default function App() {
     setActiveTab('success');
   };
 
-  // Témoignage soumis publiquement par un alumni — entre en file de modération.
   const handleSubmitTestimonial = (t: Omit<Testimonial, 'id' | 'image'>) => {
     setPendingTestimonials((curr) => [
       {
         ...t,
         id: `pending-${Date.now()}`,
-        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=006c49&color=fff`,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff`,
       },
       ...curr,
     ]);
   };
 
-  // Don soumis publiquement — reçu côté admin avec le statut « Nouveau ».
   const handleSubmitDonation = (d: Pick<Donation, 'donor' | 'email' | 'amount' | 'message'>) => {
     setDonations((curr) => [
       {
@@ -213,8 +255,6 @@ export default function App() {
     setActiveTab('home');
   };
 
-  // Ouvre l'espace candidat : si déjà connecté en candidat, va au tableau de bord ;
-  // sinon repart d'un état vierge (déconnecte tout rôle précédent) vers la connexion.
   const openCandidateArea = () => {
     if (role === 'candidate') {
       setActiveTab('candidate-dashboard');
@@ -235,20 +275,22 @@ export default function App() {
     setActiveTab('admin-login');
   };
 
-  // La mise en page « tableau de bord » (fond clair + barre latérale) dépend du rôle
-  // authentifié : les écrans de connexion (invité) restent en plein écran sombre.
-  // Un candidat connecté conserve sa barre latérale même en consultant les
-  // contenus publics (programmes / actualités).
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
     (role === 'candidate' && (activeTab === 'candidate-dashboard' || CANDIDATE_BROWSE_TABS.includes(activeTab)));
 
-  // L'en-tête public n'est destiné qu'aux visiteurs non authentifiés.
   const showPublicHeader = role === 'guest';
 
   return (
-    <div className={`min-h-screen overflow-x-hidden ${isDashboardLayout ? 'bg-[#f8f9ff]' : 'bg-[#00020e]'}`}>
-      {/* En-tête public — réservé aux visiteurs (masqué pour candidat / admin connecté) */}
+    <div className={`min-h-screen overflow-x-hidden bg-bg-primary text-text-primary`}>
+      {/* Premium Notification Banner for Database/Appwrite errors */}
+      {dbError && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2 relative z-50">
+          <span>⚠️ {dbError}</span>
+        </div>
+      )}
+
+      {/* Public Header with Theme Controls */}
       {showPublicHeader && (
         <Header
           activeTab={activeTab}
@@ -256,10 +298,12 @@ export default function App() {
           onLoginClick={openCandidateArea}
           onSignUpClick={() => setActiveTab('candidature')}
           onAdminLoginClick={openAdminArea}
+          theme={theme}
+          setTheme={setTheme}
         />
       )}
 
-      {/* Barre latérale persistante des espaces authentifiés */}
+      {/* Persistent Sidebar for Authenticated Portals */}
       {isDashboardLayout && (
         <AdminSidebar
           role={role}
@@ -269,9 +313,8 @@ export default function App() {
         />
       )}
 
-      {/* Routeur de vues (piloté par activeTab) */}
       <main className={`transition-all duration-300 w-full ${isDashboardLayout ? 'lg:pl-[280px]' : ''}`}>
-        {/* PORTAIL PUBLIC */}
+        {/* PUBLIC WEBPAGE PORTAL */}
         {PUBLIC_TABS.includes(activeTab) && (
           <PublicPortal
             activeTab={activeTab as any}
@@ -285,15 +328,16 @@ export default function App() {
           />
         )}
 
-        {/* FORMULAIRE DE CANDIDATURE MULTI-ÉTAPES */}
+        {/* APPLICATION STEPPER FORM */}
         {activeTab === 'candidature' && (
           <ApplicationForm
             onSuccess={handleApplicationSuccess}
             onBackToHome={() => setActiveTab('home')}
+            programs={programs}
           />
         )}
 
-        {/* CONFIRMATION DE SOUMISSION */}
+        {/* SUBMISSION SUCCESS CONFIRMATION */}
         {activeTab === 'success' && (
           <ApplicationSuccess
             candidateName={candidateName}
@@ -306,7 +350,7 @@ export default function App() {
           />
         )}
 
-        {/* ESPACE CANDIDAT (connexion + suivi du dossier) */}
+        {/* CANDIDATE STUDY DOSSIER & CHAT */}
         {CANDIDATE_TABS.includes(activeTab) && (
           <CandidatePortal
             isLoggedIn={role === 'candidate'}
@@ -319,7 +363,7 @@ export default function App() {
           />
         )}
 
-        {/* ESPACE ADMINISTRATION (CMS) */}
+        {/* CMS ADMINISTRATION CONSOLE */}
         {ADMIN_TABS.includes(activeTab) && (
           <AdminPortal
             activeTab={activeTab as any}
@@ -339,7 +383,6 @@ export default function App() {
           />
         )}
       </main>
-
     </div>
   );
 }

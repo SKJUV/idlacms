@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { UserPlus, Search, Pencil, Trash2, X } from 'lucide-react';
+import { UserPlusIcon as UserPlus, SearchIcon as Search, PencilIcon as Pencil, Trash2Icon as Trash2, XIcon as X } from '../Icons';
 import { User } from '../../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
 
@@ -86,10 +86,10 @@ export default function UsersManagement({
             <button
               key={st}
               onClick={() => setSelectedUserStatusFilter(st)}
-              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
                 selectedUserStatusFilter === st
-                  ? 'bg-[#00020e] text-white'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-500 border border-[#c6c6cf]/40'
+                  ? 'bg-brand-primary text-white'
+                  : 'bg-bg-primary hover:bg-border-primary/50 text-text-secondary border border-border-primary/40'
               }`}
             >
               {st}
@@ -99,10 +99,10 @@ export default function UsersManagement({
       </div>
 
       {/* Users Table */}
-      <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+            <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/40 font-bold uppercase">
               <th className="p-4 w-20">ID</th>
               <th className="p-4">Utilisateur</th>
               <th className="p-4">Rôle</th>
@@ -111,12 +111,12 @@ export default function UsersManagement({
               <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#c6c6cf]/20">
+          <tbody className="divide-y divide-border-primary/20">
             {filteredUsers.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50/40">
-                <td className="p-4 font-bold text-slate-400">#{u.id}</td>
+              <tr key={u.id} className="hover:bg-bg-primary/40">
+                <td className="p-4 font-bold text-text-secondary opacity-60">#{u.id}</td>
                 <td className="p-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center overflow-hidden border border-[#c6c6cf]/30">
+                  <div className="w-9 h-9 rounded-full bg-brand-light text-brand-primary font-bold text-xs flex items-center justify-center overflow-hidden border border-border-primary/30">
                     {u.avatar ? (
                       <img className="w-full h-full object-cover" alt={u.name} src={u.avatar} />
                     ) : (
@@ -124,8 +124,8 @@ export default function UsersManagement({
                     )}
                   </div>
                   <div>
-                    <div className="font-bold text-[#00020e]">{u.name}</div>
-                    <div className="text-[10px] text-slate-400 font-semibold">{u.email}</div>
+                    <div className="font-bold text-text-primary">{u.name}</div>
+                    <div className="text-[10px] text-text-secondary font-semibold">{u.email}</div>
                   </div>
                 </td>
                 <td className="p-4 font-semibold text-slate-600">
