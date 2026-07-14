@@ -49,6 +49,9 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
   const [otpError, setOtpError] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
 
+  const selectedProgObj = programs.find((p) => p.title === selectedProgram);
+  const isCertification = selectedProgObj?.type === 'Certification';
+
   // Initialize selected program when programs are loaded
   useEffect(() => {
     if (programs.length > 0 && !selectedProgram) {
@@ -184,13 +187,17 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
       }
     }
     if (step === 2) {
-      if (!selectedProgram || !highestDegree) {
-        setErrorMessage('Veuillez sélectionner votre programme cible.');
+      if (!selectedProgram || (!isCertification && !highestDegree)) {
+        setErrorMessage(
+          !selectedProgram
+            ? 'Veuillez sélectionner votre programme cible.'
+            : 'Veuillez renseigner votre dernier diplôme obtenu.'
+        );
         return;
       }
     }
     if (step === 3) {
-      if (files.length === 0) {
+      if (files.length === 0 && !isCertification) {
         setErrorMessage('Veuillez charger au moins un document justificatif (CV ou Diplôme).');
         return;
       }
@@ -232,8 +239,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
             phone,
             program: selectedProgram,
             nationality,
-            highestDegree,
-            graduationYear: Number(graduationYear) || undefined,
+            highestDegree: isCertification ? undefined : highestDegree,
+            graduationYear: isCertification ? undefined : (Number(graduationYear) || undefined),
             status: 'New',
             dateApplied: new Date().toISOString(),
             declarationChecked,
@@ -446,30 +453,36 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
                 <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-secondary uppercase">Dernier diplôme obtenu *</label>
-                  <input 
-                    type="text" 
-                    value={highestDegree}
-                    onChange={(e) => setHighestDegree(e.target.value)}
-                    placeholder="ex: Licence en Management"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
-                    required 
-                  />
+              {isCertification ? (
+                <div className="bg-brand-primary/10 border-l-4 border-brand-primary p-4 rounded text-xs text-text-primary leading-relaxed">
+                  Pour ce programme de certification, vous n'avez pas besoin de fournir votre dernier diplôme obtenu, l'année d'obtention, ni de pièces justificatives.
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-secondary uppercase">Année d'obtention *</label>
-                  <input 
-                    type="number" 
-                    value={graduationYear}
-                    onChange={(e) => setGraduationYear(e.target.value)}
-                    placeholder="2024"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
-                    required 
-                  />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-text-secondary uppercase">Dernier diplôme obtenu *</label>
+                    <input 
+                      type="text" 
+                      value={highestDegree}
+                      onChange={(e) => setHighestDegree(e.target.value)}
+                      placeholder="ex: Licence en Management"
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-text-secondary uppercase">Année d'obtention *</label>
+                    <input 
+                      type="number" 
+                      value={graduationYear}
+                      onChange={(e) => setGraduationYear(e.target.value)}
+                      placeholder="2024"
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      required 
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -479,6 +492,12 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
               <h3 className="font-sans font-bold text-lg text-text-primary pb-2 border-b border-border-primary/40">
                 Téléchargement du dossier de pièces
               </h3>
+              
+              {isCertification && (
+                <div className="bg-brand-primary/10 border-l-4 border-brand-primary p-4 rounded text-xs text-text-primary leading-relaxed">
+                  Le dépôt de pièces justificatives est facultatif pour ce programme de certification. Vous pouvez passer à l'étape suivante si vous le souhaitez.
+                </div>
+              )}
               
               <div 
                 onDragOver={handleDragOver}
