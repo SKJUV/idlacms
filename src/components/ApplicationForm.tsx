@@ -9,10 +9,10 @@ import {
   AlertCircleIcon,
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account } from '../lib/appwrite';
 
 interface ApplicationFormProps {
-  onSuccess: (candidateName: string, selectedProgram: string, email: string) => void;
+  onSuccess: (candidateName: string, selectedProgram: string, email: string, tempPass: string) => void;
   onBackToHome: () => void;
   programs: Program[];
 }
@@ -225,8 +225,47 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     const candidateName = `${firstName} ${lastName}`;
     const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
 
+    // Generate a temporary random password
+    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-2) + '!1';
+
     if (isAppwriteDbConfigured()) {
       try {
+        // 1. Create Appwrite Auth Account
+        try {
+          await account.create(
+            ID.unique(),
+            email,
+            generatedPassword,
+            candidateName
+          );
+          console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
+
+          // 2. Set user preference mustChangePassword: true by logging in temporarily
+          await account.createEmailPasswordSession({ email, password: generatedPassword });
+          await account.updatePrefs({ mustChangePassword: true });
+          // Log out so they can see the confirmation page
+          await account.deleteSession({ sessionId: 'current' });
+
+          // 3. Send credentials email
+          try {
+            await fetch('/api/send-credentials', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                fullName: candidateName,
+                selectedProgram,
+                tempPassword: generatedPassword,
+              }),
+            });
+          } catch (mailErr) {
+            console.warn("Échec de l'envoi de l'email avec les identifiants:", mailErr);
+          }
+        } catch (authErr: any) {
+          // If user already exists (e.g. they submit another application), ignore the account creation error
+          console.warn("Le compte utilisateur existe peut-être déjà ou échec de la création:", authErr);
+        }
+
         const application = await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.applications,
@@ -277,7 +316,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     }
 
     setIsSubmitting(false);
-    onSuccess(candidateName, selectedProgram, email);
+    onSuccess(candidateName, selectedProgram, email, generatedPassword);
   };
 
   const stepsList = [

@@ -4,6 +4,7 @@ import { CheckCircle2Icon, ArrowRightIcon, ArrowLeftIcon, MailIcon, FileTextIcon
 interface ApplicationSuccessProps {
   candidateName: string;
   selectedProgram: string;
+  tempPassword?: string;
   onGoToCandidatePortal: () => void;
   onBackToHome: () => void;
 }
@@ -11,6 +12,7 @@ interface ApplicationSuccessProps {
 export default function ApplicationSuccess({
   candidateName,
   selectedProgram,
+  tempPassword,
   onGoToCandidatePortal,
   onBackToHome,
 }: ApplicationSuccessProps) {
@@ -96,6 +98,26 @@ export default function ApplicationSuccess({
           )}{' '}
           a été transmis avec succès à notre comité d'étude.
         </p>
+
+        {tempPassword && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 text-left space-y-3">
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">
+              🔑 Identifiants d'accès temporaires :
+            </h4>
+            <div className="space-y-2 text-xs">
+              <p className="text-text-secondary">
+                Voici vos identifiants temporaires pour vous connecter à votre espace candidat. <strong>Veuillez les noter précieusement</strong> :
+              </p>
+              <div className="bg-bg-primary p-3 rounded-lg border border-border-primary/50 font-mono space-y-1 text-xs select-all text-text-primary">
+                <div>Email : <span className="font-bold text-brand-primary">saisi lors de l'inscription</span></div>
+                <div>Mot de passe : <span className="font-bold text-[#e11d48]">{tempPassword}</span></div>
+              </div>
+              <p className="text-amber-800 dark:text-amber-400 text-[11px] font-semibold">
+                ⚠️ Modification obligatoire : Vous devez modifier ce mot de passe en priorité dès votre première connexion pour accéder pleinement à votre compte.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Informational Tracking Card */}
         <div className="bg-bg-primary p-6 rounded-xl border border-border-primary/40 text-left space-y-4">

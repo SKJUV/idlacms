@@ -23,7 +23,7 @@ export default async function handler(req: any, res: any) {
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'IDLA Admissions <onboarding@resend.dev>',
+        from: 'IDLA Admissions <Admission@idlaacademy.online>',
         to: email,
         subject: '🔐 Votre code de vérification — Candidature IDLA',
         html: `

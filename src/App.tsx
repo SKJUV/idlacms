@@ -130,6 +130,7 @@ export default function App() {
   // Candidate identity from ApplicationForm
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
+  const [candidateTempPassword, setCandidateTempPassword] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
 
   // Fetch data directly from Appwrite (Strict Database, no silent mock fallback)
@@ -221,10 +222,11 @@ export default function App() {
     account.deleteSession({ sessionId: 'current' }).catch(() => {});
   };
 
-  const handleApplicationSuccess = (name: string, prog: string, email: string) => {
+  const handleApplicationSuccess = (name: string, prog: string, email: string, tempPass: string) => {
     setCandidateName(name);
     setSelectedProgram(prog);
     setCandidateEmail(email);
+    setCandidateTempPassword(tempPass);
     setActiveTab('success');
   };
 
@@ -341,6 +343,7 @@ export default function App() {
           <ApplicationSuccess
             candidateName={candidateName}
             selectedProgram={selectedProgram}
+            tempPassword={candidateTempPassword}
             onGoToCandidatePortal={() => {
               setRole('candidate');
               setActiveTab('candidate-dashboard');

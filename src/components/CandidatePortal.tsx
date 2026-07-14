@@ -64,6 +64,15 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
 
+  // Password / Settings states
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+  const [settingsError, setSettingsError] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   // Dashboard / Interactive states
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMsg[]>([
@@ -145,6 +154,23 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
 
     loadDossier();
   }, [isLoggedIn, email, application?.$id]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const checkPrefs = async () => {
+      try {
+        const prefs = await account.getPrefs();
+        if (prefs && prefs.mustChangePassword) {
+          setMustChangePassword(true);
+        } else {
+          setMustChangePassword(false);
+        }
+      } catch (err) {
+        console.warn("Impossible de récupérer les préférences de l'utilisateur", err);
+      }
+    };
+    checkPrefs();
+  }, [isLoggedIn]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,6 +284,41 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
       } finally {
         setIsUploading(false);
       }
+    }
+  };
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsError('');
+    setSettingsSuccess('');
+
+    if (newPassword.length < 8) {
+      setSettingsError('Le nouveau mot de passe doit comporter au moins 8 caractères.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSettingsError('Les deux mots de passe ne correspondent pas.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await account.updatePassword({ password: newPassword, oldPassword: currentPassword });
+      // Remove mustChangePassword flag
+      await account.updatePrefs({ mustChangePassword: false });
+      setMustChangePassword(false);
+      setSettingsSuccess('Mot de passe modifié avec succès ! Votre compte est maintenant pleinement actif.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error("Échec du changement de mot de passe:", err);
+      if (err?.code === 401) {
+        setSettingsError('Le mot de passe actuel est incorrect. Veuillez réessayer.');
+      } else {
+        setSettingsError(err?.message || "Erreur lors de la mise à jour du mot de passe.");
+      }
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -477,6 +538,81 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
             </div>
           )}
         </div>
+
+        {/* MUST CHANGE PASSWORD — Priority Banner */}
+        {mustChangePassword && (
+          <div className="bg-bg-secondary border-2 border-amber-500 rounded-2xl p-6 md:p-8 shadow-lg space-y-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                <LockIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-sans font-bold text-base text-amber-700 dark:text-amber-400">
+                  ⚠️ Modification du mot de passe obligatoire
+                </h3>
+                <p className="text-xs text-text-secondary mt-1">
+                  Votre compte utilise encore un mot de passe temporaire. Vous devez le modifier immédiatement pour sécuriser votre espace candidat.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Mot de passe actuel</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Mot de passe temporaire"
+                  className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Nouveau mot de passe</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min. 8 caractères"
+                  className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Confirmer le nouveau</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Même mot de passe"
+                  className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary"
+                  required
+                />
+              </div>
+              <div className="sm:col-span-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword}
+                  className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                >
+                  <LockIcon className="w-3.5 h-3.5" />
+                  {isUpdatingPassword ? 'Modification en cours...' : 'Modifier mon mot de passe'}
+                </button>
+                {settingsError && (
+                  <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
+                    <AlertCircleIcon className="w-3.5 h-3.5" /> {settingsError}
+                  </p>
+                )}
+                {settingsSuccess && (
+                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2Icon className="w-3.5 h-3.5" /> {settingsSuccess}
+                  </p>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Stepper Progress Timeline */}
         <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
