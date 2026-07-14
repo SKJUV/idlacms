@@ -12,6 +12,8 @@ import {
   SettingsIcon,
   LogOutIcon,
   GraduationCapIcon,
+  SunIcon,
+  MoonIcon,
 } from './Icons';
 
 interface AdminSidebarProps {
@@ -19,6 +21,8 @@ interface AdminSidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onLogout: () => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 const sharedClasses =
@@ -31,7 +35,7 @@ interface NavLink {
   activeOn: ActiveTab[];
 }
 
-export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout }: AdminSidebarProps) {
+export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, theme, setTheme }: AdminSidebarProps) {
   const candidateLinks: NavLink[] = [
     { label: 'Dashboard', icon: TrendingUpIcon, target: 'candidate-dashboard', activeOn: ['candidate-dashboard'] },
     { label: 'Programmes', icon: BookOpenIcon, target: 'programmes', activeOn: ['programmes'] },
@@ -102,6 +106,17 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout }
             <span>Paramètres</span>
           </button>
         )}
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className={`${sharedClasses} text-text-secondary hover:bg-bg-primary hover:text-text-primary`}
+        >
+          {theme === 'dark' ? (
+            <SunIcon className="w-4 h-4 text-amber-500 animate-spin-slow" size={16} />
+          ) : (
+            <MoonIcon className="w-4 h-4 text-indigo-600" size={16} />
+          )}
+          <span>Thème : {theme === 'dark' ? 'Clair' : 'Sombre'}</span>
+        </button>
         <button
           onClick={onLogout}
           className={`${sharedClasses} text-text-secondary hover:bg-bg-primary hover:text-text-primary`}

@@ -305,6 +305,8 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onLogout={handleLogout}
+          theme={theme}
+          setTheme={setTheme}
         />
       )}
 
