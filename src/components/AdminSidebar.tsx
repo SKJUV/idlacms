@@ -14,6 +14,9 @@ import {
   GraduationCapIcon,
   SunIcon,
   MoonIcon,
+  AwardIcon,
+  UserIcon,
+  SearchIcon,
 } from './Icons';
 
 interface AdminSidebarProps {
@@ -42,6 +45,14 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Actualités', icon: NewspaperIcon, target: 'actualites', activeOn: ['actualites'] },
   ];
 
+  const studentLinks: NavLink[] = [
+    { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'student-dashboard', activeOn: ['student-dashboard'] },
+    { label: 'Catalogue', icon: SearchIcon, target: 'student-catalog', activeOn: ['student-catalog'] },
+    { label: 'Profil', icon: UserIcon, target: 'student-profile', activeOn: ['student-profile'] },
+    { label: 'Certificats', icon: AwardIcon, target: 'student-certificates', activeOn: ['student-certificates'] },
+    { label: 'Paramètres', icon: SettingsIcon, target: 'student-settings', activeOn: ['student-settings'] },
+  ];
+
   const adminLinks: NavLink[] = [
     { label: 'Dashboard', icon: TrendingUpIcon, target: 'admin-dashboard', activeOn: ['admin-dashboard', 'admin-login'] },
     { label: 'Utilisateurs', icon: UsersIcon, target: 'admin-users', activeOn: ['admin-users', 'admin-add-user'] },
@@ -54,9 +65,10 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
   ];
 
   const isCandidate = role === 'candidate';
-  const links = isCandidate ? candidateLinks : adminLinks;
-  const title = isCandidate ? 'Espace Candidat' : 'IDLA Admin';
-  const subtitle = isCandidate ? 'Suivi de candidature' : 'CMS Portal';
+  const isStudent = role === 'student';
+  const links = isStudent ? studentLinks : isCandidate ? candidateLinks : adminLinks;
+  const title = isStudent ? 'Espace Étudiant' : isCandidate ? 'Espace Candidat' : 'IDLA Admin';
+  const subtitle = isStudent ? 'Ma formation' : isCandidate ? 'Suivi de candidature' : 'CMS Portal';
 
   return (
     <aside className="w-full border-b border-border-primary bg-bg-secondary text-text-primary lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50 shadow-sm">
@@ -93,7 +105,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
       </nav>
 
       <div className="mt-0 flex flex-wrap gap-2 border-t border-border-primary p-3 lg:mt-auto lg:flex-col lg:px-4 lg:pt-4 lg:space-y-1">
-        {!isCandidate && (
+        {!isCandidate && !isStudent && (
           <button
             onClick={() => setActiveTab('admin-settings')}
             className={`${sharedClasses} ${

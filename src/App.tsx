@@ -5,6 +5,7 @@ import PublicPortal from './components/PublicPortal';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationSuccess from './components/ApplicationSuccess';
 import CandidatePortal from './components/CandidatePortal';
+import StudentPortal from './components/StudentPortal';
 import AdminPortal from './components/AdminPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from './lib/appwrite';
@@ -19,6 +20,12 @@ export type ActiveTab =
   | 'candidate-login'
   | 'candidate-dashboard'
   | 'candidate-programmes'
+  | 'student-login'
+  | 'student-dashboard'
+  | 'student-catalog'
+  | 'student-profile'
+  | 'student-certificates'
+  | 'student-settings'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
@@ -31,10 +38,13 @@ export type ActiveTab =
   | 'admin-marketing'
   | 'admin-settings';
 
-export type Role = 'guest' | 'candidate' | 'admin';
+export type Role = 'guest' | 'candidate' | 'student' | 'admin';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
 const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard', 'candidate-programmes'];
+const STUDENT_TABS: ActiveTab[] = [
+  'student-login', 'student-dashboard', 'student-catalog', 'student-profile', 'student-certificates', 'student-settings',
+];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes',
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
@@ -52,6 +62,12 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'candidate-login': '/candidat',
   'candidate-dashboard': '/candidat/dossier',
   'candidate-programmes': '/candidat/programmes',
+  'student-login': '/etudiant',
+  'student-dashboard': '/etudiant/tableau-de-bord',
+  'student-catalog': '/etudiant/catalogue',
+  'student-profile': '/etudiant/profil',
+  'student-certificates': '/etudiant/certificats',
+  'student-settings': '/etudiant/parametres',
   'admin-login': '/admin',
   'admin-dashboard': '/admin/tableau-de-bord',
   'admin-users': '/admin/utilisateurs',
@@ -269,6 +285,16 @@ export default function App() {
     setActiveTab('candidate-login');
   };
 
+  const openStudentArea = () => {
+    if (role === 'student') {
+      setActiveTab('student-dashboard');
+      return;
+    }
+    if (role === 'admin' || role === 'candidate') clearAppwriteSession();
+    setRole('guest');
+    setActiveTab('student-login');
+  };
+
   const openAdminArea = () => {
     if (role === 'admin') {
       setActiveTab('admin-dashboard');
@@ -281,7 +307,8 @@ export default function App() {
 
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
-    (role === 'candidate' && (activeTab === 'candidate-dashboard' || CANDIDATE_BROWSE_TABS.includes(activeTab)));
+    (role === 'candidate' && (activeTab === 'candidate-dashboard' || CANDIDATE_BROWSE_TABS.includes(activeTab))) ||
+    (role === 'student' && STUDENT_TABS.includes(activeTab));
 
   const showPublicHeader = role === 'guest';
 
@@ -297,6 +324,7 @@ export default function App() {
           onLoginClick={openCandidateArea}
           onSignUpClick={() => setActiveTab('candidature')}
           onAdminLoginClick={openAdminArea}
+          onStudentLoginClick={openStudentArea}
           theme={theme}
           setTheme={setTheme}
         />
@@ -362,6 +390,20 @@ export default function App() {
             onLoginSuccess={() => {
               setRole('candidate');
               setActiveTab('candidate-dashboard');
+            }}
+            onBackToHome={() => setActiveTab('home')}
+          />
+        )}
+
+        {/* STUDENT LEARNING PORTAL */}
+        {STUDENT_TABS.includes(activeTab) && (
+          <StudentPortal
+            isLoggedIn={role === 'student'}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onLoginSuccess={() => {
+              setRole('student');
+              setActiveTab('student-dashboard');
             }}
             onBackToHome={() => setActiveTab('home')}
           />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActiveTab } from '../App';
-import { LogInIcon, MenuIcon, ShieldCheckIcon, XIcon, SunIcon, MoonIcon } from './Icons';
+import { LogInIcon, MenuIcon, ShieldCheckIcon, XIcon, SunIcon, MoonIcon, GraduationCapIcon } from './Icons';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -8,6 +8,7 @@ interface HeaderProps {
   onLoginClick: () => void;
   onSignUpClick: () => void;
   onAdminLoginClick: () => void;
+  onStudentLoginClick: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
 }
@@ -18,6 +19,7 @@ export default function Header({
   onLoginClick,
   onSignUpClick,
   onAdminLoginClick,
+  onStudentLoginClick,
   theme,
   setTheme,
 }: HeaderProps) {
@@ -90,6 +92,16 @@ export default function Header({
           </button>
           <button
             onClick={() => {
+              onStudentLoginClick();
+              setMobileMenuOpen(false);
+            }}
+            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors"
+          >
+            <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+            Étudiant
+          </button>
+          <button
+            onClick={() => {
               onSignUpClick();
               setMobileMenuOpen(false);
             }}
@@ -135,6 +147,16 @@ export default function Header({
                 >
                   <LogInIcon className="w-4 h-4" />
                   Connexion Candidat
+                </button>
+                <button
+                  onClick={() => {
+                    onStudentLoginClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-xs font-semibold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1"
+                >
+                  <GraduationCapIcon className="w-4 h-4" />
+                  Espace Étudiant
                 </button>
               </div>
             </div>

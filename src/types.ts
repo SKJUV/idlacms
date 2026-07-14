@@ -87,3 +87,72 @@ export interface Campaign {
   status: 'Active' | 'En pause';
   reach: number;
 }
+
+// ─── Student Portal ────────────────────────────────────────────────────────────
+
+export type CourseStatus = 'en cours' | 'terminé' | 'non commencé';
+export type CourseLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
+
+export interface CourseEnrollment {
+  id: string;
+  courseId: string;
+  title: string;
+  instructor: string;
+  category: string;
+  level: CourseLevel;
+  duration: string;          // e.g. "12h 30min"
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;   // 0–100
+  status: CourseStatus;
+  enrolledAt: string;        // ISO date string
+  lastAccessedAt?: string;   // ISO date string
+  nextDeadline?: string;     // ISO date string
+  image: string;
+  nextLessonTitle?: string;
+}
+
+export interface AssignmentDeadline {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  assignmentTitle: string;
+  dueDate: string;           // ISO date string
+  isSubmitted: boolean;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface Certificate {
+  id: string;
+  courseTitle: string;
+  issueDate: string;         // ISO date string
+  credentialId: string;
+  category: string;
+  instructor: string;
+  image?: string;
+}
+
+export interface StudentProfile {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  avatarUrl?: string;
+  language: 'fr' | 'en';
+  joinedAt: string;          // ISO date string
+}
+
+export interface CourseCatalogItem {
+  id: string;
+  title: string;
+  instructor: string;
+  category: string;
+  level: CourseLevel;
+  duration: string;
+  rating: number;            // 0–5
+  totalStudents: number;
+  image: string;
+  isNew?: boolean;
+  isFeatured?: boolean;
+  tags: string[];
+}
