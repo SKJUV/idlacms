@@ -152,3 +152,22 @@ img {
   color: var(--text-secondary) !important;
 }
 
+/* Custom Hero Carousel Background Overlays */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to right, var(--bg-secondary) 30%, rgba(255, 255, 255, 0.75) 60%, rgba(255, 255, 255, 0.1) 100%);
+}
+
+.dark .hero-overlay {
+  background: linear-gradient(to right, var(--bg-secondary) 30%, rgba(22, 30, 46, 0.75) 60%, rgba(22, 30, 46, 0.1) 100%);
+}
+
+.hero-overlay-vertical {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg-secondary) 0%, transparent 15%, transparent 85%, var(--bg-secondary) 100%);
+}
+

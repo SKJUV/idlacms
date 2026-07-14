@@ -1,4 +1,4 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, useMemo, useEffect, type FormEvent } from 'react';
 import {
   SearchIcon as Search,
   ClockIcon as Clock,
@@ -28,6 +28,7 @@ interface PublicPortalProps {
 }
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
+
   // Newsletter Subscription States
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribedNewsletter, setSubscribedNewsletter] = useState(false);
@@ -125,14 +126,20 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     return (
       <div className="bg-bg-primary text-text-primary">
         {/* Hero Section */}
-        <section className="relative min-h-[700px] flex items-center overflow-hidden bg-bg-secondary border-b border-border-primary px-6 md:px-16 py-16">
-          <div className="absolute inset-0 opacity-20 pointer-events-none">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#006c49] blur-[120px] rounded-full -mr-40 -mt-40"></div>
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6cf8bb] blur-[100px] rounded-full -ml-20 -mb-20"></div>
+        <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
+          {/* Background Image (replacing green glows/carousel) */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="/hero-bg.jpg" 
+              alt="Campus IDLA" 
+              className="w-full h-full object-cover object-center"
+            />
+            {/* Subtle Gradient Overlay: light in light mode, dark in dark mode */}
+            <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary/70 via-bg-secondary/40 to-transparent dark:from-bg-secondary/80 dark:via-bg-secondary/50 dark:to-transparent pointer-events-none"></div>
           </div>
 
-          <div className="relative z-10 max-w-[1440px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+          <div className="relative z-10 max-w-[1440px] mx-auto w-full">
+            <div className="max-w-2xl space-y-6">
               <div className="inline-flex items-center gap-2 bg-[#6cf8bb]/10 border border-[#006c49]/20 px-4 py-1.5 rounded-full">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#6ffbbe] animate-pulse"></span>
                 <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
@@ -160,22 +167,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 >
                   Je pose ma candidature
                 </button>
-              </div>
-            </div>
-
-            <div className="hidden lg:block relative">
-              <div className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-white/10">
-                <img 
-                  className="object-cover w-full h-full" 
-                  alt="Students collaboration" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlITubWSxX5Bi1Gy85eRy77geyt0EUVKXodBcmi7ce7aMf4tkOIOVgH76UESrQXS7z0RqEHM0vmG34skiJicsHxzTJ8fo92_IjCDgdc7SwXNrQkVa6UoMxrBpZQaJpgyXvQmkEnluNtqFz6Ae-LrFyZOjhHbRXgMHqNhjE1NyZ1UA2M1U5uAvvxYRnBUZez2lIgcWFDzF2G2-XZcpduxY6-R3CAoOf1sh9s6h5zPSiplERtRZW7mTMss86SQt7G7QErPXgTSnzcQA"
-                />
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-[#c6c6cf] max-w-[220px]">
-                <div className="text-[#006c49] font-bold text-3xl">98%</div>
-                <div className="text-[#45464e] text-xs font-medium mt-1 leading-snug">
-                  Taux d'insertion professionnelle de nos diplômés.
-                </div>
               </div>
             </div>
           </div>
