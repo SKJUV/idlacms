@@ -23,6 +23,8 @@ interface CandidatePortalProps {
   onLoginSuccess: () => void;
   isLoggedIn: boolean;
   knownEmail?: string;
+  activeTab?: string;
+  setActiveTab?: (tab: any) => void;
 }
 
 interface CandidateDoc {
@@ -50,7 +52,7 @@ const formatDateTime = (iso?: string) => {
 
 const STATUS_STEP: Record<string, number> = { New: 2, 'In Review': 2, Accepted: 4, Rejected: 2 };
 
-export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLoggedIn, knownEmail }: CandidatePortalProps) {
+export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, activeTab, setActiveTab }: CandidatePortalProps) {
   // Login Form States
   const [email, setEmail] = useState(knownEmail || '');
   const [password, setPassword] = useState('');
@@ -59,6 +61,7 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
 
   // Real application record
   const [application, setApplication] = useState<any>(null);
+  const [applications, setApplications] = useState<any[]>([]);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
 
   // Dashboard / Interactive states
@@ -83,12 +86,19 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
           APPWRITE_CONFIG.collections.applications,
           [Query.equal('email', email)]
         );
+        setApplications(appsRes.documents);
+
         if (appsRes.documents.length === 0) {
           setApplication(null);
           return;
         }
-        const doc = appsRes.documents[0];
-        setApplication(doc);
+
+        // Determine current application to focus on
+        let doc = application;
+        if (!doc || !appsRes.documents.some((d: any) => d.$id === doc.$id)) {
+          doc = appsRes.documents[0];
+          setApplication(doc);
+        }
 
         if (APPWRITE_CONFIG.collections.candidateDocuments) {
           const docsRes = await databases.listDocuments(
@@ -103,6 +113,8 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
               size: formatSize(d.sizeBytes),
               date: formatDateTime(d.uploadedAt),
             })));
+          } else {
+            setCandidateDocs([]);
           }
         }
 
@@ -118,6 +130,10 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
               text: m.text,
               time: formatDateTime(m.createdAt),
             })));
+          } else {
+            setChatHistory([
+              { sender: 'advisor', text: 'Bonjour, j\'ai bien reçu votre dossier. N\'hésitez pas à me contacter ici pour toute question sur votre candidature.', time: 'Aujourd\'hui' }
+            ]);
           }
         }
       } catch (err) {
@@ -128,7 +144,7 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
     };
 
     loadDossier();
-  }, [isLoggedIn, email]);
+  }, [isLoggedIn, email, application?.$id]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,6 +377,70 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
     if (state === 'active') return { border: 'border-amber-500', text: 'text-amber-600', opacity: '' };
     return { border: 'border-border-primary/60', text: 'text-text-secondary/60', opacity: 'opacity-50' };
   };
+
+  if (activeTab === 'candidate-programmes') {
+    return (
+      <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 ml-0 transition-all duration-200">
+        <div className="max-w-[1440px] mx-auto space-y-8">
+          {/* Top Header */}
+          <div>
+            <h1 className="font-sans font-bold text-2xl text-text-primary">Mes Programmes Inscrits</h1>
+            <p className="text-sm text-text-secondary mt-1">Retrouvez les programmes d'études auxquels vous avez postulé.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {applications.map((app) => {
+              const status = app.status || 'New';
+              const statusBadge =
+                status === 'Accepted'
+                  ? { cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', label: 'Admis' }
+                  : status === 'Rejected'
+                  ? { cls: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20', label: 'Non retenu' }
+                  : { cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', label: 'En cours d\'examen' };
+
+              return (
+                <div key={app.$id} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm flex flex-col justify-between h-48 hover:shadow-md transition-shadow">
+                  <div>
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-sans font-bold text-sm text-text-primary line-clamp-2">{app.program}</h3>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${statusBadge.cls}`}>
+                        {statusBadge.label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-secondary mt-2">
+                      Déposé le : {new Date(app.dateApplied || app.$createdAt).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setApplication(app);
+                      if (setActiveTab) setActiveTab('candidate-dashboard');
+                    }}
+                    className="w-full bg-brand-primary hover:bg-brand-hover text-white py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-4"
+                  >
+                    <span>Suivre mon dossier</span>
+                    <ChevronRightIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+            {applications.length === 0 && (
+              <div className="col-span-full bg-bg-secondary border border-border-primary rounded-2xl p-8 text-center">
+                <p className="text-sm text-text-secondary italic">Vous n'êtes inscrit à aucun programme pour le moment.</p>
+                <button
+                  onClick={onBackToHome}
+                  className="mt-4 inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                >
+                  Découvrir nos programmes
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 ml-0 transition-all duration-200">

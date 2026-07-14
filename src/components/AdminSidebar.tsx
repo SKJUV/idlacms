@@ -38,7 +38,7 @@ interface NavLink {
 export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, theme, setTheme }: AdminSidebarProps) {
   const candidateLinks: NavLink[] = [
     { label: 'Dashboard', icon: TrendingUpIcon, target: 'candidate-dashboard', activeOn: ['candidate-dashboard'] },
-    { label: 'Programmes', icon: BookOpenIcon, target: 'programmes', activeOn: ['programmes'] },
+    { label: 'Programmes', icon: BookOpenIcon, target: 'candidate-programmes', activeOn: ['candidate-programmes'] },
     { label: 'Actualités', icon: NewspaperIcon, target: 'actualites', activeOn: ['actualites'] },
   ];
 

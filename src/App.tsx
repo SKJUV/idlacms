@@ -18,6 +18,7 @@ export type ActiveTab =
   | 'success'
   | 'candidate-login'
   | 'candidate-dashboard'
+  | 'candidate-programmes'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
@@ -33,7 +34,7 @@ export type ActiveTab =
 export type Role = 'guest' | 'candidate' | 'admin';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
-const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard'];
+const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard', 'candidate-programmes'];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes',
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
@@ -50,6 +51,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   success: '/candidature/confirmation',
   'candidate-login': '/candidat',
   'candidate-dashboard': '/candidat/dossier',
+  'candidate-programmes': '/candidat/programmes',
   'admin-login': '/admin',
   'admin-dashboard': '/admin/tableau-de-bord',
   'admin-users': '/admin/utilisateurs',
@@ -352,6 +354,8 @@ export default function App() {
           <CandidatePortal
             isLoggedIn={role === 'candidate'}
             knownEmail={candidateEmail}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             onLoginSuccess={() => {
               setRole('candidate');
               setActiveTab('candidate-dashboard');

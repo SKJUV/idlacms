@@ -161,6 +161,12 @@ export default function AdminPortal({
               dateApplied: doc.dateApplied || 'Récemment',
               status: doc.status || 'New',
               initials: doc.initials || doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+              phone: doc.phone,
+              nationality: doc.nationality,
+              highestDegree: doc.highestDegree,
+              graduationYear: doc.graduationYear,
+              motivation: doc.motivation,
+              documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
             }))
           );
         }
