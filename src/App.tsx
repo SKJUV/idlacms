@@ -79,8 +79,8 @@ const tabFromPath = (pathname: string): ActiveTab => {
   const pathOnly = pathname.split('?')[0].split('#')[0];
   const clean = pathOnly.replace(/\/+$/, '') || '/';
 
-  // Routes protégées accessibles directement sans session → home
-  const protectedPrefixes = ['/etudiant', '/candidat', '/admin'];
+  // Routes étudiants protégées → home si accès direct sans session
+  const protectedPrefixes = ['/etudiant', '/candidat'];
   if (protectedPrefixes.some((prefix) => clean.startsWith(prefix))) {
     return 'home';
   }
