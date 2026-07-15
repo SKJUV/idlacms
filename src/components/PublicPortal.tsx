@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type FormEvent } from 'react';
+import { useState, useMemo, useEffect, useRef, type FormEvent } from 'react';
 import {
   SearchIcon as Search,
   ClockIcon as Clock,
@@ -32,6 +32,23 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   // Newsletter Subscription States
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribedNewsletter, setSubscribedNewsletter] = useState(false);
+
+  // Modal article
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Fermer la modal avec Echap
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedArticle(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Bloquer le scroll du body quand la modal est ouverte
+  useEffect(() => {
+    document.body.style.overflow = selectedArticle ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedArticle]);
 
   const handleNewsletterSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -581,7 +598,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="flex-grow space-y-8">
               {/* Featured article shown on 'Tous' or when matches category */}
               {featuredNewsArticle && selectedNewsCategory === 'Tous' && (
-                <article className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-all">
+                <article
+                  onClick={() => setSelectedArticle(featuredNewsArticle)}
+                  className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-all"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(featuredNewsArticle)}
+                  aria-label={`Lire l'article : ${featuredNewsArticle.title}`}
+                >
                   <div className="md:w-3/5 overflow-hidden h-64 md:h-auto">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
@@ -610,12 +634,18 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                 </article>
               )}
-
-              {/* Regular Grid */}
               {regularNewsArticles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {regularNewsArticles.map((n) => (
-                    <article key={n.id} className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden group cursor-pointer hover:shadow-sm transition-all flex flex-col">
+                    <article
+                      key={n.id}
+                      onClick={() => setSelectedArticle(n)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(n)}
+                      aria-label={`Lire l'article : ${n.title}`}
+                      className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden group cursor-pointer hover:shadow-sm transition-all flex flex-col"
+                    >
                       <div className="aspect-video overflow-hidden">
                         <img 
                           className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
@@ -657,6 +687,81 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         </div>
+
+        {/* ── Modal article plein écran avec fond flouté ── */}
+        {selectedArticle && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+            onClick={() => setSelectedArticle(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedArticle.title}
+          >
+            <div
+              ref={modalRef}
+              className="relative bg-white dark:bg-[#0f1117] w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#c6c6cf]/60 dark:border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Image header */}
+              <div className="relative h-56 shrink-0 overflow-hidden">
+                <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                {/* Bouton fermeture */}
+                <button
+                  onClick={() => setSelectedArticle(null)}
+                  className="absolute top-4 right-4 w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer backdrop-blur-sm"
+                  aria-label="Fermer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                {/* Catégorie + date en bas de l'image */}
+                <div className="absolute bottom-4 left-5 flex items-center gap-2">
+                  <span className="bg-[#6cf8bb] text-[#00714d] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    {selectedArticle.category}
+                  </span>
+                  <span className="text-white/80 text-xs font-medium">{selectedArticle.date}</span>
+                </div>
+              </div>
+
+              {/* Contenu scrollable */}
+              <div className="overflow-y-auto flex-1 p-6 md:p-8 space-y-5">
+                <h2 className="font-sans font-bold text-2xl text-[#00020e] dark:text-white leading-tight">
+                  {selectedArticle.title}
+                </h2>
+                <p className="text-[#45464e] dark:text-gray-300 text-sm leading-relaxed">
+                  {selectedArticle.description}
+                </p>
+                {/* Contenu étendu simulé */}
+                <div className="space-y-4 text-sm text-[#45464e] dark:text-gray-400 leading-relaxed border-t border-[#c6c6cf]/40 pt-5">
+                  <p>
+                    L'International Distance Learning Academy (IDLA) poursuit son engagement envers l'excellence académique et le développement des talents africains. Cette actualité reflète notre vision d'une éducation accessible, rigoureuse et internationalement reconnue.
+                  </p>
+                  <p>
+                    Nos programmes sont conçus pour répondre aux besoins actuels du marché professionnel, avec un corps professoral de renommée internationale et des partenariats stratégiques qui ouvrent des portes à nos diplômés dans le monde entier.
+                  </p>
+                  <p>
+                    Pour toute information complémentaire, n'hésitez pas à contacter notre service des admissions à l'adresse{' '}
+                    <a href="mailto:admission@idlaacademy.online" className="text-[#006c49] font-semibold hover:underline">
+                      admission@idlaacademy.online
+                    </a>{' '}
+                    ou via WhatsApp au <span className="font-semibold">+237 680 548 221</span>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer de la modal */}
+              <div className="shrink-0 border-t border-[#c6c6cf]/40 dark:border-white/10 px-6 py-4 bg-white dark:bg-[#0f1117] flex items-center justify-between gap-4">
+                <p className="text-xs text-slate-400">IDLA — {selectedArticle.date}</p>
+                <button
+                  onClick={() => setSelectedArticle(null)}
+                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

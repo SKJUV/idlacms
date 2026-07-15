@@ -12,7 +12,6 @@ import {
   FileTextIcon,
   ChevronRightIcon,
   ArrowLeftIcon,
-  ChevronUpIcon,
   MessageSquareIcon,
   XCircleIcon
 } from './Icons';
@@ -58,6 +57,10 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState(knownEmail || '');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   // Real application record
   const [application, setApplication] = useState<any>(null);
@@ -81,6 +84,12 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
   const [candidateDocs, setCandidateDocs] = useState<CandidateDoc[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
 
   // Charge le dossier réel du candidat depuis Appwrite
   useEffect(() => {
@@ -171,6 +180,23 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
     };
     checkPrefs();
   }, [isLoggedIn]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setResetLoading(true);
+    try {
+      await account.createRecovery({
+        email: resetEmail,
+        url: `${window.location.origin}/candidat/reinitialisation`,
+      });
+      setResetSent(true);
+    } catch (err: any) {
+      setLoginError("Impossible d'envoyer le lien. Vérifiez l'adresse e-mail saisie.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,6 +350,59 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
 
   // LOGIN PAGE VIEW
   if (!isLoggedIn) {
+    // ── Vue réinitialisation mot de passe ──
+    if (showReset) {
+      return (
+        <div className="bg-bg-primary min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden text-text-primary">
+          <div className="absolute inset-0 opacity-10 pointer-events-none z-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-primary blur-[150px] rounded-full" />
+          </div>
+          <div className="max-w-md w-full bg-bg-secondary rounded-2xl border border-border-primary p-8 shadow-2xl relative z-10 space-y-6">
+            <div className="text-center space-y-2">
+              <button onClick={() => { setShowReset(false); setResetSent(false); setLoginError(''); }}
+                className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-primary transition-colors mb-4 border border-border-primary px-3 py-1 rounded cursor-pointer">
+                <ArrowLeftIcon className="w-3 h-3" /> Retour à la connexion
+              </button>
+              <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center text-2xl mx-auto">🔑</div>
+              <h1 className="font-sans font-bold text-2xl text-text-primary">Mot de passe oublié</h1>
+              <p className="text-text-secondary text-xs">Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
+            </div>
+            {resetSent ? (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-400 text-sm font-semibold text-center space-y-3">
+                <CheckCircle2Icon className="w-10 h-10 mx-auto" />
+                <p>E-mail envoyé ! Vérifiez votre boîte mail et cliquez sur le lien reçu pour réinitialiser votre mot de passe.</p>
+                <button onClick={() => { setShowReset(false); setResetSent(false); }}
+                  className="text-xs text-brand-primary hover:underline cursor-pointer">
+                  Retour à la connexion
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                {loginError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-700 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircleIcon className="w-4 h-4 shrink-0" /><span>{loginError}</span>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Adresse email</label>
+                  <div className="relative">
+                    <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
+                    <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Votre adresse email"
+                      className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-primary outline-none text-text-primary font-medium" required />
+                  </div>
+                </div>
+                <button type="submit" disabled={resetLoading}
+                  className="w-full bg-brand-primary hover:bg-brand-hover text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
+                  {resetLoading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-bg-primary min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden text-text-primary">
         {/* Glow Background */}
@@ -373,7 +452,8 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Mot de passe</label>
-                <a href="#" className="text-[10px] text-brand-primary hover:underline font-bold">Oublié ?</a>
+                <button type="button" onClick={() => { setResetEmail(email); setShowReset(true); setLoginError(''); }}
+                  className="text-[10px] text-brand-primary hover:underline font-bold cursor-pointer">Oublié ?</button>
               </div>
               <div className="relative">
                 <LockIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
@@ -750,6 +830,7 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
                   <span className="text-[9px] text-text-secondary mt-1 px-1">{m.time}</span>
                 </div>
               ))}
+              <div ref={chatEndRef} />
             </div>
 
             {/* Chat entry form */}

@@ -22,6 +22,7 @@ export type ActiveTab =
   | 'candidate-programmes'
   | 'student-login'
   | 'student-dashboard'
+  | 'student-programs'
   | 'student-catalog'
   | 'student-profile'
   | 'student-certificates'
@@ -43,7 +44,8 @@ export type Role = 'guest' | 'candidate' | 'student' | 'admin';
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
 const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard', 'candidate-programmes'];
 const STUDENT_TABS: ActiveTab[] = [
-  'student-login', 'student-dashboard', 'student-catalog', 'student-profile', 'student-certificates', 'student-settings',
+  'student-login', 'student-dashboard', 'student-programs', 'student-catalog',
+  'student-profile', 'student-certificates', 'student-settings',
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes',
@@ -64,6 +66,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'candidate-programmes': '/candidat/programmes',
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
+  'student-programs': '/etudiant/programmes',
   'student-catalog': '/etudiant/catalogue',
   'student-profile': '/etudiant/profil',
   'student-certificates': '/etudiant/certificats',
@@ -307,7 +310,7 @@ export default function App() {
 
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
-    (role === 'candidate' && (activeTab === 'candidate-dashboard' || CANDIDATE_BROWSE_TABS.includes(activeTab))) ||
+    (role === 'candidate' && CANDIDATE_TABS.includes(activeTab)) ||
     (role === 'student' && STUDENT_TABS.includes(activeTab));
 
   const showPublicHeader = role === 'guest';

@@ -1,18 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
   LinkedinIcon, DownloadIcon, FilterIcon, StarIcon, CalendarIcon, SearchIcon,
-  SettingsIcon, BellIcon, SaveIcon, ClockIcon, BookOpenIcon,
-  ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon,
+  BellIcon, SaveIcon, ClockIcon, BookOpenIcon,
+  ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon, SettingsIcon,
 } from './Icons';
-import { account } from '../lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../lib/appwrite';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem,
 } from '../types';
+import { programsData } from '../data/mockData';
 
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
+// ─── Constantes ────────────────────────────────────────────────────────────────
 
 const MOCK_ENROLLMENTS: CourseEnrollment[] = [
   {
@@ -44,19 +45,10 @@ const MOCK_ENROLLMENTS: CourseEnrollment[] = [
     nextDeadline: '2026-07-25', nextLessonTitle: 'Arbitrage commercial international',
     image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80',
   },
-  {
-    id: 'enr-4', courseId: 'c-4',
-    title: 'Biostatistiques & Épidémiologie',
-    instructor: 'Dr. Claire Mensah', category: 'Santé', level: 'Intermédiaire',
-    duration: '11h 15min', totalLessons: 28, completedLessons: 0,
-    progressPercent: 0, status: 'non commencé',
-    enrolledAt: '2026-07-01',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80',
-  },
 ];
 
 const MOCK_DEADLINES: AssignmentDeadline[] = [
-  { id: 'dl-1', courseId: 'c-1', courseTitle: 'Intelligence Artificielle : Fondamentaux', assignmentTitle: 'Projet CNN — Classification d\'images', dueDate: '2026-07-20', isSubmitted: false, priority: 'high' },
+  { id: 'dl-1', courseId: 'c-1', courseTitle: 'Intelligence Artificielle : Fondamentaux', assignmentTitle: "Projet CNN — Classification d'images", dueDate: '2026-07-20', isSubmitted: false, priority: 'high' },
   { id: 'dl-2', courseId: 'c-3', courseTitle: 'Droit International des Contrats', assignmentTitle: 'Analyse de cas — Affaire Suez', dueDate: '2026-07-25', isSubmitted: false, priority: 'medium' },
   { id: 'dl-3', courseId: 'c-1', courseTitle: 'Intelligence Artificielle : Fondamentaux', assignmentTitle: 'Quiz hebdomadaire — Module 7', dueDate: '2026-07-17', isSubmitted: true, priority: 'low' },
 ];
@@ -77,16 +69,17 @@ const MOCK_CATALOG: CourseCatalogItem[] = [
 
 const MOCK_PROFILE: StudentProfile = {
   id: 'stu-1', name: 'Amina Koné', email: 'amina.kone@exemple.com',
-  bio: 'Étudiante en Master IA & Sciences des Données. Passionnée par l\'application de l\'intelligence artificielle aux enjeux de santé en Afrique.',
+  bio: "Étudiante en Master IA & Sciences des Données. Passionnée par l'application de l'intelligence artificielle aux enjeux de santé en Afrique.",
   language: 'fr', joinedAt: '2025-09-01',
 };
 
+const CATEGORIES = ['Tous', 'Tech', 'Management', 'Droit', 'Santé', 'Sciences', 'Communication'];
+const LEVELS = ['Tous niveaux', 'Débutant', 'Intermédiaire', 'Avancé'];
+const LANGUAGES_UI = [{ value: 'fr', label: 'Français' }, { value: 'en', label: 'English' }];
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const daysUntil = (isoDate: string) => {
-  const diff = new Date(isoDate).getTime() - Date.now();
-  return Math.ceil(diff / 86400000);
-};
+const daysUntil = (isoDate: string) => Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000);
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -96,7 +89,6 @@ const priorityBadge = (p: AssignmentDeadline['priority']) => {
   if (p === 'medium') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
   return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
 };
-
 const priorityLabel = (p: AssignmentDeadline['priority']) =>
   p === 'high' ? 'Urgent' : p === 'medium' ? 'Normal' : 'Faible';
 
@@ -105,13 +97,15 @@ const statusBadge = (s: CourseEnrollment['status']) => {
   if (s === 'en cours') return 'bg-brand-primary/10 text-brand-primary border-brand-primary/20';
   return 'bg-bg-primary text-text-secondary border-border-primary/40';
 };
-
 const statusLabel = (s: CourseEnrollment['status']) =>
   s === 'terminé' ? 'Terminé' : s === 'en cours' ? 'En cours' : 'Non commencé';
 
-const CATEGORIES = ['Tous', 'Tech', 'Management', 'Droit', 'Santé', 'Sciences', 'Communication'];
-const LEVELS = ['Tous niveaux', 'Débutant', 'Intermédiaire', 'Avancé'];
-const LANGUAGES_UI = [{ value: 'fr', label: 'Français' }, { value: 'en', label: 'English' }];
+const appStatusBadge = (s: string) => {
+  if (s === 'Accepted') return { cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', label: 'Admis ✓' };
+  if (s === 'Rejected') return { cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', label: 'Non retenu' };
+  if (s === 'In Review') return { cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', label: 'En examen' };
+  return { cls: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20', label: 'Nouveau' };
+};
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -124,19 +118,27 @@ interface StudentPortalProps {
   setActiveTab?: (tab: any) => void;
 }
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// ─── Composant Principal ────────────────────────────────────────────────────────
 
 export default function StudentPortal({
   onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, activeTab, setActiveTab,
 }: StudentPortalProps) {
 
-  // ── Login state ──
+  // ── Login ──
   const [email, setEmail] = useState(knownEmail || '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState(knownEmail || '');
 
-  // ── Profile state ──
+  // ── Applications réelles Appwrite ──
+  const [applications, setApplications] = useState<any[]>([]);
+  const [appsLoading, setAppsLoading] = useState(false);
+
+  // ── Profile ──
   const [profile, setProfile] = useState<StudentProfile>(MOCK_PROFILE);
   const [editProfile, setEditProfile] = useState(false);
   const [draftName, setDraftName] = useState(profile.name);
@@ -144,8 +146,9 @@ export default function StudentPortal({
   const [profileSaved, setProfileSaved] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Account settings state ──
+  // ── Paramètres ──
   const [settingsTab, setSettingsTab] = useState<'security' | 'notifications' | 'language'>('security');
+  const [mustChangePwd, setMustChangePwd] = useState(false);
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
@@ -158,10 +161,45 @@ export default function StudentPortal({
   const [selectedLang, setSelectedLang] = useState<'fr' | 'en'>(profile.language);
   const [langSaved, setLangSaved] = useState(false);
 
-  // ── Catalog state ──
+  // ── Catalogue ──
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('Tous');
   const [filterLevel, setFilterLevel] = useState('Tous niveaux');
+
+  // ── Programmes : section active ──
+  const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
+
+  // ── Charger les candidatures réelles depuis Appwrite ──
+  const loadApplications = useCallback(async () => {
+    if (!isLoggedIn || !isAppwriteDbConfigured() || !APPWRITE_CONFIG.collections.applications) return;
+    setAppsLoading(true);
+    try {
+      const res = await databases.listDocuments(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.applications,
+        [Query.equal('email', profile.email)]
+      );
+      setApplications(res.documents);
+    } catch (err) {
+      console.warn('Impossible de charger les candidatures:', err);
+    } finally {
+      setAppsLoading(false);
+    }
+  }, [isLoggedIn, profile.email]);
+
+  // ── Vérifier mustChangePassword ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    account.getPrefs().then((prefs: any) => {
+      setMustChangePwd(!!prefs?.mustChangePassword);
+      // Récupérer l'email réel
+      account.get().then((u: any) => {
+        setProfile((p) => ({ ...p, email: u.email, name: u.name || p.name }));
+        setDraftName(u.name || MOCK_PROFILE.name);
+      }).catch(() => {});
+    }).catch(() => {});
+    loadApplications();
+  }, [isLoggedIn, loadApplications]);
 
   // ── Handlers ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -174,12 +212,28 @@ export default function StudentPortal({
       onLoginSuccess();
     } catch (err: any) {
       if (err.type === 'project_paused' || err.code === 403) {
-        setLoginError('Le serveur est actuellement suspendu. Veuillez le restaurer depuis la console Appwrite.');
+        setLoginError('Le serveur est suspendu. Veuillez le restaurer depuis la console Appwrite.');
       } else {
         setLoginError('Identifiants incorrects ou serveur inaccessible.');
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    try {
+      await account.createRecovery({
+        email: resetEmail,
+        url: `${window.location.origin}/etudiant/reinitialisation`,
+      });
+      setResetSent(true);
+    } catch (err: any) {
+      setLoginError("Impossible d'envoyer l'e-mail de réinitialisation. Vérifiez l'adresse saisie.");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -193,12 +247,14 @@ export default function StudentPortal({
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwdError(''); setPwdSuccess('');
-    if (newPwd.length < 8) { setPwdError('Le mot de passe doit comporter au moins 8 caractères.'); return; }
-    if (newPwd !== confirmPwd) { setPwdError('Les deux mots de passe ne correspondent pas.'); return; }
+    if (newPwd.length < 8) { setPwdError('Min. 8 caractères requis.'); return; }
+    if (newPwd !== confirmPwd) { setPwdError('Les mots de passe ne correspondent pas.'); return; }
     setIsUpdatingPwd(true);
     try {
       await account.updatePassword({ password: newPwd, oldPassword: currentPwd });
-      setPwdSuccess('Mot de passe modifié avec succès.');
+      await account.updatePrefs({ mustChangePassword: false });
+      setMustChangePwd(false);
+      setPwdSuccess('Mot de passe modifié avec succès !');
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
     } catch (err: any) {
       if (err?.code === 401) setPwdError('Mot de passe actuel incorrect.');
@@ -214,12 +270,11 @@ export default function StudentPortal({
     setTimeout(() => setLangSaved(false), 3000);
   };
 
-  // ── Derived data ──
+  // ── Données dérivées ──
   const inProgress = MOCK_ENROLLMENTS.filter((e) => e.status === 'en cours');
   const completed = MOCK_ENROLLMENTS.filter((e) => e.status === 'terminé');
-  const upcomingDeadlines = MOCK_DEADLINES.filter((d) => !d.isSubmitted).sort(
-    (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-  );
+  const upcomingDeadlines = MOCK_DEADLINES.filter((d) => !d.isSubmitted)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
   const filteredCatalog = MOCK_CATALOG.filter((c) => {
     const matchQ = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -230,10 +285,61 @@ export default function StudentPortal({
     return matchQ && matchCat && matchLvl;
   });
 
+  // Programmes IDLA complets depuis mockData (pour la section "Explorer")
+  const allPrograms = programsData;
+
   // ════════════════════════════════════════════════════════════════════════════
   // LOGIN VIEW
   // ════════════════════════════════════════════════════════════════════════════
   if (!isLoggedIn) {
+    if (showReset) {
+      return (
+        <div className="bg-bg-primary min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden text-text-primary">
+          <div className="absolute inset-0 opacity-10 pointer-events-none z-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-primary blur-[150px] rounded-full" />
+          </div>
+          <div className="max-w-md w-full bg-bg-secondary rounded-2xl border border-border-primary p-8 shadow-2xl relative z-10 space-y-6">
+            <div className="text-center space-y-2">
+              <button onClick={() => setShowReset(false)} className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-primary transition-colors mb-4 border border-border-primary px-3 py-1 rounded cursor-pointer">
+                <ArrowLeftIcon className="w-3 h-3" /> Retour à la connexion
+              </button>
+              <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center text-2xl mx-auto">🔑</div>
+              <h1 className="font-sans font-bold text-2xl text-text-primary">Mot de passe oublié</h1>
+              <p className="text-text-secondary text-xs">Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
+            </div>
+            {resetSent ? (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-400 text-sm font-semibold text-center space-y-2">
+                <CheckCircle2Icon className="w-8 h-8 mx-auto" />
+                <p>E-mail envoyé ! Vérifiez votre boîte mail et cliquez sur le lien reçu.</p>
+                <button onClick={() => { setShowReset(false); setResetSent(false); }} className="text-xs text-brand-primary hover:underline cursor-pointer">Retour à la connexion</button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                {loginError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-700 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircleIcon className="w-4 h-4 shrink-0" /><span>{loginError}</span>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Adresse email</label>
+                  <div className="relative">
+                    <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
+                    <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Votre adresse email"
+                      className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-primary outline-none text-text-primary font-medium" required />
+                  </div>
+                </div>
+                <button type="submit" disabled={resetLoading}
+                  className="w-full bg-brand-primary hover:bg-brand-hover text-white py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
+                  {resetLoading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-bg-primary min-h-screen flex items-center justify-center py-12 px-6 relative overflow-hidden text-text-primary">
         <div className="absolute inset-0 opacity-10 pointer-events-none z-0">
@@ -246,7 +352,7 @@ export default function StudentPortal({
             </button>
             <div className="w-12 h-12 bg-brand-light text-brand-primary rounded-xl flex items-center justify-center font-bold text-2xl mx-auto shadow-sm">📚</div>
             <h1 className="font-sans font-bold text-2xl text-text-primary">Espace Étudiant</h1>
-            <p className="text-text-secondary text-xs">Accédez à vos cours, certificats et progression</p>
+            <p className="text-text-secondary text-xs">Accédez à vos cours, candidatures et progression</p>
           </div>
           {loginError && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-700 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
@@ -265,7 +371,8 @@ export default function StudentPortal({
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Mot de passe</label>
-                <a href="#" className="text-[10px] text-brand-primary hover:underline font-bold">Oublié ?</a>
+                <button type="button" onClick={() => { setResetEmail(email); setShowReset(true); setLoginError(''); }}
+                  className="text-[10px] text-brand-primary hover:underline font-bold cursor-pointer">Oublié ?</button>
               </div>
               <div className="relative">
                 <LockIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
@@ -287,13 +394,34 @@ export default function StudentPortal({
     );
   }
 
+  // ── Banner mustChangePassword (affiché sur toutes les vues authentifiées) ──
+  const MustChangePwdBanner = mustChangePwd ? (
+    <div className="bg-amber-500/10 border-2 border-amber-500 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+          <LockIcon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="font-bold text-sm text-amber-700 dark:text-amber-400">⚠️ Mot de passe temporaire actif</p>
+          <p className="text-xs text-text-secondary mt-0.5">Pour sécuriser votre compte, modifiez votre mot de passe dès maintenant.</p>
+        </div>
+      </div>
+      <button onClick={() => { setSettingsTab('security'); setActiveTab && setActiveTab('student-settings'); }}
+        className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5">
+        <LockIcon className="w-3.5 h-3.5" /> Modifier maintenant
+      </button>
+    </div>
+  ) : null;
+
   // ════════════════════════════════════════════════════════════════════════════
   // DASHBOARD VIEW
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-dashboard') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-[1440px] mx-auto space-y-8">
+        <div className="max-w-[1440px] mx-auto space-y-6">
+
+          {MustChangePwdBanner}
 
           {/* Welcome banner */}
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -305,12 +433,16 @@ export default function StudentPortal({
               </div>
               <div>
                 <h1 className="font-sans font-bold text-2xl text-text-primary">Bonjour, {profile.name.split(' ')[0]} !</h1>
-                <p className="text-sm text-text-secondary mt-0.5">Vous avez <span className="text-brand-primary font-bold">{inProgress.length} cours</span> en cours et <span className="text-rose-500 font-bold">{upcomingDeadlines.length} échéance{upcomingDeadlines.length !== 1 ? 's' : ''}</span> à venir.</p>
+                <p className="text-sm text-text-secondary mt-0.5">
+                  <span className="text-brand-primary font-bold">{inProgress.length} cours</span> en cours •{' '}
+                  <span className="text-amber-500 font-bold">{applications.length} candidature{applications.length !== 1 ? 's' : ''}</span> suivies
+                </p>
               </div>
             </div>
             <div className="flex gap-3 flex-wrap">
-              <button onClick={() => setActiveTab && setActiveTab('student-catalog')} className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer">
-                <SearchIcon className="w-3.5 h-3.5" /> Explorer le catalogue
+              <button onClick={() => setActiveTab && setActiveTab('student-programs')}
+                className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer">
+                <BookOpenIcon className="w-3.5 h-3.5" /> Mes programmes
               </button>
             </div>
           </div>
@@ -318,12 +450,13 @@ export default function StudentPortal({
           {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Cours inscrits', value: MOCK_ENROLLMENTS.length, icon: BookOpenIcon, color: 'text-brand-primary', bg: 'bg-brand-light' },
-              { label: 'En cours', value: inProgress.length, icon: PlayCircleIcon, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-              { label: 'Terminés', value: completed.length, icon: CheckCircle2Icon, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
-              { label: 'Certificats', value: MOCK_CERTIFICATES.length, icon: AwardIcon, color: 'text-purple-600', bg: 'bg-purple-500/10' },
-            ].map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm flex items-center gap-4">
+              { label: 'Cours inscrits', value: MOCK_ENROLLMENTS.length, icon: BookOpenIcon, color: 'text-brand-primary', bg: 'bg-brand-light', onClick: () => setActiveTab && setActiveTab('student-programs') },
+              { label: 'En cours', value: inProgress.length, icon: PlayCircleIcon, color: 'text-amber-600', bg: 'bg-amber-500/10', onClick: () => {} },
+              { label: 'Terminés', value: completed.length, icon: CheckCircle2Icon, color: 'text-emerald-600', bg: 'bg-emerald-500/10', onClick: () => {} },
+              { label: 'Certificats', value: MOCK_CERTIFICATES.length, icon: AwardIcon, color: 'text-purple-600', bg: 'bg-purple-500/10', onClick: () => setActiveTab && setActiveTab('student-certificates') },
+            ].map(({ label, value, icon: Icon, color, bg, onClick }) => (
+              <button key={label} onClick={onClick}
+                className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow text-left cursor-pointer">
                 <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
                   <Icon className={`w-5 h-5 ${color}`} />
                 </div>
@@ -331,72 +464,101 @@ export default function StudentPortal({
                   <p className="text-2xl font-bold text-text-primary">{value}</p>
                   <p className="text-xs text-text-secondary">{label}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
-          {/* Continue learning + Deadlines */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* In-progress courses */}
-            <div className="lg:col-span-2 space-y-4">
-              <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Reprendre un cours</h2>
-              <div className="space-y-4">
-                {inProgress.map((enr) => (
-                  <div key={enr.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row">
-                    <div className="w-full sm:w-40 h-36 sm:h-auto shrink-0 overflow-hidden">
-                      <img src={enr.image} alt={enr.title} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-5 flex flex-col justify-between gap-3 flex-1">
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-sans font-bold text-sm text-text-primary line-clamp-2">{enr.title}</h3>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${statusBadge(enr.status)}`}>{statusLabel(enr.status)}</span>
-                        </div>
-                        <p className="text-xs text-text-secondary">{enr.instructor}</p>
-                        {enr.nextLessonTitle && (
-                          <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
-                            <PlayCircleIcon className="w-3 h-3 text-brand-primary shrink-0" />
-                            <span className="text-brand-primary font-semibold line-clamp-1">{enr.nextLessonTitle}</span>
-                          </p>
-                        )}
+          {/* Candidatures actives depuis Appwrite */}
+          {applications.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Mes Candidatures</h2>
+                <button onClick={() => setActiveTab && setActiveTab('student-programs')} className="text-xs text-brand-primary hover:underline font-bold cursor-pointer flex items-center gap-1">
+                  Voir tout <ChevronRightIcon className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {applications.slice(0, 3).map((app) => {
+                  const badge = appStatusBadge(app.status);
+                  return (
+                    <div key={app.$id} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="font-bold text-sm text-text-primary line-clamp-2 flex-1">{app.program}</h3>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${badge.cls}`}>{badge.label}</span>
                       </div>
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[10px] text-text-secondary">
-                          <span>{enr.completedLessons}/{enr.totalLessons} leçons</span>
-                          <span className="font-bold text-brand-primary">{enr.progressPercent}%</span>
+                      <p className="text-xs text-text-secondary">
+                        Déposé le {new Date(app.dateApplied || app.$createdAt).toLocaleDateString('fr-FR')}
+                      </p>
+                      {app.status === 'Accepted' && (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                          <CheckCircle2Icon className="w-3.5 h-3.5" /> Félicitations ! Vous êtes admis(e).
                         </div>
-                        <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
-                          <div className="h-full bg-brand-primary rounded-full transition-all" style={{ width: `${enr.progressPercent}%` }} />
-                        </div>
-                      </div>
-                      <button className="self-start inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer">
-                        <PlayCircleIcon className="w-3.5 h-3.5" /> Continuer
-                      </button>
+                      )}
                     </div>
-                  </div>
-                ))}
-                {inProgress.length === 0 && (
-                  <div className="bg-bg-secondary border border-border-primary rounded-2xl p-8 text-center">
-                    <p className="text-sm text-text-secondary italic">Aucun cours en cours pour l'instant.</p>
-                    <button onClick={() => setActiveTab && setActiveTab('student-catalog')} className="mt-4 inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
-                      Explorer le catalogue
-                    </button>
-                  </div>
-                )}
+                  );
+                })}
               </div>
             </div>
+          )}
 
-            {/* Upcoming deadlines */}
+          {/* Reprendre un cours */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Reprendre un cours</h2>
+              {inProgress.length === 0 ? (
+                <div className="bg-bg-secondary border border-border-primary rounded-2xl p-8 text-center">
+                  <p className="text-sm text-text-secondary italic">Aucun cours en cours.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {inProgress.map((enr) => (
+                    <div key={enr.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row">
+                      <div className="w-full sm:w-36 h-32 sm:h-auto shrink-0 overflow-hidden">
+                        <img src={enr.image} alt={enr.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-5 flex flex-col justify-between gap-3 flex-1">
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h3 className="font-bold text-sm text-text-primary line-clamp-2">{enr.title}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${statusBadge(enr.status)}`}>{statusLabel(enr.status)}</span>
+                          </div>
+                          <p className="text-xs text-text-secondary">{enr.instructor}</p>
+                          {enr.nextLessonTitle && (
+                            <p className="text-xs mt-1 flex items-center gap-1">
+                              <PlayCircleIcon className="w-3 h-3 text-brand-primary shrink-0" />
+                              <span className="text-brand-primary font-semibold line-clamp-1">{enr.nextLessonTitle}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-[10px] text-text-secondary">
+                            <span>{enr.completedLessons}/{enr.totalLessons} leçons</span>
+                            <span className="font-bold text-brand-primary">{enr.progressPercent}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
+                            <div className="h-full bg-brand-primary rounded-full" style={{ width: `${enr.progressPercent}%` }} />
+                          </div>
+                        </div>
+                        <button className="self-start inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
+                          <PlayCircleIcon className="w-3.5 h-3.5" /> Continuer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Échéances */}
             <div className="space-y-4">
-              <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Échéances à venir</h2>
+              <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Échéances</h2>
               <div className="space-y-3">
-                {upcomingDeadlines.length === 0 && (
+                {upcomingDeadlines.length === 0 ? (
                   <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 text-center">
                     <CheckCircle2Icon className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                     <p className="text-sm text-text-secondary">Tout est à jour !</p>
                   </div>
-                )}
-                {upcomingDeadlines.map((dl) => {
+                ) : upcomingDeadlines.map((dl) => {
                   const days = daysUntil(dl.dueDate);
                   return (
                     <div key={dl.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-4 shadow-sm space-y-2">
@@ -408,7 +570,7 @@ export default function StudentPortal({
                       <div className="flex items-center gap-1.5 text-[11px]">
                         <CalendarIcon className="w-3 h-3 text-text-secondary" />
                         <span className={days <= 3 ? 'text-rose-500 font-bold' : 'text-text-secondary'}>
-                          {days <= 0 ? 'Aujourd\'hui' : `Dans ${days} jour${days > 1 ? 's' : ''}`} — {fmtDate(dl.dueDate)}
+                          {days <= 0 ? "Aujourd'hui" : `Dans ${days} jour${days > 1 ? 's' : ''}`} — {fmtDate(dl.dueDate)}
                         </span>
                       </div>
                     </div>
@@ -417,92 +579,267 @@ export default function StudentPortal({
               </div>
             </div>
           </div>
-
-          {/* All enrollments */}
-          <div className="space-y-4">
-            <h2 className="font-sans font-bold text-base text-text-primary uppercase tracking-wider">Tous mes cours</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              {MOCK_ENROLLMENTS.map((enr) => (
-                <div key={enr.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                  <div className="h-36 overflow-hidden"><img src={enr.image} alt={enr.title} className="w-full h-full object-cover" /></div>
-                  <div className="p-4 flex flex-col gap-2 flex-1">
-                    <div className="flex justify-between items-start gap-2">
-                      <h3 className="font-sans font-bold text-xs text-text-primary line-clamp-2 flex-1">{enr.title}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${statusBadge(enr.status)}`}>{statusLabel(enr.status)}</span>
-                    </div>
-                    <p className="text-[11px] text-text-secondary">{enr.instructor}</p>
-                    <div className="mt-auto space-y-1">
-                      <div className="flex justify-between text-[10px] text-text-secondary">
-                        <span>{enr.completedLessons}/{enr.totalLessons} leçons</span>
-                        <span className="font-bold">{enr.progressPercent}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
-                        <div className="h-full bg-brand-primary rounded-full" style={{ width: `${enr.progressPercent}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
       </div>
     );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // CATALOG VIEW
+  // MES PROGRAMMES VIEW (candidatures réelles + explorer catalogue)
+  // ════════════════════════════════════════════════════════════════════════════
+  if (activeTab === 'student-programs') {
+    const STEP: Record<string, number> = { New: 1, 'In Review': 2, Accepted: 4, Rejected: 2 };
+
+    return (
+      <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
+        <div className="max-w-[1440px] mx-auto space-y-6">
+
+          {MustChangePwdBanner}
+
+          <div>
+            <h1 className="font-sans font-bold text-2xl text-text-primary">Mes Programmes</h1>
+            <p className="text-sm text-text-secondary mt-1">Suivez vos candidatures et explorez de nouvelles formations.</p>
+          </div>
+
+          {/* Onglets de section */}
+          <div className="flex gap-1 bg-bg-secondary border border-border-primary p-1 rounded-xl w-fit">
+            {([
+              ['mes-candidatures', 'Mes candidatures', `(${applications.length})`],
+              ['explorer', 'Explorer d\'autres programmes', ''],
+            ] as const).map(([key, label, count]) => (
+              <button key={key} onClick={() => setProgSection(key)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${progSection === key ? 'bg-brand-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}>
+                {label} {count && <span className="opacity-70">{count}</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Section : Mes candidatures ── */}
+          {progSection === 'mes-candidatures' && (
+            <div className="space-y-4">
+              {appsLoading ? (
+                <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center">
+                  <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm text-text-secondary">Chargement de vos candidatures…</p>
+                </div>
+              ) : applications.length === 0 ? (
+                <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-4">
+                  <BookOpenIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
+                  <p className="text-text-secondary text-sm">Vous n'avez pas encore soumis de candidature.</p>
+                  <button onClick={() => setProgSection('explorer')}
+                    className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg cursor-pointer">
+                    Explorer les programmes
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {applications.map((app) => {
+                    const badge = appStatusBadge(app.status || 'New');
+                    const step = STEP[app.status] ?? 1;
+                    const steps = [
+                      { n: 1, label: 'Déposé' },
+                      { n: 2, label: 'En examen' },
+                      { n: 3, label: 'Entretien' },
+                      { n: 4, label: 'Décision' },
+                    ];
+                    return (
+                      <div key={app.$id} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-5">
+                        {/* Header */}
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-base text-text-primary line-clamp-2">{app.program}</h3>
+                            <p className="text-xs text-text-secondary mt-1">
+                              Déposé le {new Date(app.dateApplied || app.$createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold border shrink-0 ${badge.cls}`}>{badge.label}</span>
+                        </div>
+
+                        {/* Stepper */}
+                        <div className="grid grid-cols-4 gap-1">
+                          {steps.map(({ n, label }) => {
+                            const isDone = app.status === 'Accepted' || (app.status !== 'Rejected' && n < step) || (app.status === 'Rejected' && n <= step);
+                            const isActive = app.status !== 'Accepted' && n === step;
+                            return (
+                              <div key={n} className={`text-center space-y-1.5 ${isDone || isActive ? '' : 'opacity-40'}`}>
+                                <div className={`h-1 rounded-full ${isDone ? 'bg-brand-primary' : isActive ? 'bg-amber-500' : 'bg-border-primary'}`} />
+                                <div className={`w-5 h-5 rounded-full mx-auto flex items-center justify-center text-[9px] font-bold border-2 ${isDone ? 'bg-brand-primary border-brand-primary text-white' : isActive ? 'border-amber-500 text-amber-600 bg-amber-500/10' : 'border-border-primary text-text-secondary'}`}>
+                                  {isDone ? '✓' : n}
+                                </div>
+                                <p className="text-[9px] text-text-secondary font-semibold leading-tight">{label}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Message statut */}
+                        {app.status === 'Accepted' && (
+                          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
+                            <CheckCircle2Icon className="w-4 h-4 shrink-0" />
+                            Félicitations ! Votre candidature a été acceptée. Vous serez contacté(e) prochainement.
+                          </div>
+                        )}
+                        {app.status === 'Rejected' && (
+                          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+                            <AlertCircleIcon className="w-4 h-4 shrink-0" />
+                            Votre candidature n'a pas été retenue pour cette session. N'hésitez pas à postuler à nouveau.
+                          </div>
+                        )}
+                        {(app.status === 'New' || app.status === 'In Review') && (
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                            <ClockIcon className="w-4 h-4 shrink-0" />
+                            Votre dossier est en cours d'évaluation. Nous vous informerons dès qu'une décision sera prise.
+                          </div>
+                        )}
+
+                        {/* Infos candidat */}
+                        <div className="grid grid-cols-2 gap-3 text-xs border-t border-border-primary/40 pt-4">
+                          {app.highestDegree && (
+                            <div>
+                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Diplôme</p>
+                              <p className="text-text-primary font-bold mt-0.5">{app.highestDegree}</p>
+                            </div>
+                          )}
+                          {app.graduationYear && (
+                            <div>
+                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Année d'obtention</p>
+                              <p className="text-text-primary font-bold mt-0.5">{app.graduationYear}</p>
+                            </div>
+                          )}
+                          {app.nationality && (
+                            <div>
+                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Nationalité</p>
+                              <p className="text-text-primary font-bold mt-0.5">{app.nationality}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Dossier n°</p>
+                            <p className="text-text-primary font-bold font-mono mt-0.5">#{app.$id.slice(-6).toUpperCase()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Section : Explorer d'autres programmes ── */}
+          {progSection === 'explorer' && (
+            <div className="space-y-6">
+              {/* Barre de recherche */}
+              <div className="relative">
+                <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un programme…"
+                  className="w-full bg-bg-secondary border border-border-primary rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary text-text-primary" />
+              </div>
+
+              {/* Filtres catégorie */}
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((cat) => (
+                  <button key={cat} onClick={() => setFilterCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Grille programmes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {allPrograms
+                  .filter((p) => {
+                    const q = searchQuery.toLowerCase();
+                    const matchQ = !q || p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
+                    const matchCat = filterCategory === 'Tous' || p.category === filterCategory;
+                    return matchQ && matchCat;
+                  })
+                  .map((prog) => {
+                    const alreadyApplied = applications.some((a) => a.program === prog.title);
+                    return (
+                      <div key={prog.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+                        <div className="relative h-40 overflow-hidden">
+                          <img src={prog.image} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <div className="absolute top-3 left-3 flex gap-1.5">
+                            {prog.isNew && <span className="bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Nouveau</span>}
+                          </div>
+                          {alreadyApplied && (
+                            <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle2Icon className="w-3 h-3" /> Candidature déposée
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-[10px] font-bold text-brand-primary bg-brand-light px-2 py-0.5 rounded-full">{prog.category}</span>
+                              <span className="text-[10px] text-text-secondary border border-border-primary px-2 py-0.5 rounded-full">{prog.type}</span>
+                            </div>
+                            <h3 className="font-bold text-sm text-text-primary line-clamp-2">{prog.title}</h3>
+                            <p className="text-xs text-text-secondary mt-1 line-clamp-2">{prog.description}</p>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-text-secondary mt-auto">
+                            <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{prog.duration}</span>
+                          </div>
+                          <button onClick={onBackToHome}
+                            className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${alreadyApplied ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
+                            {alreadyApplied ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Candidature soumise</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {allPrograms.filter((p) => filterCategory === 'Tous' || p.category === filterCategory).length === 0 && (
+                <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center">
+                  <p className="text-sm text-text-secondary">Aucun programme dans cette catégorie.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // CATALOGUE VIEW (cours en ligne)
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-catalog') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-[1440px] mx-auto space-y-8">
-
+        <div className="max-w-[1440px] mx-auto space-y-6">
+          {MustChangePwdBanner}
           <div>
             <h1 className="font-sans font-bold text-2xl text-text-primary">Catalogue de Cours</h1>
-            <p className="text-sm text-text-secondary mt-1">Explorez notre offre de formations et inscrivez-vous à de nouveaux cours.</p>
+            <p className="text-sm text-text-secondary mt-1">Explorez notre offre de formations en ligne.</p>
           </div>
-
-          {/* Search + Filters */}
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4">
             <div className="relative">
               <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
-              <input
-                type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher un cours, instructeur, tag…"
-                className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-primary text-text-primary"
-              />
+                className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-primary text-text-primary" />
             </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-2">
-                <FilterIcon className="w-4 h-4 text-text-secondary" />
-                <span className="text-xs text-text-secondary font-semibold">Domaine :</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.map((cat) => (
-                    <button key={cat} onClick={() => setFilterCategory(cat)}
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-text-secondary font-semibold">Niveau :</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {LEVELS.map((lvl) => (
-                    <button key={lvl} onClick={() => setFilterLevel(lvl)}
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterLevel === lvl ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
-                      {lvl}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterIcon className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
+              {CATEGORIES.map((cat) => (
+                <button key={cat} onClick={() => setFilterCategory(cat)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
+                  {cat}
+                </button>
+              ))}
+              {LEVELS.map((lvl) => (
+                <button key={lvl} onClick={() => setFilterLevel(lvl)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterLevel === lvl ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
+                  {lvl}
+                </button>
+              ))}
             </div>
             <p className="text-xs text-text-secondary">{filteredCatalog.length} cours trouvé{filteredCatalog.length !== 1 ? 's' : ''}</p>
           </div>
-
-          {/* Course grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredCatalog.map((course) => {
               const isEnrolled = MOCK_ENROLLMENTS.some((e) => e.courseId === course.id);
@@ -526,11 +863,11 @@ export default function StudentPortal({
                         <span className="text-[10px] font-bold text-brand-primary bg-brand-light px-2 py-0.5 rounded-full">{course.category}</span>
                         <span className="text-[10px] text-text-secondary border border-border-primary px-2 py-0.5 rounded-full">{course.level}</span>
                       </div>
-                      <h3 className="font-sans font-bold text-sm text-text-primary line-clamp-2">{course.title}</h3>
+                      <h3 className="font-bold text-sm text-text-primary line-clamp-2">{course.title}</h3>
                       <p className="text-xs text-text-secondary mt-1">{course.instructor}</p>
                     </div>
                     <div className="flex items-center gap-4 text-[11px] text-text-secondary">
-                      <span className="flex items-center gap-1"><StarIcon className="w-3 h-3 text-amber-500 fill-amber-500" /><span className="font-bold text-text-primary">{course.rating}</span></span>
+                      <span className="flex items-center gap-1"><StarIcon className="w-3 h-3 text-amber-500" /><span className="font-bold text-text-primary">{course.rating}</span></span>
                       <span className="flex items-center gap-1"><UsersIcon className="w-3 h-3" />{course.totalStudents.toLocaleString('fr-FR')}</span>
                       <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{course.duration}</span>
                     </div>
@@ -550,10 +887,7 @@ export default function StudentPortal({
               <div className="col-span-full bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center">
                 <SearchIcon className="w-10 h-10 text-text-secondary/40 mx-auto mb-3" />
                 <p className="text-sm text-text-secondary">Aucun cours ne correspond à votre recherche.</p>
-                <button onClick={() => { setSearchQuery(''); setFilterCategory('Tous'); setFilterLevel('Tous niveaux'); }}
-                  className="mt-4 text-brand-primary text-xs font-bold hover:underline cursor-pointer">
-                  Réinitialiser les filtres
-                </button>
+                <button onClick={() => { setSearchQuery(''); setFilterCategory('Tous'); setFilterLevel('Tous niveaux'); }} className="mt-4 text-brand-primary text-xs font-bold hover:underline cursor-pointer">Réinitialiser</button>
               </div>
             )}
           </div>
@@ -563,173 +897,128 @@ export default function StudentPortal({
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // PROFILE VIEW
+  // PROFIL VIEW
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-profile') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-3xl mx-auto space-y-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {MustChangePwdBanner}
+          <div><h1 className="font-sans font-bold text-2xl text-text-primary">Mon Profil</h1></div>
 
-          <div>
-            <h1 className="font-sans font-bold text-2xl text-text-primary">Mon Profil</h1>
-            <p className="text-sm text-text-secondary mt-1">Gérez votre identité publique sur la plateforme.</p>
-          </div>
-
-          {/* Avatar + identity */}
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-              {/* Avatar */}
               <div className="relative shrink-0">
                 <div className="w-24 h-24 rounded-2xl bg-brand-light border border-brand-primary/30 flex items-center justify-center overflow-hidden">
-                  {profile.avatarUrl
-                    ? <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" />
-                    : <span className="text-4xl font-bold text-brand-primary">{profile.name.charAt(0)}</span>}
+                  {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover" /> : <span className="text-4xl font-bold text-brand-primary">{profile.name.charAt(0)}</span>}
                 </div>
                 <button onClick={() => avatarInputRef.current?.click()}
-                  className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-primary hover:bg-brand-hover text-white rounded-full flex items-center justify-center shadow-md cursor-pointer transition-colors">
+                  className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-primary hover:bg-brand-hover text-white rounded-full flex items-center justify-center shadow-md cursor-pointer">
                   <CameraIcon className="w-3.5 h-3.5" />
                 </button>
                 <input ref={avatarInputRef} type="file" className="hidden" accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) setProfile((p) => ({ ...p, avatarUrl: URL.createObjectURL(f) }));
-                  }} />
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) setProfile((p) => ({ ...p, avatarUrl: URL.createObjectURL(f) })); }} />
               </div>
-
-              {/* Identity */}
               <div className="flex-1 space-y-1">
                 {editProfile ? (
                   <input value={draftName} onChange={(e) => setDraftName(e.target.value)}
                     className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-lg font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand-primary" />
-                ) : (
-                  <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>
-                )}
+                ) : <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>}
                 <p className="text-sm text-text-secondary">{profile.email}</p>
-                <p className="text-xs text-text-secondary">Inscrit depuis le {fmtDate(profile.joinedAt)}</p>
+                <p className="text-xs text-text-secondary">Inscrit depuis {fmtDate(profile.joinedAt)}</p>
               </div>
-
               <button onClick={() => { setEditProfile(!editProfile); setDraftName(profile.name); setDraftBio(profile.bio); }}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-primary hover:text-brand-hover border border-brand-primary/30 hover:border-brand-primary px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0">
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-primary border border-brand-primary/30 hover:border-brand-primary px-3 py-1.5 rounded-lg cursor-pointer shrink-0">
                 <PencilIcon className="w-3.5 h-3.5" /> {editProfile ? 'Annuler' : 'Modifier'}
               </button>
             </div>
           </div>
 
-          {/* Bio */}
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="font-sans font-bold text-sm text-text-primary uppercase tracking-wider">Biographie</h3>
+            <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Biographie</h3>
             {editProfile ? (
               <textarea value={draftBio} onChange={(e) => setDraftBio(e.target.value)} rows={4}
-                placeholder="Parlez-nous de vous, de vos objectifs et de vos centres d'intérêt…"
                 className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:ring-2 focus:ring-brand-primary resize-none" />
-            ) : (
-              <p className="text-sm text-text-secondary leading-relaxed">{profile.bio || 'Aucune biographie ajoutée.'}</p>
-            )}
+            ) : <p className="text-sm text-text-secondary leading-relaxed">{profile.bio || 'Aucune biographie.'}</p>}
             {editProfile && (
-              <div className="flex items-center gap-3">
-                <button onClick={handleSaveProfile}
-                  className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer">
-                  <SaveIcon className="w-3.5 h-3.5" /> Enregistrer les modifications
-                </button>
-                {profileSaved && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Profil mis à jour</span>}
-              </div>
+              <button onClick={handleSaveProfile} className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg cursor-pointer">
+                <SaveIcon className="w-3.5 h-3.5" /> Enregistrer
+              </button>
             )}
-            {!editProfile && profileSaved && (
-              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Profil mis à jour</span>
-            )}
+            {profileSaved && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Profil mis à jour</span>}
           </div>
 
-          {/* Certificates preview */}
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-sans font-bold text-sm text-text-primary uppercase tracking-wider">Certificats obtenus</h3>
-              <button onClick={() => setActiveTab && setActiveTab('student-certificates')}
-                className="text-xs text-brand-primary hover:underline font-bold cursor-pointer flex items-center gap-1">
+              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Certificats</h3>
+              <button onClick={() => setActiveTab && setActiveTab('student-certificates')} className="text-xs text-brand-primary hover:underline font-bold cursor-pointer flex items-center gap-1">
                 Voir tous <ChevronRightIcon className="w-3 h-3" />
               </button>
             </div>
-            {MOCK_CERTIFICATES.length === 0
-              ? <p className="text-sm text-text-secondary italic">Aucun certificat pour le moment.</p>
-              : <div className="flex flex-wrap gap-3">
-                  {MOCK_CERTIFICATES.map((cert) => (
-                    <div key={cert.id} className="flex items-center gap-2 bg-bg-primary border border-border-primary rounded-xl px-4 py-2.5">
-                      <AwardIcon className="w-4 h-4 text-amber-500" />
-                      <div>
-                        <p className="text-xs font-bold text-text-primary line-clamp-1">{cert.courseTitle}</p>
-                        <p className="text-[10px] text-text-secondary">{fmtDate(cert.issueDate)}</p>
-                      </div>
+            {MOCK_CERTIFICATES.length === 0 ? <p className="text-sm text-text-secondary italic">Aucun certificat pour le moment.</p> : (
+              <div className="flex flex-wrap gap-3">
+                {MOCK_CERTIFICATES.map((cert) => (
+                  <div key={cert.id} className="flex items-center gap-2 bg-bg-primary border border-border-primary rounded-xl px-4 py-2.5">
+                    <AwardIcon className="w-4 h-4 text-amber-500" />
+                    <div>
+                      <p className="text-xs font-bold text-text-primary line-clamp-1">{cert.courseTitle}</p>
+                      <p className="text-[10px] text-text-secondary">{fmtDate(cert.issueDate)}</p>
                     </div>
-                  ))}
-                </div>
-            }
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
         </div>
       </div>
     );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // CERTIFICATES VIEW
+  // CERTIFICATS VIEW
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-certificates') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-[1440px] mx-auto space-y-8">
-
-          <div>
-            <h1 className="font-sans font-bold text-2xl text-text-primary">Mes Certificats</h1>
-            <p className="text-sm text-text-secondary mt-1">Téléchargez vos certificats ou partagez-les directement sur LinkedIn.</p>
+        <div className="max-w-[1440px] mx-auto space-y-6">
+          {MustChangePwdBanner}
+          <div><h1 className="font-sans font-bold text-2xl text-text-primary">Mes Certificats</h1>
+            <p className="text-sm text-text-secondary mt-1">Téléchargez ou partagez vos certificats.</p>
           </div>
-
           {MOCK_CERTIFICATES.length === 0 ? (
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-4">
               <AwardIcon className="w-14 h-14 text-text-secondary/30 mx-auto" />
-              <p className="text-text-secondary text-sm">Vous n'avez pas encore obtenu de certificat.</p>
-              <p className="text-text-secondary/60 text-xs">Terminez un cours pour recevoir votre certificat de réussite.</p>
-              <button onClick={() => setActiveTab && setActiveTab('student-catalog')}
-                className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer">
-                Explorer le catalogue
-              </button>
+              <p className="text-text-secondary text-sm">Aucun certificat pour l'instant.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {MOCK_CERTIFICATES.map((cert) => (
-                <div key={cert.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                  {/* Certificate card visual */}
+                <div key={cert.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md flex flex-col">
                   <div className="bg-gradient-to-br from-brand-primary/20 via-brand-light to-purple-500/10 p-8 flex flex-col items-center text-center border-b border-border-primary space-y-3">
                     <div className="w-16 h-16 bg-amber-500/10 border-2 border-amber-400/40 rounded-full flex items-center justify-center">
                       <AwardIcon className="w-8 h-8 text-amber-500" />
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Certificat de Réussite</p>
-                      <h3 className="font-sans font-bold text-base text-text-primary leading-tight">{cert.courseTitle}</h3>
+                      <h3 className="font-bold text-base text-text-primary leading-tight">{cert.courseTitle}</h3>
                       <p className="text-xs text-text-secondary mt-1">{cert.instructor}</p>
                     </div>
-                    <div className="bg-bg-secondary/60 border border-border-primary/50 rounded-lg px-3 py-1.5 text-[10px] font-mono text-text-secondary">
-                      {cert.credentialId}
-                    </div>
+                    <div className="bg-bg-secondary/60 border border-border-primary/50 rounded-lg px-3 py-1.5 text-[10px] font-mono text-text-secondary">{cert.credentialId}</div>
                   </div>
-
-                  {/* Meta + actions */}
                   <div className="p-5 space-y-4">
                     <div className="flex justify-between items-center text-xs text-text-secondary">
-                      <span className="flex items-center gap-1"><CalendarIcon className="w-3.5 h-3.5" /> Délivré le {fmtDate(cert.issueDate)}</span>
+                      <span className="flex items-center gap-1"><CalendarIcon className="w-3.5 h-3.5" /> {fmtDate(cert.issueDate)}</span>
                       <span className="bg-brand-light text-brand-primary font-bold px-2 py-0.5 rounded-full text-[10px]">{cert.category}</span>
                     </div>
-
                     <div className="flex gap-2">
-                      <button className="flex-1 flex items-center justify-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold py-2.5 rounded-lg transition-colors cursor-pointer">
-                        <DownloadIcon className="w-3.5 h-3.5" /> Télécharger PDF
+                      <button className="flex-1 flex items-center justify-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold py-2.5 rounded-lg cursor-pointer">
+                        <DownloadIcon className="w-3.5 h-3.5" /> PDF
                       </button>
-                      <button
-                        onClick={() => window.open(`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(cert.courseTitle)}&organizationId=idla&issueYear=${new Date(cert.issueDate).getFullYear()}&certUrl=https://idla.education/verify/${cert.credentialId}`, '_blank')}
-                        className="flex items-center justify-center gap-1.5 bg-[#0077B5] hover:bg-[#005f91] text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
-                        title="Ajouter sur LinkedIn"
-                      >
+                      <button onClick={() => window.open(`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(cert.courseTitle)}&issueYear=${new Date(cert.issueDate).getFullYear()}`, '_blank')}
+                        className="flex items-center justify-center gap-1.5 bg-[#0077B5] hover:bg-[#005f91] text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">
                         <LinkedinIcon className="w-3.5 h-3.5" />
                       </button>
-                      <button className="flex items-center justify-center gap-1.5 bg-bg-primary hover:bg-bg-secondary border border-border-primary text-text-secondary hover:text-text-primary text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer" title="Partager">
+                      <button className="flex items-center justify-center gap-1.5 bg-bg-primary border border-border-primary text-text-secondary hover:text-text-primary text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">
                         <ShareIcon className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -738,11 +1027,9 @@ export default function StudentPortal({
               ))}
             </div>
           )}
-
-          {/* Courses in progress that will earn certificates */}
           {inProgress.length > 0 && (
             <div className="space-y-4">
-              <h2 className="font-sans font-bold text-sm text-text-primary uppercase tracking-wider">En route vers vos prochains certificats</h2>
+              <h2 className="font-bold text-sm text-text-primary uppercase tracking-wider">En route vers vos prochains certificats</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {inProgress.map((enr) => (
                   <div key={enr.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 flex items-center gap-4 shadow-sm">
@@ -754,36 +1041,77 @@ export default function StudentPortal({
                       <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: `${enr.progressPercent}%` }} />
                       </div>
-                      <p className="text-[11px] text-text-secondary">{enr.progressPercent}% complété — {enr.totalLessons - enr.completedLessons} leçon{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''} restante{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''}</p>
+                      <p className="text-[11px] text-text-secondary">{enr.progressPercent}% — {enr.totalLessons - enr.completedLessons} leçon{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''} restante{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''}</p>
                     </div>
-                    <ChevronRightIcon className="w-4 h-4 text-text-secondary shrink-0" />
                   </div>
                 ))}
               </div>
             </div>
           )}
-
         </div>
       </div>
     );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // ACCOUNT SETTINGS VIEW
+  // PARAMÈTRES VIEW — avec vrai changement de mot de passe + mustChangePwd
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-settings') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-3xl mx-auto space-y-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+
+          {/* Banner prioritaire si mot de passe temporaire */}
+          {mustChangePwd && (
+            <div className="bg-amber-500/10 border-2 border-amber-500 rounded-2xl p-6 shadow-lg space-y-5">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                  <LockIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-amber-700 dark:text-amber-400">⚠️ Modification du mot de passe obligatoire</h3>
+                  <p className="text-xs text-text-secondary mt-1">Votre compte utilise encore un mot de passe temporaire. Modifiez-le ci-dessous pour sécuriser votre accès.</p>
+                </div>
+              </div>
+              <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Mot de passe actuel</label>
+                  <input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)}
+                    placeholder="Mot de passe temporaire"
+                    className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary" required />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Nouveau mot de passe</label>
+                  <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
+                    placeholder="Min. 8 caractères"
+                    className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary" required />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Confirmer</label>
+                  <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)}
+                    placeholder="Même mot de passe"
+                    className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 text-text-primary" required />
+                </div>
+                <div className="sm:col-span-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <button type="submit" disabled={isUpdatingPwd}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
+                    <LockIcon className="w-3.5 h-3.5" /> {isUpdatingPwd ? 'Modification…' : 'Modifier maintenant'}
+                  </button>
+                  {pwdError && <p className="text-xs text-red-600 font-semibold flex items-center gap-1"><AlertCircleIcon className="w-3.5 h-3.5" />{pwdError}</p>}
+                  {pwdSuccess && <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" />{pwdSuccess}</p>}
+                </div>
+              </form>
+            </div>
+          )}
 
           <div>
             <h1 className="font-sans font-bold text-2xl text-text-primary">Paramètres du Compte</h1>
-            <p className="text-sm text-text-secondary mt-1">Gérez la sécurité, les notifications et la langue de votre espace étudiant.</p>
+            <p className="text-sm text-text-secondary mt-1">Sécurité, notifications et langue.</p>
           </div>
 
-          {/* Settings tabs */}
-          <div className="flex gap-2 border-b border-border-primary pb-0">
-            {([ ['security', 'Sécurité', LockIcon], ['notifications', 'Notifications', BellIcon], ['language', 'Langue', GlobeIcon] ] as const).map(([id, label, Icon]) => (
+          {/* Onglets */}
+          <div className="flex gap-0 border-b border-border-primary">
+            {([['security', 'Sécurité', LockIcon], ['notifications', 'Notifications', BellIcon], ['language', 'Langue', GlobeIcon]] as const).map(([id, label, Icon]) => (
               <button key={id} onClick={() => setSettingsTab(id as any)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors cursor-pointer -mb-px ${settingsTab === id ? 'border-brand-primary text-brand-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}>
                 <Icon className="w-4 h-4" />{label}
@@ -791,24 +1119,22 @@ export default function StudentPortal({
             ))}
           </div>
 
-          {/* Security — change password */}
+          {/* Sécurité */}
           {settingsTab === 'security' && (
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
               <div>
-                <h3 className="font-sans font-bold text-sm text-text-primary">Adresse e-mail</h3>
-                <div className="mt-3 flex items-center gap-3">
+                <h3 className="font-bold text-sm text-text-primary mb-3">Adresse e-mail</h3>
+                <div className="flex items-center gap-3">
                   <div className="relative flex-1">
                     <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
-                    <input type="email" defaultValue={profile.email} readOnly
-                      className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm text-text-primary opacity-70 cursor-not-allowed" />
+                    <input type="email" defaultValue={profile.email} readOnly className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm text-text-primary opacity-70 cursor-not-allowed" />
                   </div>
                   <button className="text-xs font-bold text-brand-primary hover:underline cursor-pointer shrink-0">Modifier</button>
                 </div>
-                <p className="text-[11px] text-text-secondary mt-1.5">La modification de l'adresse e-mail nécessite une vérification.</p>
               </div>
 
               <div className="border-t border-border-primary/40 pt-6">
-                <h3 className="font-sans font-bold text-sm text-text-primary mb-4">Changer le mot de passe</h3>
+                <h3 className="font-bold text-sm text-text-primary mb-4">Changer le mot de passe</h3>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Mot de passe actuel</label>
@@ -838,12 +1164,23 @@ export default function StudentPortal({
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <button type="submit" disabled={isUpdatingPwd}
-                      className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-60">
+                      className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg cursor-pointer disabled:opacity-60">
                       <SaveIcon className="w-3.5 h-3.5" /> {isUpdatingPwd ? 'Modification…' : 'Modifier le mot de passe'}
                     </button>
                     {pwdError && <p className="text-xs text-red-600 font-semibold flex items-center gap-1"><AlertCircleIcon className="w-3.5 h-3.5" />{pwdError}</p>}
                     {pwdSuccess && <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" />{pwdSuccess}</p>}
                   </div>
+                  <p className="text-[11px] text-text-secondary">
+                    Mot de passe oublié ?{' '}
+                    <button type="button" onClick={async () => {
+                      try {
+                        await account.createRecovery({ email: profile.email, url: `${window.location.origin}/etudiant/reinitialisation` });
+                        setPwdSuccess('Lien de réinitialisation envoyé à ' + profile.email);
+                      } catch { setPwdError("Erreur lors de l'envoi du lien."); }
+                    }} className="text-brand-primary hover:underline font-bold cursor-pointer">
+                      Recevoir un lien par email
+                    </button>
+                  </p>
                 </form>
               </div>
             </div>
@@ -852,19 +1189,18 @@ export default function StudentPortal({
           {/* Notifications */}
           {settingsTab === 'notifications' && (
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
-              <p className="text-sm text-text-secondary">Choisissez les événements pour lesquels vous souhaitez recevoir des notifications.</p>
               {([
-                { key: 'email', label: 'Notifications par e-mail', desc: 'Recevoir un e-mail pour les mises à jour importantes de votre compte.', value: notifEmail, setter: setNotifEmail },
-                { key: 'deadlines', label: 'Rappels d\'échéances', desc: 'Être notifié 48h avant la date limite d\'un devoir.', value: notifDeadlines, setter: setNotifDeadlines },
-                { key: 'news', label: 'Nouveautés & Actualités', desc: 'Recevoir les dernières nouvelles de l\'IDLA et les nouveaux cours.', value: notifNews, setter: setNotifNews },
-              ]).map(({ key, label, desc, value, setter }) => (
+                { key: 'email', label: 'Notifications par e-mail', desc: 'Mises à jour importantes de votre compte.', value: notifEmail, setter: setNotifEmail },
+                { key: 'deadlines', label: "Rappels d'échéances", desc: 'Notifié 48h avant la date limite.', value: notifDeadlines, setter: setNotifDeadlines },
+                { key: 'news', label: 'Nouveautés & Actualités', desc: "Dernières nouvelles de l'IDLA.", value: notifNews, setter: setNotifNews },
+              ] as { key: string; label: string; desc: string; value: boolean; setter: React.Dispatch<React.SetStateAction<boolean>> }[]).map(({ key, label, desc, value, setter }) => (
                 <div key={key} className="flex items-center justify-between gap-6 pb-5 border-b border-border-primary/30 last:border-0 last:pb-0">
                   <div>
                     <p className="text-sm font-bold text-text-primary">{label}</p>
                     <p className="text-xs text-text-secondary mt-0.5">{desc}</p>
                   </div>
                   <button onClick={() => setter(!value)} role="switch" aria-checked={value}
-                    className={`relative shrink-0 w-11 h-6 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-bg-secondary ${value ? 'bg-brand-primary' : 'bg-border-primary'}`}>
+                    className={`relative shrink-0 w-11 h-6 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 ${value ? 'bg-brand-primary' : 'bg-border-primary'}`}>
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
@@ -872,36 +1208,32 @@ export default function StudentPortal({
             </div>
           )}
 
-          {/* Language */}
+          {/* Langue */}
           {settingsTab === 'language' && (
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-5">
-              <p className="text-sm text-text-secondary">Choisissez la langue d'affichage de l'interface.</p>
               <div className="flex flex-col gap-3">
                 {LANGUAGES_UI.map(({ value, label }) => (
                   <label key={value} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${selectedLang === value ? 'border-brand-primary bg-brand-light' : 'border-border-primary hover:border-brand-primary/50'}`}>
                     <input type="radio" name="language" value={value} checked={selectedLang === value} onChange={() => setSelectedLang(value as 'fr' | 'en')} className="accent-brand-primary w-4 h-4" />
                     <div>
                       <p className="text-sm font-bold text-text-primary">{label}</p>
-                      <p className="text-xs text-text-secondary">{value === 'fr' ? 'Interface entièrement en français' : 'Switch the interface to English'}</p>
+                      <p className="text-xs text-text-secondary">{value === 'fr' ? 'Interface en français' : 'English interface'}</p>
                     </div>
                   </label>
                 ))}
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={handleSaveLanguage}
-                  className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer">
+                <button onClick={handleSaveLanguage} className="inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-lg cursor-pointer">
                   <SaveIcon className="w-3.5 h-3.5" /> Appliquer
                 </button>
                 {langSaved && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Préférence enregistrée</span>}
               </div>
             </div>
           )}
-
         </div>
       </div>
     );
   }
 
-  // Fallback — redirect to dashboard for any unknown student tab
   return null;
 }
