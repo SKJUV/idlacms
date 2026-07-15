@@ -474,7 +474,20 @@ export default function App() {
             candidateName={candidateName}
             selectedProgram={selectedProgram}
             tempPassword={candidateTempPassword}
-            onGoToCandidatePortal={() => {
+            onGoToCandidatePortal={async () => {
+              // Re-create Appwrite session with temp credentials so StudentPortal can load applications
+              if (candidateEmail && candidateTempPassword) {
+                try {
+                  const { account: appwriteAccount } = await import('./lib/appwrite');
+                  await appwriteAccount.deleteSession({ sessionId: 'current' }).catch(() => undefined);
+                  await appwriteAccount.createEmailPasswordSession({
+                    email: candidateEmail.trim().toLowerCase(),
+                    password: candidateTempPassword,
+                  });
+                } catch (err) {
+                  console.warn('Auto-login après soumission échoué:', err);
+                }
+              }
               setRole('student');
               setActiveTab('student-dashboard');
             }}
