@@ -212,6 +212,7 @@ export default function AdminPortal({
     try {
       await account.deleteSession({ sessionId: 'current' }).catch(() => undefined);
       await account.createEmailPasswordSession({ email, password });
+      sessionStorage.setItem('idla_portal_session_email', email.trim().toLowerCase());
       onLoginSuccess();
     } catch (err: any) {
       console.warn('Connexion Appwrite refusée.', err);

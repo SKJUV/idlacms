@@ -188,6 +188,48 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  // Listen to window focus to detect session shifts (e.g. logging into a different account in another tab)
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (!isAppwriteDbConfigured()) return;
+      try {
+        const user = await account.get();
+        if (user) {
+          const userEmail = user.email.toLowerCase().trim();
+          const storedEmail = sessionStorage.getItem('idla_portal_session_email');
+          
+          if (storedEmail && storedEmail.toLowerCase().trim() !== userEmail) {
+            // Session was hijacked/changed in another tab!
+            console.warn("Session change detected. Logging out tab.");
+            sessionStorage.removeItem('idla_portal_session_email');
+            setRole('guest');
+            setActiveTab('home');
+            clearAppwriteSession();
+          }
+        } else {
+          // Cookie session is gone!
+          const storedEmail = sessionStorage.getItem('idla_portal_session_email');
+          if (storedEmail) {
+            sessionStorage.removeItem('idla_portal_session_email');
+            setRole('guest');
+            setActiveTab('home');
+          }
+        }
+      } catch (err) {
+        // Session might be expired/deleted
+        const storedEmail = sessionStorage.getItem('idla_portal_session_email');
+        if (storedEmail) {
+          sessionStorage.removeItem('idla_portal_session_email');
+          setRole('guest');
+          setActiveTab('home');
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [role, activeTab]);
+
   // Database Real Records States (Removed default MockData initialization)
   const [programs, setPrograms] = useState<Program[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
@@ -324,6 +366,7 @@ export default function App() {
 
   const handleLogout = () => {
     clearAppwriteSession();
+    sessionStorage.removeItem('idla_portal_session_email');
     setRole('guest');
     setActiveTab('home');
   };
@@ -333,7 +376,10 @@ export default function App() {
       setActiveTab('student-dashboard');
       return;
     }
-    if (role === 'admin') clearAppwriteSession();
+    if (role === 'admin') {
+      clearAppwriteSession();
+      sessionStorage.removeItem('idla_portal_session_email');
+    }
     setRole('guest');
     setActiveTab('student-login');
   };
@@ -344,6 +390,7 @@ export default function App() {
       return;
     }
     clearAppwriteSession();
+    sessionStorage.removeItem('idla_portal_session_email');
     setRole('guest');
     setActiveTab('admin-login');
   };

@@ -375,6 +375,7 @@ export default function StudentPortal({
     try {
       await account.deleteSession({ sessionId: 'current' }).catch(() => undefined);
       await account.createEmailPasswordSession({ email, password });
+      sessionStorage.setItem('idla_portal_session_email', email.trim().toLowerCase());
       onLoginSuccess();
     } catch (err: any) {
       if (err.type === 'project_paused' || err.code === 403) {
