@@ -87,17 +87,16 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-settings': '/admin/parametres',
 };
 
-const PATH_TO_TAB: Record<string, ActiveTab> = Object.entries(TAB_TO_PATH).reduce(
-  (acc, [tab, path]) => {
-    acc[path] = tab as ActiveTab;
-    return acc;
-  },
-  {} as Record<string, ActiveTab>
-);
-
 const tabFromPath = (pathname: string): ActiveTab => {
-  const clean = pathname.replace(/\/+$/, '') || '/';
-  return PATH_TO_TAB[clean] ?? 'home';
+  const pathOnly = pathname.split('?')[0].split('#')[0];
+  const clean = pathOnly.replace(/\/+$/, '') || '/';
+  
+  const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
+    const cleanPath = path.replace(/\/+$/, '') || '/';
+    return cleanPath === clean;
+  });
+  
+  return found ? (found[0] as ActiveTab) : 'home';
 };
 
 export default function App() {
@@ -129,7 +128,10 @@ export default function App() {
   // Synchronise URL with current view
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
-    if (window.location.pathname !== target) {
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const cleanTarget = target.replace(/\/+$/, '') || '/';
+    
+    if (currentPath !== cleanTarget) {
       window.history.pushState({ tab: activeTab }, '', target);
     }
   }, [activeTab]);
