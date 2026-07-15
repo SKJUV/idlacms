@@ -188,7 +188,7 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
     try {
       await account.createRecovery({
         email: resetEmail,
-        url: `${window.location.origin}/candidat/reinitialisation`,
+        url: `${window.location.origin}/reinitialisation`,
       });
       setResetSent(true);
     } catch (err: any) {

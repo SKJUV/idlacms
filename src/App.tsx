@@ -6,6 +6,7 @@ import ApplicationForm from './components/ApplicationForm';
 import ApplicationSuccess from './components/ApplicationSuccess';
 import CandidatePortal from './components/CandidatePortal';
 import StudentPortal from './components/StudentPortal';
+import PasswordReset from './components/PasswordReset';
 import AdminPortal from './components/AdminPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from './lib/appwrite';
@@ -27,6 +28,7 @@ export type ActiveTab =
   | 'student-profile'
   | 'student-certificates'
   | 'student-settings'
+  | 'password-reset'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
@@ -71,6 +73,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'student-profile': '/etudiant/profil',
   'student-certificates': '/etudiant/certificats',
   'student-settings': '/etudiant/parametres',
+  'password-reset': '/reinitialisation',
   'admin-login': '/admin',
   'admin-dashboard': '/admin/tableau-de-bord',
   'admin-users': '/admin/utilisateurs',
@@ -380,6 +383,14 @@ export default function App() {
               setActiveTab('candidate-dashboard');
             }}
             onBackToHome={() => setActiveTab('home')}
+          />
+        )}
+
+        {/* MOT DE PASSE OUBLIÉ — PAGE DE RÉINITIALISATION */}
+        {activeTab === 'password-reset' && (
+          <PasswordReset
+            onBackToHome={() => setActiveTab('home')}
+            onGoToLogin={() => setActiveTab('candidate-login')}
           />
         )}
 

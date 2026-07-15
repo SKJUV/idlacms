@@ -227,7 +227,7 @@ export default function StudentPortal({
     try {
       await account.createRecovery({
         email: resetEmail,
-        url: `${window.location.origin}/etudiant/reinitialisation`,
+        url: `${window.location.origin}/reinitialisation`,
       });
       setResetSent(true);
     } catch (err: any) {
@@ -1174,7 +1174,7 @@ export default function StudentPortal({
                     Mot de passe oublié ?{' '}
                     <button type="button" onClick={async () => {
                       try {
-                        await account.createRecovery({ email: profile.email, url: `${window.location.origin}/etudiant/reinitialisation` });
+                        await account.createRecovery({ email: profile.email, url: `${window.location.origin}/reinitialisation` });
                         setPwdSuccess('Lien de réinitialisation envoyé à ' + profile.email);
                       } catch { setPwdError("Erreur lors de l'envoi du lien."); }
                     }} className="text-brand-primary hover:underline font-bold cursor-pointer">
