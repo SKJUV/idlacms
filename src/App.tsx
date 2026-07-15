@@ -8,7 +8,7 @@ import StudentPortal from './components/StudentPortal';
 import PasswordReset from './components/PasswordReset';
 import AdminPortal from './components/AdminPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from './lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from './lib/appwrite';
 
 export type ActiveTab =
   | 'home'
@@ -96,6 +96,59 @@ export default function App() {
     typeof window !== 'undefined' ? tabFromPath(window.location.pathname) : 'home'
   );
   const [role, setRole] = useState<Role>('guest');
+  const [isSessionChecking, setIsSessionChecking] = useState(true);
+
+  // Check active session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      if (!isAppwriteDbConfigured()) {
+        setIsSessionChecking(false);
+        return;
+      }
+      try {
+        const user = await account.get();
+        if (user) {
+          const userEmail = user.email.toLowerCase().trim();
+          let isCmsAdmin = false;
+
+          // Check if user is in cmsUsers collection (Admin)
+          if (APPWRITE_CONFIG.collections.cmsUsers) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) {
+                isCmsAdmin = true;
+              }
+            } catch (err) {
+              console.warn("Erreur lors de la vérification de l'accès CMS :", err);
+            }
+          }
+
+          if (isCmsAdmin) {
+            setRole('admin');
+            // If they are on a login or public tab, redirect to admin dashboard
+            if (activeTab === 'admin-login' || activeTab === 'home') {
+              setActiveTab('admin-dashboard');
+            }
+          } else {
+            setRole('student');
+            // If they are on a login or public tab, redirect to student dashboard
+            if (activeTab === 'student-login' || activeTab === 'home') {
+              setActiveTab('student-dashboard');
+            }
+          }
+        }
+      } catch (err) {
+        console.log("Aucune session active détectée.");
+      } finally {
+        setIsSessionChecking(false);
+      }
+    };
+    checkSession();
+  }, []);
 
   // Theme management (Dark / Light)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -300,6 +353,14 @@ export default function App() {
     (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login');
 
   const showPublicHeader = role === 'guest';
+
+  if (isSessionChecking) {
+    return (
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen overflow-x-hidden bg-bg-primary text-text-primary`}>
