@@ -125,6 +125,7 @@ interface StudentPortalProps {
   onLoginSuccess: () => void;
   isLoggedIn: boolean;
   knownEmail?: string;
+  knownName?: string;
   activeTab?: string;
   setActiveTab?: (tab: any) => void;
   programs?: any[];
@@ -133,7 +134,7 @@ interface StudentPortalProps {
 // ─── Composant Principal ────────────────────────────────────────────────────────
 
 export default function StudentPortal({
-  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, activeTab, setActiveTab, programs,
+  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, knownName, activeTab, setActiveTab, programs,
 }: StudentPortalProps) {
 
   // ── Login ──
@@ -160,10 +161,14 @@ export default function StudentPortal({
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // ── Profile ──
-  const [profile, setProfile] = useState<StudentProfile>(MOCK_PROFILE);
+  const [profile, setProfile] = useState<StudentProfile>(() => ({
+    ...MOCK_PROFILE,
+    ...(knownName ? { name: knownName } : {}),
+    ...(knownEmail ? { email: knownEmail } : {}),
+  }));
   const [editProfile, setEditProfile] = useState(false);
-  const [draftName, setDraftName] = useState(profile.name);
-  const [draftBio, setDraftBio] = useState(profile.bio);
+  const [draftName, setDraftName] = useState(knownName || MOCK_PROFILE.name);
+  const [draftBio, setDraftBio] = useState(MOCK_PROFILE.bio);
   const [profileSaved, setProfileSaved] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,8 +208,10 @@ export default function StudentPortal({
         const u = await account.get();
         const userEmail = u.email.toLowerCase().trim();
         
-        setProfile((p) => ({ ...p, email: userEmail, name: u.name || p.name }));
-        setDraftName(u.name || MOCK_PROFILE.name);
+        // Priorité : knownName (saisi dans le formulaire) > nom Appwrite > profil actuel
+        const resolvedName = knownName || u.name || profile.name;
+        setProfile((p) => ({ ...p, email: userEmail, name: resolvedName }));
+        setDraftName(resolvedName);
 
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
           const res = await databases.listDocuments(
