@@ -5,8 +5,9 @@ import {
   LinkedinIcon, DownloadIcon, FilterIcon, StarIcon, CalendarIcon, SearchIcon,
   BellIcon, SaveIcon, ClockIcon, BookOpenIcon,
   ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon, SettingsIcon,
+  SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon,
 } from './Icons';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../lib/appwrite';
+import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem,
@@ -84,6 +85,16 @@ const daysUntil = (isoDate: string) => Math.ceil((new Date(isoDate).getTime() - 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
+const fmtSize = (bytes?: number) => {
+  if (!bytes) return '—';
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const fmtDateTime = (iso?: string) => {
+  if (!iso) return 'À l\'instant';
+  return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+
 const priorityBadge = (p: AssignmentDeadline['priority']) => {
   if (p === 'high') return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
   if (p === 'medium') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
@@ -138,6 +149,15 @@ export default function StudentPortal({
   // ── Applications réelles Appwrite ──
   const [applications, setApplications] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+
+  // ── Suivi de candidature et messagerie intégrés ──
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [candidateDocs, setCandidateDocs] = useState<any[]>([]);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // ── Profile ──
   const [profile, setProfile] = useState<StudentProfile>(MOCK_PROFILE);
@@ -203,6 +223,149 @@ export default function StudentPortal({
 
     initStudentData();
   }, [isLoggedIn]);
+
+  // ── Auto-scroll du chat ──
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
+
+  // ── Charger les documents et messages de la candidature sélectionnée ──
+  useEffect(() => {
+    if (!selectedAppId || !isLoggedIn) return;
+
+    const loadDossierDetails = async () => {
+      try {
+        // 1. Charger les documents
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.candidateDocuments) {
+          const docsRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.candidateDocuments,
+            [Query.equal('applicationId', selectedAppId)]
+          );
+          setCandidateDocs(docsRes.documents.map((d: any) => ({
+            id: d.$id,
+            name: d.name,
+            size: fmtSize(d.sizeBytes),
+            date: fmtDateTime(d.uploadedAt),
+          })));
+        } else {
+          setCandidateDocs([]);
+        }
+
+        // 2. Charger les messages du chat
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+          const msgRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.messages,
+            [Query.equal('applicationId', selectedAppId), Query.orderAsc('createdAt')]
+          );
+          if (msgRes.documents.length > 0) {
+            setChatHistory(msgRes.documents.map((m: any) => ({
+              sender: m.sender,
+              text: m.text,
+              time: fmtDateTime(m.createdAt),
+            })));
+          } else {
+            setChatHistory([
+              { sender: 'advisor', text: 'Bonjour, j\'ai bien reçu votre dossier. N\'hésitez pas à me contacter ici pour toute question sur votre candidature.', time: 'Aujourd\'hui' }
+            ]);
+          }
+        }
+      } catch (err) {
+        console.warn("Impossible de charger les détails du dossier:", err);
+      }
+    };
+
+    loadDossierDetails();
+  }, [selectedAppId, isLoggedIn]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim() || !selectedAppId) return;
+
+    const text = chatMessage;
+    setChatMessage('');
+    const userMsg = { sender: 'candidate' as const, text, time: 'À l\'instant' };
+    setChatHistory((curr) => [...curr, userMsg]);
+
+    const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
+    if (canPersist) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.messages,
+          ID.unique(),
+          { applicationId: selectedAppId, sender: 'candidate', text, createdAt: new Date().toISOString() }
+        );
+      } catch (err) {
+        console.error("Échec de l'enregistrement du message sur Appwrite:", err);
+      }
+    }
+
+    // Réponse automatique de Sophie Vallet
+    setTimeout(async () => {
+      const replyText = 'Merci beaucoup pour votre message ! Je transmets immédiatement votre dossier au jury d\'admission pour étude approfondie. Je vous recontacte dès que possible.';
+      setChatHistory((curr) => [...curr, { sender: 'advisor' as const, text: replyText, time: 'À l\'instant' }]);
+      if (canPersist) {
+        try {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.messages,
+            ID.unique(),
+            { applicationId: selectedAppId, sender: 'advisor', text: replyText, createdAt: new Date().toISOString() }
+          );
+        } catch (err) {
+          console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);
+        }
+      }
+    }, 1500);
+  };
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (selectedFiles && selectedFiles.length > 0 && selectedAppId) {
+      const file = selectedFiles[0];
+      setIsUploadingDoc(true);
+
+      try {
+        let fileId = '';
+        if (isAppwriteStorageConfigured()) {
+          const response = await storage.createFile(
+            APPWRITE_CONFIG.buckets.documents,
+            ID.unique(),
+            file
+          );
+          fileId = response.$id;
+        }
+
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.candidateDocuments) {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.candidateDocuments,
+            ID.unique(),
+            {
+              applicationId: selectedAppId,
+              fileId,
+              name: file.name,
+              sizeBytes: file.size,
+              mimeType: file.type,
+              uploadedBy: 'candidate',
+              uploadedAt: new Date().toISOString(),
+            }
+          );
+        }
+
+        setCandidateDocs((curr) => [
+          ...curr,
+          { name: file.name, size: fmtSize(file.size), date: 'À l\'instant' }
+        ]);
+      } catch (err: any) {
+        console.error("Échec du téléversement sur Appwrite:", err);
+      } finally {
+        setIsUploadingDoc(false);
+      }
+    }
+  };
 
   // ── Handlers ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -625,7 +788,7 @@ export default function StudentPortal({
               ['mes-candidatures', 'Mes candidatures', `(${applications.length})`],
               ['explorer', 'Explorer d\'autres programmes', ''],
             ] as const).map(([key, label, count]) => (
-              <button key={key} onClick={() => setProgSection(key)}
+              <button key={key} onClick={() => { setProgSection(key); setSelectedAppId(null); }}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${progSection === key ? 'bg-brand-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}>
                 {label} {count && <span className="opacity-70">{count}</span>}
               </button>
@@ -649,6 +812,200 @@ export default function StudentPortal({
                     Explorer les programmes
                   </button>
                 </div>
+              ) : selectedAppId ? (
+                (() => {
+                  const app = applications.find((a) => a.$id === selectedAppId);
+                  if (!app) {
+                    setSelectedAppId(null);
+                    return null;
+                  }
+                  const badge = appStatusBadge(app.status || 'New');
+                  const step = STEP[app.status] ?? 1;
+                  const stepState = (n: number) => {
+                    if (step > n) return 'complete';
+                    if (step === n) return 'active';
+                    return 'upcoming';
+                  };
+                  const stepClasses = (state: 'complete' | 'active' | 'upcoming') => {
+                    if (state === 'complete') return { border: 'border-brand-primary', text: 'text-brand-primary', opacity: '' };
+                    if (state === 'active') return { border: 'border-amber-500', text: 'text-amber-500', opacity: '' };
+                    return { border: 'border-border-primary/50', text: 'text-text-secondary', opacity: 'opacity-40' };
+                  };
+                  return (
+                    <div className="space-y-6">
+                      {/* Back button and title */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm">
+                        <div className="space-y-2">
+                          <button onClick={() => setSelectedAppId(null)}
+                            className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-primary transition-colors border border-border-primary px-3 py-1.5 rounded cursor-pointer">
+                            <ArrowLeftIcon className="w-3 h-3" /> Retour à mes candidatures
+                          </button>
+                          <h2 className="font-sans font-bold text-lg text-text-primary mt-1">{app.program}</h2>
+                          <p className="text-xs text-text-secondary">Dossier n° #{app.$id.slice(-6).toUpperCase()}</p>
+                        </div>
+                        <span className={`px-4 py-2 rounded-full text-xs font-bold border w-fit ${badge.cls}`}>{badge.label}</span>
+                      </div>
+
+                      {/* Timeline stepper (Spacious) */}
+                      <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                        <h3 className="font-sans font-bold text-sm text-text-primary uppercase tracking-wider">État d'évaluation du dossier</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+                          {/* Step 1 : Soumis */}
+                          <div className={`space-y-2 border-l-4 md:border-l-0 md:border-t-4 ${stepClasses(stepState(1)).border} pl-4 md:pl-0 pt-0 md:pt-4 ${stepClasses(stepState(1)).opacity}`}>
+                            <div className={`flex items-center gap-1.5 ${stepClasses(stepState(1)).text} font-bold text-xs`}>
+                              <CheckCircle2Icon className="w-4 h-4" />
+                              <span>Étape 1 : Soumis</span>
+                            </div>
+                            <p className="font-bold text-xs text-text-primary">Candidature Enregistrée</p>
+                            <p className="text-[11px] text-text-secondary">Le dossier a été déposé en ligne avec succès.</p>
+                          </div>
+
+                          {/* Step 2 : Analyse académique */}
+                          <div className={`space-y-2 border-l-4 md:border-l-0 md:border-t-4 ${stepClasses(stepState(2)).border} pl-4 md:pl-0 pt-0 md:pt-4 ${stepClasses(stepState(2)).opacity}`}>
+                            <div className={`flex items-center gap-1.5 ${stepClasses(stepState(2)).text} font-bold text-xs`}>
+                              {stepState(2) === 'active' ? <ClockIcon className="w-4 h-4 animate-spin-slow" /> : <CheckCircle2Icon className="w-4 h-4" />}
+                              <span>Étape 2 : Analyse académique</span>
+                            </div>
+                            <p className="font-bold text-xs text-text-primary">Étude des pièces</p>
+                            <p className="text-[11px] text-text-secondary">Notre équipe examine l'adéquation de vos relevés.</p>
+                          </div>
+
+                          {/* Step 3 : Évaluation orale */}
+                          <div className={`space-y-2 border-l-4 md:border-l-0 md:border-t-4 ${stepClasses(stepState(3)).border} pl-4 md:pl-0 pt-0 md:pt-4 ${stepClasses(stepState(3)).opacity}`}>
+                            <div className={`flex items-center gap-1.5 ${stepClasses(stepState(3)).text} font-semibold text-xs`}>
+                              {stepState(3) === 'complete' && <CheckCircle2Icon className="w-4 h-4" />}
+                              <span>Étape 3 : Évaluation orale</span>
+                            </div>
+                            <p className="font-bold text-xs text-text-primary">Entretien de motivation</p>
+                            <p className="text-[11px] text-text-secondary">Présentation de votre projet devant le jury académique.</p>
+                          </div>
+
+                          {/* Step 4 : Délibération */}
+                          <div className={`space-y-2 border-l-4 md:border-l-0 md:border-t-4 ${stepClasses(stepState(4)).border} pl-4 md:pl-0 pt-0 md:pt-4 ${stepClasses(stepState(4)).opacity}`}>
+                            <div className={`flex items-center gap-1.5 ${stepClasses(stepState(4)).text} font-semibold text-xs`}>
+                              {stepState(4) === 'complete' && <CheckCircle2Icon className="w-4 h-4" />}
+                              <span>Étape 4 : Délibération</span>
+                            </div>
+                            <p className="font-bold text-xs text-text-primary">Décision d'Admission</p>
+                            <p className="text-[11px] text-text-secondary">
+                              {app.status === 'Rejected' ? 'Décision : candidature non retenue.' : 'Notification finale d\'acceptation.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Split screen : upload + chat */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        {/* Documents Upload Panel */}
+                        <div className="lg:col-span-6 bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+                          <div className="flex justify-between items-center pb-2 border-b border-border-primary/30">
+                            <h3 className="font-sans font-bold text-sm text-text-primary flex items-center gap-2">
+                              <FileTextIcon className="w-5 h-5 text-brand-primary" />
+                              Pièces justificatives
+                            </h3>
+                            <button
+                              onClick={() => docInputRef.current?.click()}
+                              disabled={isUploadingDoc}
+                              className="bg-brand-light text-brand-primary text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer hover:bg-brand-primary hover:text-white"
+                            >
+                              <UploadIcon className="w-3.5 h-3.5" />
+                              {isUploadingDoc ? 'Chargement...' : 'Ajouter'}
+                            </button>
+                            <input
+                              type="file"
+                              ref={docInputRef}
+                              onChange={handleDocUpload}
+                              className="hidden"
+                              accept=".pdf,.doc,.docx"
+                            />
+                          </div>
+
+                          <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1">
+                            {candidateDocs.length === 0 && (
+                              <p className="text-xs text-text-secondary italic">Aucun document téléversé pour l'instant.</p>
+                            )}
+                            {candidateDocs.map((doc, idx) => (
+                              <div key={doc.id ?? idx} className="flex items-center justify-between p-3 bg-bg-primary border border-border-primary/40 rounded-xl hover:border-brand-primary/40 transition-colors">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-8 h-8 rounded-lg bg-brand-light text-brand-primary flex items-center justify-center font-bold text-[10px] shrink-0">
+                                    PDF
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-text-primary line-clamp-1">{doc.name}</p>
+                                    <p className="text-[10px] text-text-secondary">{doc.size} • Chargé le {doc.date}</p>
+                                  </div>
+                                </div>
+                                <CheckCircle2Icon className="w-4 h-4 text-brand-primary shrink-0 ml-2" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Advisor Chat Panel */}
+                        <div className="lg:col-span-6 bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[380px] max-h-[420px]">
+                          {/* Advisor Profile Header */}
+                          <div className="bg-bg-primary p-4 flex items-center justify-between border-b border-border-primary">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center border border-brand-primary/30 shrink-0">
+                                🎓
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-xs text-text-primary">Sophie Vallet</h4>
+                                <p className="text-[9px] text-brand-primary font-bold flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+                                  Conseillère des Admissions
+                                </p>
+                              </div>
+                            </div>
+                            <MessageSquareIcon className="w-4 h-4 text-text-secondary" />
+                          </div>
+
+                          {/* Chat History Area */}
+                          <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                            {chatHistory.map((m, idx) => (
+                              <div
+                                key={idx}
+                                className={`flex flex-col max-w-[85%] ${
+                                  m.sender === 'candidate' ? 'ml-auto items-end' : 'mr-auto items-start'
+                                }`}
+                              >
+                                <div
+                                  className={`p-3 rounded-2xl text-xs leading-relaxed ${
+                                    m.sender === 'candidate'
+                                      ? 'bg-brand-primary text-white rounded-tr-none font-medium shadow-sm'
+                                      : 'bg-bg-primary text-text-primary rounded-tl-none border border-border-primary/40 shadow-sm'
+                                  }`}
+                                >
+                                  {m.text}
+                                </div>
+                                <span className="text-[9px] text-text-secondary mt-1 px-1">{m.time}</span>
+                              </div>
+                            ))}
+                            <div ref={chatEndRef} />
+                          </div>
+
+                          {/* Chat Entry Form */}
+                          <form onSubmit={handleSendMessage} className="p-3 border-t border-border-primary/30 bg-bg-primary flex gap-2">
+                            <input
+                              type="text"
+                              value={chatMessage}
+                              onChange={(e) => setChatMessage(e.target.value)}
+                              placeholder="Rédiger votre réponse..."
+                              className="flex-grow bg-bg-secondary border border-border-primary rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-brand-primary text-text-primary font-medium"
+                            />
+                            <button
+                              type="submit"
+                              className="bg-brand-primary text-white px-3 py-2 rounded-lg hover:bg-brand-hover transition-colors shrink-0 cursor-pointer"
+                            >
+                              <SendIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {applications.map((app) => {
@@ -661,80 +1018,84 @@ export default function StudentPortal({
                       { n: 4, label: 'Décision' },
                     ];
                     return (
-                      <div key={app.$id} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-5">
-                        {/* Header */}
-                        <div className="flex justify-between items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-base text-text-primary line-clamp-2">{app.program}</h3>
-                            <p className="text-xs text-text-secondary mt-1">
-                              Déposé le {new Date(app.dateApplied || app.$createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                            </p>
+                      <div key={app.$id} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
+                        <div className="space-y-5">
+                          {/* Header */}
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-base text-text-primary line-clamp-2">{app.program}</h3>
+                              <p className="text-xs text-text-secondary mt-1">
+                                Déposé le {new Date(app.dateApplied || app.$createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </p>
+                            </div>
+                            <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold border shrink-0 ${badge.cls}`}>{badge.label}</span>
                           </div>
-                          <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold border shrink-0 ${badge.cls}`}>{badge.label}</span>
-                        </div>
 
-                        {/* Stepper */}
-                        <div className="grid grid-cols-4 gap-1">
-                          {steps.map(({ n, label }) => {
-                            const isDone = app.status === 'Accepted' || (app.status !== 'Rejected' && n < step) || (app.status === 'Rejected' && n <= step);
-                            const isActive = app.status !== 'Accepted' && n === step;
-                            return (
-                              <div key={n} className={`text-center space-y-1.5 ${isDone || isActive ? '' : 'opacity-40'}`}>
-                                <div className={`h-1 rounded-full ${isDone ? 'bg-brand-primary' : isActive ? 'bg-amber-500' : 'bg-border-primary'}`} />
-                                <div className={`w-5 h-5 rounded-full mx-auto flex items-center justify-center text-[9px] font-bold border-2 ${isDone ? 'bg-brand-primary border-brand-primary text-white' : isActive ? 'border-amber-500 text-amber-600 bg-amber-500/10' : 'border-border-primary text-text-secondary'}`}>
-                                  {isDone ? '✓' : n}
+                          {/* Stepper */}
+                          <div className="grid grid-cols-4 gap-1">
+                            {steps.map(({ n, label }) => {
+                              const isDone = app.status === 'Accepted' || (app.status !== 'Rejected' && n < step) || (app.status === 'Rejected' && n <= step);
+                              const isActive = app.status !== 'Accepted' && n === step;
+                              return (
+                                <div key={n} className={`text-center space-y-1.5 ${isDone || isActive ? '' : 'opacity-40'}`}>
+                                  <div className={`h-1 rounded-full ${isDone ? 'bg-brand-primary' : isActive ? 'bg-amber-500' : 'bg-border-primary'}`} />
+                                  <div className={`w-5 h-5 rounded-full mx-auto flex items-center justify-center text-[9px] font-bold border-2 ${isDone ? 'bg-brand-primary border-brand-primary text-white' : isActive ? 'border-amber-500 text-amber-600 bg-amber-500/10' : 'border-border-primary text-text-secondary'}`}>
+                                    {isDone ? '✓' : n}
+                                  </div>
+                                  <p className="text-[9px] text-text-secondary font-semibold leading-tight">{label}</p>
                                 </div>
-                                <p className="text-[9px] text-text-secondary font-semibold leading-tight">{label}</p>
+                              );
+                            })}
+                          </div>
+
+                          {/* Message statut */}
+                          {app.status === 'Accepted' && (
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
+                              <CheckCircle2Icon className="w-4 h-4 shrink-0" />
+                              Félicitations ! Votre candidature a été acceptée.
+                            </div>
+                          )}
+                          {app.status === 'Rejected' && (
+                            <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+                              <AlertCircleIcon className="w-4 h-4 shrink-0" />
+                              Votre candidature n'a pas été retenue pour cette session.
+                            </div>
+                          )}
+                          {(app.status === 'New' || app.status === 'In Review') && (
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                              <ClockIcon className="w-4 h-4 shrink-0" />
+                              Votre dossier est en cours d'évaluation.
+                            </div>
+                          )}
+
+                          {/* Infos candidat */}
+                          <div className="grid grid-cols-2 gap-3 text-xs border-t border-border-primary/40 pt-4">
+                            {app.highestDegree && (
+                              <div>
+                                <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Diplôme</p>
+                                <p className="text-text-primary font-bold mt-0.5">{app.highestDegree}</p>
                               </div>
-                            );
-                          })}
+                            )}
+                            {app.nationality && (
+                              <div>
+                                <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Nationalité</p>
+                                <p className="text-text-primary font-bold mt-0.5">{app.nationality}</p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Dossier n°</p>
+                              <p className="text-text-primary font-bold font-mono mt-0.5">#{app.$id.slice(-6).toUpperCase()}</p>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Message statut */}
-                        {app.status === 'Accepted' && (
-                          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
-                            <CheckCircle2Icon className="w-4 h-4 shrink-0" />
-                            Félicitations ! Votre candidature a été acceptée. Vous serez contacté(e) prochainement.
-                          </div>
-                        )}
-                        {app.status === 'Rejected' && (
-                          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
-                            <AlertCircleIcon className="w-4 h-4 shrink-0" />
-                            Votre candidature n'a pas été retenue pour cette session. N'hésitez pas à postuler à nouveau.
-                          </div>
-                        )}
-                        {(app.status === 'New' || app.status === 'In Review') && (
-                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
-                            <ClockIcon className="w-4 h-4 shrink-0" />
-                            Votre dossier est en cours d'évaluation. Nous vous informerons dès qu'une décision sera prise.
-                          </div>
-                        )}
-
-                        {/* Infos candidat */}
-                        <div className="grid grid-cols-2 gap-3 text-xs border-t border-border-primary/40 pt-4">
-                          {app.highestDegree && (
-                            <div>
-                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Diplôme</p>
-                              <p className="text-text-primary font-bold mt-0.5">{app.highestDegree}</p>
-                            </div>
-                          )}
-                          {app.graduationYear && (
-                            <div>
-                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Année d'obtention</p>
-                              <p className="text-text-primary font-bold mt-0.5">{app.graduationYear}</p>
-                            </div>
-                          )}
-                          {app.nationality && (
-                            <div>
-                              <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Nationalité</p>
-                              <p className="text-text-primary font-bold mt-0.5">{app.nationality}</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-text-secondary font-semibold uppercase text-[9px] tracking-wider">Dossier n°</p>
-                            <p className="text-text-primary font-bold font-mono mt-0.5">#{app.$id.slice(-6).toUpperCase()}</p>
-                          </div>
-                        </div>
+                        <button
+                          onClick={() => setSelectedAppId(app.$id)}
+                          className="w-full mt-5 bg-brand-light text-brand-primary hover:bg-brand-primary hover:text-white py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-brand-primary/20"
+                        >
+                          <MessageSquareIcon className="w-3.5 h-3.5" />
+                          Suivi & Discussion avec un conseiller
+                        </button>
                       </div>
                     );
                   })}

@@ -5,7 +5,6 @@ import { LogInIcon, MenuIcon, ShieldCheckIcon, XIcon, SunIcon, MoonIcon, Graduat
 interface HeaderProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  onLoginClick: () => void;
   onSignUpClick: () => void;
   onAdminLoginClick: () => void;
   onStudentLoginClick: () => void;
@@ -16,7 +15,6 @@ interface HeaderProps {
 export default function Header({
   activeTab,
   setActiveTab,
-  onLoginClick,
   onSignUpClick,
   onAdminLoginClick,
   onStudentLoginClick,
@@ -82,23 +80,13 @@ export default function Header({
 
           <button
             onClick={() => {
-              onLoginClick();
-              setMobileMenuOpen(false);
-            }}
-            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors"
-          >
-            <LogInIcon className="w-4 h-4 text-brand-primary" />
-            Connexion
-          </button>
-          <button
-            onClick={() => {
               onStudentLoginClick();
               setMobileMenuOpen(false);
             }}
-            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
           >
             <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-            Étudiant
+            Mon Espace
           </button>
           <button
             onClick={() => {
@@ -137,26 +125,16 @@ export default function Header({
                   {item.label}
                 </button>
               ))}
-              <div className="flex items-center justify-between border-t border-border-primary pt-2 mt-2 px-3">
-                <button
-                  onClick={() => {
-                    onLoginClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-xs font-semibold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1"
-                >
-                  <LogInIcon className="w-4 h-4" />
-                  Connexion Candidat
-                </button>
+               <div className="flex items-center justify-center border-t border-border-primary pt-2 mt-2 px-3">
                 <button
                   onClick={() => {
                     onStudentLoginClick();
                     setMobileMenuOpen(false);
                   }}
-                  className="text-xs font-semibold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1"
+                  className="text-xs font-bold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer"
                 >
-                  <GraduationCapIcon className="w-4 h-4" />
-                  Espace Étudiant
+                  <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                  Mon Espace
                 </button>
               </div>
             </div>

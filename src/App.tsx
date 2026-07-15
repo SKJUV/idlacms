@@ -4,7 +4,6 @@ import AdminSidebar from './components/AdminSidebar';
 import PublicPortal from './components/PublicPortal';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationSuccess from './components/ApplicationSuccess';
-import CandidatePortal from './components/CandidatePortal';
 import StudentPortal from './components/StudentPortal';
 import PasswordReset from './components/PasswordReset';
 import AdminPortal from './components/AdminPortal';
@@ -18,9 +17,6 @@ export type ActiveTab =
   | 'temoignages'
   | 'candidature'
   | 'success'
-  | 'candidate-login'
-  | 'candidate-dashboard'
-  | 'candidate-programmes'
   | 'student-login'
   | 'student-dashboard'
   | 'student-programs'
@@ -40,10 +36,9 @@ export type ActiveTab =
   | 'admin-marketing'
   | 'admin-settings';
 
-export type Role = 'guest' | 'candidate' | 'student' | 'admin';
+export type Role = 'guest' | 'student' | 'admin';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
-const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard', 'candidate-programmes'];
 const STUDENT_TABS: ActiveTab[] = [
   'student-login', 'student-dashboard', 'student-programs', 'student-catalog',
   'student-profile', 'student-settings',
@@ -53,8 +48,6 @@ const ADMIN_TABS: ActiveTab[] = [
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
   'admin-settings',
 ];
-const CANDIDATE_BROWSE_TABS: ActiveTab[] = ['programmes', 'actualites'];
-
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
   programmes: '/programmes',
@@ -62,9 +55,6 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   temoignages: '/temoignages',
   candidature: '/candidature',
   success: '/candidature/confirmation',
-  'candidate-login': '/candidat',
-  'candidate-dashboard': '/candidat/dossier',
-  'candidate-programmes': '/candidat/programmes',
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
   'student-programs': '/etudiant/programmes',
@@ -88,6 +78,10 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
 const tabFromPath = (pathname: string): ActiveTab => {
   const pathOnly = pathname.split('?')[0].split('#')[0];
   const clean = pathOnly.replace(/\/+$/, '') || '/';
+  
+  if (clean === '/candidat' || clean === '/candidat/dossier' || clean === '/candidat/programmes') {
+    return 'student-login';
+  }
   
   const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
     const cleanPath = path.replace(/\/+$/, '') || '/';
@@ -281,22 +275,12 @@ export default function App() {
     setActiveTab('home');
   };
 
-  const openCandidateArea = () => {
-    if (role === 'candidate') {
-      setActiveTab('candidate-dashboard');
-      return;
-    }
-    if (role === 'admin') clearAppwriteSession();
-    setRole('guest');
-    setActiveTab('candidate-login');
-  };
-
   const openStudentArea = () => {
     if (role === 'student') {
       setActiveTab('student-dashboard');
       return;
     }
-    if (role === 'admin' || role === 'candidate') clearAppwriteSession();
+    if (role === 'admin') clearAppwriteSession();
     setRole('guest');
     setActiveTab('student-login');
   };
@@ -306,15 +290,14 @@ export default function App() {
       setActiveTab('admin-dashboard');
       return;
     }
-    if (role === 'candidate') clearAppwriteSession();
+    clearAppwriteSession();
     setRole('guest');
     setActiveTab('admin-login');
   };
 
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
-    (role === 'candidate' && CANDIDATE_TABS.includes(activeTab)) ||
-    (role === 'student' && STUDENT_TABS.includes(activeTab));
+    (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login');
 
   const showPublicHeader = role === 'guest';
 
@@ -327,7 +310,6 @@ export default function App() {
         <Header
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onLoginClick={openCandidateArea}
           onSignUpClick={() => setActiveTab('candidature')}
           onAdminLoginClick={openAdminArea}
           onStudentLoginClick={openStudentArea}
@@ -379,8 +361,8 @@ export default function App() {
             selectedProgram={selectedProgram}
             tempPassword={candidateTempPassword}
             onGoToCandidatePortal={() => {
-              setRole('candidate');
-              setActiveTab('candidate-dashboard');
+              setRole('student');
+              setActiveTab('student-dashboard');
             }}
             onBackToHome={() => setActiveTab('home')}
           />
@@ -390,22 +372,7 @@ export default function App() {
         {activeTab === 'password-reset' && (
           <PasswordReset
             onBackToHome={() => setActiveTab('home')}
-            onGoToLogin={() => setActiveTab('candidate-login')}
-          />
-        )}
-
-        {/* CANDIDATE STUDY DOSSIER & CHAT */}
-        {CANDIDATE_TABS.includes(activeTab) && (
-          <CandidatePortal
-            isLoggedIn={role === 'candidate'}
-            knownEmail={candidateEmail}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            onLoginSuccess={() => {
-              setRole('candidate');
-              setActiveTab('candidate-dashboard');
-            }}
-            onBackToHome={() => setActiveTab('home')}
+            onGoToLogin={() => setActiveTab('student-login')}
           />
         )}
 
