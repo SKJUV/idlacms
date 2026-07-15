@@ -78,16 +78,22 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
 const tabFromPath = (pathname: string): ActiveTab => {
   const pathOnly = pathname.split('?')[0].split('#')[0];
   const clean = pathOnly.replace(/\/+$/, '') || '/';
-  
+
+  // Routes protégées accessibles directement sans session → home
+  const protectedPrefixes = ['/etudiant', '/candidat', '/admin'];
+  if (protectedPrefixes.some((prefix) => clean.startsWith(prefix))) {
+    return 'home';
+  }
+
   if (clean === '/candidat' || clean === '/candidat/dossier' || clean === '/candidat/programmes') {
     return 'student-login';
   }
-  
+
   const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
     const cleanPath = path.replace(/\/+$/, '') || '/';
     return cleanPath === clean;
   });
-  
+
   return found ? (found[0] as ActiveTab) : 'home';
 };
 
@@ -488,6 +494,8 @@ export default function App() {
         {STUDENT_TABS.includes(activeTab) && (
           <StudentPortal
             isLoggedIn={role === 'student'}
+            knownEmail={candidateEmail}
+            knownName={candidateName}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             onLoginSuccess={() => {
