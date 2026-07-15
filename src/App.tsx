@@ -26,7 +26,6 @@ export type ActiveTab =
   | 'student-programs'
   | 'student-catalog'
   | 'student-profile'
-  | 'student-certificates'
   | 'student-settings'
   | 'password-reset'
   | 'admin-login'
@@ -47,7 +46,7 @@ const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignag
 const CANDIDATE_TABS: ActiveTab[] = ['candidate-login', 'candidate-dashboard', 'candidate-programmes'];
 const STUDENT_TABS: ActiveTab[] = [
   'student-login', 'student-dashboard', 'student-programs', 'student-catalog',
-  'student-profile', 'student-certificates', 'student-settings',
+  'student-profile', 'student-settings',
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes',
@@ -71,7 +70,6 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'student-programs': '/etudiant/programmes',
   'student-catalog': '/etudiant/catalogue',
   'student-profile': '/etudiant/profil',
-  'student-certificates': '/etudiant/certificats',
   'student-settings': '/etudiant/parametres',
   'password-reset': '/reinitialisation',
   'admin-login': '/admin',

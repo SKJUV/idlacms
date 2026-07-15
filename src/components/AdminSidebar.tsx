@@ -50,7 +50,6 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Mes Programmes', icon: BookOpenIcon, target: 'student-programs', activeOn: ['student-programs'] },
     { label: 'Catalogue', icon: SearchIcon, target: 'student-catalog', activeOn: ['student-catalog'] },
     { label: 'Profil', icon: UserIcon, target: 'student-profile', activeOn: ['student-profile'] },
-    { label: 'Certificats', icon: AwardIcon, target: 'student-certificates', activeOn: ['student-certificates'] },
     { label: 'Paramètres', icon: SettingsIcon, target: 'student-settings', activeOn: ['student-settings'] },
   ];
 

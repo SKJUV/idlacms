@@ -227,6 +227,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
 
     // Generate a temporary random password
     const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-2) + '!1';
+    const cleanEmail = email.trim().toLowerCase();
 
     if (isAppwriteDbConfigured()) {
       try {
@@ -234,14 +235,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
         try {
           await account.create(
             ID.unique(),
-            email,
+            cleanEmail,
             generatedPassword,
             candidateName
           );
           console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
 
           // 2. Set user preference mustChangePassword: true by logging in temporarily
-          await account.createEmailPasswordSession({ email, password: generatedPassword });
+          await account.createEmailPasswordSession({ email: cleanEmail, password: generatedPassword });
           await account.updatePrefs({ mustChangePassword: true });
           // Log out so they can see the confirmation page
           await account.deleteSession({ sessionId: 'current' });
@@ -252,7 +253,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                email,
+                email: cleanEmail,
                 fullName: candidateName,
                 selectedProgram,
                 tempPassword: generatedPassword,
@@ -274,7 +275,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
             firstName,
             lastName,
             name: candidateName,
-            email,
+            email: cleanEmail,
             phone,
             program: selectedProgram,
             nationality,

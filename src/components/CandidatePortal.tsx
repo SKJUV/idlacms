@@ -102,7 +102,7 @@ export default function CandidatePortal({ onBackToHome, onLoginSuccess, isLogged
         const appsRes = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.applications,
-          [Query.equal('email', email)]
+          [Query.equal('email', email.trim().toLowerCase())]
         );
         setApplications(appsRes.documents);
 

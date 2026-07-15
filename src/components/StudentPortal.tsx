@@ -169,37 +169,39 @@ export default function StudentPortal({
   // ── Programmes : section active ──
   const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
 
-  // ── Charger les candidatures réelles depuis Appwrite ──
-  const loadApplications = useCallback(async () => {
-    if (!isLoggedIn || !isAppwriteDbConfigured() || !APPWRITE_CONFIG.collections.applications) return;
-    setAppsLoading(true);
-    try {
-      const res = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.collections.applications,
-        [Query.equal('email', profile.email)]
-      );
-      setApplications(res.documents);
-    } catch (err) {
-      console.warn('Impossible de charger les candidatures:', err);
-    } finally {
-      setAppsLoading(false);
-    }
-  }, [isLoggedIn, profile.email]);
-
-  // ── Vérifier mustChangePassword ──
+  // ── Charger le profil et les candidatures réelles depuis Appwrite ──
   useEffect(() => {
     if (!isLoggedIn) return;
-    account.getPrefs().then((prefs: any) => {
-      setMustChangePwd(!!prefs?.mustChangePassword);
-      // Récupérer l'email réel
-      account.get().then((u: any) => {
-        setProfile((p) => ({ ...p, email: u.email, name: u.name || p.name }));
+
+    const initStudentData = async () => {
+      setAppsLoading(true);
+      try {
+        const prefs = await account.getPrefs().catch(() => null);
+        setMustChangePwd(!!prefs?.mustChangePassword);
+
+        const u = await account.get();
+        const userEmail = u.email.toLowerCase().trim();
+        
+        setProfile((p) => ({ ...p, email: userEmail, name: u.name || p.name }));
         setDraftName(u.name || MOCK_PROFILE.name);
-      }).catch(() => {});
-    }).catch(() => {});
-    loadApplications();
-  }, [isLoggedIn, loadApplications]);
+
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.applications,
+            [Query.equal('email', userEmail)]
+          );
+          setApplications(res.documents);
+        }
+      } catch (err) {
+        console.warn("Erreur lors de l'initialisation du portail étudiant :", err);
+      } finally {
+        setAppsLoading(false);
+      }
+    };
+
+    initStudentData();
+  }, [isLoggedIn]);
 
   // ── Handlers ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -448,12 +450,11 @@ export default function StudentPortal({
           </div>
 
           {/* KPI cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label: 'Cours inscrits', value: MOCK_ENROLLMENTS.length, icon: BookOpenIcon, color: 'text-brand-primary', bg: 'bg-brand-light', onClick: () => setActiveTab && setActiveTab('student-programs') },
               { label: 'En cours', value: inProgress.length, icon: PlayCircleIcon, color: 'text-amber-600', bg: 'bg-amber-500/10', onClick: () => {} },
               { label: 'Terminés', value: completed.length, icon: CheckCircle2Icon, color: 'text-emerald-600', bg: 'bg-emerald-500/10', onClick: () => {} },
-              { label: 'Certificats', value: MOCK_CERTIFICATES.length, icon: AwardIcon, color: 'text-purple-600', bg: 'bg-purple-500/10', onClick: () => setActiveTab && setActiveTab('student-certificates') },
             ].map(({ label, value, icon: Icon, color, bg, onClick }) => (
               <button key={label} onClick={onClick}
                 className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow text-left cursor-pointer">
@@ -947,107 +948,6 @@ export default function StudentPortal({
             )}
             {profileSaved && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Profil mis à jour</span>}
           </div>
-
-          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-bold text-sm text-text-primary uppercase tracking-wider">Certificats</h3>
-              <button onClick={() => setActiveTab && setActiveTab('student-certificates')} className="text-xs text-brand-primary hover:underline font-bold cursor-pointer flex items-center gap-1">
-                Voir tous <ChevronRightIcon className="w-3 h-3" />
-              </button>
-            </div>
-            {MOCK_CERTIFICATES.length === 0 ? <p className="text-sm text-text-secondary italic">Aucun certificat pour le moment.</p> : (
-              <div className="flex flex-wrap gap-3">
-                {MOCK_CERTIFICATES.map((cert) => (
-                  <div key={cert.id} className="flex items-center gap-2 bg-bg-primary border border-border-primary rounded-xl px-4 py-2.5">
-                    <AwardIcon className="w-4 h-4 text-amber-500" />
-                    <div>
-                      <p className="text-xs font-bold text-text-primary line-clamp-1">{cert.courseTitle}</p>
-                      <p className="text-[10px] text-text-secondary">{fmtDate(cert.issueDate)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // CERTIFICATS VIEW
-  // ════════════════════════════════════════════════════════════════════════════
-  if (activeTab === 'student-certificates') {
-    return (
-      <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
-        <div className="max-w-[1440px] mx-auto space-y-6">
-          {MustChangePwdBanner}
-          <div><h1 className="font-sans font-bold text-2xl text-text-primary">Mes Certificats</h1>
-            <p className="text-sm text-text-secondary mt-1">Téléchargez ou partagez vos certificats.</p>
-          </div>
-          {MOCK_CERTIFICATES.length === 0 ? (
-            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-4">
-              <AwardIcon className="w-14 h-14 text-text-secondary/30 mx-auto" />
-              <p className="text-text-secondary text-sm">Aucun certificat pour l'instant.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {MOCK_CERTIFICATES.map((cert) => (
-                <div key={cert.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md flex flex-col">
-                  <div className="bg-gradient-to-br from-brand-primary/20 via-brand-light to-purple-500/10 p-8 flex flex-col items-center text-center border-b border-border-primary space-y-3">
-                    <div className="w-16 h-16 bg-amber-500/10 border-2 border-amber-400/40 rounded-full flex items-center justify-center">
-                      <AwardIcon className="w-8 h-8 text-amber-500" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-1">Certificat de Réussite</p>
-                      <h3 className="font-bold text-base text-text-primary leading-tight">{cert.courseTitle}</h3>
-                      <p className="text-xs text-text-secondary mt-1">{cert.instructor}</p>
-                    </div>
-                    <div className="bg-bg-secondary/60 border border-border-primary/50 rounded-lg px-3 py-1.5 text-[10px] font-mono text-text-secondary">{cert.credentialId}</div>
-                  </div>
-                  <div className="p-5 space-y-4">
-                    <div className="flex justify-between items-center text-xs text-text-secondary">
-                      <span className="flex items-center gap-1"><CalendarIcon className="w-3.5 h-3.5" /> {fmtDate(cert.issueDate)}</span>
-                      <span className="bg-brand-light text-brand-primary font-bold px-2 py-0.5 rounded-full text-[10px]">{cert.category}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="flex-1 flex items-center justify-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold py-2.5 rounded-lg cursor-pointer">
-                        <DownloadIcon className="w-3.5 h-3.5" /> PDF
-                      </button>
-                      <button onClick={() => window.open(`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(cert.courseTitle)}&issueYear=${new Date(cert.issueDate).getFullYear()}`, '_blank')}
-                        className="flex items-center justify-center gap-1.5 bg-[#0077B5] hover:bg-[#005f91] text-white text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">
-                        <LinkedinIcon className="w-3.5 h-3.5" />
-                      </button>
-                      <button className="flex items-center justify-center gap-1.5 bg-bg-primary border border-border-primary text-text-secondary hover:text-text-primary text-xs font-bold px-4 py-2.5 rounded-lg cursor-pointer">
-                        <ShareIcon className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {inProgress.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="font-bold text-sm text-text-primary uppercase tracking-wider">En route vers vos prochains certificats</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inProgress.map((enr) => (
-                  <div key={enr.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 flex items-center gap-4 shadow-sm">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                      <AwardIcon className="w-6 h-6 text-amber-500/50" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <p className="text-sm font-bold text-text-primary line-clamp-1">{enr.title}</p>
-                      <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${enr.progressPercent}%` }} />
-                      </div>
-                      <p className="text-[11px] text-text-secondary">{enr.progressPercent}% — {enr.totalLessons - enr.completedLessons} leçon{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''} restante{enr.totalLessons - enr.completedLessons !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
