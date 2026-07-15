@@ -420,6 +420,7 @@ export default function App() {
               setActiveTab('student-dashboard');
             }}
             onBackToHome={() => setActiveTab('home')}
+            programs={programs}
           />
         )}
 

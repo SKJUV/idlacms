@@ -116,12 +116,13 @@ interface StudentPortalProps {
   knownEmail?: string;
   activeTab?: string;
   setActiveTab?: (tab: any) => void;
+  programs?: any[];
 }
 
 // ─── Composant Principal ────────────────────────────────────────────────────────
 
 export default function StudentPortal({
-  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, activeTab, setActiveTab,
+  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, activeTab, setActiveTab, programs,
 }: StudentPortalProps) {
 
   // ── Login ──
@@ -273,22 +274,38 @@ export default function StudentPortal({
   };
 
   // ── Données dérivées ──
-  const inProgress = MOCK_ENROLLMENTS.filter((e) => e.status === 'en cours');
-  const completed = MOCK_ENROLLMENTS.filter((e) => e.status === 'terminé');
-  const upcomingDeadlines = MOCK_DEADLINES.filter((d) => !d.isSubmitted)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const enrollments = applications
+    .filter((app) => app.status === 'Accepted')
+    .map((app) => {
+      const progDetail = (programs || []).find((p) => p.title === app.program);
+      return {
+        id: app.$id,
+        courseId: progDetail?.id || app.$id,
+        title: app.program,
+        instructor: 'Jury académique IDLA',
+        category: progDetail?.category || 'Formation',
+        level: 'Tous niveaux',
+        duration: progDetail?.duration || '12 mois',
+        progressPercent: 0,
+        status: 'en cours' as const,
+        enrolledAt: app.dateApplied || app.$createdAt,
+        image: progDetail?.image || 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',
+      };
+    });
 
-  const filteredCatalog = MOCK_CATALOG.filter((c) => {
-    const matchQ = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+  const inProgress = enrollments;
+  const completed: any[] = [];
+  const upcomingDeadlines: any[] = [];
+
+  const filteredCatalog = (programs || []).filter((c) => {
+    const q = searchQuery.toLowerCase();
+    const matchQ = !q || c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q);
     const matchCat = filterCategory === 'Tous' || c.category === filterCategory;
-    const matchLvl = filterLevel === 'Tous niveaux' || c.level === filterLevel;
-    return matchQ && matchCat && matchLvl;
+    return matchQ && matchCat;
   });
 
-  // Programmes IDLA complets depuis mockData (pour la section "Explorer")
-  const allPrograms = programsData;
+  // Programmes IDLA complets depuis la base de données (pour la section "Explorer")
+  const allPrograms = programs || [];
 
   // ════════════════════════════════════════════════════════════════════════════
   // LOGIN VIEW
@@ -452,7 +469,7 @@ export default function StudentPortal({
           {/* KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Cours inscrits', value: MOCK_ENROLLMENTS.length, icon: BookOpenIcon, color: 'text-brand-primary', bg: 'bg-brand-light', onClick: () => setActiveTab && setActiveTab('student-programs') },
+              { label: 'Cours inscrits', value: enrollments.length, icon: BookOpenIcon, color: 'text-brand-primary', bg: 'bg-brand-light', onClick: () => setActiveTab && setActiveTab('student-programs') },
               { label: 'En cours', value: inProgress.length, icon: PlayCircleIcon, color: 'text-amber-600', bg: 'bg-amber-500/10', onClick: () => {} },
               { label: 'Terminés', value: completed.length, icon: CheckCircle2Icon, color: 'text-emerald-600', bg: 'bg-emerald-500/10', onClick: () => {} },
             ].map(({ label, value, icon: Icon, color, bg, onClick }) => (
@@ -843,18 +860,17 @@ export default function StudentPortal({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredCatalog.map((course) => {
-              const isEnrolled = MOCK_ENROLLMENTS.some((e) => e.courseId === course.id);
+              const isEnrolled = enrollments.some((e) => e.title === course.title);
               return (
                 <div key={course.id} className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
                   <div className="relative h-44 overflow-hidden">
                     <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute top-3 left-3 flex gap-1.5">
                       {course.isNew && <span className="bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Nouveau</span>}
-                      {course.isFeatured && <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Populaire</span>}
                     </div>
                     {isEnrolled && (
                       <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle2Icon className="w-3 h-3" /> Inscrit
+                        <CheckCircle2Icon className="w-3 h-3" /> Admis
                       </div>
                     )}
                   </div>
@@ -862,23 +878,17 @@ export default function StudentPortal({
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-[10px] font-bold text-brand-primary bg-brand-light px-2 py-0.5 rounded-full">{course.category}</span>
-                        <span className="text-[10px] text-text-secondary border border-border-primary px-2 py-0.5 rounded-full">{course.level}</span>
+                        <span className="text-[10px] text-text-secondary border border-border-primary px-2 py-0.5 rounded-full">{course.type || 'Formation'}</span>
                       </div>
                       <h3 className="font-bold text-sm text-text-primary line-clamp-2">{course.title}</h3>
-                      <p className="text-xs text-text-secondary mt-1">{course.instructor}</p>
+                      <p className="text-xs text-text-secondary mt-1 line-clamp-3">{course.description}</p>
                     </div>
-                    <div className="flex items-center gap-4 text-[11px] text-text-secondary">
-                      <span className="flex items-center gap-1"><StarIcon className="w-3 h-3 text-amber-500" /><span className="font-bold text-text-primary">{course.rating}</span></span>
-                      <span className="flex items-center gap-1"><UsersIcon className="w-3 h-3" />{course.totalStudents.toLocaleString('fr-FR')}</span>
+                    <div className="flex items-center gap-4 text-[11px] text-text-secondary mt-auto">
                       <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{course.duration}</span>
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-auto">
-                      {course.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="text-[10px] text-text-secondary bg-bg-primary border border-border-primary/50 px-2 py-0.5 rounded-full">{tag}</span>
-                      ))}
-                    </div>
-                    <button className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${isEnrolled ? 'bg-bg-primary border border-brand-primary text-brand-primary hover:bg-brand-light' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
-                      {isEnrolled ? <><PlayCircleIcon className="w-3.5 h-3.5" /> Reprendre</> : <><BookmarkIcon className="w-3.5 h-3.5" /> S'inscrire</>}
+                    <button onClick={() => setActiveTab && setActiveTab('student-programs')}
+                      className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${isEnrolled ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
+                      {isEnrolled ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Voir mon programme</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                     </button>
                   </div>
                 </div>
