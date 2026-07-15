@@ -21,6 +21,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Flag: l'utilisateur est déjà connecté (session active)
+  const [isExistingUser, setIsExistingUser] = useState(false);
 
   // Form State
   const [firstName, setFirstName] = useState('');
@@ -59,7 +61,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     }
   }, [programs, selectedProgram]);
 
-  // Pre-fill student info if logged in and skip OTP
+  // Pre-fill student info if logged in and skip OTP + step 1
   useEffect(() => {
     const loadLoggedInUser = async () => {
       try {
@@ -67,6 +69,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
         if (user) {
           setEmail(user.email);
           setOtpVerified(true); // User is already authenticated
+          setIsExistingUser(true);
 
           if (user.name) {
             const parts = user.name.trim().split(/\s+/);
@@ -77,9 +80,12 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
               setFirstName(user.name);
             }
           }
+
+          // Sauter directement à l'étape 2 (choix du programme)
+          setStep(2);
         }
       } catch (err) {
-        // No active session
+        // No active session — formulaire normal
       }
     };
     loadLoggedInUser();
@@ -346,12 +352,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     onSuccess(candidateName, selectedProgram, email, generatedPassword);
   };
 
-  const stepsList = [
-    'Données Personnelles',
-    'Parcours Académique',
-    'Dossier de Pièces',
-    'Signature & Envoi'
-  ];
+  // Pour les utilisateurs déjà connectés : 3 étapes (2→3→4), sinon 4 étapes
+  const stepsList = isExistingUser
+    ? ['Parcours Académique', 'Dossier de Pièces', 'Signature & Envoi']
+    : ['Données Personnelles', 'Parcours Académique', 'Dossier de Pièces', 'Signature & Envoi'];
+
+  // Index visuel de l'étape (0-based) pour la progression
+  const visualStep = isExistingUser ? step - 1 : step;  // step 2→1, 3→2, 4→3
+  const totalSteps = isExistingUser ? 3 : 4;
 
   return (
     <div className="bg-bg-primary min-h-screen py-12 px-6 md:px-12 text-text-primary">
@@ -380,10 +388,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
         <div className="bg-bg-primary border-b border-border-primary/40 p-6">
           <div className="flex justify-between items-center mb-4">
             <span className="text-xs font-bold text-brand-primary uppercase tracking-wider">
-              Étape {step} sur 4 : {stepsList[step - 1]}
+              Étape {visualStep} sur {totalSteps} : {stepsList[visualStep - 1]}
             </span>
             <span className="text-xs text-text-secondary font-semibold">
-              {Math.round(((step - 1) / 3) * 100)}% Complété
+              {Math.round(((visualStep - 1) / (totalSteps - 1)) * 100)}% Complété
             </span>
           </div>
           
@@ -391,19 +399,19 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
           <div className="w-full h-1.5 bg-border-primary rounded-full overflow-hidden">
             <div 
               className="bg-brand-primary h-full transition-all duration-300"
-              style={{ width: `${((step - 1) / 3) * 100}%` }}
+              style={{ width: `${((visualStep - 1) / (totalSteps - 1)) * 100}%` }}
             ></div>
           </div>
 
           {/* Staggered Step badges */}
-          <div className="hidden sm:grid grid-cols-4 gap-2 mt-4 text-center">
+          <div className={`hidden sm:grid grid-cols-${totalSteps} gap-2 mt-4 text-center`}>
             {stepsList.map((st, i) => (
               <div 
                 key={st}
                 className={`text-[10px] font-bold uppercase tracking-wider ${
-                  step > i + 1 
+                  visualStep > i + 1 
                     ? 'text-brand-primary' 
-                    : step === i + 1 
+                    : visualStep === i + 1 
                     ? 'text-text-primary' 
                     : 'text-text-secondary opacity-50'
                 }`}
@@ -413,6 +421,17 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
             ))}
           </div>
         </div>
+
+        {/* Bandeau identité pré-remplie pour utilisateur existant */}
+        {isExistingUser && (
+          <div className="mx-6 mt-6 p-4 bg-brand-primary/10 border-l-4 border-brand-primary rounded flex items-center gap-3">
+            <CheckCircle2Icon className="w-4 h-4 text-brand-primary shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-text-primary">Identité vérifiée — {firstName} {lastName}</p>
+              <p className="text-[11px] text-text-secondary mt-0.5">Vos informations personnelles sont déjà enregistrées. Choisissez simplement votre programme et soumettez votre dossier.</p>
+            </div>
+          </div>
+        )}
 
         {/* Error message wrapper */}
         {errorMessage && (
