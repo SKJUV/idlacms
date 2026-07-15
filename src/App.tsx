@@ -135,14 +135,12 @@ export default function App() {
 
           if (isCmsAdmin) {
             setRole('admin');
-            // If they are on a login or public tab, redirect to admin dashboard
-            if (activeTab === 'admin-login' || activeTab === 'home') {
+            if (activeTab === 'admin-login') {
               setActiveTab('admin-dashboard');
             }
           } else {
             setRole('student');
-            // If they are on a login or public tab, redirect to student dashboard
-            if (activeTab === 'student-login' || activeTab === 'home') {
+            if (activeTab === 'student-login') {
               setActiveTab('student-dashboard');
             }
           }
@@ -425,7 +423,6 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onSignUpClick={() => setActiveTab('candidature')}
-          onAdminLoginClick={openAdminArea}
           onStudentLoginClick={openStudentArea}
           theme={theme}
           setTheme={setTheme}
@@ -475,15 +472,16 @@ export default function App() {
             selectedProgram={selectedProgram}
             tempPassword={candidateTempPassword}
             onGoToCandidatePortal={async () => {
-              // Re-create Appwrite session with temp credentials so StudentPortal can load applications
+              // Re-créer la session Appwrite avec les identifiants temporaires
+              // pour que StudentPortal puisse charger les candidatures
               if (candidateEmail && candidateTempPassword) {
                 try {
-                  const { account: appwriteAccount } = await import('./lib/appwrite');
-                  await appwriteAccount.deleteSession({ sessionId: 'current' }).catch(() => undefined);
-                  await appwriteAccount.createEmailPasswordSession({
+                  await account.deleteSession({ sessionId: 'current' }).catch(() => undefined);
+                  await account.createEmailPasswordSession({
                     email: candidateEmail.trim().toLowerCase(),
                     password: candidateTempPassword,
                   });
+                  sessionStorage.setItem('idla_portal_session_email', candidateEmail.trim().toLowerCase());
                 } catch (err) {
                   console.warn('Auto-login après soumission échoué:', err);
                 }

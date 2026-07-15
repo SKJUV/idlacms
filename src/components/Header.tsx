@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ActiveTab } from '../App';
-import { LogInIcon, MenuIcon, ShieldCheckIcon, XIcon, SunIcon, MoonIcon, GraduationCapIcon } from './Icons';
+import { MenuIcon, XIcon, SunIcon, MoonIcon, GraduationCapIcon } from './Icons';
 
 interface HeaderProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onSignUpClick: () => void;
-  onAdminLoginClick: () => void;
   onStudentLoginClick: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
@@ -16,7 +15,6 @@ export default function Header({
   activeTab,
   setActiveTab,
   onSignUpClick,
-  onAdminLoginClick,
   onStudentLoginClick,
   theme,
   setTheme,
