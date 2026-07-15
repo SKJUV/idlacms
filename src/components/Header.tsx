@@ -7,6 +7,7 @@ interface HeaderProps {
   setActiveTab: (tab: ActiveTab) => void;
   onSignUpClick: () => void;
   onStudentLoginClick: () => void;
+  onAdminLoginClick: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
 }
@@ -16,6 +17,7 @@ export default function Header({
   setActiveTab,
   onSignUpClick,
   onStudentLoginClick,
+  onAdminLoginClick,
   theme,
   setTheme,
 }: HeaderProps) {
@@ -85,8 +87,7 @@ export default function Header({
           >
             <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
             Mon Espace
-          </button>
-          <button
+          </button>          <button
             onClick={() => {
               onSignUpClick();
               setMobileMenuOpen(false);
@@ -123,7 +124,7 @@ export default function Header({
                   {item.label}
                 </button>
               ))}
-               <div className="flex items-center justify-center border-t border-border-primary pt-2 mt-2 px-3">
+               <div className="flex items-center justify-between border-t border-border-primary pt-2 mt-2 px-3">
                 <button
                   onClick={() => {
                     onStudentLoginClick();
@@ -133,6 +134,15 @@ export default function Header({
                 >
                   <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
                   Mon Espace
+                </button>
+                <button
+                  onClick={() => {
+                    onAdminLoginClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-[10px] text-text-secondary/40 hover:text-text-secondary py-1.5 cursor-pointer"
+                >
+                  Admin
                 </button>
               </div>
             </div>

@@ -424,6 +424,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           onSignUpClick={() => setActiveTab('candidature')}
           onStudentLoginClick={openStudentArea}
+          onAdminLoginClick={openAdminArea}
           theme={theme}
           setTheme={setTheme}
         />
