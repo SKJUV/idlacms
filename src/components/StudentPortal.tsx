@@ -1161,7 +1161,7 @@ export default function StudentPortal({
                           <div className="flex items-center gap-3 text-[11px] text-text-secondary mt-auto">
                             <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{prog.duration}</span>
                           </div>
-                          <button onClick={onBackToHome}
+                          <button onClick={() => alreadyApplied ? setProgSection('mes-candidatures') : (setActiveTab && setActiveTab('candidature'))}
                             className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${alreadyApplied ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                             {alreadyApplied ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Candidature soumise</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                           </button>
@@ -1247,7 +1247,7 @@ export default function StudentPortal({
                     <div className="flex items-center gap-4 text-[11px] text-text-secondary mt-auto">
                       <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{course.duration}</span>
                     </div>
-                    <button onClick={() => setActiveTab && setActiveTab('student-programs')}
+                    <button onClick={() => isEnrolled ? (setActiveTab && setActiveTab('student-programs')) : (setActiveTab && setActiveTab('candidature'))}
                       className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${isEnrolled ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                       {isEnrolled ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Voir mon programme</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                     </button>

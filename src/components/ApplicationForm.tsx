@@ -59,6 +59,32 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     }
   }, [programs, selectedProgram]);
 
+  // Pre-fill student info if logged in and skip OTP
+  useEffect(() => {
+    const loadLoggedInUser = async () => {
+      try {
+        const user = await account.get();
+        if (user) {
+          setEmail(user.email);
+          setOtpVerified(true); // User is already authenticated
+
+          if (user.name) {
+            const parts = user.name.trim().split(/\s+/);
+            if (parts.length > 1) {
+              setFirstName(parts[0]);
+              setLastName(parts.slice(1).join(' '));
+            } else {
+              setFirstName(user.name);
+            }
+          }
+        }
+      } catch (err) {
+        // No active session
+      }
+    };
+    loadLoggedInUser();
+  }, []);
+
   // Handle Drag & Drop Events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
