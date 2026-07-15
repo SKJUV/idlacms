@@ -1,19 +1,19 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, useMemo, useEffect, type FormEvent } from 'react';
 import {
-  Search,
-  Clock,
-  ArrowRight,
-  AlertTriangle,
-  ShieldAlert,
-  Flame,
-  Compass,
-  Quote,
-  BookOpen,
-  X,
-  Send,
-  HeartHandshake,
-  CheckCircle2,
-} from 'lucide-react';
+  SearchIcon as Search,
+  ClockIcon as Clock,
+  ArrowRightIcon as ArrowRight,
+  AlertTriangleIcon as AlertTriangle,
+  ShieldAlertIcon as ShieldAlert,
+  FlameIcon as Flame,
+  CompassIcon as Compass,
+  QuoteIcon as Quote,
+  BookOpenIcon as BookOpen,
+  XIcon as X,
+  SendIcon as Send,
+  HeartHandshakeIcon as HeartHandshake,
+  CheckCircle2Icon as CheckCircle2,
+} from './Icons';
 import { Program, NewsArticle, Testimonial } from '../types';
 
 interface PublicPortalProps {
@@ -28,6 +28,25 @@ interface PublicPortalProps {
 }
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
+
+  // Newsletter Subscription States
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [subscribedNewsletter, setSubscribedNewsletter] = useState(false);
+
+  const handleNewsletterSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    
+    const currentSubscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    if (!currentSubscribers.includes(newsletterEmail)) {
+      currentSubscribers.push(newsletterEmail);
+      localStorage.setItem('newsletter_subscribers', JSON.stringify(currentSubscribers));
+    }
+    
+    setSubscribedNewsletter(true);
+    setNewsletterEmail('');
+  };
+
   // Programs View States
   const [programSearch, setProgramSearch] = useState('');
   const [selectedProgramType, setSelectedProgramType] = useState<string>('Tous');
@@ -105,59 +124,49 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'home') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30]">
+      <div className="bg-bg-primary text-text-primary">
         {/* Hero Section */}
-        <section className="relative min-h-[700px] flex items-center overflow-hidden bg-[#00020e] px-6 md:px-16 py-16">
-          <div className="absolute inset-0 opacity-20 pointer-events-none">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#006c49] blur-[120px] rounded-full -mr-40 -mt-40"></div>
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6cf8bb] blur-[100px] rounded-full -ml-20 -mb-20"></div>
+        <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
+          {/* Background Image (replacing green glows/carousel) */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="/hero-bg.jpg" 
+              alt="Campus IDLA" 
+              className="w-full h-full object-cover object-center"
+            />
+            {/* Subtle Gradient Overlay: light in light mode, dark in dark mode */}
+            <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary/70 via-bg-secondary/40 to-transparent dark:from-bg-secondary/80 dark:via-bg-secondary/50 dark:to-transparent pointer-events-none"></div>
           </div>
 
-          <div className="relative z-10 max-w-[1440px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+          <div className="relative z-10 max-w-[1440px] mx-auto w-full">
+            <div className="max-w-2xl space-y-6">
               <div className="inline-flex items-center gap-2 bg-[#6cf8bb]/10 border border-[#006c49]/20 px-4 py-1.5 rounded-full">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#6ffbbe] animate-pulse"></span>
                 <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
               </div>
               
-              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight">
-                L'Éducation d'Élite <span className="text-[#6ffbbe]">Accessible</span> en Afrique Centrale
+              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-text-primary leading-tight">
+                L'Éducation d'Élite <span className="text-brand-primary">Accessible</span> en Afrique Centrale
               </h1>
               
-              <p className="font-sans text-lg text-white/70 max-w-lg leading-relaxed">
+              <p className="font-sans text-lg text-text-secondary max-w-lg leading-relaxed">
                 IDLA forme les leaders de demain à travers des programmes d'excellence, une infrastructure de pointe et un réseau alumni d'influence.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="bg-[#006c49] text-white px-8 py-4 rounded-lg font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#006c49]/20"
+                  className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20 cursor-pointer"
                 >
                   Explorer les programmes 
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={onApplyNow}
-                  className="border border-white/20 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-all text-center"
+                  className="border border-border-primary text-text-primary px-8 py-4 rounded-lg font-semibold hover:bg-bg-primary transition-all text-center cursor-pointer"
                 >
                   Je pose ma candidature
                 </button>
-              </div>
-            </div>
-
-            <div className="hidden lg:block relative">
-              <div className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-white/10">
-                <img 
-                  className="object-cover w-full h-full" 
-                  alt="Students collaboration" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlITubWSxX5Bi1Gy85eRy77geyt0EUVKXodBcmi7ce7aMf4tkOIOVgH76UESrQXS7z0RqEHM0vmG34skiJicsHxzTJ8fo92_IjCDgdc7SwXNrQkVa6UoMxrBpZQaJpgyXvQmkEnluNtqFz6Ae-LrFyZOjhHbRXgMHqNhjE1NyZ1UA2M1U5uAvvxYRnBUZez2lIgcWFDzF2G2-XZcpduxY6-R3CAoOf1sh9s6h5zPSiplERtRZW7mTMss86SQt7G7QErPXgTSnzcQA"
-                />
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-[#c6c6cf] max-w-[220px]">
-                <div className="text-[#006c49] font-bold text-3xl">98%</div>
-                <div className="text-[#45464e] text-xs font-medium mt-1 leading-snug">
-                  Taux d'insertion professionnelle de nos diplômés.
-                </div>
               </div>
             </div>
           </div>
@@ -265,8 +274,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Philanthropy CTA */}
-        <section className="py-16 px-6 md:px-12 bg-[#eff4ff]">
-          <div className="max-w-[1200px] mx-auto bg-[#00020e] rounded-3xl overflow-hidden relative border border-white/10">
+        <section className="py-16 px-6 md:px-12 bg-bg-primary">
+          <div className="max-w-[1200px] mx-auto bg-bg-secondary rounded-3xl overflow-hidden relative border border-border-primary">
             <div className="absolute top-0 right-0 w-1/2 h-full opacity-35 pointer-events-none">
               <img 
                 className="object-cover w-full h-full" 
@@ -275,21 +284,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               />
             </div>
             <div className="relative z-10 p-8 md:p-12 lg:p-16 max-w-2xl space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-text-primary leading-tight">
                 Investissez dans le Capital Humain de l'Afrique
               </h2>
-              <p className="text-white/70 text-base leading-relaxed">
+              <p className="text-text-secondary text-base leading-relaxed">
                 Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
               </p>
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="bg-[#006c49] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-[#6cf8bb] hover:text-[#00020e] transition-all flex items-center gap-2"
+                  className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <HeartHandshake className="w-4 h-4" />
                   Faire un don de soutien
                 </button>
-                <button className="text-white border border-white/20 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-white/10 transition-all">
+                <button className="text-text-primary border border-border-primary px-6 py-3 rounded-lg text-sm font-semibold hover:bg-bg-primary transition-all cursor-pointer">
                   Devenir Partenaire académique
                 </button>
               </div>
@@ -297,39 +306,75 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
 
+        {/* Newsletter Subscription */}
+        <section className="py-12 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
+          <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 max-w-lg">
+              <h3 className="text-xl font-bold text-text-primary">Restez connecté avec l'IDLA</h3>
+              <p className="text-sm text-text-secondary">
+                Inscrivez-vous à notre newsletter d'élite pour recevoir en exclusivité les nouveaux programmes et actualités académiques.
+              </p>
+            </div>
+            <form onSubmit={handleNewsletterSubmit} className="flex w-full md:w-auto max-w-md gap-2 shrink-0">
+              {subscribedNewsletter ? (
+                <div className="bg-brand-light text-brand-primary text-xs font-bold px-6 py-3.5 rounded-lg flex items-center gap-1.5 border border-brand-primary/20">
+                  Inscription réussie ! Vous recevrez nos e-mails d'actualité.
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Votre adresse email d'excellence"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    className="flex-grow md:w-64 p-3 rounded-lg border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all cursor-pointer shadow-sm"
+                  >
+                    S'abonner
+                  </button>
+                </>
+              )}
+            </form>
+          </div>
+        </section>
+
         {/* Footer */}
-        <footer className="bg-[#00020e] text-white border-t border-white/10 py-12 px-6 md:px-12">
+        <footer className="bg-bg-secondary text-text-primary border-t border-border-primary py-12 px-6 md:px-12">
           <div className="max-w-[1440px] mx-auto grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
-              <div className="text-xl font-bold text-[#6ffbbe]">IDLA</div>
-              <p className="text-xs text-white/60 leading-relaxed">
-                L'Institut de Leadership et d'Administration est dédié à l'émergence d'une nouvelle génération de leaders africains d'élite.
+              <div className="text-xl font-bold text-brand-primary">IDLA</div>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                L'International Distance Learning Academy est dédiée à l'enseignement d'excellence et à distance pour les futurs leaders.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Filières</h4>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li><a href="#" className="hover:text-white transition-colors">Ingénierie & Tech</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Business & Management</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Santé & Administration</a></li>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Filières</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Ingénierie & Tech</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Business & Management</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Santé & Administration</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Admissions</h4>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li><a href="#" className="hover:text-white transition-colors">Dossier de candidature</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Dates clés</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Financement & Bourses</a></li>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Admissions</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Dossier de candidature</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Dates clés</a></li>
+                <li><a href="#" className="hover:text-brand-primary transition-colors">Financement & Bourses</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Contact</h4>
-              <p className="text-sm text-white/60">Douala, Cameroun</p>
-              <p className="text-sm text-white/60 mt-1">contact@idla.edu</p>
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Contact</h4>
+              <p className="text-sm text-text-secondary">Douala, Cameroun</p>
+              <p className="text-sm text-text-secondary mt-1">contact@idla.edu</p>
             </div>
           </div>
-          <div className="max-w-[1440px] mx-auto border-t border-white/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-white/40 gap-2">
-            <p>© {new Date().getFullYear()} IDLA — Institut de Leadership et d'Administration. Tous droits réservés.</p>
+          <div className="max-w-[1440px] mx-auto border-t border-border-primary/60 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-text-secondary/60 gap-2">
+            <p>© {new Date().getFullYear()} IDLA — International Distance Learning Academy. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique Centrale</p>
           </div>
         </footer>
@@ -337,10 +382,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         {/* MODALE — Formulaire public de don */}
         {showDonationModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeDonationModal}>
-            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
-                <h3 className="font-bold text-base flex items-center gap-2"><HeartHandshake className="w-5 h-5 text-[#6ffbbe]" /> Faire un don</h3>
-                <button onClick={closeDonationModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-primary" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary/40 bg-bg-primary text-text-primary">
+                <h3 className="font-bold text-base flex items-center gap-2"><HeartHandshake className="w-5 h-5 text-brand-primary" /> Faire un don</h3>
+                <button onClick={closeDonationModal} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               {donationSent ? (
                 <div className="p-8 text-center space-y-3">
@@ -385,11 +430,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-[#00020e]">Nos Programmes d'Excellence</h1>
+            <h1 className="font-sans font-bold text-4xl text-text-primary">Nos Programmes d'Excellence</h1>
             <p className="text-[#45464e] text-lg max-w-2xl">
               Découvrez des parcours académiques d'élite conçus pour propulser votre carrière. Des formations rigoureuses encadrées par des experts internationaux.
             </p>
@@ -412,10 +457,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <button 
                   key={type}
                   onClick={() => setSelectedProgramType(type)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     selectedProgramType === type 
-                      ? 'bg-[#00020e] text-white shadow-sm' 
-                      : 'bg-slate-100 hover:bg-slate-200 text-[#45464e]'
+                      ? 'bg-brand-primary text-white shadow-sm' 
+                      : 'bg-bg-primary hover:bg-border-primary/50 text-text-secondary border border-border-primary/60'
                   }`}
                 >
                   {type === 'Tous' ? 'Tous les types' : type}
@@ -493,11 +538,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     const regularNewsArticles = filteredNews.filter(n => !n.isFeatured || selectedNewsCategory !== 'Tous');
 
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-[#00020e]">Actualités</h1>
+            <h1 className="font-sans font-bold text-4xl text-text-primary">Actualités</h1>
             <p className="text-[#45464e] text-lg max-w-2xl">
               Restez informé des derniers événements, des réussites académiques et des nouveaux partenariats d'élite de l'IDLA.
             </p>
@@ -618,15 +663,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'temoignages') {
     return (
-      <div className="bg-[#f8f9ff] text-[#0b1c30] min-h-screen py-12 px-6 md:px-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 bg-[#6cf8bb]/20 text-[#00714d] text-xs font-bold rounded-full uppercase tracking-wider">
+              <span className="inline-block px-3 py-1 bg-brand-light text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">
                 Nos Réussites
               </span>
-              <h1 className="font-sans font-bold text-4xl text-[#00020e]">Des parcours d'alumni inspirants.</h1>
+              <h1 className="font-sans font-bold text-4xl text-text-primary">Des parcours d'alumni inspirants.</h1>
               <p className="text-[#45464e] text-lg max-w-2xl">
                 Découvrez comment nos diplômés transforment leurs ambitions en projets d'envergure. Leurs histoires sont le reflet de notre exigence.
               </p>
@@ -640,15 +685,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
 
           {/* Quick Category filter pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[#c6c6cf]/30">
+          <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border-primary/30">
             {['Tous', 'Programmes Masters', 'Executive Education', 'Alumni Stories'].map((pill) => (
               <button 
                 key={pill}
                 onClick={() => setSelectedTestimonialType(pill)}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   selectedTestimonialType === pill 
-                    ? 'bg-[#00020e] text-white' 
-                    : 'bg-white hover:bg-slate-100 text-[#45464e] border border-[#c6c6cf]/60'
+                    ? 'bg-brand-primary text-white shadow-sm' 
+                    : 'bg-bg-secondary hover:bg-bg-primary text-text-secondary border border-border-primary/60'
                 }`}
               >
                 {pill}
@@ -691,10 +736,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         {/* MODALE — Formulaire public de témoignage */}
         {showTestimonialModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeTestimonialModal}>
-            <div className="bg-white text-[#0b1c30] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-[#00020e] text-white">
-                <h3 className="font-bold text-base flex items-center gap-2"><Quote className="w-5 h-5 text-[#6ffbbe]" /> Partager mon témoignage</h3>
-                <button onClick={closeTestimonialModal} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-primary" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary/40 bg-bg-primary text-text-primary">
+                <h3 className="font-bold text-base flex items-center gap-2"><Quote className="w-5 h-5 text-brand-primary" /> Partager mon témoignage</h3>
+                <button onClick={closeTestimonialModal} className="text-text-secondary hover:text-text-primary cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               {testimonialSent ? (
                 <div className="p-8 text-center space-y-3">
