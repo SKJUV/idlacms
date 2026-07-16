@@ -11,7 +11,7 @@ import {
 } from '../Icons';
 import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown } from 'lucide-react';
 import { PreRegistration } from '../../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
 
 interface PreRegistrationsProps {
   preRegistrations: PreRegistration[];
@@ -343,12 +343,30 @@ export default function PreRegistrations({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button className="p-1.5 text-slate-500 hover:text-brand-primary cursor-pointer" title="Télécharger">
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                          <button className="p-1.5 text-slate-500 hover:text-brand-primary cursor-pointer" title="Ouvrir">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
+                          {appDoc ? (
+                            <>
+                              <a
+                                href={storage.getFileDownload(APPWRITE_CONFIG.buckets.documents, appDoc.fileId).toString()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 text-slate-500 hover:text-brand-primary cursor-pointer"
+                                title="Télécharger"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                              <a
+                                href={storage.getFileView(APPWRITE_CONFIG.buckets.documents, appDoc.fileId).toString()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 text-slate-500 hover:text-brand-primary cursor-pointer"
+                                title="Ouvrir"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Lien non disponible</span>
+                          )}
                         </div>
                       </div>
                     );

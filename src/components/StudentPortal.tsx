@@ -129,12 +129,13 @@ interface StudentPortalProps {
   activeTab?: string;
   setActiveTab?: (tab: any) => void;
   programs?: any[];
+  onApplyNow?: (programTitle?: string) => void;
 }
 
 // ─── Composant Principal ────────────────────────────────────────────────────────
 
 export default function StudentPortal({
-  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, knownName, activeTab, setActiveTab, programs,
+  onBackToHome, onLoginSuccess, isLoggedIn, knownEmail, knownName, activeTab, setActiveTab, programs, onApplyNow,
 }: StudentPortalProps) {
 
   // ── Login ──
@@ -157,6 +158,7 @@ export default function StudentPortal({
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [candidateDocs, setCandidateDocs] = useState<any[]>([]);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [activeUploadType, setActiveUploadType] = useState<'cni' | 'diplome' | null>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -330,9 +332,11 @@ export default function StudentPortal({
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
-    if (selectedFiles && selectedFiles.length > 0 && selectedAppId) {
+    if (selectedFiles && selectedFiles.length > 0 && selectedAppId && activeUploadType) {
       const file = selectedFiles[0];
       setIsUploadingDoc(true);
+      const docType = activeUploadType;
+      const prefixedName = docType === 'cni' ? `[CNI] ${file.name}` : `[Diplôme] ${file.name}`;
 
       try {
         let fileId = '';
@@ -353,7 +357,7 @@ export default function StudentPortal({
             {
               applicationId: selectedAppId,
               fileId,
-              name: file.name,
+              name: prefixedName,
               sizeBytes: file.size,
               mimeType: file.type,
               uploadedBy: 'candidate',
@@ -362,10 +366,16 @@ export default function StudentPortal({
           );
         }
 
-        setCandidateDocs((curr) => [
-          ...curr,
-          { name: file.name, size: fmtSize(file.size), date: 'À l\'instant' }
-        ]);
+        setCandidateDocs((curr) => {
+          const filtered = curr.filter(d => {
+            if (docType === 'cni') return !d.name.startsWith('[CNI]');
+            return !d.name.startsWith('[Diplôme]');
+          });
+          return [
+            ...filtered,
+            { name: prefixedName, size: fmtSize(file.size), date: 'À l\'instant' }
+          ];
+        });
       } catch (err: any) {
         console.error("Échec du téléversement sur Appwrite:", err);
       } finally {
@@ -907,47 +917,117 @@ export default function StudentPortal({
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         {/* Documents Upload Panel */}
                         <div className="lg:col-span-6 bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                          <div className="flex justify-between items-center pb-2 border-b border-border-primary/30">
-                            <h3 className="font-sans font-bold text-sm text-text-primary flex items-center gap-2">
-                              <FileTextIcon className="w-5 h-5 text-brand-primary" />
-                              Pièces justificatives
-                            </h3>
-                            <button
-                              onClick={() => docInputRef.current?.click()}
-                              disabled={isUploadingDoc}
-                              className="bg-brand-light text-brand-primary text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer hover:bg-brand-primary hover:text-white"
-                            >
-                              <UploadIcon className="w-3.5 h-3.5" />
-                              {isUploadingDoc ? 'Chargement...' : 'Ajouter'}
-                            </button>
-                            <input
-                              type="file"
-                              ref={docInputRef}
-                              onChange={handleDocUpload}
-                              className="hidden"
-                              accept=".pdf,.doc,.docx"
-                            />
-                          </div>
+                          <h3 className="font-sans font-bold text-sm text-text-primary pb-2 border-b border-border-primary/30 flex items-center gap-2">
+                            <FileTextIcon className="w-5 h-5 text-brand-primary" />
+                            Pièces justificatives
+                          </h3>
 
-                          <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1">
-                            {candidateDocs.length === 0 && (
-                              <p className="text-xs text-text-secondary italic">Aucun document téléversé pour l'instant.</p>
-                            )}
-                            {candidateDocs.map((doc, idx) => (
-                              <div key={doc.id ?? idx} className="flex items-center justify-between p-3 bg-bg-primary border border-border-primary/40 rounded-xl hover:border-brand-primary/40 transition-colors">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="w-8 h-8 rounded-lg bg-brand-light text-brand-primary flex items-center justify-center font-bold text-[10px] shrink-0">
-                                    PDF
+                          {(() => {
+                            const appProg = programs?.find((p) => p.title === app.program);
+                            const isAppCert = appProg?.type === 'Certification';
+                            const studentCni = candidateDocs.find((d) => d.name.startsWith('[CNI]'));
+                            const studentDiplome = candidateDocs.find((d) => d.name.startsWith('[Diplôme]'));
+
+                            return (
+                              <div className="space-y-4 flex-1">
+                                {/* CNI Card */}
+                                <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h4 className="text-xs font-bold text-text-primary">1. Carte Nationale d'Identité (CNI)</h4>
+                                      <p className="text-[9px] text-text-secondary mt-0.5">Format requis : PDF, Word (Max: 5 Mo)</p>
+                                    </div>
+                                    {studentCni ? (
+                                      <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <CheckCircle2Icon className="w-3.5 h-3.5" /> Chargé
+                                      </span>
+                                    ) : (
+                                      <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        Manquant
+                                      </span>
+                                    )}
                                   </div>
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-bold text-text-primary line-clamp-1">{doc.name}</p>
-                                    <p className="text-[10px] text-text-secondary">{doc.size} • Chargé le {doc.date}</p>
-                                  </div>
+
+                                  {studentCni ? (
+                                    <div className="flex items-center justify-between p-2.5 bg-bg-secondary rounded-lg border border-border-primary/40 text-xs">
+                                      <div className="flex items-center gap-2 truncate">
+                                        <FileTextIcon className="w-4 h-4 text-brand-primary" />
+                                        <span className="font-semibold text-text-primary truncate">{studentCni.name.replace('[CNI] ', '')}</span>
+                                        <span className="text-[10px] text-text-secondary">({studentCni.size})</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveUploadType('cni');
+                                        docInputRef.current?.click();
+                                      }}
+                                      className="w-full py-2 border-2 border-dashed border-border-primary rounded-lg hover:border-brand-primary hover:bg-bg-secondary text-xs font-semibold text-text-secondary hover:text-brand-primary transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                      <UploadIcon className="w-4 h-4" /> Charger ma CNI
+                                    </button>
+                                  )}
                                 </div>
-                                <CheckCircle2Icon className="w-4 h-4 text-brand-primary shrink-0 ml-2" />
+
+                                {/* Diploma Card */}
+                                {!isAppCert && (
+                                  <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h4 className="text-xs font-bold text-text-primary">2. Diplôme le plus récent</h4>
+                                        <p className="text-[9px] text-text-secondary mt-0.5">Format requis : PDF, Word (Max: 5 Mo)</p>
+                                      </div>
+                                      {studentDiplome ? (
+                                        <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                          <CheckCircle2Icon className="w-3.5 h-3.5" /> Chargé
+                                        </span>
+                                      ) : (
+                                        <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                          Manquant
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {studentDiplome ? (
+                                      <div className="flex items-center justify-between p-2.5 bg-bg-secondary rounded-lg border border-border-primary/40 text-xs">
+                                        <div className="flex items-center gap-2 truncate">
+                                          <FileTextIcon className="w-4 h-4 text-brand-primary" />
+                                          <span className="font-semibold text-text-primary truncate">{studentDiplome.name.replace('[Diplôme] ', '')}</span>
+                                          <span className="text-[10px] text-text-secondary">({studentDiplome.size})</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveUploadType('diplome');
+                                          docInputRef.current?.click();
+                                        }}
+                                        className="w-full py-2 border-2 border-dashed border-border-primary rounded-lg hover:border-brand-primary hover:bg-bg-secondary text-xs font-semibold text-text-secondary hover:text-brand-primary transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                      >
+                                        <UploadIcon className="w-4 h-4" /> Charger mon Diplôme
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })()}
+
+                          <input
+                            type="file"
+                            ref={docInputRef}
+                            onChange={handleDocUpload}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx"
+                          />
+
+                          {isUploadingDoc && (
+                            <div className="bg-bg-primary p-4 rounded-lg border border-border-primary text-center text-xs font-bold text-brand-primary animate-pulse">
+                              Téléversement en cours...
+                            </div>
+                          )}
                         </div>
 
                         {/* Advisor Chat Panel */}
@@ -1169,7 +1249,7 @@ export default function StudentPortal({
                           <div className="flex items-center gap-3 text-[11px] text-text-secondary mt-auto">
                             <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{prog.duration}</span>
                           </div>
-                          <button onClick={() => alreadyApplied ? setProgSection('mes-candidatures') : (setActiveTab && setActiveTab('candidature'))}
+                          <button onClick={() => alreadyApplied ? setProgSection('mes-candidatures') : (onApplyNow ? onApplyNow(prog.title) : (setActiveTab && setActiveTab('candidature')))}
                             className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${alreadyApplied ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                             {alreadyApplied ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Candidature soumise</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                           </button>
@@ -1255,7 +1335,7 @@ export default function StudentPortal({
                     <div className="flex items-center gap-4 text-[11px] text-text-secondary mt-auto">
                       <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{course.duration}</span>
                     </div>
-                    <button onClick={() => isEnrolled ? (setActiveTab && setActiveTab('student-programs')) : (setActiveTab && setActiveTab('candidature'))}
+                    <button onClick={() => isEnrolled ? (setActiveTab && setActiveTab('student-programs')) : (onApplyNow ? onApplyNow(course.title) : (setActiveTab && setActiveTab('candidature')))}
                       className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${isEnrolled ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                       {isEnrolled ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Voir mon programme</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                     </button>

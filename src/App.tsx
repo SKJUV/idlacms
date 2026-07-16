@@ -103,6 +103,7 @@ export default function App() {
   );
   const [role, setRole] = useState<Role>('guest');
   const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [selectedProgramTitle, setSelectedProgramTitle] = useState<string | undefined>(undefined);
 
   // Check active session on mount
   useEffect(() => {
@@ -345,6 +346,11 @@ export default function App() {
     setActiveTab('success');
   };
 
+  const handleApplyToProgram = (programTitle?: string) => {
+    setSelectedProgramTitle(programTitle);
+    setActiveTab('candidature');
+  };
+
   const handleSubmitTestimonial = (t: Omit<Testimonial, 'id' | 'image'>) => {
     setPendingTestimonials((curr) => [
       {
@@ -448,7 +454,7 @@ export default function App() {
           <PublicPortal
             activeTab={activeTab as any}
             setActiveTab={setActiveTab}
-            onApplyNow={() => setActiveTab('candidature')}
+            onApplyNow={handleApplyToProgram}
             programs={programs}
             news={news}
             testimonials={testimonials}
@@ -461,8 +467,15 @@ export default function App() {
         {activeTab === 'candidature' && (
           <ApplicationForm
             onSuccess={handleApplicationSuccess}
-            onBackToHome={() => setActiveTab('home')}
+            onBackToHome={() => {
+              if (role === 'student') {
+                setActiveTab('student-programs');
+              } else {
+                setActiveTab('home');
+              }
+            }}
             programs={programs}
+            initialProgram={selectedProgramTitle}
           />
         )}
 
@@ -516,6 +529,7 @@ export default function App() {
             }}
             onBackToHome={() => setActiveTab('home')}
             programs={programs}
+            onApplyNow={handleApplyToProgram}
           />
         )}
 

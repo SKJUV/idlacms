@@ -12,12 +12,13 @@ import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account } from '../lib/appwrite';
 
 interface ApplicationFormProps {
-  onSuccess: (candidateName: string, selectedProgram: string, email: string, tempPass: string) => void;
+  onSuccess: (candidateName: string, selectedProgram: string, email: string, tempPass?: string) => void;
   onBackToHome: () => void;
   programs: Program[];
+  initialProgram?: string;
 }
 
-export default function ApplicationForm({ onSuccess, onBackToHome, programs }: ApplicationFormProps) {
+export default function ApplicationForm({ onSuccess, onBackToHome, programs, initialProgram }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,7 +32,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
   const [phone, setPhone] = useState('');
   const [nationality, setNationality] = useState('');
 
-  const [selectedProgram, setSelectedProgram] = useState('');
+  const [selectedProgram, setSelectedProgram] = useState(initialProgram || '');
   const [highestDegree, setHighestDegree] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
 
@@ -39,6 +40,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeUploadType, setActiveUploadType] = useState<'cni' | 'diplome' | null>(null);
 
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -101,9 +103,11 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     setIsDragging(false);
   };
 
-  const simulateUpload = async (file: File) => {
+  const simulateUpload = async (file: File, docType: 'cni' | 'diplome') => {
     setIsUploading(true);
     setUploadProgress(0);
+
+    const prefixedName = docType === 'cni' ? `[CNI] ${file.name}` : `[Diplôme] ${file.name}`;
 
     let appwriteFileId = '';
     if (isAppwriteStorageConfigured()) {
@@ -116,7 +120,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
         appwriteFileId = response.$id;
         console.log("Fichier téléversé dans le bucket Appwrite:", response);
       } catch (err) {
-        console.error("Échec du téléversement sur Appwrite. Poursuite avec l'upload simulé.", err);
+        console.error("Échec du téléversement sur Appwrite.", err);
       }
     }
 
@@ -126,37 +130,33 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
           clearInterval(interval);
           setIsUploading(false);
           const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
-          setFiles((current) => [...current, { 
-            name: file.name, 
-            size: `${sizeInMb} MB`, 
-            type: file.type,
-            fileId: appwriteFileId
-          }]);
+          setFiles((current) => {
+            const filtered = current.filter(f => {
+              if (docType === 'cni') return !f.name.startsWith('[CNI]');
+              return !f.name.startsWith('[Diplôme]');
+            });
+            return [
+              ...filtered,
+              { 
+                name: prefixedName, 
+                size: `${sizeInMb} MB`, 
+                type: file.type,
+                fileId: appwriteFileId || ID.unique(),
+              }
+            ];
+          });
           return 100;
         }
-        return prev + 20;
+        return prev + 25;
       });
-    }, 150);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles.length > 0) {
-      simulateUpload(droppedFiles[0]);
-    }
+    }, 100);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
-    if (selectedFiles && selectedFiles.length > 0) {
-      simulateUpload(selectedFiles[0]);
+    if (selectedFiles && selectedFiles.length > 0 && activeUploadType) {
+      simulateUpload(selectedFiles[0], activeUploadType);
     }
-  };
-
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
   };
 
   // Generate & send a 6-digit OTP via Resend Serverless API
@@ -229,10 +229,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
       }
     }
     if (step === 3) {
-      if (files.length === 0 && !isCertification) {
-        setErrorMessage('Veuillez charger au moins un document justificatif (CV ou Diplôme).');
-        return;
-      }
+      // Les fichiers justificatifs sont optionnels lors de l'inscription
     }
     setStep((s) => s + 1);
   };
@@ -575,45 +572,128 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
 
           {/* STEP 3 */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="font-sans font-bold text-lg text-text-primary pb-2 border-b border-border-primary/40">
-                Téléchargement du dossier de pièces
+                Téléchargement du dossier de pièces (Optionnel)
               </h3>
               
-              {isCertification && (
-                <div className="bg-brand-primary/10 border-l-4 border-brand-primary p-4 rounded text-xs text-text-primary leading-relaxed">
-                  Le dépôt de pièces justificatives est facultatif pour ce programme de certification. Vous pouvez passer à l'étape suivante si vous le souhaitez.
-                </div>
-              )}
-              
-              <div 
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={triggerFileSelect}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  isDragging 
-                    ? 'border-brand-primary bg-brand-light' 
-                    : 'border-border-primary hover:border-brand-primary hover:bg-bg-primary'
-                }`}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileSelect} 
-                  className="hidden" 
-                  accept=".pdf,.doc,.docx"
-                />
-                
-                <UploadCloudIcon className="w-12 h-12 text-brand-primary mx-auto mb-3 opacity-80" size={48} />
-                
-                <p className="text-sm font-semibold text-text-primary">
-                  Glissez-déposez vos fichiers ici, ou cliquez pour parcourir
-                </p>
-                <p className="text-xs text-text-secondary mt-1">
-                  Format requis : PDF, Word (Taille max : 5 MB) • CV & Lettre de motivation recommandés.
-                </p>
-              </div>
+              <p className="text-xs text-text-secondary">
+                Vous pouvez charger vos pièces justificatives dès maintenant ou finaliser votre dossier plus tard depuis votre espace étudiant.
+              </p>
+
+              {(() => {
+                const cniFile = files.find(f => f.name.startsWith('[CNI]'));
+                const diplomeFile = files.find(f => f.name.startsWith('[Diplôme]'));
+
+                return (
+                  <div className="space-y-4">
+                    {/* 1. CNI upload block */}
+                    <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/60 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-text-primary">1. Carte Nationale d'Identité (CNI)</h4>
+                          <p className="text-[10px] text-text-secondary mt-0.5">Format requis : PDF, Word (Max: 5 Mo)</p>
+                        </div>
+                        {cniFile ? (
+                          <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2Icon className="w-3 h-3" /> Chargé
+                          </span>
+                        ) : (
+                          <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Manquant
+                          </span>
+                        )}
+                      </div>
+                      
+                      {cniFile ? (
+                        <div className="flex items-center justify-between p-2.5 bg-bg-primary rounded-lg border border-border-primary/40 text-xs">
+                          <div className="flex items-center gap-2 truncate">
+                            <FileTextIcon className="w-4 h-4 text-brand-primary" />
+                            <span className="font-semibold text-text-primary truncate">{cniFile.name.replace('[CNI] ', '')}</span>
+                            <span className="text-[10px] text-text-secondary">({cniFile.size})</span>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => setFiles(prev => prev.filter(f => !f.name.startsWith('[CNI]')))}
+                            className="text-red-500 hover:text-red-700 font-bold text-[10px] cursor-pointer"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveUploadType('cni');
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full py-2 border-2 border-dashed border-border-primary rounded-lg hover:border-brand-primary hover:bg-bg-primary text-xs font-semibold text-text-secondary hover:text-brand-primary transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <UploadCloudIcon className="w-4 h-4" /> Charger ma CNI
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 2. Diploma upload block */}
+                    {!isCertification && (
+                      <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/60 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-text-primary">2. Diplôme le plus récent</h4>
+                            <p className="text-[10px] text-text-secondary mt-0.5">Format requis : PDF, Word (Max: 5 Mo)</p>
+                          </div>
+                          {diplomeFile ? (
+                            <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle2Icon className="w-3 h-3" /> Chargé
+                            </span>
+                          ) : (
+                            <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              Manquant
+                            </span>
+                          )}
+                        </div>
+                        
+                        {diplomeFile ? (
+                          <div className="flex items-center justify-between p-2.5 bg-bg-primary rounded-lg border border-border-primary/40 text-xs">
+                            <div className="flex items-center gap-2 truncate">
+                              <FileTextIcon className="w-4 h-4 text-brand-primary" />
+                              <span className="font-semibold text-text-primary truncate">{diplomeFile.name.replace('[Diplôme] ', '')}</span>
+                              <span className="text-[10px] text-text-secondary">({diplomeFile.size})</span>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setFiles(prev => prev.filter(f => !f.name.startsWith('[Diplôme]')))}
+                              className="text-red-500 hover:text-red-700 font-bold text-[10px] cursor-pointer"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUploadType('diplome');
+                              fileInputRef.current?.click();
+                            }}
+                            className="w-full py-2 border-2 border-dashed border-border-primary rounded-lg hover:border-brand-primary hover:bg-bg-primary text-xs font-semibold text-text-secondary hover:text-brand-primary transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <UploadCloudIcon className="w-4 h-4" /> Charger mon Diplôme
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Hidden file input */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileSelect} 
+                className="hidden" 
+                accept=".pdf,.doc,.docx"
+              />
 
               {/* Uploading progress feedback */}
               {isUploading && (
@@ -627,27 +707,6 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
                       className="bg-brand-primary h-full transition-all duration-150"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Attached files lists */}
-              {files.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Fichiers joints ({files.length})</h4>
-                  <div className="space-y-2">
-                    {files.map((f, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-bg-primary rounded-lg border border-border-primary/40">
-                        <div className="flex items-center gap-2">
-                          <FileTextIcon className="w-4 h-4 text-brand-primary" />
-                          <div>
-                            <p className="text-xs font-semibold text-text-primary line-clamp-1">{f.name}</p>
-                            <p className="text-[10px] text-text-secondary">{f.size}</p>
-                          </div>
-                        </div>
-                        <CheckCircle2Icon className="w-4 h-4 text-brand-primary" />
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}

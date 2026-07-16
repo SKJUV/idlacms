@@ -19,7 +19,7 @@ import { Program, NewsArticle, Testimonial } from '../types';
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
   setActiveTab: (tab: any) => void;
-  onApplyNow: () => void;
+  onApplyNow: (programTitle?: string) => void;
   programs: Program[];
   news: NewsArticle[];
   testimonials: Testimonial[];
@@ -522,7 +522,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         <span>{p.duration}</span>
                       </div>
                       <button 
-                        onClick={onApplyNow}
+                        onClick={() => onApplyNow(p.title)}
                         className="flex items-center gap-1 text-sm font-semibold text-[#006c49] group-hover:underline"
                       >
                         S'inscrire
