@@ -135,15 +135,17 @@ export default function ApplicationSuccess({
                 sous un délai de 24 heures ouvrées.
               </span>
             </li>
-            <li className="flex items-start gap-2 text-xs text-text-secondary">
-              <span className="w-5 h-5 rounded-full bg-brand-light text-brand-primary flex items-center justify-center font-bold shrink-0 mt-0.5 text-[10px]">
-                2
-              </span>
-              <span>
-                <strong>Espace Candidat :</strong> Connectez-vous avec vos identifiants temporaires reçus par
-                mail pour suivre l'évaluation de votre dossier.
-              </span>
-            </li>
+            {tempPassword && (
+              <li className="flex items-start gap-2 text-xs text-text-secondary">
+                <span className="w-5 h-5 rounded-full bg-brand-light text-brand-primary flex items-center justify-center font-bold shrink-0 mt-0.5 text-[10px]">
+                  2
+                </span>
+                <span>
+                  <strong>Espace Candidat :</strong> Connectez-vous avec vos identifiants temporaires reçus par
+                  mail pour suivre l'évaluation de votre dossier.
+                </span>
+              </li>
+            )}
           </ul>
         </div>
 

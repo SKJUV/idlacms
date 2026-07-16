@@ -263,40 +263,42 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
 
     if (isAppwriteDbConfigured()) {
       try {
-        // 1. Create Appwrite Auth Account
-        try {
-          await account.create(
-            ID.unique(),
-            cleanEmail,
-            generatedPassword,
-            candidateName
-          );
-          console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
-
-          // 2. Set user preference mustChangePassword: true by logging in temporarily
-          await account.createEmailPasswordSession({ email: cleanEmail, password: generatedPassword });
-          await account.updatePrefs({ mustChangePassword: true });
-          // Log out so they can see the confirmation page
-          await account.deleteSession({ sessionId: 'current' });
-
-          // 3. Send credentials email
+        if (!isExistingUser) {
+          // 1. Create Appwrite Auth Account
           try {
-            await fetch('/api/send-credentials', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: cleanEmail,
-                fullName: candidateName,
-                selectedProgram,
-                tempPassword: generatedPassword,
-              }),
-            });
-          } catch (mailErr) {
-            console.warn("Échec de l'envoi de l'email avec les identifiants:", mailErr);
+            await account.create(
+              ID.unique(),
+              cleanEmail,
+              generatedPassword,
+              candidateName
+            );
+            console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
+
+            // 2. Set user preference mustChangePassword: true by logging in temporarily
+            await account.createEmailPasswordSession({ email: cleanEmail, password: generatedPassword });
+            await account.updatePrefs({ mustChangePassword: true });
+            // Log out so they can see the confirmation page
+            await account.deleteSession({ sessionId: 'current' });
+
+            // 3. Send credentials email
+            try {
+              await fetch('/api/send-credentials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: cleanEmail,
+                  fullName: candidateName,
+                  selectedProgram,
+                  tempPassword: generatedPassword,
+                }),
+              });
+            } catch (mailErr) {
+              console.warn("Échec de l'envoi de l'email avec les identifiants:", mailErr);
+            }
+          } catch (authErr: any) {
+            // If user already exists (e.g. they submit another application), ignore the account creation error
+            console.warn("Le compte utilisateur existe peut-être déjà ou échec de la création:", authErr);
           }
-        } catch (authErr: any) {
-          // If user already exists (e.g. they submit another application), ignore the account creation error
-          console.warn("Le compte utilisateur existe peut-être déjà ou échec de la création:", authErr);
         }
 
         const application = await databases.createDocument(
@@ -349,7 +351,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs }: A
     }
 
     setIsSubmitting(false);
-    onSuccess(candidateName, selectedProgram, email, generatedPassword);
+    onSuccess(candidateName, selectedProgram, email, isExistingUser ? undefined : generatedPassword);
   };
 
   // Pour les utilisateurs déjà connectés : 3 étapes (2→3→4), sinon 4 étapes
