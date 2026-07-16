@@ -39,12 +39,6 @@ interface NavLink {
 }
 
 export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, theme, setTheme }: AdminSidebarProps) {
-  const candidateLinks: NavLink[] = [
-    { label: 'Dashboard', icon: TrendingUpIcon, target: 'candidate-dashboard', activeOn: ['candidate-dashboard'] },
-    { label: 'Programmes', icon: BookOpenIcon, target: 'candidate-programmes', activeOn: ['candidate-programmes'] },
-    { label: 'Actualités', icon: NewspaperIcon, target: 'actualites', activeOn: ['actualites'] },
-  ];
-
   const studentLinks: NavLink[] = [
     { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'student-dashboard', activeOn: ['student-dashboard'] },
     { label: 'Mes Programmes', icon: BookOpenIcon, target: 'student-programs', activeOn: ['student-programs'] },
@@ -64,11 +58,10 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Marketing', icon: MegaphoneIcon, target: 'admin-marketing', activeOn: ['admin-marketing'] },
   ];
 
-  const isCandidate = role === 'candidate';
   const isStudent = role === 'student';
-  const links = isStudent ? studentLinks : isCandidate ? candidateLinks : adminLinks;
-  const title = isStudent ? 'Espace Étudiant' : isCandidate ? 'Espace Candidat' : 'IDLA Admin';
-  const subtitle = isStudent ? 'Ma formation' : isCandidate ? 'Suivi de candidature' : 'CMS Portal';
+  const links = isStudent ? studentLinks : adminLinks;
+  const title = isStudent ? 'Espace Étudiant' : 'IDLA Admin';
+  const subtitle = isStudent ? 'Ma formation' : 'CMS Portal';
 
   return (
     <aside className="w-full border-b border-border-primary bg-bg-secondary text-text-primary lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50 shadow-sm">
@@ -105,7 +98,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
       </nav>
 
       <div className="mt-0 flex flex-wrap gap-2 border-t border-border-primary p-3 lg:mt-auto lg:flex-col lg:px-4 lg:pt-4 lg:space-y-1">
-        {!isCandidate && !isStudent && (
+        {!isStudent && (
           <button
             onClick={() => setActiveTab('admin-settings')}
             className={`${sharedClasses} ${
