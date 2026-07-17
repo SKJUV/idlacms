@@ -173,16 +173,20 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="bg-brand-primary text-white px-8 py-4 rounded-lg font-semibold hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20 cursor-pointer"
+                  className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] via-[#0d9488] to-[#006c49] text-white px-8 py-4 rounded-xl font-bold hover:shadow-[0_0_35px_rgba(0,108,73,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer border border-[#6ffbbe]/30"
                 >
-                  Explorer les programmes 
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Explorer les programmes 
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-300" />
+                  </span>
+                  <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
                 </button>
                 <button 
-                  onClick={onApplyNow}
-                  className="border border-border-primary text-text-primary px-8 py-4 rounded-lg font-semibold hover:bg-bg-primary transition-all text-center cursor-pointer"
+                  onClick={() => onApplyNow()}
+                  className="group relative px-8 py-4 rounded-xl font-bold transition-all duration-300 text-center cursor-pointer bg-white/10 hover:bg-white text-[#006c49] border-2 border-[#006c49] hover:border-transparent shadow-md hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
-                  Je pose ma candidature
+                  <span>Je pose ma candidature</span>
+                  <span className="w-2 h-2 rounded-full bg-[#006c49] group-hover:animate-ping"></span>
                 </button>
               </div>
             </div>
@@ -207,6 +211,97 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div>
               <div className="text-xs text-[#45464e] uppercase tracking-wider mb-1">Partenaires</div>
               <div className="text-3xl font-bold text-[#00020e]">120+</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section interactive : Pourquoi choisir l'IDLA ? (3 Piliers d'Excellence) */}
+        <section className="py-20 px-6 md:px-12 bg-gradient-to-b from-white via-[#eff4ff]/30 to-white">
+          <div className="max-w-[1440px] mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#006c49] bg-[#006c49]/10 px-3 py-1.5 rounded-full inline-block mb-3">
+                L'Expérience Académique IDLA
+              </span>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#00020e] leading-tight">
+                Pourquoi l'IDLA est le Choix n°1 en Afrique Centrale ?
+              </h2>
+              <p className="text-[#45464e] mt-3 text-base">
+                Une pédagogie flexible et innovante qui propulse votre carrière vers les sphères décisionnelles internationales.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Carte 1 */}
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#006c49] to-[#0d9488] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <BookOpen className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                    Pédagogie d'Élite & Flexible
+                  </h3>
+                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                    Accédez à des cours interactifs en direct ou à la demande, conçus par des professeurs et professionnels internationaux prestigieux.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setActiveTab('programmes')}
+                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                >
+                  <span>En savoir plus</span>
+                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
+              </div>
+
+              {/* Carte 2 */}
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0d9488] to-[#006c49] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <HeartHandshake className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                    Réseau Alumni & Mentorat
+                  </h3>
+                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                    Bénéficiez d'un accompagnement personnalisé par des mentors de haut niveau et intégrez un réseau influent de plus de 5 000 anciens élèves.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setActiveTab('temoignages')}
+                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                >
+                  <span>Voir le réseau</span>
+                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
+              </div>
+
+              {/* Carte 3 */}
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#006c49] to-[#044c35] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                    Reconnaissance Internationale
+                  </h3>
+                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                    Nos cursus sont accrédités et conçus pour répondre aux standards internationaux, vous ouvrant les portes des grandes organisations.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setActiveTab('programmes')}
+                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                >
+                  <span>Découvrir l'accréditation</span>
+                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -256,9 +351,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
-                className="text-[#006c49] font-semibold text-sm flex items-center gap-1 group hover:underline"
+                className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#006c49]/10 to-[#0d9488]/10 hover:from-[#006c49] hover:to-[#0d9488] text-[#006c49] hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-[#006c49]/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-[#006c49]/25 hover:-translate-y-0.5 cursor-pointer"
               >
-                Voir tout <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <span>Voir plus — Toutes nos formations</span>
+                <span className="w-7 h-7 rounded-full bg-[#006c49]/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
               </button>
             </div>
 
@@ -266,23 +364,33 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {programs.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
-                  className={`rounded-2xl overflow-hidden relative group min-h-[350px] shadow-sm border border-[#c6c6cf]/30 cursor-pointer ${
+                  className={`rounded-2xl overflow-hidden relative group min-h-[380px] shadow-md hover:shadow-2xl hover:shadow-[#006c49]/20 border border-[#c6c6cf]/30 cursor-pointer transition-all duration-500 transform hover:-translate-y-1.5 flex flex-col justify-end ${
                     idx === 0 ? 'md:col-span-8' : 'md:col-span-4'
                   }`}
                   onClick={() => setActiveTab('programmes')}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#00020e]/95 via-[#00020e]/40 to-transparent z-10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#00020e]/95 via-[#00020e]/50 to-transparent z-10 transition-opacity duration-300 group-hover:opacity-95"></div>
                   <img 
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
+                    className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" 
                     alt={p.title} 
                     src={p.image}
                   />
-                  <div className="absolute bottom-0 left-0 p-6 z-20">
-                    <span className="bg-[#6cf8bb] text-[#00020e] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                  <div className="relative z-20 p-6 w-full flex flex-col justify-end">
+                    <span className="bg-[#6cf8bb] text-[#00020e] text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2.5 inline-block w-fit shadow-sm">
                       {p.category}
                     </span>
-                    <h3 className="text-white font-bold text-xl md:text-2xl mb-1">{p.title}</h3>
-                    <p className="text-white/70 text-xs line-clamp-2 max-w-sm">{p.description}</p>
+                    <h3 className="text-white font-bold text-xl md:text-2xl mb-2 group-hover:text-[#6cf8bb] transition-colors">{p.title}</h3>
+                    <p className="text-white/80 text-xs line-clamp-2 max-w-md mb-5">{p.description}</p>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t border-white/15 opacity-90 group-hover:opacity-100 transition-all duration-300">
+                      <span className="text-white/90 text-xs font-semibold flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#6cf8bb]" /> Rentrée {new Date().getFullYear()}
+                      </span>
+                      <span className="inline-flex items-center gap-2 bg-white/15 hover:bg-[#6cf8bb] text-white group-hover:text-[#00020e] px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-300 transform group-hover:translate-x-1.5 shadow-md">
+                        <span>Découvrir & Voir plus</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -307,16 +415,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <p className="text-text-secondary text-base leading-relaxed">
                 Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 pt-2">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all flex items-center gap-2 cursor-pointer"
+                  className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] to-[#0d9488] text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(0,108,73,0.5)] transition-all duration-300 flex items-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer"
                 >
-                  <HeartHandshake className="w-4 h-4" />
-                  Faire un don de soutien
+                  <HeartHandshake className="w-4 h-4 group-hover:scale-125 transition-transform duration-300" />
+                  <span>Faire un don de soutien</span>
+                  <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
                 </button>
-                <button className="text-text-primary border border-border-primary px-6 py-3 rounded-lg text-sm font-semibold hover:bg-bg-primary transition-all cursor-pointer">
-                  Devenir Partenaire académique
+                <button 
+                  onClick={() => setActiveTab('temoignages')}
+                  className="group px-7 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-white/10 hover:bg-white text-text-primary hover:text-[#00020e] border border-border-primary hover:border-transparent shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Devenir Partenaire académique</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
@@ -345,13 +458,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     placeholder="Votre adresse email d'excellence"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-grow md:w-64 p-3 rounded-lg border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium"
+                    className="flex-grow md:w-64 p-3.5 rounded-xl border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-[#006c49] text-sm font-medium transition-all shadow-inner"
                   />
                   <button
                     type="submit"
-                    className="bg-brand-primary text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-brand-hover transition-all cursor-pointer shadow-sm"
+                    className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] to-[#0d9488] text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_20px_rgba(0,108,73,0.4)] transition-all duration-300 cursor-pointer shrink-0 flex items-center gap-1.5 transform hover:-translate-y-0.5"
                   >
-                    S'abonner
+                    <span>S'abonner</span>
+                    <Send className="w-3.5 h-3.5 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform duration-300" />
                   </button>
                 </>
               )}
