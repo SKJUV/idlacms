@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
-import { ID, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
+import { ID, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 
 interface ProgramsManagementProps {
   programs: Program[];
@@ -148,7 +148,8 @@ export default function ProgramsManagement({
               duration: newProgramDuration,
               image: newProgramImage,
               isNew: newProgramIsNew,
-            } as any
+            } as any,
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
           setCloudSuccess("Programme mis à jour avec succès sur le Cloud Appwrite.");
         } catch (err: any) {
@@ -170,7 +171,8 @@ export default function ProgramsManagement({
                   duration: newProgramDuration,
                   image: newProgramImage,
                   isNew: newProgramIsNew,
-                } as any
+                } as any,
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
               setCloudSuccess("Programme mis à jour en ligne (catégorie ajustée automatiquement sur la base distante pour compatibilité avec l'ancien schéma).");
             } catch (retryErr: any) {
@@ -218,7 +220,8 @@ export default function ProgramsManagement({
             duration: newProgram.duration,
             image: newProgram.image,
             isNew: newProgram.isNew,
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
         setCloudSuccess("Nouveau programme créé et synchronisé avec succès sur la base Appwrite en ligne !");
       } catch (err: any) {
@@ -240,7 +243,8 @@ export default function ProgramsManagement({
                 duration: newProgram.duration,
                 image: newProgram.image,
                 isNew: newProgram.isNew,
-              }
+              },
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
             setCloudSuccess("Nouveau programme créé en ligne (catégorie Cloud ajustée automatiquement sur 'Tech'/'Management' pour compatibilité avec l'ancien schéma Appwrite de la base).");
           } catch (retryErr: any) {
@@ -354,8 +358,113 @@ export default function ProgramsManagement({
     );
   };
 
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handleForcePublishToAllScreens = async () => {
+    if (!isAppwriteDbConfigured()) {
+      setCloudError("⚠️ Votre Cloud Appwrite n'est pas configuré (.env). La publication en ligne est impossible.");
+      return;
+    }
+    setIsPublishing(true);
+    setCloudSuccess(null);
+    setCloudError(null);
+    try {
+      let localProgs: Program[] = [];
+      try { localProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
+      const combined = [...localProgs, ...programs];
+      const uniqueMap = new Map<string, Program>();
+      combined.forEach((p) => {
+        if (p && p.id && !uniqueMap.has(p.id)) uniqueMap.set(p.id, p);
+      });
+      const allToPublish = Array.from(uniqueMap.values());
+
+      let count = 0;
+      for (const p of allToPublish) {
+        if (!p.id || !p.title) continue;
+        const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(p.category || '')
+          ? p.category
+          : 'Tech';
+        try {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.programs,
+            p.id.startsWith('prog-') ? ID.unique() : p.id,
+            {
+              title: p.title,
+              description: p.description || p.title,
+              type: p.type || 'Master',
+              category: safeCategory,
+              duration: p.duration || '1 an',
+              image: p.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+              isNew: !!p.isNew,
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+          );
+          count++;
+        } catch (err: any) {
+          try {
+            await databases.updateDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.programs,
+              p.id,
+              {
+                title: p.title,
+                description: p.description || p.title,
+                type: p.type || 'Master',
+                category: safeCategory,
+                duration: p.duration || '1 an',
+                image: p.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+                isNew: !!p.isNew,
+              } as any,
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+            );
+            count++;
+          } catch (updateErr) {
+            console.warn(`Impossible de publier ${p.title}:`, updateErr);
+          }
+        }
+      }
+      setCloudSuccess(`🌐 Magnifique ! ${count} programmes ont été publiés en ligne avec accès public absolu. Ils sont maintenant immédiatement visibles sur l'écran de tous les internautes !`);
+    } catch (err: any) {
+      setCloudError("Erreur lors de la publication en ligne : " + err.message);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-[#006c49]/15 via-emerald-50 to-[#006c49]/10 border border-[#006c49]/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#006c49] text-white flex items-center justify-center shrink-0 shadow-md">
+            <BookOpen className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-[#00020e]">Publication Universelle en Ligne (Tous Écrans & Tous Visiteurs)</h4>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Force l&apos;envoi immédiat et l&apos;ouverture des permissions publiques sur le Cloud Appwrite afin que n&apos;importe quel internaute voie instantanément vos ajouts sur son écran.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleForcePublishToAllScreens}
+          disabled={isPublishing}
+          className="px-5 py-2.5 bg-[#006c49] hover:bg-[#004e35] disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2 shrink-0 transform hover:-translate-y-0.5"
+        >
+          {isPublishing ? (
+            <>
+              <Clock className="w-4 h-4 animate-spin" />
+              <span>Publication en cours...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4" />
+              <span>🌐 Publier en Ligne pour Tous</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {cloudSuccess && (
         <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm animate-fadeIn">
           <div className="flex items-center gap-2">

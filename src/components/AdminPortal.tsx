@@ -9,7 +9,7 @@ import {
   XCircleIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog, Donation, Campaign } from '../types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../lib/appwrite';
 
 import AdminDashboard from './admin/AdminDashboard';
 import UsersManagement from './admin/UsersManagement';
@@ -166,6 +166,53 @@ export default function AdminPortal({
             try { localStorage.setItem('idla_local_programs', JSON.stringify(combined)); } catch (e) {}
             return combined;
           });
+
+          // AUTO-PUSH ET SYNCHRONISATION EN LIGNE DES PROGRAMMES LOCAUX AVEC PERMISSIONS PUBLIQUES
+          if (isLoggedIn) {
+            setTimeout(async () => {
+              try {
+                let currentLocal: any[] = [];
+                try { currentLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
+                for (const lp of currentLocal) {
+                  const existsInCloud = remoteProgs.some((cd: any) => cd.id === lp.id || cd.title?.toLowerCase() === lp.title?.toLowerCase());
+                  if (!existsInCloud && lp.id && lp.title) {
+                    const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(lp.category)
+                      ? lp.category
+                      : 'Tech';
+                    await databases.createDocument(
+                      APPWRITE_CONFIG.databaseId,
+                      APPWRITE_CONFIG.collections.programs,
+                      lp.id.startsWith('prog-') ? ID.unique() : lp.id,
+                      {
+                        title: lp.title,
+                        description: lp.description || lp.title,
+                        type: lp.type || 'Master',
+                        category: safeCategory,
+                        duration: lp.duration || '1 an',
+                        image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+                        isNew: !!lp.isNew,
+                      },
+                      [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+                    ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
+                  }
+                }
+                // Réparer/Garantir que tous les programmes sur le Cloud sont accessibles en lecture par tout le public sur n'importe quel écran
+                for (const rp of remoteProgs) {
+                  if (rp && rp.id) {
+                    databases.updateDocument(
+                      APPWRITE_CONFIG.databaseId,
+                      APPWRITE_CONFIG.collections.programs,
+                      rp.id,
+                      {},
+                      [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+                    ).catch(() => {});
+                  }
+                }
+              } catch (syncErr) {
+                console.warn("Exception auto-sync cloud:", syncErr);
+              }
+            }, 1000);
+          }
         } else {
           setPrograms((curr) => {
             let freshLocal: any[] = [];

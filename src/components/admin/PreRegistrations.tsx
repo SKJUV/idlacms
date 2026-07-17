@@ -12,7 +12,7 @@ import {
 import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen } from 'lucide-react';
 import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
 import { programsData } from '../../data/mockData';
-import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
 
 interface PreRegistrationsProps {
   preRegistrations: PreRegistration[];
@@ -230,7 +230,8 @@ export default function PreRegistrations({
                 status: 'Accepted',
                 motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
                 initials: selected.initials,
-              }
+              },
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           } catch (e) {
             console.error('Erreur création inscription manuelle Appwrite DB:', e);
