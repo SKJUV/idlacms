@@ -197,6 +197,13 @@ export default function StudentPortal({
   // ── Programmes : section active ──
   const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
 
+  // ── Soumission de candidature depuis le catalogue étudiant ──
+  const [applyingProgram, setApplyingProgram] = useState<{ title: string; category?: string; duration?: string } | null>(null);
+  const [applyMotivation, setApplyMotivation] = useState('');
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+  const [applyError, setApplyError] = useState('');
+  const [applySuccessProgram, setApplySuccessProgram] = useState<string | null>(null);
+
   // ── Charger le profil et les candidatures réelles depuis Appwrite ──
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -381,6 +388,86 @@ export default function StudentPortal({
       } finally {
         setIsUploadingDoc(false);
       }
+    }
+  };
+
+  const handleConfirmApplication = async () => {
+    if (!applyingProgram) return;
+    setIsSubmittingApplication(true);
+    setApplyError('');
+
+    try {
+      const user = await account.get().catch(() => null);
+      const userEmail = profile.email || user?.email || knownEmail || '';
+      if (!userEmail) {
+        setApplyError("Impossible d'identifier votre compte. Veuillez vous reconnecter.");
+        setIsSubmittingApplication(false);
+        return;
+      }
+
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
+        // Vérifier si un dossier initial d'inscription (sans programme ou 'Inscription seule') existe
+        const blankApp = applications.find((a) => !a.program || a.program === 'Inscription seule');
+        if (blankApp) {
+          const updatedDoc = await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.applications,
+            blankApp.$id || blankApp.id,
+            {
+              program: applyingProgram.title,
+              dateApplied: new Date().toISOString(),
+              status: 'New',
+              motivation: applyMotivation || undefined,
+            }
+          );
+          setApplications((apps) =>
+            apps.map((a) => ((a.$id === blankApp.$id || a.id === blankApp.id) ? { ...a, ...updatedDoc, program: applyingProgram.title } : a))
+          );
+        } else {
+          // Créer une nouvelle candidature pour ce programme spécifique
+          const newDoc = await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.applications,
+            ID.unique(),
+            {
+              firstName: profile.name.split(' ')[0] || profile.name,
+              lastName: profile.name.split(' ').slice(1).join(' ') || '',
+              name: profile.name,
+              email: userEmail,
+              phone: profile.phone || '',
+              program: applyingProgram.title,
+              dateApplied: new Date().toISOString(),
+              status: 'New',
+              motivation: applyMotivation || undefined,
+              initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+            }
+          );
+          setApplications((apps) => [newDoc, ...apps]);
+        }
+      } else {
+        const mockNewApp = {
+          id: `app_${Date.now()}`,
+          name: profile.name,
+          email: profile.email,
+          program: applyingProgram.title,
+          dateApplied: new Date().toISOString(),
+          status: 'New' as const,
+          initials: profile.name.slice(0, 2).toUpperCase(),
+          motivation: applyMotivation,
+        };
+        setApplications((apps) => [mockNewApp, ...apps]);
+      }
+
+      const submittedTitle = applyingProgram.title;
+      setApplySuccessProgram(submittedTitle);
+      setApplyingProgram(null);
+      setApplyMotivation('');
+      setProgSection('mes-candidatures');
+    } catch (err: any) {
+      console.error("Erreur lors de la soumission de candidature :", err);
+      setApplyError(err?.message || "Une erreur est survenue lors de l'enregistrement.");
+    } finally {
+      setIsSubmittingApplication(false);
     }
   };
 
@@ -1249,7 +1336,7 @@ export default function StudentPortal({
                           <div className="flex items-center gap-3 text-[11px] text-text-secondary mt-auto">
                             <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{prog.duration}</span>
                           </div>
-                          <button onClick={() => alreadyApplied ? setProgSection('mes-candidatures') : (onApplyNow ? onApplyNow(prog.title) : (setActiveTab && setActiveTab('candidature')))}
+                          <button onClick={() => alreadyApplied ? setProgSection('mes-candidatures') : setApplyingProgram(prog)}
                             className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${alreadyApplied ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                             {alreadyApplied ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Candidature soumise</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                           </button>
@@ -1335,7 +1422,7 @@ export default function StudentPortal({
                     <div className="flex items-center gap-4 text-[11px] text-text-secondary mt-auto">
                       <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" />{course.duration}</span>
                     </div>
-                    <button onClick={() => isEnrolled ? (setActiveTab && setActiveTab('student-programs')) : (onApplyNow ? onApplyNow(course.title) : (setActiveTab && setActiveTab('candidature')))}
+                    <button onClick={() => isEnrolled ? (setActiveTab && setActiveTab('student-programs')) : setApplyingProgram(course)}
                       className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${isEnrolled ? 'bg-bg-primary border border-brand-primary text-brand-primary' : 'bg-brand-primary hover:bg-brand-hover text-white'}`}>
                       {isEnrolled ? <><CheckCircle2Icon className="w-3.5 h-3.5" /> Voir mon programme</> : <><BookmarkIcon className="w-3.5 h-3.5" /> Postuler maintenant</>}
                     </button>
@@ -1590,6 +1677,102 @@ export default function StudentPortal({
             </div>
           )}
         </div>
+
+        {/* ── Modale de confirmation de candidature ── */}
+        {applyingProgram && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border-primary/40 pb-4">
+                <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+                  🎓 Soumettre ma candidature
+                </h3>
+                <button 
+                  onClick={() => { setApplyingProgram(null); setApplyError(''); }}
+                  className="text-text-secondary hover:text-text-primary text-sm font-bold p-1 rounded-lg"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs text-text-secondary">
+                <p>Vous êtes sur le point de postuler au programme :</p>
+                <div className="p-3 bg-brand-light/30 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
+                  ▸ {applyingProgram.title}
+                </div>
+                <p>Vos informations personnelles et documents déjà enregistrés seront automatiquement transmis à notre commission d'admission.</p>
+                
+                <div className="space-y-1.5 pt-2">
+                  <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                    Motivation / Message pour le jury (Optionnel)
+                  </label>
+                  <textarea
+                    value={applyMotivation}
+                    onChange={(e) => setApplyMotivation(e.target.value)}
+                    placeholder="Expliquez brièvement pourquoi vous souhaitez suivre cette formation..."
+                    rows={3}
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
+                  />
+                </div>
+
+                {applyError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
+                    ⚠️ {applyError}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-border-primary/40">
+                <button
+                  onClick={() => { setApplyingProgram(null); setApplyError(''); }}
+                  disabled={isSubmittingApplication}
+                  className="flex-1 py-2.5 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleConfirmApplication}
+                  disabled={isSubmittingApplication}
+                  className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmittingApplication ? 'Transmission...' : 'Confirmer ma candidature'}
+                  <CheckCircle2Icon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modale de succès après soumission d'une candidature ── */}
+        {applySuccessProgram && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-md w-full p-8 text-center space-y-6 shadow-2xl">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto ring-8 ring-emerald-500/10 animate-pulse">
+                <CheckCircle2Icon className="w-8 h-8 stroke-[3]" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-2xl text-text-primary">Candidature Soumise !</h3>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Votre dossier pour le programme <strong className="text-brand-primary">{applySuccessProgram}</strong> a été transmis avec succès au service des admissions de l'IDLA.
+                </p>
+              </div>
+              <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 text-left text-xs text-text-secondary space-y-2">
+                <p className="font-bold text-text-primary flex items-center gap-1.5">
+                  📋 Ce qui va se passer ensuite :
+                </p>
+                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                  <li>Votre conseiller pédagogique va étudier votre candidature.</li>
+                  <li>Vous pouvez suivre l'avancement et envoyer des messages depuis l'onglet <strong className="text-text-primary">Mes Candidatures</strong>.</li>
+                </ul>
+              </div>
+              <button
+                onClick={() => setApplySuccessProgram(null)}
+                className="w-full py-3 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+              >
+                Voir ma candidature →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
