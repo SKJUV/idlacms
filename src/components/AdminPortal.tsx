@@ -121,23 +121,50 @@ export default function AdminPortal({
   // Fetch Appwrite & Local Data on Login or Tab Change
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Charger immédiatement les inscriptions locales depuis localStorage
+      // 1. Charger immédiatement les inscriptions et programmes locaux depuis localStorage
       let localApps: any[] = [];
+      let localPrograms: any[] = [];
       try {
         localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+        localPrograms = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
       } catch (e) {
-        console.warn("Erreur lecture idla_local_applications:", e);
+        console.warn("Erreur lecture localStorage:", e);
       }
 
       if (!isAppwriteDbConfigured()) {
-        console.warn("Appwrite DB n'est pas configurée. Affichage des inscriptions en stockage local/mémoire.");
-        if (localApps.length > 0) {
-          setPreRegistrations(localApps);
-        }
+        console.warn("Appwrite DB n'est pas configurée. Affichage en stockage local/mémoire.");
+        if (localApps.length > 0) setPreRegistrations(localApps);
+        if (localPrograms.length > 0) setPrograms(localPrograms);
         return;
       }
 
       try {
+        if (APPWRITE_CONFIG.collections.programs) {
+          const progsRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.programs
+          );
+          const remoteProgs = progsRes.documents.map((doc: any) => ({
+            id: doc.$id,
+            title: doc.title,
+            description: doc.description,
+            type: doc.type,
+            category: doc.category,
+            duration: doc.duration,
+            image: doc.image,
+            isNew: doc.isNew,
+          }));
+          const mergedProgs = [...localPrograms];
+          for (const rp of remoteProgs) {
+            if (!mergedProgs.some((l) => l.id === rp.id || l.title?.toLowerCase() === rp.title?.toLowerCase())) {
+              mergedProgs.push(rp);
+            }
+          }
+          if (mergedProgs.length > 0) setPrograms(mergedProgs);
+        } else if (localPrograms.length > 0) {
+          setPrograms(localPrograms);
+        }
+
         if (APPWRITE_CONFIG.collections.cmsUsers) {
           const usersRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
@@ -210,9 +237,8 @@ export default function AdminPortal({
         }
       } catch (err) {
         console.warn("Échec du chargement d'Appwrite DB. Utilisation du backup local.", err);
-        if (localApps.length > 0) {
-          setPreRegistrations(localApps);
-        }
+        if (localApps.length > 0) setPreRegistrations(localApps);
+        if (localPrograms.length > 0) setPrograms(localPrograms);
       }
     };
 

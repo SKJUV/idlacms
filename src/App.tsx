@@ -247,34 +247,47 @@ export default function App() {
   const [candidateEmail, setCandidateEmail] = useState('');
   const [candidateTempPassword, setCandidateTempPassword] = useState('');
 
-  // Fetch data directly from Appwrite (Strict Database, no silent mock fallback)
+  // Fetch data directly from Appwrite (Strict Database + Local backup sync)
   useEffect(() => {
-    if (!isAppwriteDbConfigured()) {
-      setDbError("Configuration Appwrite manquante. Veuillez renseigner le fichier .env.");
-      return;
-    }
-
     const loadPublicContent = async () => {
+      let localPrograms: Program[] = [];
+      try {
+        localPrograms = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+      } catch (e) {}
+
+      if (!isAppwriteDbConfigured()) {
+        setDbError("Configuration Appwrite manquante. Affichage des programmes en stockage local.");
+        if (localPrograms.length > 0) setPrograms(localPrograms);
+        return;
+      }
+
       try {
         setDbError(null);
 
         // Fetch Programs
         if (APPWRITE_CONFIG.collections.programs) {
           const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs);
-          if (res.documents.length > 0) {
-            setPrograms(
-              res.documents.map((doc: any) => ({
-                id: doc.$id,
-                title: doc.title,
-                description: doc.description,
-                type: doc.type,
-                category: doc.category,
-                duration: doc.duration,
-                image: doc.image,
-                isNew: doc.isNew,
-              }))
-            );
+          const remoteProgs = res.documents.map((doc: any) => ({
+            id: doc.$id,
+            title: doc.title,
+            description: doc.description,
+            type: doc.type,
+            category: doc.category,
+            duration: doc.duration,
+            image: doc.image,
+            isNew: doc.isNew,
+          }));
+          const mergedProgs = [...localPrograms];
+          for (const rp of remoteProgs) {
+            if (!mergedProgs.some((l) => l.id === rp.id || l.title?.toLowerCase() === rp.title?.toLowerCase())) {
+              mergedProgs.push(rp);
+            }
           }
+          if (mergedProgs.length > 0) {
+            setPrograms(mergedProgs);
+          }
+        } else if (localPrograms.length > 0) {
+          setPrograms(localPrograms);
         }
 
         // Fetch News
@@ -319,6 +332,7 @@ export default function App() {
         }
       } catch (err: any) {
         console.error("Impossible d'accéder au serveur Appwrite:", err);
+        if (localPrograms.length > 0) setPrograms(localPrograms);
         if (err.type === 'project_paused' || err.code === 403) {
           setDbError(
             "Le projet Appwrite est suspendu pour inactivité. Veuillez restaurer le projet depuis la console Appwrite Cloud (https://cloud.appwrite.io) pour réactiver la base de données."

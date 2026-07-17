@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
+import { ID, databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
 
 interface ProgramsManagementProps {
   programs: Program[];
@@ -98,9 +98,11 @@ export default function ProgramsManagement({
         image: newProgramImage,
         isNew: newProgramIsNew,
       };
-      setPrograms((curr) =>
-        curr.map((p) => (p.id === editingProgramId ? { ...p, ...updated } : p))
-      );
+      setPrograms((curr) => {
+        const next = curr.map((p) => (p.id === editingProgramId ? { ...p, ...updated } : p));
+        try { localStorage.setItem('idla_local_programs', JSON.stringify(next)); } catch (e) {}
+        return next;
+      });
       if (isAppwriteDbConfigured()) {
         try {
           await databases.updateDocument(
@@ -118,7 +120,7 @@ export default function ProgramsManagement({
       return;
     }
 
-    const progId = `prog-${Math.floor(1000 + Math.random() * 9500)}`;
+    const progId = isAppwriteDbConfigured() ? ID.unique() : `prog-${Math.floor(1000 + Math.random() * 9500)}`;
     const newProgram: Program = {
       id: progId,
       title: newProgramTitle,
@@ -130,7 +132,11 @@ export default function ProgramsManagement({
       isNew: newProgramIsNew,
     };
 
-    setPrograms((curr) => [newProgram, ...curr]);
+    setPrograms((curr) => {
+      const next = [newProgram, ...curr];
+      try { localStorage.setItem('idla_local_programs', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
 
     if (isAppwriteDbConfigured()) {
       try {
@@ -169,7 +175,11 @@ export default function ProgramsManagement({
 
   const handleDeleteProgram = async (id: string) => {
     const targetProgram = programs.find((p) => p.id === id);
-    setPrograms((curr) => curr.filter((p) => p.id !== id));
+    setPrograms((curr) => {
+      const next = curr.filter((p) => p.id !== id);
+      try { localStorage.setItem('idla_local_programs', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
 
     if (isAppwriteDbConfigured()) {
       try {
