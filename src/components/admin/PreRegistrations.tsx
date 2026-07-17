@@ -9,8 +9,9 @@ import {
   DownloadIcon as Download,
   AlertCircleIcon as AlertCircleIcon,
 } from '../Icons';
-import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown } from 'lucide-react';
-import { PreRegistration } from '../../types';
+import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen } from 'lucide-react';
+import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
+import { programsData } from '../../data/mockData';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
 
 interface PreRegistrationsProps {
@@ -34,7 +35,11 @@ export default function PreRegistrations({
   preRegistrations, setPreRegistrations, selectedPreRegId, setSelectedPreRegId, logActivity,
 }: PreRegistrationsProps) {
 
-  const [viewMode, setViewMode] = useState<'candidates' | 'applications'>('candidates');
+  const [viewMode, setViewMode] = useState<'candidates' | 'registered_no_course' | 'applications'>('candidates');
+  const [manualEnrollProgram, setManualEnrollProgram] = useState(programsData[0]?.title || 'Master en Cybersécurité');
+  const [manualEnrollSession, setManualEnrollSession] = useState(DEFAULT_ACADEMIC_SESSIONS[0]?.name || "Session d'Octobre 2026");
+  const [isEnrollingManual, setIsEnrollingManual] = useState(false);
+  const [showManualEnrollForm, setShowManualEnrollForm] = useState(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [selectedAppIdForChat, setSelectedAppIdForChat] = useState<string | null>(null);
   const [adminReply, setAdminReply] = useState('');
@@ -150,11 +155,96 @@ export default function PreRegistrations({
     setTimeout(() => setSavingNote(false), 1000);
   };
 
+  // Handlers pour inscription manuelle par l'admin d'un candidat inscrit sans cours
+  const handleManualEnrollCandidate = async () => {
+    if (!selected || !manualEnrollProgram) return;
+    setIsEnrollingManual(true);
+    try {
+      const blankApp = selected.applications.find((a: any) => !a.program || a.program === 'Inscription seule');
+      let updatedOrNewId = `app_${Date.now()}`;
+      if (blankApp) {
+        updatedOrNewId = blankApp.id;
+        setPreRegistrations((curr) =>
+          curr.map((p) =>
+            p.id === blankApp.id
+              ? {
+                  ...p,
+                  program: manualEnrollProgram,
+                  motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+                  status: 'Accepted',
+                }
+              : p
+          )
+        );
+        if (isAppwriteDbConfigured()) {
+          try {
+            await databases.updateDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              blankApp.id,
+              {
+                program: manualEnrollProgram,
+                motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+                status: 'Accepted',
+              }
+            );
+          } catch (e) {
+            console.error('Erreur inscription manuelle Appwrite DB:', e);
+          }
+        }
+      } else {
+        const newApp: PreRegistration = {
+          ...selected.applications[0],
+          id: updatedOrNewId,
+          program: manualEnrollProgram,
+          motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+          status: 'Accepted' as const,
+          dateApplied: new Date().toISOString(),
+        };
+        setPreRegistrations((curr) => [newApp, ...curr]);
+        if (isAppwriteDbConfigured()) {
+          try {
+            await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              ID.unique(),
+              {
+                firstName: selected.name.split(' ')[0] || selected.name,
+                lastName: selected.name.split(' ').slice(1).join(' ') || '',
+                name: selected.name,
+                email: selected.email,
+                phone: selected.phone || '',
+                program: manualEnrollProgram,
+                dateApplied: new Date().toISOString(),
+                status: 'Accepted',
+                motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+                initials: selected.initials,
+              }
+            );
+          } catch (e) {
+            console.error('Erreur création inscription manuelle Appwrite DB:', e);
+          }
+        }
+      }
+      logActivity(
+        'registration',
+        'Super Admin',
+        `a inscrit manuellement ${selected.name} à la formation : "${manualEnrollProgram}".`
+      );
+      setShowManualEnrollForm(false);
+    } finally {
+      setIsEnrollingManual(false);
+    }
+  };
+
   // Grouper par candidat
   const candidatesMap = preRegistrations.reduce((acc, curr) => {
     const key = curr.email;
-    if (!acc[key]) acc[key] = { email: key, name: curr.name, initials: curr.initials, phone: curr.phone, nationality: curr.nationality, highestDegree: curr.highestDegree, graduationYear: curr.graduationYear, motivation: curr.motivation, documents: curr.documents || [], applications: [] };
+    if (!acc[key]) acc[key] = { email: key, name: curr.name, initials: curr.initials, phone: curr.phone, nationality: curr.nationality, highestDegree: curr.highestDegree, graduationYear: curr.graduationYear, motivation: curr.motivation, documents: curr.documents || [], applications: [], courseApplications: [] };
     acc[key].applications.push(curr);
+    if (curr.program && curr.program !== 'Inscription seule') {
+      acc[key].courseApplications.push(curr);
+    }
     if (curr.phone) acc[key].phone = curr.phone;
     if (curr.nationality) acc[key].nationality = curr.nationality;
     if (curr.highestDegree) acc[key].highestDegree = curr.highestDegree;
@@ -163,15 +253,23 @@ export default function PreRegistrations({
     if (curr.documents?.length) acc[key].documents = Array.from(new Set([...acc[key].documents, ...curr.documents]));
     return acc;
   }, {} as Record<string, any>);
-  const candidatesList = Object.values(candidatesMap);
+
+  const candidatesList = Object.values(candidatesMap).map((c: any) => ({
+    ...c,
+    isRegisteredOnly: c.courseApplications.length === 0,
+  }));
 
   // Filtres liste
-  const filteredApps = preRegistrations.filter((p) => {
-    const matchStatus = statusFilter === 'Tous' || p.status === statusFilter;
-    const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()) || p.email.toLowerCase().includes(searchQ.toLowerCase()) || (p.program || '').toLowerCase().includes(searchQ.toLowerCase());
-    return matchStatus && matchSearch;
-  });
-  const filteredCandidates = candidatesList.filter((c) => {
+  const filteredApps = preRegistrations
+    .filter((p) => p.program && p.program !== 'Inscription seule')
+    .filter((p) => {
+      const matchStatus = statusFilter === 'Tous' || p.status === statusFilter;
+      const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()) || p.email.toLowerCase().includes(searchQ.toLowerCase()) || (p.program || '').toLowerCase().includes(searchQ.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+
+  const filteredCandidates = candidatesList.filter((c: any) => {
+    if (viewMode === 'registered_no_course' && !c.isRegisteredOnly) return false;
     const matchStatus = statusFilter === 'Tous' || c.applications.some((a: any) => a.status === statusFilter);
     const matchSearch = !searchQ || c.name.toLowerCase().includes(searchQ.toLowerCase()) || c.email.toLowerCase().includes(searchQ.toLowerCase());
     return matchStatus && matchSearch;
@@ -235,6 +333,73 @@ export default function PreRegistrations({
                 </div>
               </div>
             </div>
+
+            {/* Notification & Inscription Manuelle pour candidat sans cours */}
+            {selected.isRegisteredOnly && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircleIcon className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-sm text-amber-900">Étudiant inscrit sans cours sélectionné</h4>
+                      <p className="text-xs text-amber-800/80 mt-0.5 leading-relaxed">
+                        Cet étudiant ({selected.email}) s'est inscrit sur le portail IDLA mais n'a pas encore postulé à une formation. Vous pouvez l'inscrire directement depuis cet espace.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowManualEnrollForm(!showManualEnrollForm)}
+                    className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    {showManualEnrollForm ? 'Fermer' : 'Inscrire à un cours'}
+                  </button>
+                </div>
+
+                {showManualEnrollForm && (
+                  <div className="bg-white border border-amber-200/80 rounded-xl p-4 space-y-3 pt-3">
+                    <p className="text-xs font-bold text-[#00020e] flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#006c49]" /> Sélectionner le programme académique :
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <select
+                        value={manualEnrollProgram}
+                        onChange={(e) => setManualEnrollProgram(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-[#c6c6cf] text-xs font-semibold text-[#00020e] focus:ring-2 focus:ring-[#006c49] outline-none"
+                      >
+                        {programsData.map((p) => (
+                          <option key={p.id} value={p.title}>{p.title} ({p.type})</option>
+                        ))}
+                      </select>
+                      <select
+                        value={manualEnrollSession}
+                        onChange={(e) => setManualEnrollSession(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-[#c6c6cf] text-xs font-semibold text-[#00020e] focus:ring-2 focus:ring-[#006c49] outline-none"
+                      >
+                        {DEFAULT_ACADEMIC_SESSIONS.map((s) => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => setShowManualEnrollForm(false)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={handleManualEnrollCandidate}
+                        disabled={isEnrollingManual}
+                        className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        {isEnrollingManual ? 'Inscription en cours...' : 'Valider l\'inscription immédiate'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Candidatures de ce candidat */}
             <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm space-y-4">
@@ -477,14 +642,23 @@ export default function PreRegistrations({
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h3 className="font-bold text-lg text-[#00020e]">Pré-inscriptions & Candidatures</h3>
-        <div className="flex bg-slate-100 p-1 rounded-lg border border-[#c6c6cf]/40 shrink-0">
-          {(['candidates', 'applications'] as const).map((mode) => (
-            <button key={mode} onClick={() => setViewMode(mode)}
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer ${viewMode === mode ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
-              {mode === 'candidates' ? <><Users className="w-3.5 h-3.5" /> Par candidats ({candidatesList.length})</> : <><FileText className="w-3.5 h-3.5" /> Par candidatures ({preRegistrations.length})</>}
-            </button>
-          ))}
+        <div>
+          <h3 className="font-bold text-lg text-[#00020e]">Inscrits & Candidatures aux formations</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Consultez tous les étudiants inscrits sur le portail IDLA (avec ou sans cours) et leurs dossiers</p>
+        </div>
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-[#c6c6cf]/40 shrink-0 flex-wrap gap-1">
+          <button onClick={() => setViewMode('candidates')}
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'candidates' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
+            <Users className="w-3.5 h-3.5" /> Tous les inscrits ({candidatesList.length})
+          </button>
+          <button onClick={() => setViewMode('registered_no_course')}
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'registered_no_course' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-700 hover:bg-amber-50 border border-amber-200/60'}`}>
+            <AlertCircleIcon className="w-3.5 h-3.5" /> Inscrits sans cours ({candidatesList.filter((c: any) => c.isRegisteredOnly).length})
+          </button>
+          <button onClick={() => setViewMode('applications')}
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
+            <FileText className="w-3.5 h-3.5" /> Candidatures cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
+          </button>
         </div>
       </div>
 
@@ -503,42 +677,59 @@ export default function PreRegistrations({
         </select>
       </div>
 
-      {viewMode === 'candidates' ? (
+      {viewMode === 'candidates' || viewMode === 'registered_no_course' ? (
         <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
-                <th className="p-4">Candidat</th>
+                <th className="p-4">Candidat / Étudiant</th>
                 <th className="p-4 hidden md:table-cell">Contact</th>
-                <th className="p-4">Programmes postulés</th>
+                <th className="p-4">Programmes postulés & Statut</th>
                 <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#c6c6cf]/20">
-              {filteredCandidates.map((c) => (
+              {filteredCandidates.map((c: any) => (
                 <tr key={c.email} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[11px] shrink-0">{c.initials}</div>
                       <div>
-                        <p className="font-bold text-[#00020e]">{c.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-[#00020e]">{c.name}</p>
+                          {c.isRegisteredOnly && (
+                            <span className="bg-amber-500/15 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                              Sans cours
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-slate-400">{c.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="p-4 hidden md:table-cell text-slate-500">{c.phone || '—'}</td>
                   <td className="p-4">
-                    <div className="flex flex-wrap gap-1.5">
-                      {c.applications.map((app: any) => {
-                        const badge = statusConfig(app.status || 'New');
-                        return <span key={app.id} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badge.cls}`}>{(app.program || 'Inscription').slice(0, 25)}{(app.program || '').length > 25 ? '…' : ''}</span>;
-                      })}
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {c.isRegisteredOnly ? (
+                        <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300/60 px-2.5 py-1 rounded-md text-[10px] font-bold">
+                          ⚡ Inscrit au portail IDLA (En attente d'inscription à un cours)
+                        </span>
+                      ) : (
+                        c.courseApplications.map((app: any) => {
+                          const badge = statusConfig(app.status || 'New');
+                          return (
+                            <span key={app.id} className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${badge.cls}`}>
+                              {app.program.slice(0, 32)}{app.program.length > 32 ? '…' : ''} • {badge.label}
+                            </span>
+                          );
+                        })
+                      )}
                     </div>
                   </td>
                   <td className="p-4">
                     <button onClick={() => setSelectedPreRegId(c.applications[0].id)}
-                      className="mx-auto flex items-center gap-1.5 bg-[#006c49] hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">
-                      <Eye className="w-3.5 h-3.5" /> Gérer
+                      className="mx-auto flex items-center gap-1.5 bg-[#006c49] hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs">
+                      <Eye className="w-3.5 h-3.5" /> Dossier
                     </button>
                   </td>
                 </tr>

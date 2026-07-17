@@ -54,7 +54,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Témoignages', icon: QuoteIcon, target: 'admin-testimonials', activeOn: ['admin-testimonials'] },
     { label: 'Actualités', icon: NewspaperIcon, target: 'admin-news', activeOn: ['admin-news'] },
     { label: 'Soutien & Dons', icon: HeartHandshakeIcon, target: 'admin-donations', activeOn: ['admin-donations'] },
-    { label: 'Pré-inscriptions', icon: UserCheckIcon, target: 'admin-preregistrations', activeOn: ['admin-preregistrations'] },
+    { label: 'Inscrits & Candidatures', icon: UserCheckIcon, target: 'admin-preregistrations', activeOn: ['admin-preregistrations'] },
     { label: 'Marketing', icon: MegaphoneIcon, target: 'admin-marketing', activeOn: ['admin-marketing'] },
   ];
 
