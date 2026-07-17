@@ -4,7 +4,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, fullName, tempPassword } = req.body || {};
+  const { email, fullName, tempPassword, userDefinedPassword } = req.body || {};
 
   if (!email || !fullName || !tempPassword) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
             <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
               <p>Bonjour <strong>${fullName}</strong>,</p>
               <p>Votre inscription à l'International Distance Learning Academy (IDLA) a été enregistrée avec succès.</p>
-              <p>Un compte d'accès a été créé automatiquement pour vous permettre d'explorer nos programmes et de postuler. Voici vos identifiants temporaires :</p>
+              <p>Votre compte d'accès a été créé avec succès pour vous permettre d'explorer nos programmes et de postuler. Voici un rappel de vos informations de connexion :</p>
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
@@ -43,16 +43,17 @@ export default async function handler(req: any, res: any) {
                     <td style="padding: 6px 0; font-weight: bold; color: #0d9488;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Mot de passe temporaire :</td>
-                    <td style="padding: 6px 0; font-weight: bold; color: #e11d48; font-family: monospace; font-size: 16px;">${tempPassword}</td>
+                    <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Mot de passe :</td>
+                    <td style="padding: 6px 0; font-weight: bold; color: ${userDefinedPassword ? '#0d9488' : '#e11d48'}; font-family: monospace; font-size: ${userDefinedPassword ? '14px' : '16px'};">${userDefinedPassword ? 'Celui que vous avez choisi lors de l\'inscription' : tempPassword}</td>
                   </tr>
                 </table>
               </div>
+              ${!userDefinedPassword ? `
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
                 <p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">
                   ⚠️ IMPORTANT : Vous devez modifier ce mot de passe lors de votre première connexion pour sécuriser votre compte.
                 </p>
-              </div>
+              </div>` : ''}
               <p>Connectez-vous à votre espace candidat pour explorer les programmes, postuler et échanger avec votre conseillère d'admission :</p>
               <div style="text-align: center; margin: 24px 0;">
                 <a href="https://idlaacademy.online/candidat" style="display: inline-block; background-color: #0d9488; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px;">

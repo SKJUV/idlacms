@@ -29,6 +29,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
   const [gender, setGender] = useState('');
   const [countryOfResidence, setCountryOfResidence] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -124,8 +126,16 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
   const handleNextStep = () => {
     setErrorMessage('');
     if (step === 1) {
-      if (!firstName || !lastName || !email || !phone) {
+      if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
         setErrorMessage('Veuillez remplir tous les champs requis.');
+        return;
+      }
+      if (password.length < 8) {
+        setErrorMessage('Le mot de passe doit contenir au moins 8 caractères.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage('Les mots de passe saisis ne correspondent pas.');
         return;
       }
     }
@@ -152,30 +162,23 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     const candidateName = `${firstName} ${lastName}`;
     const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
 
-    // Generate a temporary random password
-    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-2) + '!1';
+    // Use candidate's chosen password
     const cleanEmail = email.trim().toLowerCase();
 
     if (isAppwriteDbConfigured()) {
       try {
         if (!isExistingUser) {
-          // 1. Create Appwrite Auth Account
+          // 1. Create Appwrite Auth Account with user-defined password
           try {
             await account.create(
               ID.unique(),
               cleanEmail,
-              generatedPassword,
+              password,
               candidateName
             );
             console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
 
-            // 2. Set user preference mustChangePassword: true by logging in temporarily
-            await account.createEmailPasswordSession({ email: cleanEmail, password: generatedPassword });
-            await account.updatePrefs({ mustChangePassword: true });
-            // Log out so they can see the confirmation page
-            await account.deleteSession({ sessionId: 'current' });
-
-            // 3. Send credentials email
+            // 2. Send welcome credentials email
             try {
               await fetch('/api/send-credentials', {
                 method: 'POST',
@@ -183,7 +186,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                 body: JSON.stringify({
                   email: cleanEmail,
                   fullName: candidateName,
-                  tempPassword: generatedPassword,
+                  tempPassword: password,
+                  userDefinedPassword: true,
                 }),
               });
             } catch (mailErr) {
@@ -223,7 +227,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     }
 
     setIsSubmitting(false);
-    onSuccess(candidateName, cleanEmail, isExistingUser ? undefined : generatedPassword);
+    onSuccess(candidateName, cleanEmail, isExistingUser ? undefined : password);
   };
 
   // Pour les utilisateurs déjà connectés : 1 étape (2), sinon 2 étapes
@@ -438,6 +442,36 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
                     <option value="Doctorat">Doctorat</option>
                     <option value="Autre">Autre</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border-primary/40 space-y-4">
+                <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider">
+                  🔐 Définissez votre mot de passe de connexion
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-text-secondary uppercase">Mot de passe *</label>
+                    <input 
+                      type="password" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Minimum 8 caractères"
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-text-secondary uppercase">Confirmer le mot de passe *</label>
+                    <input 
+                      type="password" 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Répétez le mot de passe"
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      required 
+                    />
+                  </div>
                 </div>
               </div>
 

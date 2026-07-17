@@ -90,20 +90,20 @@ export default function ApplicationSuccess({
         </p>
 
         {tempPassword && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 text-left space-y-3">
-            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">
-              🔑 Identifiants d'accès temporaires :
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 text-left space-y-3">
+            <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
+              🔑 Vos identifiants de connexion :
             </h4>
             <div className="space-y-2 text-xs">
               <p className="text-text-secondary">
-                Voici vos identifiants temporaires pour vous connecter à votre espace candidat. <strong>Veuillez les noter précieusement</strong> :
+                Voici un rappel de votre adresse email de connexion. Vous utiliserez le mot de passe que vous venez de définir :
               </p>
               <div className="bg-bg-primary p-3 rounded-lg border border-border-primary/50 font-mono space-y-1 text-xs select-all text-text-primary">
                 <div>Email : <span className="font-bold text-brand-primary">saisi lors de l'inscription</span></div>
-                <div>Mot de passe : <span className="font-bold text-[#e11d48]">{tempPassword}</span></div>
+                <div>Mot de passe : <span className="font-bold text-emerald-600 dark:text-emerald-400">Celui défini lors de l'étape 1 ({tempPassword.replace(/./g, '•')})</span></div>
               </div>
-              <p className="text-amber-800 dark:text-amber-400 text-[11px] font-semibold">
-                ⚠️ Modification obligatoire : Vous devez modifier ce mot de passe en priorité dès votre première connexion pour accéder pleinement à votre compte.
+              <p className="text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
+                🔒 Vous pouvez cliquer sur "Accéder à mon espace" ci-dessous pour vous connecter directement.
               </p>
             </div>
           </div>
