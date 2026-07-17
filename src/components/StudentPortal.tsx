@@ -10,7 +10,7 @@ import {
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
-  StudentProfile, CourseCatalogItem,
+  StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
 } from '../types';
 import { programsData } from '../data/mockData';
 
@@ -205,9 +205,49 @@ export default function StudentPortal({
   const [applyCniFile, setApplyCniFile] = useState<File | null>(null);
   const [applyDiplomaFile, setApplyDiplomaFile] = useState<File | null>(null);
   const [applyResumeFile, setApplyResumeFile] = useState<File | null>(null);
-  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
   const [applyError, setApplyError] = useState('');
   const [applySuccessProgram, setApplySuccessProgram] = useState<string | null>(null);
+
+  // ── Sessions / Rentrées Universitaires gérées par l'Administrateur ──
+  const [availableSessions, setAvailableSessions] = useState<AcademicSession[]>(() => {
+    try {
+      const saved = localStorage.getItem('idla_academic_sessions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Erreur lecture idla_academic_sessions dans portail:', e);
+    }
+    return DEFAULT_ACADEMIC_SESSIONS;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const saved = localStorage.getItem('idla_academic_sessions');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAvailableSessions(parsed);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    if (applyingProgram) {
+      const openSessions = availableSessions.filter((s) => s.status === 'ouverte' || s.status === 'bientot');
+      if (openSessions.length > 0 && !openSessions.some((s) => s.name === applySession)) {
+        setApplySession(openSessions[0].name);
+      }
+    }
+  }, [applyingProgram, availableSessions]);
 
   // ── Charger le profil et les candidatures réelles depuis Appwrite ──
   useEffect(() => {
@@ -801,10 +841,16 @@ export default function StudentPortal({
                     onChange={(e) => setApplySession(e.target.value)}
                     className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-semibold cursor-pointer"
                   >
-                    <option value="Session d'Octobre 2026">Session d'Octobre 2026 (Rentée principale)</option>
-                    <option value="Session de Janvier 2027">Session de Janvier 2027 (Rentrée d'hiver)</option>
-                    <option value="Session d'Avril 2027">Session d'Avril 2027 (Rentrée de printemps)</option>
-                    <option value="Rentrées permanentes (E-learning)">Rentrée immédiate en continu (E-learning libre)</option>
+                    {availableSessions
+                      .filter((s) => s.status === 'ouverte' || s.status === 'bientot')
+                      .map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name} {s.status === 'bientot' ? '(Bientôt ouverte)' : ''} {s.deadline ? `— Clôture : ${s.deadline}` : ''}
+                        </option>
+                      ))}
+                    {availableSessions.filter((s) => s.status === 'ouverte' || s.status === 'bientot').length === 0 && (
+                      <option value="Session d'Octobre 2026">Session d'Octobre 2026 (Rentée principale)</option>
+                    )}
                   </select>
                 </div>
 

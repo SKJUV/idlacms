@@ -11,6 +11,50 @@ export interface Program {
   isNew?: boolean;
 }
 
+export interface AcademicSession {
+  id: string;
+  name: string;
+  type: 'principale' | 'hiver' | 'printemps' | 'continu' | 'autre';
+  status: 'ouverte' | 'fermee' | 'bientot';
+  deadline?: string;
+  description?: string;
+}
+
+export const DEFAULT_ACADEMIC_SESSIONS: AcademicSession[] = [
+  {
+    id: 'sess_1',
+    name: "Session d'Octobre 2026",
+    type: 'principale',
+    status: 'ouverte',
+    deadline: '15 Septembre 2026',
+    description: 'Rentrée universitaire principale pour l\'ensemble des cursus Master et Bachelor.'
+  },
+  {
+    id: 'sess_2',
+    name: "Session de Janvier 2027",
+    type: 'hiver',
+    status: 'ouverte',
+    deadline: '15 Décembre 2026',
+    description: 'Rentrée décalée d\'hiver pour les programmes accélérés et certifications.'
+  },
+  {
+    id: 'sess_3',
+    name: "Session d'Avril 2027",
+    type: 'printemps',
+    status: 'ouverte',
+    deadline: '15 Mars 2027',
+    description: 'Rentrée de printemps pour les inscriptions tardives et auditeurs libres.'
+  },
+  {
+    id: 'sess_4',
+    name: "Rentrées permanentes (E-learning)",
+    type: 'continu',
+    status: 'ouverte',
+    deadline: 'Toute l\'année',
+    description: 'Rentrée immédiate et apprentissage à votre rythme pour les certifications 100% en ligne.'
+  }
+];
+
 export interface NewsArticle {
   id: string;
   title: string;
