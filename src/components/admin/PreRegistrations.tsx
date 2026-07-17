@@ -58,6 +58,17 @@ export default function PreRegistrations({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Sync back to localStorage when preRegistrations changes
+  useEffect(() => {
+    if (preRegistrations && preRegistrations.length > 0) {
+      try {
+        localStorage.setItem('idla_local_applications', JSON.stringify(preRegistrations));
+      } catch (e) {
+        console.warn("Erreur sync idla_local_applications:", e);
+      }
+    }
+  }, [preRegistrations]);
+
   // Handlers statut
   const handleApprovePreRegistration = async (id: string) => {
     setPreRegistrations((curr) => curr.map((p) => (p.id === id ? { ...p, status: 'Accepted' } : p)));

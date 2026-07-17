@@ -165,6 +165,34 @@ export default function ApplicationForm({ onSuccess, onBackToHome }: Application
     // Use candidate's chosen password
     const cleanEmail = email.trim().toLowerCase();
 
+    // 1. Toujours enregistrer en local dans localStorage pour garantir la visibilité immédiate dans l'admin
+    const newLocalAppId = `app_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newLocalApp = {
+      id: newLocalAppId,
+      $id: newLocalAppId,
+      firstName,
+      lastName,
+      name: candidateName,
+      email: cleanEmail,
+      phone,
+      nationality,
+      dateOfBirth: dateOfBirth || undefined,
+      gender: gender || undefined,
+      countryOfResidence: countryOfResidence || undefined,
+      educationLevel: educationLevel || undefined,
+      status: 'New',
+      dateApplied: new Date().toISOString(),
+      declarationChecked,
+      initials,
+    };
+    try {
+      const existingLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+      const filtered = existingLocal.filter((a: any) => a.email !== cleanEmail || a.program);
+      localStorage.setItem('idla_local_applications', JSON.stringify([newLocalApp, ...filtered]));
+    } catch (e) {
+      console.warn("Erreur sauvegarde locale inscription:", e);
+    }
+
     if (isAppwriteDbConfigured()) {
       try {
         if (!isExistingUser) {

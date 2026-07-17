@@ -452,6 +452,27 @@ export default function StudentPortal({
 
       let newAppId = `app_${Date.now()}`;
 
+      // 1. Sauvegarder dans localStorage pour visibilité instantanée dans l'Admin
+      try {
+        const localRecord = {
+          id: newAppId,
+          $id: newAppId,
+          name: profile.name,
+          email: userEmail,
+          phone: profile.phone || '',
+          program: applyingProgram.title,
+          dateApplied: new Date().toISOString(),
+          status: 'New',
+          motivation: `${applySession} | ${applyMotivation}`.trim(),
+          initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+        };
+        const existingLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+        const filtered = existingLocal.filter((a: any) => !(a.email === userEmail && (!a.program || a.program === applyingProgram.title)));
+        localStorage.setItem('idla_local_applications', JSON.stringify([localRecord, ...filtered]));
+      } catch (e) {
+        console.warn("Erreur sauvegarde locale candidature:", e);
+      }
+
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
         // Vérifier si un dossier initial d'inscription (sans programme ou 'Inscription seule') existe
         const blankApp = applications.find((a) => !a.program || a.program === 'Inscription seule');

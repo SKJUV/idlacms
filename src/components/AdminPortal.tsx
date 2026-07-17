@@ -118,13 +118,25 @@ export default function AdminPortal({
     }
   };
 
-  // Fetch Appwrite Data on Login
+  // Fetch Appwrite & Local Data on Login or Tab Change
   useEffect(() => {
     const fetchData = async () => {
+      // 1. Charger immédiatement les inscriptions locales depuis localStorage
+      let localApps: any[] = [];
+      try {
+        localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+      } catch (e) {
+        console.warn("Erreur lecture idla_local_applications:", e);
+      }
+
       if (!isAppwriteDbConfigured()) {
-        console.warn("Appwrite DB n'est pas configurée.");
+        console.warn("Appwrite DB n'est pas configurée. Affichage des inscriptions en stockage local/mémoire.");
+        if (localApps.length > 0) {
+          setPreRegistrations(localApps);
+        }
         return;
       }
+
       try {
         if (APPWRITE_CONFIG.collections.cmsUsers) {
           const usersRes = await databases.listDocuments(
@@ -151,25 +163,33 @@ export default function AdminPortal({
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.applications
         );
-        if (appsRes.documents.length > 0) {
-          setPreRegistrations(
-            appsRes.documents.map((doc: any) => ({
-              id: doc.$id,
-              name: doc.name,
-              email: doc.email,
-              program: doc.program,
-              dateApplied: doc.dateApplied || 'Récemment',
-              status: doc.status || 'New',
-              initials: doc.initials || doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
-              phone: doc.phone,
-              nationality: doc.nationality,
-              highestDegree: doc.highestDegree,
-              graduationYear: doc.graduationYear,
-              motivation: doc.motivation,
-              documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
-            }))
+        const remoteApps = appsRes.documents.map((doc: any) => ({
+          id: doc.$id,
+          name: doc.name,
+          email: doc.email,
+          program: doc.program,
+          dateApplied: doc.dateApplied || 'Récemment',
+          status: doc.status || 'New',
+          initials: doc.initials || doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          phone: doc.phone,
+          nationality: doc.nationality,
+          highestDegree: doc.highestDegree,
+          graduationYear: doc.graduationYear,
+          motivation: doc.motivation,
+          documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
+        }));
+
+        // Fusionner proprement avec les données locales (déduplication par id ou par email+programme)
+        const mergedApps = [...localApps];
+        for (const rApp of remoteApps) {
+          const exists = mergedApps.some(
+            (l) => l.id === rApp.id || (l.email?.toLowerCase() === rApp.email?.toLowerCase() && (l.program || '') === (rApp.program || ''))
           );
+          if (!exists) {
+            mergedApps.push(rApp);
+          }
         }
+        setPreRegistrations(mergedApps);
 
         if (APPWRITE_CONFIG.collections.logs) {
           const logsRes = await databases.listDocuments(
@@ -189,14 +209,17 @@ export default function AdminPortal({
           }
         }
       } catch (err) {
-        console.warn("Échec du chargement de la base de données Appwrite.", err);
+        console.warn("Échec du chargement d'Appwrite DB. Utilisation du backup local.", err);
+        if (localApps.length > 0) {
+          setPreRegistrations(localApps);
+        }
       }
     };
 
     if (isLoggedIn) {
       fetchData();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, activeTab]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
