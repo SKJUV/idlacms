@@ -197,9 +197,14 @@ export default function StudentPortal({
   // ── Programmes : section active ──
   const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
 
-  // ── Soumission de candidature depuis le catalogue étudiant ──
+  // ── Soumission de candidature depuis le catalogue étudiant (Wizard en 3 étapes) ──
   const [applyingProgram, setApplyingProgram] = useState<{ title: string; category?: string; duration?: string } | null>(null);
+  const [applyStep, setApplyStep] = useState<number>(1);
+  const [applySession, setApplySession] = useState("Session d'Octobre 2026");
   const [applyMotivation, setApplyMotivation] = useState('');
+  const [applyCniFile, setApplyCniFile] = useState<File | null>(null);
+  const [applyDiplomaFile, setApplyDiplomaFile] = useState<File | null>(null);
+  const [applyResumeFile, setApplyResumeFile] = useState<File | null>(null);
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
   const [applyError, setApplyError] = useState('');
   const [applySuccessProgram, setApplySuccessProgram] = useState<string | null>(null);
@@ -405,19 +410,22 @@ export default function StudentPortal({
         return;
       }
 
+      let newAppId = `app_${Date.now()}`;
+
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
         // Vérifier si un dossier initial d'inscription (sans programme ou 'Inscription seule') existe
         const blankApp = applications.find((a) => !a.program || a.program === 'Inscription seule');
         if (blankApp) {
+          newAppId = blankApp.$id || blankApp.id;
           const updatedDoc = await databases.updateDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.applications,
-            blankApp.$id || blankApp.id,
+            newAppId,
             {
               program: applyingProgram.title,
               dateApplied: new Date().toISOString(),
               status: 'New',
-              motivation: applyMotivation || undefined,
+              motivation: `${applySession} | ${applyMotivation}`.trim(),
             }
           );
           setApplications((apps) =>
@@ -425,7 +433,7 @@ export default function StudentPortal({
           );
         } else {
           // Créer une nouvelle candidature pour ce programme spécifique
-          const newDoc = await databases.createDocument(
+          const createdDoc = await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.applications,
             ID.unique(),
@@ -438,22 +446,61 @@ export default function StudentPortal({
               program: applyingProgram.title,
               dateApplied: new Date().toISOString(),
               status: 'New',
-              motivation: applyMotivation || undefined,
+              motivation: `${applySession} | ${applyMotivation}`.trim(),
               initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
             }
           );
-          setApplications((apps) => [newDoc, ...apps]);
+          newAppId = createdDoc.$id || createdDoc.id;
+          setApplications((apps) => [createdDoc, ...apps]);
+        }
+
+        // ── Enregistrement des documents joints dans Appwrite candidateDocuments ──
+        if (APPWRITE_CONFIG.collections.candidateDocuments) {
+          const docsToUpload = [
+            { file: applyCniFile, prefix: '[CNI]' },
+            { file: applyDiplomaFile, prefix: '[Diplôme]' },
+            { file: applyResumeFile, prefix: '[CV]' }
+          ].filter(item => item.file !== null);
+
+          for (const item of docsToUpload) {
+            if (!item.file) continue;
+            try {
+              let fileUrl = '#';
+              if (APPWRITE_CONFIG.buckets?.documents) {
+                const uploadedFile = await storage.createFile(
+                  APPWRITE_CONFIG.buckets.documents,
+                  ID.unique(),
+                  item.file
+                );
+                fileUrl = storage.getFileView(APPWRITE_CONFIG.buckets.documents, uploadedFile.$id).toString();
+              }
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.candidateDocuments,
+                ID.unique(),
+                {
+                  applicationId: newAppId,
+                  name: `${item.prefix} ${item.file.name}`,
+                  url: fileUrl,
+                  uploadedAt: new Date().toISOString(),
+                  sizeBytes: item.file.size,
+                }
+              );
+            } catch (docErr) {
+              console.warn(`Erreur lors de l'enregistrement du document ${item.file.name}:`, docErr);
+            }
+          }
         }
       } else {
         const mockNewApp = {
-          id: `app_${Date.now()}`,
+          id: newAppId,
           name: profile.name,
           email: profile.email,
           program: applyingProgram.title,
           dateApplied: new Date().toISOString(),
           status: 'New' as const,
           initials: profile.name.slice(0, 2).toUpperCase(),
-          motivation: applyMotivation,
+          motivation: `${applySession} | ${applyMotivation}`.trim(),
         };
         setApplications((apps) => [mockNewApp, ...apps]);
       }
@@ -461,7 +508,11 @@ export default function StudentPortal({
       const submittedTitle = applyingProgram.title;
       setApplySuccessProgram(submittedTitle);
       setApplyingProgram(null);
+      setApplyStep(1);
       setApplyMotivation('');
+      setApplyCniFile(null);
+      setApplyDiplomaFile(null);
+      setApplyResumeFile(null);
       setProgSection('mes-candidatures');
     } catch (err: any) {
       console.error("Erreur lors de la soumission de candidature :", err);
@@ -1678,66 +1729,247 @@ export default function StudentPortal({
           )}
         </div>
 
-        {/* ── Modale de confirmation de candidature ── */}
+        {/* ── Modale de candidature (Wizard 3 étapes) ── */}
         {applyingProgram && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-border-primary/40 pb-4">
-                <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
-                  🎓 Soumettre ma candidature
-                </h3>
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-border-primary/40 pb-3">
+                <div>
+                  <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+                    🎓 Soumettre ma candidature
+                  </h3>
+                  <p className="text-[11px] font-semibold text-brand-primary mt-0.5">
+                    {applyStep === 1 && "Étape 1 sur 3 — Choix de session & Motivation"}
+                    {applyStep === 2 && "Étape 2 sur 3 — Pièces justificatives du dossier"}
+                    {applyStep === 3 && "Étape 3 sur 3 — Validation sur l'honneur"}
+                  </p>
+                </div>
                 <button 
-                  onClick={() => { setApplyingProgram(null); setApplyError(''); }}
-                  className="text-text-secondary hover:text-text-primary text-sm font-bold p-1 rounded-lg"
+                  onClick={() => { setApplyingProgram(null); setApplyError(''); setApplyStep(1); }}
+                  className="text-text-secondary hover:text-text-primary text-sm font-bold p-1 rounded-lg cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs text-text-secondary">
-                <p>Vous êtes sur le point de postuler au programme :</p>
-                <div className="p-3 bg-brand-light/30 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
-                  ▸ {applyingProgram.title}
-                </div>
-                <p>Vos informations personnelles et documents déjà enregistrés seront automatiquement transmis à notre commission d'admission.</p>
-                
-                <div className="space-y-1.5 pt-2">
-                  <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
-                    Motivation / Message pour le jury (Optionnel)
-                  </label>
-                  <textarea
-                    value={applyMotivation}
-                    onChange={(e) => setApplyMotivation(e.target.value)}
-                    placeholder="Expliquez brièvement pourquoi vous souhaitez suivre cette formation..."
-                    rows={3}
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
-                  />
-                </div>
+              {/* Barre de progression */}
+              <div className="w-full bg-border-primary/30 h-1.5 rounded-full overflow-hidden flex">
+                <div className={`bg-brand-primary h-full transition-all duration-300 ${applyStep === 1 ? 'w-1/3' : applyStep === 2 ? 'w-2/3' : 'w-full'}`} />
+              </div>
 
-                {applyError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
-                    ⚠️ {applyError}
+              {/* ── Étape 1 : Programme & Session ── */}
+              {applyStep === 1 && (
+                <div className="space-y-4 text-xs text-text-secondary">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Formation sélectionnée</span>
+                    <div className="mt-1 p-3 bg-brand-light/40 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
+                      ▸ {applyingProgram.title}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div className="flex gap-3 pt-3 border-t border-border-primary/40">
-                <button
-                  onClick={() => { setApplyingProgram(null); setApplyError(''); }}
-                  disabled={isSubmittingApplication}
-                  className="flex-1 py-2.5 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleConfirmApplication}
-                  disabled={isSubmittingApplication}
-                  className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmittingApplication ? 'Transmission...' : 'Confirmer ma candidature'}
-                  <CheckCircle2Icon className="w-4 h-4" />
-                </button>
-              </div>
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                      Rentrée universitaire souhaitée *
+                    </label>
+                    <select
+                      value={applySession}
+                      onChange={(e) => setApplySession(e.target.value)}
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-semibold cursor-pointer"
+                    >
+                      <option value="Session d'Octobre 2026">Session d'Octobre 2026 (Rentée principale)</option>
+                      <option value="Session de Janvier 2027">Session de Janvier 2027 (Rentrée d'hiver)</option>
+                      <option value="Session d'Avril 2027">Session d'Avril 2027 (Rentrée de printemps)</option>
+                      <option value="Rentrées permanentes (E-learning)">Rentrée immédiate en continu (E-learning libre)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                      Motivation / Objectif professionnel (Optionnel)
+                    </label>
+                    <textarea
+                      value={applyMotivation}
+                      onChange={(e) => setApplyMotivation(e.target.value)}
+                      placeholder="Pourquoi souhaitez-vous suivre cette formation ? Quels sont vos objectifs à l'issue du cursus ?"
+                      rows={4}
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end gap-3 border-t border-border-primary/40">
+                    <button
+                      onClick={() => { setApplyingProgram(null); setApplyStep(1); }}
+                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => setApplyStep(2)}
+                      className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                      Étape suivante →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Étape 2 : Dépôt des documents ── */}
+              {applyStep === 2 && (
+                <div className="space-y-4 text-xs text-text-secondary">
+                  <div className="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-800 dark:text-amber-300 text-[11px] font-medium leading-relaxed">
+                    📎 Pour que votre admissibilité soit prononcée par le jury, veuillez joindre vos justificatifs (formats PDF, JPG ou PNG acceptés, max 10 Mo par fichier).
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* CNI */}
+                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                          🪪 Pièce d'identité (CNI ou Passeport) *
+                        </span>
+                        {applyCniFile && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => setApplyCniFile(e.target.files?.[0] || null)}
+                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Diplôme */}
+                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                          🎓 Dernier Diplôme obtenu ou Attestation *
+                        </span>
+                        {applyDiplomaFile && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => setApplyDiplomaFile(e.target.files?.[0] || null)}
+                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* CV ou Relevés de notes */}
+                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                          📄 CV ou Relevés de notes <span className="text-text-secondary font-normal">(Optionnel)</span>
+                        </span>
+                        {applyResumeFile && (
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => setApplyResumeFile(e.target.files?.[0] || null)}
+                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {applyError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
+                      ⚠️ {applyError}
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
+                    <button
+                      onClick={() => { setApplyError(''); setApplyStep(1); }}
+                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                    >
+                      ← Précédent
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!applyCniFile || !applyDiplomaFile) {
+                          setApplyError('Veuillez joindre au moins votre Pièce d\'identité et votre dernier Diplôme afin d\'étudier votre dossier.');
+                          return;
+                        }
+                        setApplyError('');
+                        setApplyStep(3);
+                      }}
+                      className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                      Vérifier mon dossier →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Étape 3 : Récapitulatif & Soumission ── */}
+              {applyStep === 3 && (
+                <div className="space-y-4 text-xs text-text-secondary">
+                  <div className="bg-bg-primary p-4 rounded-xl border border-border-primary space-y-2.5">
+                    <h4 className="font-bold text-text-primary text-xs border-b border-border-primary/40 pb-2">📋 Récapitulatif de candidature</h4>
+                    <div className="grid grid-cols-3 gap-1 py-1">
+                      <span className="font-semibold text-text-secondary">Candidat :</span>
+                      <span className="col-span-2 font-bold text-text-primary">{profile.name} ({profile.email})</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 py-1">
+                      <span className="font-semibold text-text-secondary">Formation :</span>
+                      <span className="col-span-2 font-bold text-brand-primary">{applyingProgram.title}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 py-1">
+                      <span className="font-semibold text-text-secondary">Rentrée :</span>
+                      <span className="col-span-2 font-bold text-text-primary">{applySession}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 py-1">
+                      <span className="font-semibold text-text-secondary">Pièces jointes :</span>
+                      <div className="col-span-2 space-y-1 font-mono text-[11px] text-text-primary">
+                        <div>✅ CNI : <span className="font-bold">{applyCniFile?.name}</span></div>
+                        <div>✅ Diplôme : <span className="font-bold">{applyDiplomaFile?.name}</span></div>
+                        {applyResumeFile && <div>✅ Optionnel : <span className="font-bold">{applyResumeFile.name}</span></div>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="flex items-start gap-2.5 p-3 bg-brand-light/30 border border-brand-primary/20 rounded-xl cursor-pointer">
+                    <input type="checkbox" defaultChecked required className="mt-0.5 accent-brand-primary w-4 h-4 cursor-pointer" />
+                    <span className="text-[11px] text-text-primary font-medium leading-relaxed">
+                      Je certifie sur l'honneur l'exactitude des informations fournies et l'authenticité des documents annexés à ce dossier de candidature.
+                    </span>
+                  </label>
+
+                  {applyError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
+                      ⚠️ {applyError}
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
+                    <button
+                      onClick={() => { setApplyError(''); setApplyStep(2); }}
+                      disabled={isSubmittingApplication}
+                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                    >
+                      ← Précédent
+                    </button>
+                    <button
+                      onClick={handleConfirmApplication}
+                      disabled={isSubmittingApplication}
+                      className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmittingApplication ? 'Envoi en cours...' : 'Transmettre mon dossier au jury 🚀'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
