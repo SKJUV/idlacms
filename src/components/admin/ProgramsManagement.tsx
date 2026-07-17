@@ -15,6 +15,8 @@ export default function ProgramsManagement({
   logActivity,
 }: ProgramsManagementProps) {
   const [activeSubTab, setActiveSubTab] = useState<'programs' | 'sessions'>('programs');
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [cloudSuccess, setCloudSuccess] = useState<string | null>(null);
 
   // ─── Programs State & Form ───
   const [showAddProgramForm, setShowAddProgramForm] = useState(false);
@@ -45,21 +47,20 @@ export default function ProgramsManagement({
   const [showAddSessionForm, setShowAddSessionForm] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState('');
-  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('principale');
+  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('Rentrée Principale');
   const [newSessionStatus, setNewSessionStatus] = useState<AcademicSession['status']>('ouverte');
-  const [newSessionDeadline, setNewSessionDeadline] = useState('15 Septembre 2026');
+  const [newSessionDeadline, setNewSessionDeadline] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
 
-  const saveSessionsToStorage = (updated: AcademicSession[]) => {
-    setSessions(updated);
+  const saveSessionsToStorage = (updatedSessions: AcademicSession[]) => {
+    setSessions(updatedSessions);
     try {
-      localStorage.setItem('idla_academic_sessions', JSON.stringify(updated));
+      localStorage.setItem('idla_academic_sessions', JSON.stringify(updatedSessions));
     } catch (e) {
       console.error('Erreur sauvegarde idla_academic_sessions:', e);
     }
   };
 
-  // ─── Programs Handlers ───
   const resetProgramForm = () => {
     setNewProgramTitle('');
     setNewProgramDescription('');
@@ -72,47 +73,112 @@ export default function ProgramsManagement({
     setShowAddProgramForm(false);
   };
 
-  const startEditProgram = (p: Program) => {
-    setEditingProgramId(p.id);
-    setNewProgramTitle(p.title);
-    setNewProgramDescription(p.description);
-    setNewProgramType(p.type);
-    setNewProgramCategory(p.category);
-    setNewProgramDuration(p.duration);
-    setNewProgramImage(p.image);
-    setNewProgramIsNew(!!p.isNew);
+  const resetSessionForm = () => {
+    setNewSessionName('');
+    setNewSessionType('Rentrée Principale');
+    setNewSessionStatus('ouverte');
+    setNewSessionDeadline('');
+    setNewSessionDescription('');
+    setEditingSessionId(null);
+    setShowAddSessionForm(false);
+  };
+
+  const handleEditProgram = (prog: Program) => {
+    setEditingProgramId(prog.id);
+    setNewProgramTitle(prog.title);
+    setNewProgramDescription(prog.description);
+    setNewProgramType((prog.type as any) || 'Master');
+    setNewProgramCategory(prog.category || 'Tech');
+    setNewProgramDuration(prog.duration);
+    setNewProgramImage(prog.image);
+    setNewProgramIsNew(!!prog.isNew);
     setShowAddProgramForm(true);
+    setCloudError(null);
+    setCloudSuccess(null);
+  };
+
+  const handleEditSession = (sess: AcademicSession) => {
+    setEditingSessionId(sess.id);
+    setNewSessionName(sess.name);
+    setNewSessionType(sess.type);
+    setNewSessionStatus(sess.status);
+    setNewSessionDeadline(sess.deadline);
+    setNewSessionDescription(sess.description || '');
+    setShowAddSessionForm(true);
   };
 
   const handleSubmitProgram = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProgramTitle || !newProgramDescription) return;
+    if (!newProgramTitle || !newProgramDescription || !newProgramDuration) return;
+    setCloudError(null);
+    setCloudSuccess(null);
 
     if (editingProgramId) {
-      const updated: Partial<Program> = {
-        title: newProgramTitle,
-        description: newProgramDescription,
-        type: newProgramType,
-        category: newProgramCategory,
-        duration: newProgramDuration,
-        image: newProgramImage,
-        isNew: newProgramIsNew,
-      };
-      setPrograms((curr) => {
-        const next = curr.map((p) => (p.id === editingProgramId ? { ...p, ...updated } : p));
-        try { localStorage.setItem('idla_local_programs', JSON.stringify(next)); } catch (e) {}
-        return next;
-      });
+      const updated = programs.map((p) =>
+        p.id === editingProgramId
+          ? {
+              ...p,
+              title: newProgramTitle,
+              description: newProgramDescription,
+              type: newProgramType,
+              category: newProgramCategory,
+              duration: newProgramDuration,
+              image: newProgramImage,
+              isNew: newProgramIsNew,
+            }
+          : p
+      );
+      setPrograms(updated);
+      try {
+        localStorage.setItem('idla_local_programs', JSON.stringify(updated));
+      } catch (e) {
+        console.error("Erreur d'enregistrement local des programmes:", e);
+      }
       if (isAppwriteDbConfigured()) {
         try {
           await databases.updateDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
-            updated as any
+            {
+              title: newProgramTitle,
+              description: newProgramDescription,
+              type: newProgramType,
+              category: newProgramCategory,
+              duration: newProgramDuration,
+              image: newProgramImage,
+              isNew: newProgramIsNew,
+            } as any
           );
-        } catch (err) {
-          console.error("Échec de la mise à jour du programme sur Appwrite:", err);
+          setCloudSuccess("Programme mis à jour avec succès sur le Cloud Appwrite.");
+        } catch (err: any) {
+          console.error("Échec de la mise à jour sur Appwrite:", err);
+          if (err.message && (err.message.includes('one of') || err.message.includes('category'))) {
+            try {
+              const fallbackCat = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(newProgramCategory)
+                ? newProgramCategory
+                : 'Management';
+              await databases.updateDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.programs,
+                editingProgramId,
+                {
+                  title: newProgramTitle,
+                  description: newProgramDescription,
+                  type: newProgramType,
+                  category: fallbackCat,
+                  duration: newProgramDuration,
+                  image: newProgramImage,
+                  isNew: newProgramIsNew,
+                } as any
+              );
+              setCloudSuccess("Programme mis à jour en ligne (catégorie ajustée automatiquement sur la base distante pour compatibilité avec l'ancien schéma).");
+            } catch (retryErr: any) {
+              setCloudError("Erreur Cloud Appwrite : " + (retryErr.message || err.message) + " — Vos modifications sont toutefois actives et sauvegardées en mémoire locale.");
+            }
+          } else {
+            setCloudError("Erreur Cloud Appwrite : " + err.message + " — Vos modifications sont toutefois actives et sauvegardées en mémoire locale.");
+          }
         }
       }
       logActivity('article', 'Super Admin', `a modifié le programme : ${newProgramTitle}.`);
@@ -154,8 +220,35 @@ export default function ProgramsManagement({
             isNew: newProgram.isNew,
           }
         );
-      } catch (err) {
+        setCloudSuccess("Nouveau programme créé et synchronisé avec succès sur la base Appwrite en ligne !");
+      } catch (err: any) {
         console.error("Échec de création du programme sur Appwrite:", err);
+        if (err.message && (err.message.includes('one of') || err.message.includes('category'))) {
+          try {
+            const fallbackCat = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(newProgram.category || '')
+              ? newProgram.category
+              : 'Tech';
+            await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.programs,
+              progId,
+              {
+                title: newProgram.title,
+                description: newProgram.description,
+                type: newProgram.type,
+                category: fallbackCat,
+                duration: newProgram.duration,
+                image: newProgram.image,
+                isNew: newProgram.isNew,
+              }
+            );
+            setCloudSuccess("Nouveau programme créé en ligne (catégorie Cloud ajustée automatiquement sur 'Tech'/'Management' pour compatibilité avec l'ancien schéma Appwrite de la base).");
+          } catch (retryErr: any) {
+            setCloudError("⚠️ Le Cloud Appwrite a refusé l'ajout (" + (retryErr.message || err.message) + "). Pas de panique : le programme est sauvegardé en toute sécurité dans votre stockage local !");
+          }
+        } else {
+          setCloudError("⚠️ Le Cloud Appwrite a refusé l'ajout (" + (err.message || "Erreur réseau/permissions") + "). Pas de panique : le programme est sauvegardé et visible dans votre stockage local !");
+        }
       }
     }
 
@@ -198,26 +291,7 @@ export default function ProgramsManagement({
     }
   };
 
-  // ─── Academic Sessions Handlers ───
-  const resetSessionForm = () => {
-    setNewSessionName('');
-    setNewSessionType('principale');
-    setNewSessionStatus('ouverte');
-    setNewSessionDeadline('');
-    setNewSessionDescription('');
-    setEditingSessionId(null);
-    setShowAddSessionForm(false);
-  };
 
-  const startEditSession = (s: AcademicSession) => {
-    setEditingSessionId(s.id);
-    setNewSessionName(s.name);
-    setNewSessionType(s.type);
-    setNewSessionStatus(s.status);
-    setNewSessionDeadline(s.deadline || '');
-    setNewSessionDescription(s.description || '');
-    setShowAddSessionForm(true);
-  };
 
   const handleSubmitSession = (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,6 +356,26 @@ export default function ProgramsManagement({
 
   return (
     <div className="space-y-6">
+      {cloudSuccess && (
+        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{cloudSuccess}</span>
+          </div>
+          <button onClick={() => setCloudSuccess(null)} className="text-emerald-600 hover:text-emerald-900 font-bold ml-4">✕</button>
+        </div>
+      )}
+
+      {cloudError && (
+        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <span>{cloudError}</span>
+          </div>
+          <button onClick={() => setCloudError(null)} className="text-amber-700 hover:text-amber-950 font-bold ml-4">✕</button>
+        </div>
+      )}
+
       {/* ── Tabs Header ── */}
       <div className="flex border-b border-[#c6c6cf]/40 gap-6">
         <button
@@ -708,7 +802,7 @@ export default function ProgramsManagement({
                     <td className="p-4">
                       <div className="flex justify-center items-center gap-1">
                         <button
-                          onClick={() => startEditSession(s)}
+                          onClick={() => handleEditSession(s)}
                           className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
                           title="Modifier la session"
                         >
