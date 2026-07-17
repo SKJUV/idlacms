@@ -354,6 +354,27 @@ export default function App() {
     loadPublicContent();
   }, []);
 
+  // Synchronisation instantanée de la mémoire locale vers l'état global lors de toute navigation (Public & Etudiants)
+  useEffect(() => {
+    try {
+      const localPrograms: Program[] = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+      if (localPrograms.length > 0) {
+        setPrograms((curr) => {
+          const combined = [...localPrograms, ...curr];
+          const uniqueMap = new Map<string, Program>();
+          combined.forEach((p) => {
+            if (p && p.id && !uniqueMap.has(p.id)) {
+              uniqueMap.set(p.id, p);
+            } else if (p && p.title && !uniqueMap.has(p.title.toLowerCase())) {
+              uniqueMap.set(p.title.toLowerCase(), p);
+            }
+          });
+          return Array.from(uniqueMap.values());
+        });
+      }
+    } catch (e) {}
+  }, [activeTab, role]);
+
   const clearAppwriteSession = () => {
     account.deleteSession({ sessionId: 'current' }).catch(() => {});
   };

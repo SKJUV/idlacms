@@ -110,15 +110,33 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   // Testimonials View States
   const [selectedTestimonialType, setSelectedTestimonialType] = useState<string>('Tous');
 
+  // Active merged programs (combines props.programs with instant idla_local_programs cache)
+  const activePrograms = useMemo(() => {
+    let localProgs: Program[] = [];
+    try {
+      localProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+    } catch (e) {}
+    const combined = [...localProgs, ...(programs || [])];
+    const uniqueMap = new Map<string, Program>();
+    combined.forEach((p) => {
+      if (p && p.id && !uniqueMap.has(p.id)) {
+        uniqueMap.set(p.id, p);
+      } else if (p && p.title && !uniqueMap.has(p.title.toLowerCase())) {
+        uniqueMap.set(p.title.toLowerCase(), p);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [programs]);
+
   // FILTER PROGRAMS
   const filteredPrograms = useMemo(() => {
-    return programs.filter(p => {
+    return activePrograms.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(programSearch.toLowerCase()) || 
                             p.description.toLowerCase().includes(programSearch.toLowerCase());
       const matchesType = selectedProgramType === 'Tous' || p.type === selectedProgramType;
       return matchesSearch && matchesType;
     });
-  }, [programs, programSearch, selectedProgramType]);
+  }, [activePrograms, programSearch, selectedProgramType]);
 
   // FILTER NEWS
   const filteredNews = useMemo(() => {
@@ -361,7 +379,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {programs.slice(0, 3).map((p, idx) => (
+              {activePrograms.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
                   className={`rounded-2xl overflow-hidden relative group min-h-[380px] shadow-md hover:shadow-2xl hover:shadow-[#006c49]/20 border border-[#c6c6cf]/30 cursor-pointer transition-all duration-500 transform hover:-translate-y-1.5 flex flex-col justify-end ${

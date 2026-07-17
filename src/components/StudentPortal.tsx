@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
@@ -654,10 +654,28 @@ export default function StudentPortal({
   };
 
   // ── Données dérivées ──
+  // Programmes IDLA complets (mergent temps réel de idla_local_programs + base de données)
+  const allPrograms = useMemo(() => {
+    let localProgs: any[] = [];
+    try {
+      localProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+    } catch (e) {}
+    const combined = [...localProgs, ...(programs || [])];
+    const uniqueMap = new Map<string, any>();
+    combined.forEach((p) => {
+      if (p && p.id && !uniqueMap.has(p.id)) {
+        uniqueMap.set(p.id, p);
+      } else if (p && p.title && !uniqueMap.has(p.title.toLowerCase())) {
+        uniqueMap.set(p.title.toLowerCase(), p);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [programs]);
+
   const enrollments = applications
     .filter((app) => app.status === 'Accepted')
     .map((app) => {
-      const progDetail = (programs || []).find((p) => p.title === app.program);
+      const progDetail = allPrograms.find((p) => p.title === app.program);
       return {
         id: app.$id,
         courseId: progDetail?.id || app.$id,
@@ -677,15 +695,14 @@ export default function StudentPortal({
   const completed: any[] = [];
   const upcomingDeadlines: any[] = [];
 
-  const filteredCatalog = (programs || []).filter((c) => {
-    const q = searchQuery.toLowerCase();
-    const matchQ = !q || c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q);
-    const matchCat = filterCategory === 'Tous' || c.category === filterCategory;
-    return matchQ && matchCat;
-  });
-
-  // Programmes IDLA complets depuis la base de données (pour la section "Explorer")
-  const allPrograms = programs || [];
+  const filteredCatalog = useMemo(() => {
+    return allPrograms.filter((c) => {
+      const q = searchQuery.toLowerCase();
+      const matchQ = !q || c.title?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q);
+      const matchCat = filterCategory === 'Tous' || c.category === filterCategory;
+      return matchQ && matchCat;
+    });
+  }, [allPrograms, searchQuery, filterCategory]);
 
   // ════════════════════════════════════════════════════════════════════════════
   // LOGIN VIEW
@@ -1411,7 +1428,7 @@ export default function StudentPortal({
                           </h3>
 
                           {(() => {
-                            const appProg = programs?.find((p) => p.title === app.program);
+                            const appProg = allPrograms.find((p) => p.title === app.program);
                             const isAppCert = appProg?.type === 'Certification';
                             const studentCni = candidateDocs.find((d) => d.name.startsWith('[CNI]'));
                             const studentDiplome = candidateDocs.find((d) => d.name.startsWith('[Diplôme]'));
