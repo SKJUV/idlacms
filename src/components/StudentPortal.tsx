@@ -751,6 +751,288 @@ export default function StudentPortal({
     </div>
   ) : null;
 
+  // ── Helper pour rendre les modales de candidature (Wizard & Succès) dans chaque onglet ──
+  const renderApplicationModals = () => (
+    <>
+      {/* ── Modale de candidature (Wizard 3 étapes) ── */}
+      {applyingProgram && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border-primary/40 pb-3">
+              <div>
+                <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+                  🎓 Soumettre ma candidature
+                </h3>
+                <p className="text-[11px] font-semibold text-brand-primary mt-0.5">
+                  {applyStep === 1 && "Étape 1 sur 3 — Choix de session & Motivation"}
+                  {applyStep === 2 && "Étape 2 sur 3 — Pièces justificatives du dossier"}
+                  {applyStep === 3 && "Étape 3 sur 3 — Validation sur l'honneur"}
+                </p>
+              </div>
+              <button 
+                onClick={() => { setApplyingProgram(null); setApplyError(''); setApplyStep(1); }}
+                className="text-text-secondary hover:text-text-primary text-sm font-bold p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Barre de progression */}
+            <div className="w-full bg-border-primary/30 h-1.5 rounded-full overflow-hidden flex">
+              <div className={`bg-brand-primary h-full transition-all duration-300 ${applyStep === 1 ? 'w-1/3' : applyStep === 2 ? 'w-2/3' : 'w-full'}`} />
+            </div>
+
+            {/* ── Étape 1 : Programme & Session ── */}
+            {applyStep === 1 && (
+              <div className="space-y-4 text-xs text-text-secondary">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Formation sélectionnée</span>
+                  <div className="mt-1 p-3 bg-brand-light/40 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
+                    ▸ {applyingProgram.title}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                    Rentrée universitaire souhaitée *
+                  </label>
+                  <select
+                    value={applySession}
+                    onChange={(e) => setApplySession(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-semibold cursor-pointer"
+                  >
+                    <option value="Session d'Octobre 2026">Session d'Octobre 2026 (Rentée principale)</option>
+                    <option value="Session de Janvier 2027">Session de Janvier 2027 (Rentrée d'hiver)</option>
+                    <option value="Session d'Avril 2027">Session d'Avril 2027 (Rentrée de printemps)</option>
+                    <option value="Rentrées permanentes (E-learning)">Rentrée immédiate en continu (E-learning libre)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                    Motivation / Objectif professionnel (Optionnel)
+                  </label>
+                  <textarea
+                    value={applyMotivation}
+                    onChange={(e) => setApplyMotivation(e.target.value)}
+                    placeholder="Pourquoi souhaitez-vous suivre cette formation ? Quels sont vos objectifs à l'issue du cursus ?"
+                    rows={4}
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3 border-t border-border-primary/40">
+                  <button
+                    onClick={() => { setApplyingProgram(null); setApplyStep(1); }}
+                    className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => setApplyStep(2)}
+                    className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                  >
+                    Étape suivante →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Étape 2 : Dépôt des documents ── */}
+            {applyStep === 2 && (
+              <div className="space-y-4 text-xs text-text-secondary">
+                <div className="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-800 dark:text-amber-300 text-[11px] font-medium leading-relaxed">
+                  📎 Pour que votre admissibilité soit prononcée par le jury, veuillez joindre vos justificatifs (formats PDF, JPG ou PNG acceptés, max 10 Mo par fichier).
+                </div>
+
+                <div className="space-y-3">
+                  {/* CNI */}
+                  <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                        🪪 Pièce d'identité (CNI ou Passeport) *
+                      </span>
+                      {applyCniFile && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => setApplyCniFile(e.target.files?.[0] || null)}
+                      className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Diplôme */}
+                  <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                        🎓 Dernier Diplôme obtenu ou Attestation *
+                      </span>
+                      {applyDiplomaFile && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => setApplyDiplomaFile(e.target.files?.[0] || null)}
+                      className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* CV ou Relevés de notes */}
+                  <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
+                        📄 CV ou Relevés de notes <span className="text-text-secondary font-normal">(Optionnel)</span>
+                      </span>
+                      {applyResumeFile && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      onChange={(e) => setApplyResumeFile(e.target.files?.[0] || null)}
+                      className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {applyError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
+                    ⚠️ {applyError}
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
+                  <button
+                    onClick={() => { setApplyError(''); setApplyStep(1); }}
+                    className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                  >
+                    ← Précédent
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!applyCniFile || !applyDiplomaFile) {
+                        setApplyError('Veuillez joindre au moins votre Pièce d\'identité et votre dernier Diplôme afin d\'étudier votre dossier.');
+                        return;
+                      }
+                      setApplyError('');
+                      setApplyStep(3);
+                    }}
+                    className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                  >
+                    Vérifier mon dossier →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Étape 3 : Récapitulatif & Soumission ── */}
+            {applyStep === 3 && (
+              <div className="space-y-4 text-xs text-text-secondary">
+                <div className="bg-bg-primary p-4 rounded-xl border border-border-primary space-y-2.5">
+                  <h4 className="font-bold text-text-primary text-xs border-b border-border-primary/40 pb-2">📋 Récapitulatif de candidature</h4>
+                  <div className="grid grid-cols-3 gap-1 py-1">
+                    <span className="font-semibold text-text-secondary">Candidat :</span>
+                    <span className="col-span-2 font-bold text-text-primary">{profile.name} ({profile.email})</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 py-1">
+                    <span className="font-semibold text-text-secondary">Formation :</span>
+                    <span className="col-span-2 font-bold text-brand-primary">{applyingProgram.title}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 py-1">
+                    <span className="font-semibold text-text-secondary">Rentrée :</span>
+                    <span className="col-span-2 font-bold text-text-primary">{applySession}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 py-1">
+                    <span className="font-semibold text-text-secondary">Pièces jointes :</span>
+                    <div className="col-span-2 space-y-1 font-mono text-[11px] text-text-primary">
+                      <div>✅ CNI : <span className="font-bold">{applyCniFile?.name}</span></div>
+                      <div>✅ Diplôme : <span className="font-bold">{applyDiplomaFile?.name}</span></div>
+                      {applyResumeFile && <div>✅ Optionnel : <span className="font-bold">{applyResumeFile.name}</span></div>}
+                    </div>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-2.5 p-3 bg-brand-light/30 border border-brand-primary/20 rounded-xl cursor-pointer">
+                  <input type="checkbox" defaultChecked required className="mt-0.5 accent-brand-primary w-4 h-4 cursor-pointer" />
+                  <span className="text-[11px] text-text-primary font-medium leading-relaxed">
+                    Je certifie sur l'honneur l'exactitude des informations fournies et l'authenticité des documents annexés à ce dossier de candidature.
+                  </span>
+                </label>
+
+                {applyError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
+                    ⚠️ {applyError}
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
+                  <button
+                    onClick={() => { setApplyError(''); setApplyStep(2); }}
+                    disabled={isSubmittingApplication}
+                    className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
+                  >
+                    ← Précédent
+                  </button>
+                  <button
+                    onClick={handleConfirmApplication}
+                    disabled={isSubmittingApplication}
+                    className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSubmittingApplication ? 'Envoi en cours...' : 'Transmettre mon dossier au jury 🚀'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modale de succès après soumission d'une candidature ── */}
+      {applySuccessProgram && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-md w-full p-8 text-center space-y-6 shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto ring-8 ring-emerald-500/10 animate-pulse">
+              <CheckCircle2Icon className="w-8 h-8 stroke-[3]" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bold text-2xl text-text-primary">Candidature Soumise !</h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Votre dossier pour le programme <strong className="text-brand-primary">{applySuccessProgram}</strong> a été transmis avec succès au service des admissions de l'IDLA.
+              </p>
+            </div>
+            <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 text-left text-xs text-text-secondary space-y-2">
+              <p className="font-bold text-text-primary flex items-center gap-1.5">
+                📋 Ce qui va se passer ensuite :
+              </p>
+              <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
+                <li>Votre conseiller pédagogique va étudier votre candidature.</li>
+                <li>Vous pouvez suivre l'avancement et envoyer des messages depuis l'onglet <strong className="text-text-primary">Mes Candidatures</strong>.</li>
+              </ul>
+            </div>
+            <button
+              onClick={() => setApplySuccessProgram(null)}
+              className="w-full py-3 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              Voir ma candidature →
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   // ════════════════════════════════════════════════════════════════════════════
   // DASHBOARD VIEW
   // ════════════════════════════════════════════════════════════════════════════
@@ -917,6 +1199,7 @@ export default function StudentPortal({
             </div>
           </div>
         </div>
+        {renderApplicationModals()}
       </div>
     );
   }
@@ -1405,6 +1688,7 @@ export default function StudentPortal({
             </div>
           )}
         </div>
+        {renderApplicationModals()}
       </div>
     );
   }
@@ -1490,6 +1774,7 @@ export default function StudentPortal({
             )}
           </div>
         </div>
+        {renderApplicationModals()}
       </div>
     );
   }
@@ -1546,6 +1831,7 @@ export default function StudentPortal({
             {profileSaved && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2Icon className="w-3.5 h-3.5" /> Profil mis à jour</span>}
           </div>
         </div>
+        {renderApplicationModals()}
       </div>
     );
   }
@@ -1728,283 +2014,7 @@ export default function StudentPortal({
             </div>
           )}
         </div>
-
-        {/* ── Modale de candidature (Wizard 3 étapes) ── */}
-        {applyingProgram && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-border-primary/40 pb-3">
-                <div>
-                  <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
-                    🎓 Soumettre ma candidature
-                  </h3>
-                  <p className="text-[11px] font-semibold text-brand-primary mt-0.5">
-                    {applyStep === 1 && "Étape 1 sur 3 — Choix de session & Motivation"}
-                    {applyStep === 2 && "Étape 2 sur 3 — Pièces justificatives du dossier"}
-                    {applyStep === 3 && "Étape 3 sur 3 — Validation sur l'honneur"}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => { setApplyingProgram(null); setApplyError(''); setApplyStep(1); }}
-                  className="text-text-secondary hover:text-text-primary text-sm font-bold p-1 rounded-lg cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Barre de progression */}
-              <div className="w-full bg-border-primary/30 h-1.5 rounded-full overflow-hidden flex">
-                <div className={`bg-brand-primary h-full transition-all duration-300 ${applyStep === 1 ? 'w-1/3' : applyStep === 2 ? 'w-2/3' : 'w-full'}`} />
-              </div>
-
-              {/* ── Étape 1 : Programme & Session ── */}
-              {applyStep === 1 && (
-                <div className="space-y-4 text-xs text-text-secondary">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Formation sélectionnée</span>
-                    <div className="mt-1 p-3 bg-brand-light/40 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
-                      ▸ {applyingProgram.title}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
-                      Rentrée universitaire souhaitée *
-                    </label>
-                    <select
-                      value={applySession}
-                      onChange={(e) => setApplySession(e.target.value)}
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-semibold cursor-pointer"
-                    >
-                      <option value="Session d'Octobre 2026">Session d'Octobre 2026 (Rentée principale)</option>
-                      <option value="Session de Janvier 2027">Session de Janvier 2027 (Rentrée d'hiver)</option>
-                      <option value="Session d'Avril 2027">Session d'Avril 2027 (Rentrée de printemps)</option>
-                      <option value="Rentrées permanentes (E-learning)">Rentrée immédiate en continu (E-learning libre)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
-                      Motivation / Objectif professionnel (Optionnel)
-                    </label>
-                    <textarea
-                      value={applyMotivation}
-                      onChange={(e) => setApplyMotivation(e.target.value)}
-                      placeholder="Pourquoi souhaitez-vous suivre cette formation ? Quels sont vos objectifs à l'issue du cursus ?"
-                      rows={4}
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
-                    />
-                  </div>
-
-                  <div className="pt-2 flex justify-end gap-3 border-t border-border-primary/40">
-                    <button
-                      onClick={() => { setApplyingProgram(null); setApplyStep(1); }}
-                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={() => setApplyStep(2)}
-                      className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
-                    >
-                      Étape suivante →
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Étape 2 : Dépôt des documents ── */}
-              {applyStep === 2 && (
-                <div className="space-y-4 text-xs text-text-secondary">
-                  <div className="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-800 dark:text-amber-300 text-[11px] font-medium leading-relaxed">
-                    📎 Pour que votre admissibilité soit prononcée par le jury, veuillez joindre vos justificatifs (formats PDF, JPG ou PNG acceptés, max 10 Mo par fichier).
-                  </div>
-
-                  <div className="space-y-3">
-                    {/* CNI */}
-                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                          🪪 Pièce d'identité (CNI ou Passeport) *
-                        </span>
-                        {applyCniFile && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => setApplyCniFile(e.target.files?.[0] || null)}
-                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Diplôme */}
-                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                          🎓 Dernier Diplôme obtenu ou Attestation *
-                        </span>
-                        {applyDiplomaFile && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => setApplyDiplomaFile(e.target.files?.[0] || null)}
-                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
-                      />
-                    </div>
-
-                    {/* CV ou Relevés de notes */}
-                    <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                          📄 CV ou Relevés de notes <span className="text-text-secondary font-normal">(Optionnel)</span>
-                        </span>
-                        {applyResumeFile && (
-                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <CheckCircle2Icon className="w-3 h-3" /> Fichier sélectionné
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        onChange={(e) => setApplyResumeFile(e.target.files?.[0] || null)}
-                        className="w-full text-[11px] text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  {applyError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
-                      ⚠️ {applyError}
-                    </div>
-                  )}
-
-                  <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
-                    <button
-                      onClick={() => { setApplyError(''); setApplyStep(1); }}
-                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
-                    >
-                      ← Précédent
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!applyCniFile || !applyDiplomaFile) {
-                          setApplyError('Veuillez joindre au moins votre Pièce d\'identité et votre dernier Diplôme afin d\'étudier votre dossier.');
-                          return;
-                        }
-                        setApplyError('');
-                        setApplyStep(3);
-                      }}
-                      className="px-6 py-2 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
-                    >
-                      Vérifier mon dossier →
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Étape 3 : Récapitulatif & Soumission ── */}
-              {applyStep === 3 && (
-                <div className="space-y-4 text-xs text-text-secondary">
-                  <div className="bg-bg-primary p-4 rounded-xl border border-border-primary space-y-2.5">
-                    <h4 className="font-bold text-text-primary text-xs border-b border-border-primary/40 pb-2">📋 Récapitulatif de candidature</h4>
-                    <div className="grid grid-cols-3 gap-1 py-1">
-                      <span className="font-semibold text-text-secondary">Candidat :</span>
-                      <span className="col-span-2 font-bold text-text-primary">{profile.name} ({profile.email})</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1 py-1">
-                      <span className="font-semibold text-text-secondary">Formation :</span>
-                      <span className="col-span-2 font-bold text-brand-primary">{applyingProgram.title}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1 py-1">
-                      <span className="font-semibold text-text-secondary">Rentrée :</span>
-                      <span className="col-span-2 font-bold text-text-primary">{applySession}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1 py-1">
-                      <span className="font-semibold text-text-secondary">Pièces jointes :</span>
-                      <div className="col-span-2 space-y-1 font-mono text-[11px] text-text-primary">
-                        <div>✅ CNI : <span className="font-bold">{applyCniFile?.name}</span></div>
-                        <div>✅ Diplôme : <span className="font-bold">{applyDiplomaFile?.name}</span></div>
-                        {applyResumeFile && <div>✅ Optionnel : <span className="font-bold">{applyResumeFile.name}</span></div>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-2.5 p-3 bg-brand-light/30 border border-brand-primary/20 rounded-xl cursor-pointer">
-                    <input type="checkbox" defaultChecked required className="mt-0.5 accent-brand-primary w-4 h-4 cursor-pointer" />
-                    <span className="text-[11px] text-text-primary font-medium leading-relaxed">
-                      Je certifie sur l'honneur l'exactitude des informations fournies et l'authenticité des documents annexés à ce dossier de candidature.
-                    </span>
-                  </label>
-
-                  {applyError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
-                      ⚠️ {applyError}
-                    </div>
-                  )}
-
-                  <div className="pt-2 flex justify-between gap-3 border-t border-border-primary/40">
-                    <button
-                      onClick={() => { setApplyError(''); setApplyStep(2); }}
-                      disabled={isSubmittingApplication}
-                      className="px-4 py-2 border border-border-primary rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary transition-all cursor-pointer"
-                    >
-                      ← Précédent
-                    </button>
-                    <button
-                      onClick={handleConfirmApplication}
-                      disabled={isSubmittingApplication}
-                      className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                    >
-                      {isSubmittingApplication ? 'Envoi en cours...' : 'Transmettre mon dossier au jury 🚀'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Modale de succès après soumission d'une candidature ── */}
-        {applySuccessProgram && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-md w-full p-8 text-center space-y-6 shadow-2xl">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto ring-8 ring-emerald-500/10 animate-pulse">
-                <CheckCircle2Icon className="w-8 h-8 stroke-[3]" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-bold text-2xl text-text-primary">Candidature Soumise !</h3>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Votre dossier pour le programme <strong className="text-brand-primary">{applySuccessProgram}</strong> a été transmis avec succès au service des admissions de l'IDLA.
-                </p>
-              </div>
-              <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 text-left text-xs text-text-secondary space-y-2">
-                <p className="font-bold text-text-primary flex items-center gap-1.5">
-                  📋 Ce qui va se passer ensuite :
-                </p>
-                <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
-                  <li>Votre conseiller pédagogique va étudier votre candidature.</li>
-                  <li>Vous pouvez suivre l'avancement et envoyer des messages depuis l'onglet <strong className="text-text-primary">Mes Candidatures</strong>.</li>
-                </ul>
-              </div>
-              <button
-                onClick={() => setApplySuccessProgram(null)}
-                className="w-full py-3 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
-              >
-                Voir ma candidature →
-              </button>
-            </div>
-          </div>
-        )}
+        {renderApplicationModals()}
       </div>
     );
   }
