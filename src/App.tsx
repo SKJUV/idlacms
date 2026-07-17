@@ -277,17 +277,25 @@ export default function App() {
             image: doc.image,
             isNew: doc.isNew,
           }));
-          const mergedProgs = [...localPrograms];
-          for (const rp of remoteProgs) {
-            if (!mergedProgs.some((l) => l.id === rp.id || l.title?.toLowerCase() === rp.title?.toLowerCase())) {
-              mergedProgs.push(rp);
+          setPrograms((curr) => {
+            let freshLocal: any[] = [];
+            try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
+            const combined = [...freshLocal, ...curr];
+            for (const rp of remoteProgs) {
+              if (!combined.some((l) => l.id === rp.id || l.title?.toLowerCase() === rp.title?.toLowerCase())) {
+                combined.push(rp);
+              }
             }
-          }
-          if (mergedProgs.length > 0) {
-            setPrograms(mergedProgs);
-          }
-        } else if (localPrograms.length > 0) {
-          setPrograms(localPrograms);
+            try { localStorage.setItem('idla_local_programs', JSON.stringify(combined)); } catch (e) {}
+            return combined;
+          });
+        } else {
+          setPrograms((curr) => {
+            let freshLocal: any[] = [];
+            try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
+            const combined = [...freshLocal, ...curr];
+            return combined.length > 0 ? combined : curr;
+          });
         }
 
         // Fetch News
