@@ -4,9 +4,9 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, fullName, selectedProgram, tempPassword } = req.body || {};
+  const { email, fullName, tempPassword } = req.body || {};
 
-  if (!email || !fullName || !selectedProgram || !tempPassword) {
+  if (!email || !fullName || !tempPassword) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -34,8 +34,8 @@ export default async function handler(req: any, res: any) {
             </div>
             <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
               <p>Bonjour <strong>${fullName}</strong>,</p>
-              <p>Votre candidature au programme <strong style="color: #0d9488;">${selectedProgram}</strong> a été enregistrée avec succès.</p>
-              <p>Un compte d'accès a été créé automatiquement pour vous permettre de suivre l'avancement de votre dossier. Voici vos identifiants temporaires :</p>
+              <p>Votre inscription à l'International Distance Learning Academy (IDLA) a été enregistrée avec succès.</p>
+              <p>Un compte d'accès a été créé automatiquement pour vous permettre d'explorer nos programmes et de postuler. Voici vos identifiants temporaires :</p>
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
@@ -53,7 +53,7 @@ export default async function handler(req: any, res: any) {
                   ⚠️ IMPORTANT : Vous devez modifier ce mot de passe lors de votre première connexion pour sécuriser votre compte.
                 </p>
               </div>
-              <p>Connectez-vous à votre espace candidat pour suivre l'état de votre candidature, échanger avec votre conseillère d'admission et gérer vos documents :</p>
+              <p>Connectez-vous à votre espace candidat pour explorer les programmes, postuler et échanger avec votre conseillère d'admission :</p>
               <div style="text-align: center; margin: 24px 0;">
                 <a href="https://idlaacademy.online/candidat" style="display: inline-block; background-color: #0d9488; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px;">
                   Accéder à mon espace candidat →

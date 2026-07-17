@@ -168,7 +168,7 @@ export default function PreRegistrations({
   // Filtres liste
   const filteredApps = preRegistrations.filter((p) => {
     const matchStatus = statusFilter === 'Tous' || p.status === statusFilter;
-    const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()) || p.email.toLowerCase().includes(searchQ.toLowerCase()) || p.program.toLowerCase().includes(searchQ.toLowerCase());
+    const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()) || p.email.toLowerCase().includes(searchQ.toLowerCase()) || (p.program || '').toLowerCase().includes(searchQ.toLowerCase());
     return matchStatus && matchSearch;
   });
   const filteredCandidates = candidatesList.filter((c) => {
@@ -250,7 +250,7 @@ export default function PreRegistrations({
                       className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? 'border-brand-primary bg-brand-light/30' : 'border-border-primary/50 hover:bg-slate-50'}`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[#00020e] line-clamp-2">{app.program}</p>
+                          <p className="text-sm font-bold text-[#00020e] line-clamp-2">{app.program || 'Inscription seule (pas encore postulé)'}</p>
                           <p className="text-[11px] text-slate-400 mt-0.5">
                             Déposé le {new Date(app.dateApplied || '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                           </p>
@@ -531,7 +531,7 @@ export default function PreRegistrations({
                     <div className="flex flex-wrap gap-1.5">
                       {c.applications.map((app: any) => {
                         const badge = statusConfig(app.status || 'New');
-                        return <span key={app.id} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badge.cls}`}>{app.program.slice(0, 25)}{app.program.length > 25 ? '…' : ''}</span>;
+                        return <span key={app.id} className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badge.cls}`}>{(app.program || 'Inscription').slice(0, 25)}{(app.program || '').length > 25 ? '…' : ''}</span>;
                       })}
                     </div>
                   </td>
@@ -571,7 +571,7 @@ export default function PreRegistrations({
                       <p className="text-[10px] text-slate-400">{p.email}</p>
                     </td>
                     <td className="p-4 text-slate-600 max-w-[200px]">
-                      <p className="line-clamp-2">{p.program}</p>
+                      <p className="line-clamp-2">{p.program || 'Inscription seule'}</p>
                     </td>
                     <td className="p-4 text-slate-400 hidden md:table-cell whitespace-nowrap">
                       {p.dateApplied ? new Date(p.dateApplied).toLocaleDateString('fr-FR') : '—'}

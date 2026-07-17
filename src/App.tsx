@@ -103,7 +103,6 @@ export default function App() {
   );
   const [role, setRole] = useState<Role>('guest');
   const [isSessionChecking, setIsSessionChecking] = useState(true);
-  const [selectedProgramTitle, setSelectedProgramTitle] = useState<string | undefined>(undefined);
 
   // Check active session on mount
   useEffect(() => {
@@ -247,7 +246,6 @@ export default function App() {
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
   const [candidateTempPassword, setCandidateTempPassword] = useState('');
-  const [selectedProgram, setSelectedProgram] = useState('');
 
   // Fetch data directly from Appwrite (Strict Database, no silent mock fallback)
   useEffect(() => {
@@ -338,16 +336,14 @@ export default function App() {
     account.deleteSession({ sessionId: 'current' }).catch(() => {});
   };
 
-  const handleApplicationSuccess = (name: string, prog: string, email: string, tempPass: string) => {
+  const handleApplicationSuccess = (name: string, email: string, tempPass?: string) => {
     setCandidateName(name);
-    setSelectedProgram(prog);
     setCandidateEmail(email);
-    setCandidateTempPassword(tempPass);
+    setCandidateTempPassword(tempPass || '');
     setActiveTab('success');
   };
 
   const handleApplyToProgram = (programTitle?: string) => {
-    setSelectedProgramTitle(programTitle);
     setActiveTab('candidature');
   };
 
@@ -474,8 +470,6 @@ export default function App() {
                 setActiveTab('home');
               }
             }}
-            programs={programs}
-            initialProgram={selectedProgramTitle}
           />
         )}
 
@@ -483,7 +477,6 @@ export default function App() {
         {activeTab === 'success' && (
           <ApplicationSuccess
             candidateName={candidateName}
-            selectedProgram={selectedProgram}
             tempPassword={candidateTempPassword}
             onGoToCandidatePortal={async () => {
               // Re-créer la session Appwrite avec les identifiants temporaires

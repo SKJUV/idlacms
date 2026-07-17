@@ -3,7 +3,6 @@ import { CheckCircle2Icon, ArrowRightIcon, ArrowLeftIcon, MailIcon, FileTextIcon
 
 interface ApplicationSuccessProps {
   candidateName: string;
-  selectedProgram: string;
   tempPassword?: string;
   onGoToCandidatePortal: () => void;
   onBackToHome: () => void;
@@ -11,7 +10,6 @@ interface ApplicationSuccessProps {
 
 export default function ApplicationSuccess({
   candidateName,
-  selectedProgram,
   tempPassword,
   onGoToCandidatePortal,
   onBackToHome,
@@ -71,9 +69,9 @@ export default function ApplicationSuccess({
         </div>
 
         <div className="space-y-2">
-          <h1 className="font-sans font-bold text-3xl text-text-primary">Candidature Reçue !</h1>
+          <h1 className="font-sans font-bold text-3xl text-text-primary">Inscription Réussie !</h1>
           <p className="text-brand-primary font-bold text-sm tracking-wide uppercase">
-            Votre dossier a bien été enregistré — Session {new Date().getFullYear()}
+            Votre compte IDLA a été créé avec succès — Session {new Date().getFullYear()}
           </p>
         </div>
 
@@ -87,16 +85,8 @@ export default function ApplicationSuccess({
           ) : (
             ''
           )}
-          , votre dossier d'admission
-          {selectedProgram ? (
-            <>
-              {' '}
-              pour le programme <span className="font-bold text-text-primary">{selectedProgram}</span>
-            </>
-          ) : (
-            ''
-          )}{' '}
-          a été transmis avec succès à notre comité d'étude.
+          , votre inscription à l'International Distance Learning Academy a été enregistrée avec succès.
+          Vous pouvez maintenant explorer nos programmes et postuler directement depuis votre espace candidat.
         </p>
 
         {tempPassword && (
@@ -131,21 +121,25 @@ export default function ApplicationSuccess({
                 1
               </span>
               <span>
-                <strong>Analyse de recevabilité :</strong> Le bureau des admissions IDLA étudiera vos pièces
-                sous un délai de 24 heures ouvrées.
+                <strong>Connectez-vous :</strong> Utilisez vos identifiants pour accéder à votre espace candidat IDLA.
               </span>
             </li>
-            {tempPassword && (
-              <li className="flex items-start gap-2 text-xs text-text-secondary">
-                <span className="w-5 h-5 rounded-full bg-brand-light text-brand-primary flex items-center justify-center font-bold shrink-0 mt-0.5 text-[10px]">
-                  2
-                </span>
-                <span>
-                  <strong>Espace Candidat :</strong> Connectez-vous avec vos identifiants temporaires reçus par
-                  mail pour suivre l'évaluation de votre dossier.
-                </span>
-              </li>
-            )}
+            <li className="flex items-start gap-2 text-xs text-text-secondary">
+              <span className="w-5 h-5 rounded-full bg-brand-light text-brand-primary flex items-center justify-center font-bold shrink-0 mt-0.5 text-[10px]">
+                2
+              </span>
+              <span>
+                <strong>Explorez les programmes :</strong> Parcourez notre catalogue de formations d'excellence et choisissez ceux qui correspondent à vos ambitions.
+              </span>
+            </li>
+            <li className="flex items-start gap-2 text-xs text-text-secondary">
+              <span className="w-5 h-5 rounded-full bg-brand-light text-brand-primary flex items-center justify-center font-bold shrink-0 mt-0.5 text-[10px]">
+                3
+              </span>
+              <span>
+                <strong>Postulez :</strong> Soumettez votre candidature aux programmes de votre choix directement depuis votre tableau de bord.
+              </span>
+            </li>
           </ul>
         </div>
 
@@ -155,7 +149,7 @@ export default function ApplicationSuccess({
             onClick={onGoToCandidatePortal}
             className="flex-1 bg-brand-primary hover:bg-brand-hover text-white py-3.5 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-brand-primary/10 cursor-pointer"
           >
-            Suivre mon dossier
+            Accéder à mon espace
             <ArrowRightIcon className="w-4 h-4" />
           </button>
 

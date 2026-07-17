@@ -4,9 +4,9 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, fullName, selectedProgram, otpCode } = req.body || {};
+  const { email, fullName, otpCode } = req.body || {};
 
-  if (!email || !fullName || !selectedProgram || !otpCode) {
+  if (!email || !fullName || !otpCode) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -34,9 +34,8 @@ export default async function handler(req: any, res: any) {
             </div>
             <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
               <p>Bonjour <strong>${fullName}</strong>,</p>
-              <p>Nous avons bien enregistré votre demande de soumission de candidature à l'IDLA pour le programme :</p>
-              <p style="padding-left: 12px; border-left: 4px solid #0d9488; font-weight: bold; color: #0d9488; margin: 16px 0;">▸ ${selectedProgram}</p>
-              <p>Afin de confirmer votre identité et sécuriser votre dossier, veuillez utiliser le code de vérification unique ci-dessous :</p>
+              <p>Nous avons bien enregistré votre demande d'inscription à l'International Distance Learning Academy (IDLA).</p>
+              <p>Afin de confirmer votre identité et sécuriser votre compte, veuillez utiliser le code de vérification unique ci-dessous :</p>
               <div style="text-align: center; margin: 32px 0;">
                 <span style="display: inline-block; background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 12px 32px; color: #0f172a;">${otpCode}</span>
               </div>

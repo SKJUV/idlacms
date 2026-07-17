@@ -47,13 +47,17 @@ export interface PreRegistration {
   id: string;
   name: string;
   email: string;
-  program: string;
+  program?: string;
   dateApplied: string;
   status: 'In Review' | 'New' | 'Accepted' | 'Rejected';
   initials: string;
   // Détails du dossier (facultatifs — présents pour l'examen approfondi).
   phone?: string;
   nationality?: string;
+  dateOfBirth?: string;
+  gender?: 'Homme' | 'Femme' | 'Autre';
+  countryOfResidence?: string;
+  educationLevel?: string;
   highestDegree?: string;
   graduationYear?: string | number;
   motivation?: string;
