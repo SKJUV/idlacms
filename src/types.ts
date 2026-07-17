@@ -5,7 +5,7 @@ export interface Program {
   title: string;
   description: string;
   type: 'Master' | 'Doctorat' | 'Certification' | 'Bachelor';
-  category: 'Sciences' | 'Management' | 'Tech' | 'Droit' | 'Santé' | 'Communication';
+  category: string;
   duration: string;
   image: string;
   isNew?: boolean;

@@ -23,7 +23,7 @@ export default function ProgramsManagement({
   const [newProgramTitle, setNewProgramTitle] = useState('');
   const [newProgramDescription, setNewProgramDescription] = useState('');
   const [newProgramType, setNewProgramType] = useState<'Master' | 'Doctorat' | 'Certification' | 'Bachelor'>('Master');
-  const [newProgramCategory, setNewProgramCategory] = useState<'Sciences' | 'Management' | 'Tech' | 'Droit' | 'Santé' | 'Communication'>('Tech');
+  const [newProgramCategory, setNewProgramCategory] = useState<string>('Tech');
   const [newProgramDuration, setNewProgramDuration] = useState('2 ans (Full-time)');
   const [newProgramImage, setNewProgramImage] = useState('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
   const [newProgramIsNew, setNewProgramIsNew] = useState(true);
@@ -359,19 +359,63 @@ export default function ProgramsManagement({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Catégorie *</label>
-                  <select
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Catégorie (Saisie libre ou Liste) *</label>
+                    <span className="text-[10px] text-slate-400 font-normal">Tapez ou cliquez un badge</span>
+                  </div>
+                  <input
+                    type="text"
+                    list="category-options-list"
                     value={newProgramCategory}
-                    onChange={(e) => setNewProgramCategory(e.target.value as any)}
+                    onChange={(e) => setNewProgramCategory(e.target.value)}
+                    placeholder="ex: Tech, Finance, IA & Data, Cybersécurité..."
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
-                  >
-                    <option value="Sciences">Sciences</option>
-                    <option value="Management">Management</option>
-                    <option value="Tech">Tech</option>
-                    <option value="Droit">Droit</option>
-                    <option value="Santé">Santé</option>
-                    <option value="Communication">Communication</option>
-                  </select>
+                    required
+                  />
+                  <datalist id="category-options-list">
+                    {Array.from(
+                      new Set([
+                        'Sciences',
+                        'Management',
+                        'Tech',
+                        'Droit',
+                        'Santé',
+                        'Communication',
+                        'Finance & Audit',
+                        'IA & Data',
+                        'Cybersécurité',
+                        'Marketing',
+                        ...programs.map((p) => p.category),
+                      ])
+                    ).map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      'Sciences',
+                      'Management',
+                      'Tech',
+                      'Droit',
+                      'Santé',
+                      'Communication',
+                      'Finance & Audit',
+                      'IA & Data',
+                    ].map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNewProgramCategory(cat)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          newProgramCategory === cat
+                            ? 'bg-[#006c49] text-white shadow-sm'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        + {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
