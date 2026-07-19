@@ -513,6 +513,7 @@ export default function App() {
                 setActiveTab('home');
               }
             }}
+            programs={programs}
           />
         )}
 
@@ -520,6 +521,7 @@ export default function App() {
         {activeTab === 'success' && (
           <ApplicationSuccess
             candidateName={candidateName}
+            email={candidateEmail}
             tempPassword={candidateTempPassword}
             onGoToCandidatePortal={async () => {
               // Re-créer la session Appwrite avec les identifiants temporaires

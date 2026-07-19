@@ -3,6 +3,7 @@ import { CheckCircle2Icon, ArrowRightIcon, ArrowLeftIcon, MailIcon, FileTextIcon
 
 interface ApplicationSuccessProps {
   candidateName: string;
+  email?: string;
   tempPassword?: string;
   onGoToCandidatePortal: () => void;
   onBackToHome: () => void;
@@ -10,6 +11,7 @@ interface ApplicationSuccessProps {
 
 export default function ApplicationSuccess({
   candidateName,
+  email,
   tempPassword,
   onGoToCandidatePortal,
   onBackToHome,
@@ -99,8 +101,8 @@ export default function ApplicationSuccess({
                 Voici un rappel de votre adresse email de connexion. Vous utiliserez le mot de passe que vous venez de définir :
               </p>
               <div className="bg-bg-primary p-3 rounded-lg border border-border-primary/50 font-mono space-y-1 text-xs select-all text-text-primary">
-                <div>Email : <span className="font-bold text-brand-primary">saisi lors de l'inscription</span></div>
-                <div>Mot de passe : <span className="font-bold text-emerald-600 dark:text-emerald-400">Celui défini lors de l'étape 1 ({tempPassword.replace(/./g, '•')})</span></div>
+                <div>Email : <span className="font-bold text-brand-primary">{email || 'saisi lors de l\'inscription'}</span></div>
+                <div>Mot de passe : <span className="font-bold text-emerald-600 dark:text-emerald-400">Celui choisi lors de l'inscription ({tempPassword.replace(/./g, '•')})</span></div>
               </div>
               <p className="text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
                 🔒 Vous pouvez cliquer sur "Accéder à mon espace" ci-dessous pour vous connecter directement.
