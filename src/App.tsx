@@ -502,7 +502,7 @@ export default function App() {
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
     (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login');
 
-  const showPublicHeader = role === 'guest';
+  const showPublicHeader = PUBLIC_TABS.includes(activeTab);
 
   if (isSessionChecking) {
     return (
@@ -524,6 +524,8 @@ export default function App() {
           onSignUpClick={() => setActiveTab('candidature')}
           onStudentLoginClick={openStudentArea}
           onAdminLoginClick={openAdminArea}
+          onLogoutClick={handleLogout}
+          isLoggedIn={role !== 'guest'}
           theme={theme}
           setTheme={setTheme}
         />

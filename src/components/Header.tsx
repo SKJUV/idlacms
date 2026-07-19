@@ -8,6 +8,8 @@ interface HeaderProps {
   onSignUpClick: () => void;
   onStudentLoginClick: () => void;
   onAdminLoginClick: () => void;
+  onLogoutClick: () => void;
+  isLoggedIn: boolean;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
 }
@@ -18,6 +20,8 @@ export default function Header({
   onSignUpClick,
   onStudentLoginClick,
   onAdminLoginClick,
+  onLogoutClick,
+  isLoggedIn,
   theme,
   setTheme,
 }: HeaderProps) {
@@ -78,24 +82,51 @@ export default function Header({
           </button>
 
 
-          <button
-            onClick={() => {
-              onStudentLoginClick();
-              setMobileMenuOpen(false);
-            }}
-            className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
-          >
-            <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-            Mon Espace
-          </button>          <button
-            onClick={() => {
-              onSignUpClick();
-              setMobileMenuOpen(false);
-            }}
-            className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
-          >
-            Je m'inscris
-          </button>
+          {isLoggedIn ? (
+            <>
+              <button
+                onClick={() => {
+                  onStudentLoginClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
+              >
+                <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                Mon Espace
+              </button>
+              <button
+                onClick={() => {
+                  onLogoutClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+              >
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  onStudentLoginClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
+              >
+                <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                Connexion
+              </button>
+              <button
+                onClick={() => {
+                  onSignUpClick();
+                  setMobileMenuOpen(false);
+                }}
+                className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+              >
+                Je m'inscris
+              </button>
+            </>
+          )}
           <button
             onClick={() => setMobileMenuOpen((value) => !value)}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border-primary text-text-secondary hover:bg-bg-primary md:hidden"
@@ -124,26 +155,52 @@ export default function Header({
                   {item.label}
                 </button>
               ))}
-               <div className="flex items-center justify-between border-t border-border-primary pt-2 mt-2 px-3">
-                <button
-                  onClick={() => {
-                    onStudentLoginClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-xs font-bold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer"
-                >
-                  <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                  Mon Espace
-                </button>
-                <button
-                  onClick={() => {
-                    onAdminLoginClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-[10px] text-text-secondary/40 hover:text-text-secondary py-1.5 cursor-pointer"
-                >
-                  Admin
-                </button>
+              <div className="flex items-center justify-between border-t border-border-primary pt-2 mt-2 px-3">
+                {isLoggedIn ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        onStudentLoginClick();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-xs font-bold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer"
+                    >
+                      <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                      Mon Espace
+                    </button>
+                    <button
+                      onClick={() => {
+                        onLogoutClick();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-xs font-bold text-red-500 hover:text-red-700 py-1.5 cursor-pointer"
+                    >
+                      Déconnexion
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        onStudentLoginClick();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-xs font-bold text-text-secondary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer"
+                    >
+                      <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                      Connexion
+                    </button>
+                    <button
+                      onClick={() => {
+                        onAdminLoginClick();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-[10px] text-text-secondary/40 hover:text-text-secondary py-1.5 cursor-pointer"
+                    >
+                      Admin
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
