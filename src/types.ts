@@ -188,6 +188,8 @@ export interface StudentProfile {
   avatarUrl?: string;
   language: 'fr' | 'en';
   joinedAt: string;          // ISO date string
+  phone?: string;
+  nationality?: string;
 }
 
 export interface CourseCatalogItem {

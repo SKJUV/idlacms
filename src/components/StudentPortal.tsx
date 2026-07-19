@@ -274,6 +274,16 @@ export default function StudentPortal({
             [Query.equal('email', userEmail)]
           );
           setApplications(res.documents);
+
+          // Récupérer le téléphone et la nationalité depuis les dossiers existants
+          const existingApp = res.documents.find((a: any) => a.phone || a.nationality);
+          if (existingApp) {
+            setProfile((p) => ({
+              ...p,
+              phone: existingApp.phone || p.phone,
+              nationality: existingApp.nationality || p.nationality,
+            }));
+          }
         }
       } catch (err) {
         console.warn("Erreur lors de l'initialisation du portail étudiant :", err);
@@ -460,6 +470,7 @@ export default function StudentPortal({
           name: profile.name,
           email: userEmail,
           phone: profile.phone || '',
+          nationality: profile.nationality || '',
           program: applyingProgram.title,
           dateApplied: new Date().toISOString(),
           status: 'New',
@@ -504,6 +515,7 @@ export default function StudentPortal({
               name: profile.name,
               email: userEmail,
               phone: profile.phone || '',
+              nationality: profile.nationality || '',
               program: applyingProgram.title,
               dateApplied: new Date().toISOString(),
               status: 'New',
