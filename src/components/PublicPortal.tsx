@@ -365,7 +365,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="flex justify-between items-end mb-12">
               <div>
                 <h2 className="text-3xl font-bold text-[#00020e]">Nos Filières d'Excellence</h2>
-                <p className="text-sm text-[#45464e] mt-1">Des formations adaptées aux défis technologiques et économiques du continent.</p>
+                <p className="text-sm text-[#45464e] mt-1">Nos certifications internationales.</p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
