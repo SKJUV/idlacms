@@ -8,7 +8,7 @@ import StudentPortal from './components/StudentPortal';
 import PasswordReset from './components/PasswordReset';
 import AdminPortal from './components/AdminPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from './lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role } from './lib/appwrite';
 
 export type ActiveTab =
   | 'home'
@@ -385,6 +385,49 @@ export default function App() {
       }
     } catch (e) {}
   }, [activeTab, role]);
+
+  // Background auto-sync of local programs to cloud when an admin session is active
+  useEffect(() => {
+    if (role === 'admin' && programs.length > 0 && isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.programs) {
+      const syncPrograms = async () => {
+        try {
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs);
+          const remoteProgs = res.documents;
+          let currentLocal: any[] = [];
+          try {
+            currentLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+          } catch (e) {}
+
+          for (const lp of currentLocal) {
+            const existsInCloud = remoteProgs.some((cd: any) => cd.$id === lp.id || cd.title?.toLowerCase() === lp.title?.toLowerCase());
+            if (!existsInCloud && lp.id && lp.title) {
+              const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(lp.category)
+                ? lp.category
+                : 'Tech';
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.programs,
+                lp.id,
+                {
+                  title: lp.title,
+                  description: lp.description || lp.title,
+                  type: lp.type || 'Master',
+                  category: safeCategory,
+                  duration: lp.duration || '1 an',
+                  image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+                  isNew: !!lp.isNew,
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+              ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
+            }
+          }
+        } catch (err) {
+          console.warn("Erreur auto-sync dans App.tsx:", err);
+        }
+      };
+      syncPrograms();
+    }
+  }, [role, programs]);
 
   const clearAppwriteSession = () => {
     account.deleteSession({ sessionId: 'current' }).catch(() => {});
