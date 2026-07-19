@@ -99,7 +99,7 @@ export default function Header({
                   onLogoutClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:block bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
               >
                 Déconnexion
               </button>
@@ -121,7 +121,7 @@ export default function Header({
                   onSignUpClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:block bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
               >
                 Je m'inscris
               </button>
