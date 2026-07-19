@@ -252,7 +252,18 @@ export default function App() {
     const loadPublicContent = async () => {
       let localPrograms: Program[] = [];
       try {
-        localPrograms = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+        const parsed = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+        let changed = false;
+        localPrograms = parsed.map((p: any) => {
+          if (p && p.id === 'unique') {
+            changed = true;
+            return { ...p, id: `prog-${Math.floor(100000 + Math.random() * 900000)}` };
+          }
+          return p;
+        });
+        if (changed) {
+          localStorage.setItem('idla_local_programs', JSON.stringify(localPrograms));
+        }
       } catch (e) {}
 
       if (!isAppwriteDbConfigured()) {

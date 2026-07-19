@@ -126,7 +126,18 @@ export default function AdminPortal({
       let localPrograms: any[] = [];
       try {
         localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-        localPrograms = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+        const parsedProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+        let changed = false;
+        localPrograms = parsedProgs.map((p: any) => {
+          if (p && p.id === 'unique') {
+            changed = true;
+            return { ...p, id: `prog-${Math.floor(100000 + Math.random() * 900000)}` };
+          }
+          return p;
+        });
+        if (changed) {
+          localStorage.setItem('idla_local_programs', JSON.stringify(localPrograms));
+        }
       } catch (e) {
         console.warn("Erreur lecture localStorage:", e);
       }
@@ -182,7 +193,7 @@ export default function AdminPortal({
                     await databases.createDocument(
                       APPWRITE_CONFIG.databaseId,
                       APPWRITE_CONFIG.collections.programs,
-                      lp.id.startsWith('prog-') ? ID.unique() : lp.id,
+                      lp.id,
                       {
                         title: lp.title,
                         description: lp.description || lp.title,

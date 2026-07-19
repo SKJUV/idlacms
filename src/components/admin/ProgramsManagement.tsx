@@ -188,7 +188,7 @@ export default function ProgramsManagement({
       return;
     }
 
-    const progId = isAppwriteDbConfigured() ? ID.unique() : `prog-${Math.floor(1000 + Math.random() * 9500)}`;
+    const progId = `prog-${Math.floor(100000 + Math.random() * 900000)}`;
     const newProgram: Program = {
       id: progId,
       title: newProgramTitle,
