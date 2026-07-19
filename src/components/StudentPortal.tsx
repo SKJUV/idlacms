@@ -681,7 +681,7 @@ export default function StudentPortal({
         uniqueMap.set(p.title.toLowerCase(), p);
       }
     });
-    return Array.from(uniqueMap.values());
+    return Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [programs]);
 
   const enrollments = applications
@@ -711,10 +711,17 @@ export default function StudentPortal({
     return allPrograms.filter((c) => {
       const q = searchQuery.toLowerCase();
       const matchQ = !q || c.title?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q);
-      const matchCat = filterCategory === 'Tous' || c.category === filterCategory;
-      return matchQ && matchCat;
+      const matchCat = filterCategory === 'Tous' || (c.category && c.category.toLowerCase().trim() === filterCategory.toLowerCase().trim());
+      
+      // Dynamically map course level based on program type if it doesn't exist
+      const calculatedLevel = c.level || 
+        (c.type === 'Doctorat' || c.type === 'Master' ? 'Avancé' : 
+         c.type === 'Bachelor' ? 'Intermédiaire' : 'Débutant');
+      
+      const matchLevel = filterLevel === 'Tous niveaux' || calculatedLevel === filterLevel;
+      return matchQ && matchCat && matchLevel;
     });
-  }, [allPrograms, searchQuery, filterCategory]);
+  }, [allPrograms, searchQuery, filterCategory, filterLevel]);
 
   // ════════════════════════════════════════════════════════════════════════════
   // LOGIN VIEW
@@ -1736,7 +1743,7 @@ export default function StudentPortal({
                   .filter((p) => {
                     const q = searchQuery.toLowerCase();
                     const matchQ = !q || p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
-                    const matchCat = filterCategory === 'Tous' || p.category === filterCategory;
+                    const matchCat = filterCategory === 'Tous' || (p.category && p.category.toLowerCase().trim() === filterCategory.toLowerCase().trim());
                     return matchQ && matchCat;
                   })
                   .map((prog) => {

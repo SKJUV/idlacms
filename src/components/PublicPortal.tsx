@@ -125,7 +125,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         uniqueMap.set(p.title.toLowerCase(), p);
       }
     });
-    return Array.from(uniqueMap.values());
+    return Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [programs]);
 
   // FILTER PROGRAMS
