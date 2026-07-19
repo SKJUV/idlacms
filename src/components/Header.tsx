@@ -89,17 +89,17 @@ export default function Header({
                   onStudentLoginClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-2 sm:px-3 py-1.5 transition-colors cursor-pointer"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                Mon Espace
+                <span className="hidden sm:inline">Mon Espace</span>
               </button>
               <button
                 onClick={() => {
                   onLogoutClick();
                   setMobileMenuOpen(false);
                 }}
-                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="hidden sm:block bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
               >
                 Déconnexion
               </button>
@@ -111,17 +111,17 @@ export default function Header({
                   onStudentLoginClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-3 py-1.5 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-2 sm:px-3 py-1.5 transition-colors cursor-pointer"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                Connexion
+                <span className="hidden sm:inline">Connexion</span>
               </button>
               <button
                 onClick={() => {
                   onSignUpClick();
                   setMobileMenuOpen(false);
                 }}
-                className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="hidden sm:block bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
               >
                 Je m'inscris
               </button>
