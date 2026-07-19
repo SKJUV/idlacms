@@ -9,7 +9,7 @@ import {
   XCircleIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog, Donation, Campaign } from '../types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role, Query } from '../lib/appwrite';
 
 import AdminDashboard from './admin/AdminDashboard';
 import UsersManagement from './admin/UsersManagement';
@@ -153,7 +153,8 @@ export default function AdminPortal({
         if (APPWRITE_CONFIG.collections.programs) {
           const progsRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.programs
+            APPWRITE_CONFIG.collections.programs,
+            [Query.limit(5000), Query.orderDesc('$createdAt')]
           );
           const remoteProgs = progsRes.documents.map((doc: any) => ({
             id: doc.$id,
@@ -236,7 +237,8 @@ export default function AdminPortal({
         if (APPWRITE_CONFIG.collections.cmsUsers) {
           const usersRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.cmsUsers
+            APPWRITE_CONFIG.collections.cmsUsers,
+            [Query.limit(5000), Query.orderDesc('$createdAt')]
           );
           if (usersRes.documents.length > 0) {
             setUsersList(
@@ -256,7 +258,8 @@ export default function AdminPortal({
 
         const appsRes = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.applications
+          APPWRITE_CONFIG.collections.applications,
+          [Query.limit(5000), Query.orderDesc('$createdAt')]
         );
         const remoteApps = appsRes.documents.map((doc: any) => ({
           id: doc.$id,
@@ -293,7 +296,8 @@ export default function AdminPortal({
         if (APPWRITE_CONFIG.collections.logs) {
           const logsRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.logs
+            APPWRITE_CONFIG.collections.logs,
+            [Query.limit(5000), Query.orderDesc('$createdAt')]
           );
           if (logsRes.documents.length > 0) {
             setActivityLogs(

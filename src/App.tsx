@@ -277,7 +277,7 @@ export default function App() {
 
         // Fetch Programs
         if (APPWRITE_CONFIG.collections.programs) {
-          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs);
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs, [Query.limit(5000), Query.orderDesc('$createdAt')]);
           const remoteProgs = res.documents.map((doc: any) => ({
             id: doc.$id,
             title: doc.title,
@@ -311,7 +311,7 @@ export default function App() {
 
         // Fetch News
         if (APPWRITE_CONFIG.collections.news) {
-          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.news);
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.news, [Query.limit(5000), Query.orderDesc('$createdAt')]);
           if (res.documents.length > 0) {
             setNews(
               res.documents.map((doc: any) => ({
@@ -333,7 +333,7 @@ export default function App() {
 
         // Fetch Testimonials
         if (APPWRITE_CONFIG.collections.testimonials) {
-          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.testimonials);
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.testimonials, [Query.limit(5000), Query.orderDesc('$createdAt')]);
           if (res.documents.length > 0) {
             setTestimonials(
               res.documents.map((doc: any) => ({
