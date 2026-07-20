@@ -34,6 +34,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   
   // Schedule Manager State
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
+  const [editingAssignedPrograms, setEditingAssignedPrograms] = useState<string[]>([]);
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [newSlot, setNewSlot] = useState({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '' });
 
@@ -108,6 +109,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
   const openScheduleManager = (teacher: any) => {
     setEditingSchedule(teacher);
+    setEditingAssignedPrograms(teacher.assignedPrograms || []);
     try {
       setScheduleData(teacher.scheduleData ? JSON.parse(teacher.scheduleData) : []);
     } catch {
@@ -135,12 +137,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           APPWRITE_CONFIG.collections.cmsUsers,
           idToUpdate,
           {
-            scheduleData: JSON.stringify(scheduleData)
+            scheduleData: JSON.stringify(scheduleData),
+            assignedPrograms: editingAssignedPrograms
           }
         );
         setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? updatedDoc : t));
-        logActivity('article', 'Admin', `a mis à jour l'emploi du temps de ${editingSchedule.name}`);
+        logActivity('article', 'Admin', `a mis à jour le profil de l'enseignant ${editingSchedule.name}`);
         setEditingSchedule(null);
+        setEditingAssignedPrograms([]);
       }
     } catch (err: any) {
       alert("Erreur de sauvegarde: " + err.message);
@@ -161,8 +165,8 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
               Retour
             </button>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">Emploi du temps : {editingSchedule.name}</h2>
-              <p className="text-xs text-text-secondary">Gérez les créneaux horaires de cet enseignant</p>
+              <h2 className="text-xl font-bold text-text-primary">Gestion : {editingSchedule.name}</h2>
+              <p className="text-xs text-text-secondary">Gérez les programmes assignés et l'emploi du temps</p>
             </div>
           </div>
           <button onClick={saveSchedule} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-brand-hover cursor-pointer">
@@ -170,9 +174,10 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 bg-bg-secondary border border-border-primary rounded-xl p-5 space-y-4">
-            <h3 className="font-bold text-sm text-text-primary uppercase">Ajouter un créneau</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-bg-secondary border border-border-primary rounded-xl p-5 space-y-4">
+              <h3 className="font-bold text-sm text-text-primary uppercase">Ajouter un créneau</h3>
             
             <div className="space-y-3">
               <div>
@@ -195,7 +200,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                 <label className="text-[10px] font-bold text-text-secondary uppercase">Programme</label>
                 <select value={newSlot.program} onChange={(e) => setNewSlot({...newSlot, program: e.target.value})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
                   <option value="">Sélectionner</option>
-                  {editingSchedule.assignedPrograms?.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                  {editingAssignedPrograms.map((p: string) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
@@ -206,9 +211,32 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                 Ajouter au planning
               </button>
             </div>
+            
+            <div className="bg-bg-secondary border border-border-primary rounded-xl p-5 space-y-4">
+              <h3 className="font-bold text-sm text-text-primary uppercase">Programmes assignés</h3>
+              <div className="mt-1 h-48 overflow-y-auto bg-bg-primary border border-border-primary rounded-lg p-2 space-y-1">
+                {programs.map((p: any) => (
+                  <label key={p.id || p.title} className="flex items-center gap-2 p-1 hover:bg-bg-secondary rounded cursor-pointer text-sm text-text-primary">
+                    <input 
+                      type="checkbox" 
+                      checked={editingAssignedPrograms.includes(p.title)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditingAssignedPrograms([...editingAssignedPrograms, p.title]);
+                        } else {
+                          setEditingAssignedPrograms(editingAssignedPrograms.filter(prog => prog !== p.title));
+                        }
+                      }}
+                      className="rounded border-border-primary text-brand-primary focus:ring-brand-primary"
+                    />
+                    <span className="truncate" title={p.title}>{p.title}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="lg:col-span-2 bg-bg-secondary border border-border-primary rounded-xl overflow-hidden">
+          <div className="lg:col-span-3 bg-bg-secondary border border-border-primary rounded-xl overflow-hidden">
             <div className="grid grid-cols-6 border-b border-border-primary bg-bg-primary/50 text-xs font-bold text-text-secondary uppercase tracking-wider">
               {days.map(day => (
                 <div key={day} className="p-3 text-center border-r border-border-primary last:border-0">{day.slice(0, 3)}</div>
@@ -359,8 +387,8 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                       {t.lastLogin ? new Date(t.lastLogin).toLocaleDateString() : 'Jamais'}
                     </td>
                     <td className="p-4 text-right space-x-2">
-                      <button onClick={() => openScheduleManager(t)} className="p-1.5 rounded bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-bold" title="Gérer l'emploi du temps">
-                        <CalendarIcon className="w-3.5 h-3.5" /> Planning
+                      <button onClick={() => openScheduleManager(t)} className="p-1.5 rounded bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-bold" title="Gérer l'enseignant">
+                        <BookOpenIcon className="w-3.5 h-3.5" /> Gérer
                       </button>
                       <button onClick={() => handleDeleteTeacher(t.$id || t.id, t.name)} className="p-1.5 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors cursor-pointer" title="Supprimer">
                         <Trash2Icon className="w-4 h-4" />
