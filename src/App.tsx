@@ -82,6 +82,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-settings': '/admin/parametres',
+  'admin-teachers': '/admin/enseignants',
   'teacher-dashboard': '/enseignant/tableau-de-bord',
   'teacher-schedule': '/enseignant/emploi-du-temps',
   'teacher-students': '/enseignant/etudiants',
