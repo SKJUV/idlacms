@@ -506,9 +506,9 @@ export default function AdminPortal({
   };
 
   return (
-    <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-10">
+    <div className="bg-bg-primary min-h-screen text-text-primary py-6 px-4 sm:px-6 md:px-10">
       {/* Top action header */}
-      <header className="flex justify-between items-center pb-6 border-b border-border-primary/30 mb-8">
+      <header className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 md:gap-0 pb-6 border-b border-border-primary/30 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-text-primary uppercase tracking-wide">IDLA CMS Académique</h2>
           <p className="text-xs text-text-secondary mt-1">Gouvernance du Portail d'Admissions et de Contenus</p>

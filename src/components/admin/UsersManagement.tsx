@@ -99,8 +99,8 @@ export default function UsersManagement({
       </div>
 
       {/* Users Table */}
-      <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-x-auto shadow-sm">
+        <table className="w-full min-w-[600px] text-left text-xs border-collapse">
           <thead>
             <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/40 font-bold uppercase">
               <th className="p-4 w-20">ID</th>

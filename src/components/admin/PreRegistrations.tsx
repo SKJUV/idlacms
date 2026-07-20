@@ -690,8 +690,8 @@ export default function PreRegistrations({
       </div>
 
       {viewMode === 'candidates' || viewMode === 'registered_no_course' ? (
-        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-x-auto shadow-sm">
+          <table className="w-full min-w-[800px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
                 <th className="p-4">Candidat / Étudiant</th>
@@ -753,8 +753,8 @@ export default function PreRegistrations({
           </table>
         </div>
       ) : (
-        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-x-auto shadow-sm">
+          <table className="w-full min-w-[800px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
                 <th className="p-4">Candidat</th>
