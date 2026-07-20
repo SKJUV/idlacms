@@ -694,6 +694,9 @@ export default function App() {
                 else if (userRole === 'admin') setActiveTab('admin-dashboard');
                 else setActiveTab('student-dashboard');
               } catch (err) {
+                console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
+                // Si la requête échoue (ex: problème de permission Appwrite), on affiche une alerte en dev
+                alert("La vérification du rôle a échoué. Regardez la console pour l'erreur.");
                 setRole('student');
                 setActiveTab('student-dashboard');
               }
