@@ -132,8 +132,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const filteredPrograms = useMemo(() => {
     return activePrograms.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(programSearch.toLowerCase()) || 
-                            p.description.toLowerCase().includes(programSearch.toLowerCase());
-      const matchesType = selectedProgramType === 'Tous' || p.type === selectedProgramType;
+                            p.description.toLowerCase().includes(programSearch.toLowerCase()) ||
+                            (p.type && p.type.toLowerCase().includes(programSearch.toLowerCase())) ||
+                            (p.category && p.category.toLowerCase().includes(programSearch.toLowerCase()));
+      const matchesType = selectedProgramType === 'Tous' || 
+                          (p.type && p.type.trim().toLowerCase() === selectedProgramType.trim().toLowerCase());
       return matchesSearch && matchesType;
     });
   }, [activePrograms, programSearch, selectedProgramType]);
