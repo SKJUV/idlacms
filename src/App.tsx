@@ -298,19 +298,20 @@ export default function App() {
             
             // Add remote programs first (database truth)
             for (const rp of remoteProgs) {
-              if (rp && rp.id) {
-                uniqueMap.set(rp.id, rp);
+              if (rp && rp.title) {
+                const titleKey = rp.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) {
+                  uniqueMap.set(titleKey, rp);
+                }
               }
             }
             
-            // Merge in local programs if not already present by ID or title
+            // Merge in local programs if not already present by title
             for (const lp of freshLocal) {
-              if (lp && lp.id && !uniqueMap.has(lp.id)) {
-                const hasTitle = Array.from(uniqueMap.values()).some(
-                  (r) => r.title?.toLowerCase() === lp.title?.toLowerCase()
-                );
-                if (!hasTitle) {
-                  uniqueMap.set(lp.id, lp);
+              if (lp && lp.title) {
+                const titleKey = lp.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) {
+                  uniqueMap.set(titleKey, lp);
                 }
               }
             }
@@ -326,7 +327,14 @@ export default function App() {
             let freshLocal: any[] = [];
             try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
             const combined = [...freshLocal, ...curr];
-            return combined.length > 0 ? combined : curr;
+            const uniqueMap = new Map<string, any>();
+            combined.forEach((p) => {
+              if (p && p.title) {
+                const titleKey = p.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) uniqueMap.set(titleKey, p);
+              }
+            });
+            return Array.from(uniqueMap.values());
           });
         }
 
@@ -395,10 +403,11 @@ export default function App() {
           const combined = [...localPrograms, ...curr];
           const uniqueMap = new Map<string, Program>();
           combined.forEach((p) => {
-            if (p && p.id && !uniqueMap.has(p.id)) {
-              uniqueMap.set(p.id, p);
-            } else if (p && p.title && !uniqueMap.has(p.title.toLowerCase())) {
-              uniqueMap.set(p.title.toLowerCase(), p);
+            if (p && p.title) {
+              const titleKey = p.title.toLowerCase().trim();
+              if (!uniqueMap.has(titleKey)) {
+                uniqueMap.set(titleKey, p);
+              }
             }
           });
           return Array.from(uniqueMap.values());

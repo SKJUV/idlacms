@@ -176,19 +176,20 @@ export default function AdminPortal({
             
             // Add remote programs first (database truth)
             for (const rp of remoteProgs) {
-              if (rp && rp.id) {
-                uniqueMap.set(rp.id, rp);
+              if (rp && rp.title) {
+                const titleKey = rp.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) {
+                  uniqueMap.set(titleKey, rp);
+                }
               }
             }
             
-            // Merge in local programs if not already present by ID or title
+            // Merge in local programs if not already present by title
             for (const lp of freshLocal) {
-              if (lp && lp.id && !uniqueMap.has(lp.id)) {
-                const hasTitle = Array.from(uniqueMap.values()).some(
-                  (r) => r.title?.toLowerCase() === lp.title?.toLowerCase()
-                );
-                if (!hasTitle) {
-                  uniqueMap.set(lp.id, lp);
+              if (lp && lp.title) {
+                const titleKey = lp.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) {
+                  uniqueMap.set(titleKey, lp);
                 }
               }
             }
@@ -251,7 +252,14 @@ export default function AdminPortal({
             let freshLocal: any[] = [];
             try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
             const combined = [...freshLocal, ...curr];
-            return combined.length > 0 ? combined : curr;
+            const uniqueMap = new Map<string, any>();
+            combined.forEach((p) => {
+              if (p && p.title) {
+                const titleKey = p.title.toLowerCase().trim();
+                if (!uniqueMap.has(titleKey)) uniqueMap.set(titleKey, p);
+              }
+            });
+            return Array.from(uniqueMap.values());
           });
         }
 
@@ -301,17 +309,28 @@ export default function AdminPortal({
         setPreRegistrations((curr) => {
           let freshLocal: any[] = [];
           try { freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch (e) {}
-          const combined = [...freshLocal, ...curr];
+          
+          const uniqueMap = new Map<string, any>();
+          
           for (const rApp of remoteApps) {
-            const exists = combined.some(
-              (l) => l.id === rApp.id || (l.email?.toLowerCase() === rApp.email?.toLowerCase() && (l.program || '') === (rApp.program || ''))
-            );
-            if (!exists) {
-              combined.push(rApp);
+            if (rApp && rApp.id) uniqueMap.set(rApp.id, rApp);
+          }
+          
+          const combined = [...freshLocal, ...curr];
+          for (const item of combined) {
+            if (item && item.id && !uniqueMap.has(item.id)) {
+              const exists = Array.from(uniqueMap.values()).some(
+                (r) => r.email?.toLowerCase() === item.email?.toLowerCase() && (r.program || '') === (item.program || '')
+              );
+              if (!exists) {
+                uniqueMap.set(item.id, item);
+              }
             }
           }
-          try { localStorage.setItem('idla_local_applications', JSON.stringify(combined)); } catch (e) {}
-          return combined;
+          
+          const finalApps = Array.from(uniqueMap.values());
+          try { localStorage.setItem('idla_local_applications', JSON.stringify(finalApps)); } catch (e) {}
+          return finalApps;
         });
 
         if (APPWRITE_CONFIG.collections.logs) {

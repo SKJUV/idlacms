@@ -113,6 +113,14 @@ export default function ProgramsManagement({
     setCloudError(null);
     setCloudSuccess(null);
 
+    const isDuplicate = programs.some(
+      (p) => p.title.trim().toLowerCase() === newProgramTitle.trim().toLowerCase() && p.id !== editingProgramId
+    );
+    if (isDuplicate) {
+      setCloudError(`Un programme nommé "${newProgramTitle}" existe déjà.`);
+      return;
+    }
+
     if (editingProgramId) {
       const updated = programs.map((p) =>
         p.id === editingProgramId
