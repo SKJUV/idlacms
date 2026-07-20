@@ -243,7 +243,8 @@ export default function App() {
       } catch (err) {
         // Session might be expired/deleted
         const storedEmail = sessionStorage.getItem('idla_portal_session_email');
-        if (storedEmail) {
+        // Do not auto-logout if the current role is admin (mock login)
+        if (storedEmail && role !== 'admin') {
           sessionStorage.removeItem('idla_portal_session_email');
           setRole('guest');
           setActiveTab('home');
