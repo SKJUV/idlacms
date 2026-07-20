@@ -21,11 +21,12 @@ import PreRegistrations from './admin/PreRegistrations';
 import Donations from './admin/Donations';
 import Marketing from './admin/Marketing';
 import CmsSettings from './admin/CmsSettings';
+import TeachersManagement from './admin/TeachersManagement';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
   | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-donations' | 'admin-marketing'
-  | 'admin-settings';
+  | 'admin-settings' | 'admin-teachers';
 
 interface AdminPortalProps {
   activeTab: AdminTab;
@@ -629,6 +630,13 @@ export default function AdminPortal({
           setUsersList={setUsersList}
           handleDeleteUser={handleDeleteUser}
           setActiveTab={setActiveTab}
+          logActivity={logActivity}
+        />
+      )}
+
+      {view === 'admin-teachers' && (
+        <TeachersManagement
+          programs={programs}
           logActivity={logActivity}
         />
       )}

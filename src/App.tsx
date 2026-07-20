@@ -5,8 +5,8 @@ import PublicPortal from './components/PublicPortal';
 import ApplicationForm from './components/ApplicationForm';
 import ApplicationSuccess from './components/ApplicationSuccess';
 import StudentPortal from './components/StudentPortal';
-import PasswordReset from './components/PasswordReset';
 import AdminPortal from './components/AdminPortal';
+import TeacherPortal from './components/TeacherPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role } from './lib/appwrite';
 
@@ -20,6 +20,7 @@ export type ActiveTab =
   | 'student-login'
   | 'student-dashboard'
   | 'student-programs'
+  | 'student-schedule'
   | 'student-catalog'
   | 'student-profile'
   | 'student-settings'
@@ -27,6 +28,7 @@ export type ActiveTab =
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
+  | 'admin-teachers'
   | 'admin-add-user'
   | 'admin-programmes'
   | 'admin-testimonials'
@@ -34,19 +36,25 @@ export type ActiveTab =
   | 'admin-preregistrations'
   | 'admin-donations'
   | 'admin-marketing'
-  | 'admin-settings';
+  | 'admin-settings'
+  | 'teacher-dashboard'
+  | 'teacher-schedule'
+  | 'teacher-students';
 
-export type Role = 'guest' | 'student' | 'admin';
+export type Role = 'guest' | 'student' | 'admin' | 'teacher';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
 const STUDENT_TABS: ActiveTab[] = [
-  'student-login', 'student-dashboard', 'student-programs', 'student-catalog',
+  'student-login', 'student-dashboard', 'student-schedule', 'student-programs', 'student-catalog',
   'student-profile', 'student-settings',
 ];
 const ADMIN_TABS: ActiveTab[] = [
-  'admin-login', 'admin-dashboard', 'admin-users', 'admin-add-user', 'admin-programmes',
+  'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
   'admin-settings',
+];
+const TEACHER_TABS: ActiveTab[] = [
+  'teacher-dashboard', 'teacher-schedule', 'teacher-students'
 ];
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
@@ -57,6 +65,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   success: '/candidature/confirmation',
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
+  'student-schedule': '/etudiant/emploi-du-temps',
   'student-programs': '/etudiant/programmes',
   'student-catalog': '/etudiant/catalogue',
   'student-profile': '/etudiant/profil',
@@ -73,6 +82,9 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-settings': '/admin/parametres',
+  'teacher-dashboard': '/enseignant/tableau-de-bord',
+  'teacher-schedule': '/enseignant/emploi-du-temps',
+  'teacher-students': '/enseignant/etudiants',
 };
 
 const tabFromPath = (pathname: string): ActiveTab => {
@@ -115,9 +127,9 @@ export default function App() {
         const user = await account.get();
         if (user) {
           const userEmail = user.email.toLowerCase().trim();
-          let isCmsAdmin = false;
+          let userRole: Role = 'student';
 
-          // Check if user is in cmsUsers collection (Admin)
+          // Check if user is in cmsUsers collection (Admin or Teacher)
           if (APPWRITE_CONFIG.collections.cmsUsers) {
             try {
               const res = await databases.listDocuments(
@@ -126,20 +138,28 @@ export default function App() {
                 [Query.equal('email', userEmail)]
               );
               if (res.documents.length > 0) {
-                isCmsAdmin = true;
+                const docRole = res.documents[0].role;
+                if (docRole === 'teacher') {
+                  userRole = 'teacher';
+                } else {
+                  userRole = 'admin'; // Par défaut si cmsUsers, on considère admin
+                }
               }
             } catch (err) {
               console.warn("Erreur lors de la vérification de l'accès CMS :", err);
             }
           }
 
-          if (isCmsAdmin) {
-            setRole('admin');
+          setRole(userRole);
+          if (userRole === 'admin') {
             if (activeTab === 'admin-login') {
               setActiveTab('admin-dashboard');
             }
+          } else if (userRole === 'teacher') {
+            if (activeTab === 'admin-login' || activeTab === 'student-login') {
+              setActiveTab('teacher-dashboard');
+            }
           } else {
-            setRole('student');
             if (activeTab === 'student-login') {
               setActiveTab('student-dashboard');
             }
@@ -530,7 +550,8 @@ export default function App() {
 
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
-    (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login');
+    (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') ||
+    (role === 'teacher' && TEACHER_TABS.includes(activeTab));
 
   const showPublicHeader = PUBLIC_TABS.includes(activeTab);
 
@@ -674,6 +695,16 @@ export default function App() {
             setPendingTestimonials={setPendingTestimonials}
             donations={donations}
             setDonations={setDonations}
+          />
+        )}
+
+        {/* TEACHER PORTAL */}
+        {TEACHER_TABS.includes(activeTab) && (
+          <TeacherPortal
+            activeTab={activeTab as any}
+            setActiveTab={setActiveTab}
+            isLoggedIn={role === 'teacher'}
+            programs={programs}
           />
         )}
       </main>

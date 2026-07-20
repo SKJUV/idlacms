@@ -17,6 +17,7 @@ import {
   AwardIcon,
   UserIcon,
   SearchIcon,
+  CalendarIcon,
 } from './Icons';
 
 interface AdminSidebarProps {
@@ -41,6 +42,7 @@ interface NavLink {
 export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, theme, setTheme }: AdminSidebarProps) {
   const studentLinks: NavLink[] = [
     { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'student-dashboard', activeOn: ['student-dashboard'] },
+    { label: 'Emploi du temps', icon: CalendarIcon, target: 'student-schedule', activeOn: ['student-schedule'] },
     { label: 'Mes Programmes', icon: BookOpenIcon, target: 'student-programs', activeOn: ['student-programs'] },
     { label: 'Catalogue', icon: SearchIcon, target: 'student-catalog', activeOn: ['student-catalog'] },
     { label: 'Profil', icon: UserIcon, target: 'student-profile', activeOn: ['student-profile'] },
@@ -50,6 +52,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
   const adminLinks: NavLink[] = [
     { label: 'Dashboard', icon: TrendingUpIcon, target: 'admin-dashboard', activeOn: ['admin-dashboard', 'admin-login'] },
     { label: 'Utilisateurs', icon: UsersIcon, target: 'admin-users', activeOn: ['admin-users', 'admin-add-user'] },
+    { label: 'Enseignants', icon: GraduationCapIcon, target: 'admin-teachers', activeOn: ['admin-teachers'] },
     { label: 'Programmes', icon: BookOpenIcon, target: 'admin-programmes', activeOn: ['admin-programmes'] },
     { label: 'Témoignages', icon: QuoteIcon, target: 'admin-testimonials', activeOn: ['admin-testimonials'] },
     { label: 'Actualités', icon: NewspaperIcon, target: 'admin-news', activeOn: ['admin-news'] },
@@ -58,10 +61,17 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Marketing', icon: MegaphoneIcon, target: 'admin-marketing', activeOn: ['admin-marketing'] },
   ];
 
+  const teacherLinks: NavLink[] = [
+    { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'teacher-dashboard', activeOn: ['teacher-dashboard'] },
+    { label: 'Emploi du temps', icon: CalendarIcon, target: 'teacher-schedule', activeOn: ['teacher-schedule'] },
+    { label: 'Mes Étudiants', icon: UsersIcon, target: 'teacher-students', activeOn: ['teacher-students'] },
+  ];
+
   const isStudent = role === 'student';
-  const links = isStudent ? studentLinks : adminLinks;
-  const title = isStudent ? 'Espace Étudiant' : 'IDLA Admin';
-  const subtitle = isStudent ? 'Ma formation' : 'CMS Portal';
+  const isTeacher = role === 'teacher';
+  const links = isTeacher ? teacherLinks : (isStudent ? studentLinks : adminLinks);
+  const title = isTeacher ? 'Espace Enseignant' : (isStudent ? 'Espace Étudiant' : 'IDLA Admin');
+  const subtitle = isTeacher ? 'Enseignement' : (isStudent ? 'Ma formation' : 'CMS Portal');
 
   return (
     <aside className="w-full border-b border-border-primary bg-bg-secondary text-text-primary lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-[280px] lg:border-r lg:border-b-0 lg:flex lg:flex-col lg:py-6 lg:z-50 shadow-sm">
@@ -98,7 +108,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
       </nav>
 
       <div className="mt-0 flex flex-wrap gap-2 border-t border-border-primary p-3 lg:mt-auto lg:flex-col lg:px-4 lg:pt-4 lg:space-y-1">
-        {!isStudent && (
+        {(!isStudent && !isTeacher) && (
           <button
             onClick={() => setActiveTab('admin-settings')}
             className={`${sharedClasses} ${

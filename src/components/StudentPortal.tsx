@@ -151,6 +151,7 @@ export default function StudentPortal({
   // ── Applications réelles Appwrite ──
   const [applications, setApplications] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [teachersSchedules, setTeachersSchedules] = useState<any[]>([]);
 
   // ── Suivi de candidature et messagerie intégrés ──
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -283,6 +284,31 @@ export default function StudentPortal({
               phone: existingApp.phone || p.phone,
               nationality: existingApp.nationality || p.nationality,
             }));
+          }
+
+          if (APPWRITE_CONFIG.collections.cmsUsers) {
+            try {
+              const teachersRes = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                [Query.equal('role', 'teacher')]
+              );
+              
+              const schedules: any[] = [];
+              teachersRes.documents.forEach((doc: any) => {
+                if (doc.scheduleData) {
+                  try {
+                    const parsed = JSON.parse(doc.scheduleData);
+                    parsed.forEach((slot: any) => {
+                      schedules.push({ ...slot, teacherName: doc.name });
+                    });
+                  } catch (e) {}
+                }
+              });
+              setTeachersSchedules(schedules);
+            } catch (err) {
+              console.warn("Erreur chargement emplois du temps:", err);
+            }
           }
         }
       } catch (err) {
@@ -1311,6 +1337,77 @@ export default function StudentPortal({
   // ════════════════════════════════════════════════════════════════════════════
   // MES PROGRAMMES VIEW (candidatures réelles + explorer catalogue)
   // ════════════════════════════════════════════════════════════════════════════
+  if (activeTab === 'student-schedule') {
+    const acceptedPrograms = applications
+      .filter((a) => a.status === 'Accepted' && a.program)
+      .map((a) => a.program);
+
+    const mySchedules = teachersSchedules.filter((slot) => acceptedPrograms.includes(slot.program));
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+    return (
+      <div className="flex-1 p-6 md:p-8 lg:p-12 pt-24 lg:pt-12 min-h-screen">
+        <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+              <CalendarIcon className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-text-primary font-sans">Mon Emploi du Temps</h2>
+              <p className="text-text-secondary text-sm">Consultez les horaires de cours de vos programmes validés.</p>
+            </div>
+          </div>
+
+          <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden shadow-sm">
+            {acceptedPrograms.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 bg-bg-primary rounded-full flex items-center justify-center mx-auto mb-4 border border-border-primary">
+                  <BookOpenIcon className="w-8 h-8 text-text-secondary/50" />
+                </div>
+                <h3 className="text-lg font-bold text-text-primary mb-2">Aucun programme actif</h3>
+                <p className="text-text-secondary text-sm max-w-md mx-auto">Vous n'avez pas encore été admis dans un programme. Votre emploi du temps s'affichera ici une fois votre candidature acceptée.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-6 border-b border-border-primary bg-bg-primary/50 text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  {days.map((day) => (
+                    <div key={day} className="p-4 text-center border-r border-border-primary last:border-0 hidden md:block">{day}</div>
+                  ))}
+                  {days.map((day) => (
+                    <div key={day + '-mobile'} className="p-3 text-center border-r border-border-primary last:border-0 md:hidden">{day.slice(0, 3)}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-6 min-h-[400px]">
+                  {days.map((day) => {
+                    const daySlots = mySchedules.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
+                    return (
+                      <div key={day} className="border-r border-border-primary last:border-0 p-2 space-y-2">
+                        {daySlots.map((slot: any, idx: number) => (
+                          <div key={idx} className="bg-brand-light border border-brand-primary/20 rounded-lg p-3 text-sm hover:shadow-md transition-shadow">
+                            <div className="font-bold text-brand-primary text-xs mb-1">{slot.startTime} - {slot.endTime}</div>
+                            <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
+                            <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
+                              <UsersIcon className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{slot.teacherName}</span>
+                            </div>
+                            <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
+                          </div>
+                        ))}
+                        {daySlots.length === 0 && (
+                          <div className="text-center py-6 text-xs text-text-secondary/40">--</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (activeTab === 'student-programs') {
     const STEP: Record<string, number> = { New: 1, 'In Review': 2, Accepted: 4, Rejected: 2 };
 
