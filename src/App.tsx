@@ -288,17 +288,38 @@ export default function App() {
             image: doc.image,
             isNew: doc.isNew,
           }));
-          setPrograms((curr) => {
+          setPrograms(() => {
             let freshLocal: any[] = [];
-            try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
-            const combined = [...freshLocal, ...curr];
+            try {
+              freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
+            } catch (e) {}
+
+            const uniqueMap = new Map<string, any>();
+            
+            // Add remote programs first (database truth)
             for (const rp of remoteProgs) {
-              if (!combined.some((l) => l.id === rp.id || l.title?.toLowerCase() === rp.title?.toLowerCase())) {
-                combined.push(rp);
+              if (rp && rp.id) {
+                uniqueMap.set(rp.id, rp);
               }
             }
-            try { localStorage.setItem('idla_local_programs', JSON.stringify(combined)); } catch (e) {}
-            return combined;
+            
+            // Merge in local programs if not already present by ID or title
+            for (const lp of freshLocal) {
+              if (lp && lp.id && !uniqueMap.has(lp.id)) {
+                const hasTitle = Array.from(uniqueMap.values()).some(
+                  (r) => r.title?.toLowerCase() === lp.title?.toLowerCase()
+                );
+                if (!hasTitle) {
+                  uniqueMap.set(lp.id, lp);
+                }
+              }
+            }
+            
+            const finalPrograms = Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
+            try {
+              localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms));
+            } catch (e) {}
+            return finalPrograms;
           });
         } else {
           setPrograms((curr) => {
