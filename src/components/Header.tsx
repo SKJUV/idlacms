@@ -51,7 +51,7 @@ export default function Header({
           <div className="flex flex-col">
             <span className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-text-primary leading-none">IDLA</span>
             <span className="text-[10px] sm:text-xs font-bold text-brand-primary tracking-wider uppercase mt-1">
-              Institut de [...] (Définition)
+              International Distance Learning Academy
             </span>
           </div>
         </button>
