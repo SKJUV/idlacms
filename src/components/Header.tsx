@@ -47,8 +47,8 @@ export default function Header({
           }}
           className="hover:opacity-80 transition-opacity flex items-center gap-3 text-left"
         >
-          <img src="/logo.png" alt="IDLA Logo" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
-          <div className="flex flex-col">
+          <img src="/logo.png" alt="IDLA Logo" className="w-16 h-16 sm:w-24 sm:h-24 object-contain drop-shadow-md" />
+          <div className="flex flex-col justify-center">
             <span className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-text-primary leading-none">IDLA</span>
             <span className="text-[10px] sm:text-xs font-bold text-brand-primary tracking-wider uppercase mt-1">
               International Distance Learning Academy
