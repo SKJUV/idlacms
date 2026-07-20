@@ -4,7 +4,6 @@ import {
   PlusIcon, 
   SearchIcon, 
   Trash2Icon, 
-  EditIcon, 
   CheckCircle2Icon,
   XCircleIcon,
   MailIcon,
@@ -148,7 +147,10 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     }
   };
 
-  const filteredTeachers = teachers.filter(t => t.name?.toLowerCase().includes(search.toLowerCase()) || t.email?.toLowerCase().includes(search.toLowerCase()));
+  const filteredTeachers = teachers.filter(t => 
+    (t.name || '').toLowerCase().includes(search.toLowerCase()) || 
+    (t.email || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   if (editingSchedule) {
     return (
@@ -334,7 +336,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-bold text-xs">
-                          {t.initials || t.name.substring(0, 2).toUpperCase()}
+                          {t.initials || (t.name ? t.name.substring(0, 2).toUpperCase() : 'EN')}
                         </div>
                         <div>
                           <div className="font-semibold text-text-primary">{t.name}</div>
@@ -344,7 +346,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                     </td>
                     <td className="p-4">
                       <div className="flex flex-wrap gap-1">
-                        {t.assignedPrograms?.length > 0 ? t.assignedPrograms.map((p: string, i: number) => (
+                        {Array.isArray(t.assignedPrograms) && t.assignedPrograms.length > 0 ? t.assignedPrograms.map((p: string, i: number) => (
                           <span key={i} className="bg-bg-primary border border-border-primary text-text-secondary text-[10px] px-2 py-0.5 rounded-full truncate max-w-[150px]" title={p}>
                             {p}
                           </span>
