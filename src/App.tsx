@@ -241,19 +241,13 @@ export default function App() {
           }
         }
       } catch (err) {
-        // Session might be expired/deleted
-        const storedEmail = sessionStorage.getItem('idla_portal_session_email');
-        // Do not auto-logout if the current role is admin (mock login)
-        if (storedEmail && role !== 'admin') {
-          sessionStorage.removeItem('idla_portal_session_email');
-          setRole('guest');
-          setActiveTab('home');
-        }
+        // Ignorer silencieusement l'erreur pour ne pas déconnecter l'utilisateur
+        // lorsqu'il change simplement d'onglet.
       }
     };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    
+    // Le système de déconnexion automatique au changement d'onglet est désactivé
+    // pour éviter les déconnexions intempestives liées à Appwrite.
   }, [role, activeTab]);
 
   // Database Real Records States (Removed default MockData initialization)
