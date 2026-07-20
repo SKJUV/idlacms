@@ -722,7 +722,7 @@ export default function ProgramsManagement({
                     <td className="p-4">
                       <div className="flex justify-center items-center gap-1">
                         <button
-                          onClick={() => startEditProgram(p)}
+                          onClick={() => handleEditProgram(p)}
                           className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
                           title="Modifier le programme"
                         >
