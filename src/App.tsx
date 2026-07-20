@@ -167,7 +167,16 @@ export default function App() {
           }
         }
       } catch (err) {
-        console.log("Aucune session active détectée.");
+        console.log("Aucune session active détectée côté Appwrite.");
+        // Check if there is a mock Admin session in sessionStorage
+        const storedEmail = sessionStorage.getItem('idla_portal_session_email');
+        if (storedEmail) {
+          console.log("Session Admin fictive restaurée à partir du stockage local.");
+          setRole('admin');
+          if (activeTab === 'admin-login') {
+            setActiveTab('admin-dashboard');
+          }
+        }
       } finally {
         setIsSessionChecking(false);
       }
