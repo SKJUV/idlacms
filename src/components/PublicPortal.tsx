@@ -416,6 +416,46 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
               ))}
             </div>
+
+            {/* Nos Certifications Internationales Section */}
+            <div className="mt-16 pt-12 border-t border-[#c6c6cf]/40 space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-[#00020e] flex items-center gap-2">
+                    🎓 Nos Certifications Internationales
+                  </h3>
+                  <p className="text-sm text-[#45464e] mt-1">
+                    Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
+                  className="px-5 py-2.5 bg-brand-primary text-white font-bold text-xs rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm"
+                >
+                  Voir toutes les certifications
+                </button>
+              </div>
+
+              {/* Grid of Certification shortcuts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { title: "Cisco CCNA-CCNP", desc: "Administration des réseaux et télécommunications d'entreprise.", icon: "🌐" },
+                  { title: "AWS Solutions Architect", desc: "Conception et déploiement d'architectures cloud résilientes.", icon: "☁️" },
+                  { title: "CompTIA Security+", desc: "Fondamentaux de la cybersécurité et protection des données.", icon: "🔒" },
+                  { title: "Project Management (PMP)", desc: "Gestion de projets complexes avec les standards du PMI.", icon: "📋" }
+                ].map((cert) => (
+                  <div 
+                    key={cert.title}
+                    onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
+                    className="p-5 bg-slate-50 border border-[#c6c6cf]/30 rounded-xl hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all cursor-pointer group"
+                  >
+                    <span className="text-2xl mb-3 block">{cert.icon}</span>
+                    <h4 className="font-bold text-sm text-[#00020e] group-hover:text-brand-primary transition-colors">{cert.title}</h4>
+                    <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">{cert.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

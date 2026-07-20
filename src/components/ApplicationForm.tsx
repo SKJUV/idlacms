@@ -33,6 +33,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
 
   // Form State — Etape 2
   const [selectedProgram, setSelectedProgram] = useState(initialProgram || '');
+  const [selectedProgramType, setSelectedProgramType] = useState('Master');
+  const [selectedCertOption, setSelectedCertOption] = useState('Cisco CCNA / CCNP');
   const [highestDegree, setHighestDegree] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [password, setPassword] = useState('');
@@ -57,15 +59,35 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
   const [otpError, setOtpError] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
 
-  const selectedProgObj = programs.find((p) => p.title === selectedProgram);
-  const isCertification = selectedProgObj?.type === 'Certification';
+  const isCertification = selectedProgramType === 'Certification';
 
-  // Initialize selected program when programs are loaded
+  // Filter programs based on selected type
+  const filteredPrograms = React.useMemo(() => {
+    return programs.filter((p) => p.type === selectedProgramType);
+  }, [programs, selectedProgramType]);
+
+  // Sync selected program when selectedProgramType changes
   useEffect(() => {
-    if (programs.length > 0 && !selectedProgram) {
-      setSelectedProgram(programs[0].title);
+    if (filteredPrograms.length > 0) {
+      const alreadyValid = filteredPrograms.some((p) => p.title === selectedProgram);
+      if (!alreadyValid) {
+        setSelectedProgram(filteredPrograms[0].title);
+      }
+    } else {
+      setSelectedProgram('');
     }
-  }, [programs, selectedProgram]);
+  }, [selectedProgramType, filteredPrograms]);
+
+  // Set initial program type if initialProgram is provided
+  useEffect(() => {
+    if (initialProgram && programs.length > 0) {
+      const matched = programs.find((p) => p.title === initialProgram);
+      if (matched) {
+        setSelectedProgramType(matched.type);
+        setSelectedProgram(matched.title);
+      }
+    }
+  }, [initialProgram, programs]);
 
   // Pre-fill student info if logged in and skip OTP + step 1
   useEffect(() => {
@@ -273,6 +295,9 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     const candidateName = `${firstName} ${lastName}`;
     const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
     const cleanEmail = email.trim().toLowerCase();
+    const finalProgramName = selectedProgram === "International Professional Certification Program"
+      ? `${selectedProgram} - ${selectedCertOption}`
+      : selectedProgram;
 
     if (isAppwriteDbConfigured()) {
       try {
@@ -322,7 +347,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             name: candidateName,
             email: cleanEmail,
             phone,
-            program: selectedProgram,
+            program: finalProgramName,
             nationality,
             highestDegree: isCertification ? undefined : highestDegree,
             graduationYear: isCertification ? undefined : (Number(graduationYear) || undefined),
@@ -368,7 +393,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             name: candidateName,
             email: cleanEmail,
             phone,
-            program: selectedProgram,
+            program: finalProgramName,
             nationality,
             highestDegree: isCertification ? undefined : highestDegree,
             graduationYear: isCertification ? undefined : Number(graduationYear),
@@ -539,22 +564,59 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               </h3>
               
               <div className="space-y-1.5">
+                <label className="text-xs font-bold text-text-secondary uppercase">Type de Programme *</label>
+                <select 
+                  value={selectedProgramType}
+                  onChange={(e) => setSelectedProgramType(e.target.value)}
+                  className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
+                >
+                  <option value="Master">Master (Bac +5)</option>
+                  <option value="Bachelor">Bachelor (Bac +3)</option>
+                  <option value="Doctorat">Doctorat (Recherche)</option>
+                  <option value="Certification">Certification Professionnelle</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-text-secondary uppercase">Programme académique ciblé *</label>
                 <select 
                   value={selectedProgram}
                   onChange={(e) => setSelectedProgram(e.target.value)}
                   className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
                 >
-                  {programs.length > 0 ? (
-                    programs.map((p) => (
-                      <option key={p.id} value={p.title}>{p.title} ({p.type})</option>
+                  {filteredPrograms.length > 0 ? (
+                    filteredPrograms.map((p) => (
+                      <option key={p.id} value={p.title}>{p.title}</option>
                     ))
                   ) : (
-                    <option value="">Chargement des programmes...</option>
+                    <option value="">Aucun programme disponible pour ce type</option>
                   )}
                 </select>
                 <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
               </div>
+
+              {/* Sub-dropdown option for Cisco/AWS/CompTIA when choosing International Certification */}
+              {selectedProgram === "International Professional Certification Program" && (
+                <div className="space-y-1.5 p-3.5 bg-brand-primary/5 border border-brand-primary/20 rounded-xl animate-fadeIn">
+                  <label className="text-xs font-bold text-brand-primary uppercase tracking-wider block">
+                    🎯 Spécialité de Certification Choisie *
+                  </label>
+                  <select
+                    value={selectedCertOption}
+                    onChange={(e) => setSelectedCertOption(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-brand-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
+                  >
+                    <option value="Cisco CCNA / CCNP">Cisco CCNA / CCNP (Réseaux & Infrastructure)</option>
+                    <option value="AWS Cloud Solutions Architect">AWS Cloud Solutions Architect (Architecture Cloud)</option>
+                    <option value="CompTIA Security+">CompTIA Security+ (Cybersécurité & SecOps)</option>
+                    <option value="PMP - Project Management Professional">PMP - Project Management Professional (Gestion de Projet)</option>
+                    <option value="Google IT Support Professional">Google IT Support Professional (Administration Système & Support)</option>
+                  </select>
+                  <p className="text-[10px] text-text-secondary">
+                    Votre dossier sera orienté vers la préparation intensive de cette certification internationale spécifique.
+                  </p>
+                </div>
+              )}
 
               {isCertification ? (
                 <div className="bg-brand-primary/10 border-l-4 border-brand-primary p-4 rounded text-xs text-text-primary leading-relaxed">
