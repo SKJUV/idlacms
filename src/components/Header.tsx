@@ -45,10 +45,15 @@ export default function Header({
             setActiveTab('home');
             setMobileMenuOpen(false);
           }}
-          className="font-sans font-bold text-xl sm:text-2xl tracking-tight text-text-primary hover:opacity-80 transition-opacity flex items-center gap-2"
+          className="hover:opacity-80 transition-opacity flex items-center gap-3 text-left"
         >
-          <img src="/logo.png" alt="IDLA Logo" className="w-8 h-8 object-contain" />
-          IDLA
+          <img src="/logo.png" alt="IDLA Logo" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
+          <div className="flex flex-col">
+            <span className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-text-primary leading-none">IDLA</span>
+            <span className="text-[10px] sm:text-xs font-bold text-brand-primary tracking-wider uppercase mt-1">
+              Institut de [...] (Définition)
+            </span>
+          </div>
         </button>
 
         <div className="hidden md:flex items-center gap-8">
