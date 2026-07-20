@@ -117,12 +117,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       localProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
     } catch (e) {}
     const combined = [...localProgs, ...(programs || [])];
-    const uniqueMap = new Map<string, Program>();
+    const uniqueMap = new Map<string, any>();
     combined.forEach((p) => {
-      if (p && p.id && !uniqueMap.has(p.id)) {
-        uniqueMap.set(p.id, p);
-      } else if (p && p.title && !uniqueMap.has(p.title.toLowerCase())) {
-        uniqueMap.set(p.title.toLowerCase(), p);
+      if (p && p.title) {
+        const titleKey = p.title.toLowerCase().trim();
+        if (!uniqueMap.has(titleKey)) {
+          uniqueMap.set(titleKey, p);
+        }
       }
     });
     return Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
