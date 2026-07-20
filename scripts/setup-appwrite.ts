@@ -70,7 +70,7 @@ async function step<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
 }
 
 type AttrDef =
-  | { kind: 'string'; key: string; size: number; required: boolean; default?: string }
+  | { kind: 'string'; key: string; size: number; required: boolean; default?: string; array?: boolean }
   | { kind: 'email'; key: string; required: boolean; default?: string }
   | { kind: 'url'; key: string; required: boolean; default?: string }
   | { kind: 'boolean'; key: string; required: boolean; default?: boolean }
@@ -215,11 +215,13 @@ const collectionDefs: CollectionDef[] = [
       { kind: 'string', key: 'authUserId', size: 36, required: false },
       { kind: 'string', key: 'name', size: 150, required: true },
       { kind: 'email', key: 'email', required: true },
-      { kind: 'enum', key: 'role', elements: ['Super Admin', 'Admin', 'Writer', 'Marketer', 'OC'], required: false, default: 'Admin' },
+      { kind: 'string', key: 'role', size: 255, required: false, default: 'Admin' },
       { kind: 'enum', key: 'status', elements: ['Actif', 'Inactif', 'Bloqué'], required: false, default: 'Actif' },
       { kind: 'url', key: 'avatar', required: false },
       { kind: 'datetime', key: 'lastLogin', required: false },
       { kind: 'string', key: 'initials', size: 5, required: false },
+      { kind: 'string', key: 'assignedPrograms', size: 255, required: false, array: true },
+      { kind: 'string', key: 'scheduleData', size: 65000, required: false },
     ],
     indexes: [
       { key: 'idx_email_unique', type: 'unique', attributes: ['email'] },
@@ -291,6 +293,7 @@ async function createAttribute(collectionId: string, attr: AttrDef) {
         return databases.createStringAttribute({
           databaseId: DATABASE_ID, collectionId, key: attr.key, size: attr.size,
           required: attr.required, xdefault: attr.default,
+          array: attr.array,
         });
       case 'email':
         return databases.createEmailAttribute({
