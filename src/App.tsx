@@ -168,14 +168,11 @@ export default function App() {
         }
       } catch (err) {
         console.log("Aucune session active détectée côté Appwrite.");
-        // Check if there is a mock Admin session in sessionStorage
-        const storedEmail = sessionStorage.getItem('idla_portal_session_email');
-        if (storedEmail) {
-          console.log("Session Admin fictive restaurée à partir du stockage local.");
-          setRole('admin');
-          if (activeTab === 'admin-login') {
-            setActiveTab('admin-dashboard');
-          }
+        // Si aucune session valide n'est trouvée côté Appwrite, on nettoie le storage local
+        sessionStorage.removeItem('idla_portal_session_email');
+        setRole('guest');
+        if (activeTab === 'admin-dashboard' || activeTab === 'student-dashboard' || activeTab === 'teacher-dashboard') {
+          setActiveTab('home');
         }
       } finally {
         setIsSessionChecking(false);
@@ -553,6 +550,38 @@ export default function App() {
     setActiveTab('admin-login');
   };
 
+  const handleLoginSuccess = async () => {
+    try {
+      const user = await account.get();
+      const userEmail = user.email.toLowerCase().trim();
+      let userRole: Role = 'student';
+      
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+        const res = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.cmsUsers,
+          [Query.equal('email', userEmail)]
+        );
+        if (res.documents.length > 0) {
+          const docRole = res.documents[0].role;
+          if (docRole === 'teacher') userRole = 'teacher';
+          else userRole = 'admin';
+        }
+      }
+      
+      setRole(userRole);
+      if (userRole === 'teacher') setActiveTab('teacher-dashboard');
+      else if (userRole === 'admin') setActiveTab('admin-dashboard');
+      else setActiveTab('student-dashboard');
+    } catch (err) {
+      console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
+      // Si la requête échoue (ex: problème de permission Appwrite), on affiche une alerte en dev
+      alert("La vérification du rôle a échoué. Regardez la console pour l'erreur.");
+      setRole('student');
+      setActiveTab('student-dashboard');
+    }
+  };
+
   const isDashboardLayout =
     (role === 'admin' && ADMIN_TABS.includes(activeTab)) ||
     (role === 'student' && STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') ||
@@ -673,37 +702,7 @@ export default function App() {
             knownName={candidateName}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            onLoginSuccess={async () => {
-              try {
-                const user = await account.get();
-                const userEmail = user.email.toLowerCase().trim();
-                let userRole: Role = 'student';
-                
-                if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-                  const res = await databases.listDocuments(
-                    APPWRITE_CONFIG.databaseId,
-                    APPWRITE_CONFIG.collections.cmsUsers,
-                    [Query.equal('email', userEmail)]
-                  );
-                  if (res.documents.length > 0) {
-                    const docRole = res.documents[0].role;
-                    if (docRole === 'teacher') userRole = 'teacher';
-                    else userRole = 'admin';
-                  }
-                }
-                
-                setRole(userRole);
-                if (userRole === 'teacher') setActiveTab('teacher-dashboard');
-                else if (userRole === 'admin') setActiveTab('admin-dashboard');
-                else setActiveTab('student-dashboard');
-              } catch (err) {
-                console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
-                // Si la requête échoue (ex: problème de permission Appwrite), on affiche une alerte en dev
-                alert("La vérification du rôle a échoué. Regardez la console pour l'erreur.");
-                setRole('student');
-                setActiveTab('student-dashboard');
-              }
-            }}
+            onLoginSuccess={handleLoginSuccess}
             onBackToHome={() => setActiveTab('home')}
             programs={programs}
             onApplyNow={handleApplyToProgram}
@@ -716,7 +715,7 @@ export default function App() {
             activeTab={activeTab as any}
             setActiveTab={setActiveTab}
             isLoggedIn={role === 'admin'}
-            onLoginSuccess={() => setRole('admin')}
+            onLoginSuccess={handleLoginSuccess}
             programs={programs}
             setPrograms={setPrograms}
             news={news}
