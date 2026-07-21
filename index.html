@@ -8,13 +8,21 @@
     <style>
       #google_translate_element {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
+        bottom: 15px;
+        right: 15px;
         z-index: 9999;
         background: white;
-        padding: 5px 10px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 2px 5px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        opacity: 0.2;
+        transform: scale(0.8);
+        transform-origin: bottom right;
+        transition: all 0.3s ease;
+      }
+      #google_translate_element:hover {
+        opacity: 1;
+        transform: scale(1);
       }
       /* Cacher la bannière supérieure de Google Translate */
       .goog-te-banner-frame {
