@@ -566,6 +566,38 @@ export default function App() {
           const docRole = res.documents[0].role;
           if (docRole === 'teacher') userRole = 'teacher';
           else userRole = 'admin';
+        } else {
+          // Bootstrap : si la collection cmsUsers est totalement vide, le premier qui se connecte devient admin
+          try {
+            const allDocs = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.cmsUsers,
+              [Query.limit(1)]
+            );
+            if (allDocs.documents.length === 0) {
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                'unique()',
+                { 
+                  email: userEmail, 
+                  name: user.name || 'Super Admin', 
+                  role: 'admin',
+                  status: 'Actif',
+                  initials: (user.name || 'SA').substring(0,2).toUpperCase(),
+                  lastLogin: new Date().toISOString()
+                }
+              );
+              userRole = 'admin';
+            } else if (activeTab === 'admin-login') {
+              alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur. Veuillez vous connecter avec un compte autorisé ou l'ajouter dans la collection cmsUsers sur Appwrite.");
+            }
+          } catch (e) {
+            console.warn("Erreur lors de la vérification de la collection cmsUsers", e);
+            if (activeTab === 'admin-login') {
+              alert("Accès refusé : Impossible de vérifier vos privilèges d'administrateur.");
+            }
+          }
         }
       }
       
@@ -575,8 +607,9 @@ export default function App() {
       else setActiveTab('student-dashboard');
     } catch (err) {
       console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
-      // Si la requête échoue (ex: problème de permission Appwrite), on affiche une alerte en dev
-      alert("La vérification du rôle a échoué. Regardez la console pour l'erreur.");
+      if (activeTab === 'admin-login') {
+        alert("Une erreur est survenue lors de l'authentification.");
+      }
       setRole('student');
       setActiveTab('student-dashboard');
     }
