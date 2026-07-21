@@ -92,15 +92,8 @@ const tabFromPath = (pathname: string): ActiveTab => {
   const pathOnly = pathname.split('?')[0].split('#')[0];
   const clean = pathOnly.replace(/\/+$/, '') || '/';
 
-  // Routes étudiants protégées → home si accès direct sans session
-  const protectedPrefixes = ['/etudiant', '/candidat'];
-  if (protectedPrefixes.some((prefix) => clean.startsWith(prefix))) {
-    return 'home';
-  }
-
-  if (clean === '/candidat' || clean === '/candidat/dossier' || clean === '/candidat/programmes') {
-    return 'student-login';
-  }
+  // On n'écrase plus l'onglet par 'home' si c'est une route protégée.
+  // On laisse la vérification de session gérer l'accès plus tard.
 
   const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
     const cleanPath = path.replace(/\/+$/, '') || '/';
@@ -168,11 +161,16 @@ export default function App() {
         }
       } catch (err) {
         console.log("Aucune session active détectée côté Appwrite.");
-        // Si aucune session valide n'est trouvée côté Appwrite, on nettoie le storage local
         sessionStorage.removeItem('idla_portal_session_email');
         setRole('guest');
-        if (activeTab === 'admin-dashboard' || activeTab === 'student-dashboard' || activeTab === 'teacher-dashboard') {
-          setActiveTab('home');
+        
+        // Redirection conditionnelle si la session est expirée/inexistante
+        if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
+          setActiveTab('admin-login');
+        } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
+          setActiveTab('student-login');
+        } else if (TEACHER_TABS.includes(activeTab)) {
+          setActiveTab('student-login');
         }
       } finally {
         setIsSessionChecking(false);
