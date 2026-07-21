@@ -562,7 +562,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
             <div>
               <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Contact</h4>
-              <p className="text-sm text-text-secondary">Douala, Cameroun</p>
+              <p className="text-sm text-text-secondary">Yaoundé, Cameroun</p>
               <p className="text-sm text-text-secondary mt-1">contact@idla.edu</p>
             </div>
           </div>
