@@ -467,7 +467,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <img 
                 className="object-cover w-full h-full" 
                 alt="philanthropy background" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGaWxsTckoQjKkeK4pErkSRrl_IWALAKmwKvEc-q_CVQ1rX9WUBaUPD1_tT7Yz97MNijFUG1rSdyVqlVAuQTrdF-2QjXrzDfSd6xoN8jzSYAOMwJxFOW-3WgzhjqIokkez0atuBNkRBDlFpZAr25klmEL-Y66Q5EkceEUyW6n3vijC8d1uc4-EvuFkrBbL5QGo4MxDmpBsfyYC77XMxU4i2UJ-yly3wxSx-hri9YD9K1vFnLlaB8y5S-Z_eCoEsj8t4fWoh-tHWIU"
+                src="https://media.istockphoto.com/id/1460172015/photo/businessmen-making-handshake-with-partner-greeting-dealing-merger-and-acquisition-business.jpg?s=2048x2048&w=is&k=20&c=C-eErNHMrUsJz7D7Y3gZZklVHbDFu7l_Oh1z9vs4BVs="
               />
             </div>
             <div className="relative z-10 p-8 md:p-12 lg:p-16 max-w-2xl space-y-6">
