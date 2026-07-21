@@ -211,6 +211,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                 Ajouter au planning
               </button>
             </div>
+          </div>
             
             <div className="bg-bg-secondary border border-border-primary rounded-xl p-5 space-y-4">
               <h3 className="font-bold text-sm text-text-primary uppercase">Programmes assignés</h3>
