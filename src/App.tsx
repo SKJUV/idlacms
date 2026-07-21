@@ -557,13 +557,20 @@ export default function App() {
       let userRole: Role = 'student';
       
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-        const res = await databases.listDocuments(
-          APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.cmsUsers,
-          [Query.equal('email', userEmail)]
-        );
-        if (res.documents.length > 0) {
-          const docRole = res.documents[0].role;
+        let docs: any[] = [];
+        try {
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.cmsUsers,
+            [Query.equal('email', userEmail)]
+          );
+          docs = res.documents;
+        } catch (dbErr) {
+          console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
+        }
+
+        if (docs.length > 0) {
+          const docRole = docs[0].role;
           if (docRole === 'teacher') userRole = 'teacher';
           else userRole = 'admin';
         } else {
