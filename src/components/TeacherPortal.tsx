@@ -45,16 +45,26 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             
             // Load students for assigned programs
             if (APPWRITE_CONFIG.collections.applications && userDoc.assignedPrograms?.length > 0) {
-              const studentsRes = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.applications,
-                [Query.equal('status', 'Accepted')]
-              );
-              
-              const myStudents = studentsRes.documents.filter((doc: any) => 
-                userDoc.assignedPrograms.includes(doc.program)
-              );
-              setStudents(myStudents);
+              try {
+                const studentsRes = await databases.listDocuments(
+                  APPWRITE_CONFIG.databaseId,
+                  APPWRITE_CONFIG.collections.applications,
+                  [
+                    Query.equal('status', 'Accepted'),
+                    Query.limit(5000)
+                  ]
+                );
+                
+                const myStudents = studentsRes.documents.filter((doc: any) => 
+                  userDoc.assignedPrograms.includes(doc.program)
+                );
+                setStudents(myStudents);
+              } catch (err: any) {
+                console.error("Erreur de permission ou de chargement des étudiants (Applications):", err);
+                if (err.code === 401 || err.code === 403) {
+                  alert("Attention : Votre compte n'a pas les droits pour lire la table des candidatures. Demandez à l'administrateur de mettre à jour les permissions Appwrite.");
+                }
+              }
             }
           }
         }
