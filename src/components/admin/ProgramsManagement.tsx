@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
-import { ID, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
+import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 
 interface ProgramsManagementProps {
   programs: Program[];
@@ -291,21 +291,56 @@ export default function ProgramsManagement({
 
   const handleDeleteProgram = async (id: string) => {
     const targetProgram = programs.find((p) => p.id === id);
+
+    // 1. Supprimer immédiatement en mémoire + localStorage
     setPrograms((curr) => {
       const next = curr.filter((p) => p.id !== id);
       try { localStorage.setItem('idla_local_programs', JSON.stringify(next)); } catch (e) {}
       return next;
     });
 
-    if (isAppwriteDbConfigured()) {
+    // 2. Supprimer sur Appwrite avec fallback par titre si ID mismatch
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.programs) {
+      let deleted = false;
+
+      // Tentative 1 : suppression directe par ID
       try {
         await databases.deleteDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.programs,
           id
         );
-      } catch (err) {
-        console.error("Échec de la suppression du programme sur Appwrite:", err);
+        deleted = true;
+        setCloudSuccess(`Programme "${targetProgram?.title}" supprimé avec succès sur le Cloud.`);
+      } catch (err: any) {
+        console.warn('Suppression directe échouée (ID mismatch probable), recherche par titre…', err);
+      }
+
+      // Tentative 2 : chercher par titre si l'ID local ≠ ID Appwrite
+      if (!deleted && targetProgram?.title) {
+        try {
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.programs,
+            [Query.equal('title', targetProgram.title), Query.limit(5)]
+          );
+          if (res.documents.length > 0) {
+            for (const doc of res.documents) {
+              await databases.deleteDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.programs,
+                doc.$id
+              );
+            }
+            deleted = true;
+            setCloudSuccess(`Programme "${targetProgram.title}" supprimé du Cloud (trouvé par titre).`);
+          } else {
+            setCloudSuccess(`Programme "${targetProgram?.title}" supprimé localement (pas de version en ligne).`);
+          }
+        } catch (searchErr: any) {
+          console.error('Erreur recherche/suppression par titre sur Appwrite:', searchErr);
+          setCloudError(`Supprimé localement mais erreur Cloud : ${searchErr.message || 'inconnue'}.`);
+        }
       }
     }
 
