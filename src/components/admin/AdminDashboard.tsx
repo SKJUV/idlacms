@@ -15,16 +15,24 @@ export default function AdminDashboard({
   setSelectedPreRegId,
   setActiveTab,
 }: AdminDashboardProps) {
+  const totalInscriptions = preRegistrations.length;
+  const accepted = preRegistrations.filter((p) => p.status === 'Accepted').length;
+  const rejected = preRegistrations.filter((p) => p.status === 'Rejected').length;
+  const pending = preRegistrations.filter((p) => p.status === 'In Review' || p.status === 'New').length;
+  const processed = accepted + rejected;
+  const admissionRate = processed > 0 ? Math.round((accepted / processed) * 100) : 0;
+  const processedRate = totalInscriptions > 0 ? Math.round((processed / totalInscriptions) * 100) : 0;
+
   return (
     <div className="space-y-8">
       {/* Key KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-[#c6c6cf] shadow-sm space-y-2">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Inscriptions globales</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Toutes les demandes</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-[#00020e]">1,248</span>
-            <span className="text-xs text-emerald-600 font-bold bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +12%
+            <span className="text-3xl font-extrabold text-[#00020e]">{totalInscriptions}</span>
+            <span className="text-xs text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded flex items-center gap-0.5">
+              Total
             </span>
           </div>
         </div>
@@ -32,27 +40,25 @@ export default function AdminDashboard({
         <div className="bg-white p-6 rounded-2xl border border-[#c6c6cf] shadow-sm space-y-2">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Taux d'admission</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-[#00020e]">18.4%</span>
-            <span className="text-xs text-amber-600 font-bold bg-amber-500/10 px-2 py-0.5 rounded">Sélectif</span>
+            <span className="text-3xl font-extrabold text-[#00020e]">{admissionRate}%</span>
+            <span className="text-xs text-amber-600 font-bold bg-amber-500/10 px-2 py-0.5 rounded">{accepted} Admis</span>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-[#c6c6cf] shadow-sm space-y-2">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dossiers à réviser</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-[#00020e]">
-              {preRegistrations.filter((p) => p.status === 'In Review' || p.status === 'New').length}
-            </span>
+            <span className="text-3xl font-extrabold text-[#00020e]">{pending}</span>
             <span className="text-xs text-rose-600 font-bold bg-rose-500/10 px-2 py-0.5 rounded">Action requise</span>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-[#c6c6cf] shadow-sm space-y-2">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Score Sols Éco-Design</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dossiers traités</p>
           <div className="flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-[#00020e]">94/100</span>
+            <span className="text-3xl font-extrabold text-[#00020e]">{processedRate}%</span>
             <span className="text-xs text-[#006c49] font-bold bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-0.5">
-              Optimal
+              Complétés
             </span>
           </div>
         </div>
