@@ -167,40 +167,9 @@ export default function AdminPortal({
             image: doc.image,
             isNew: doc.isNew,
           }));
-          setPrograms(() => {
-            let freshLocal: any[] = [];
-            try {
-              freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
-            } catch (e) {}
-
-            const uniqueMap = new Map<string, any>();
-            
-            // Add remote programs first (database truth)
-            for (const rp of remoteProgs) {
-              if (rp && rp.title) {
-                const titleKey = rp.title.toLowerCase().trim();
-                if (!uniqueMap.has(titleKey)) {
-                  uniqueMap.set(titleKey, rp);
-                }
-              }
-            }
-            
-            // Merge in local programs if not already present by title
-            for (const lp of freshLocal) {
-              if (lp && lp.title) {
-                const titleKey = lp.title.toLowerCase().trim();
-                if (!uniqueMap.has(titleKey)) {
-                  uniqueMap.set(titleKey, lp);
-                }
-              }
-            }
-            
-            const finalPrograms = Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-            try {
-              localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms));
-            } catch (e) {}
-            return finalPrograms;
-          });
+          const finalPrograms = remoteProgs.sort((a, b) => a.title.localeCompare(b.title));
+          try { localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms)); } catch (e) {}
+          setPrograms(finalPrograms);
 
           // AUTO-PUSH ET SYNCHRONISATION EN LIGNE DES PROGRAMMES LOCAUX AVEC PERMISSIONS PUBLIQUES
           if (isLoggedIn) {

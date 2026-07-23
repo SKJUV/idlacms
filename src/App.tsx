@@ -308,61 +308,22 @@ export default function App() {
             image: doc.image,
             isNew: doc.isNew,
           }));
-          setPrograms(() => {
-            let freshLocal: any[] = [];
-            try {
-              freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
-            } catch (e) {}
-
-            const uniqueMap = new Map<string, any>();
-            
-            // Add remote programs first (database truth)
-            for (const rp of remoteProgs) {
-              if (rp && rp.title) {
-                const titleKey = rp.title.toLowerCase().trim();
-                if (!uniqueMap.has(titleKey)) {
-                  uniqueMap.set(titleKey, rp);
-                }
-              }
-            }
-            
-            // Merge in local programs if not already present by title
-            for (const lp of freshLocal) {
-              if (lp && lp.title) {
-                const titleKey = lp.title.toLowerCase().trim();
-                if (!uniqueMap.has(titleKey)) {
-                  uniqueMap.set(titleKey, lp);
-                }
-              }
-            }
-            
-            const finalPrograms = Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-            try {
-              localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms));
-            } catch (e) {}
-            return finalPrograms;
-          });
+          const finalPrograms = remoteProgs.sort((a, b) => a.title.localeCompare(b.title));
+          try {
+            localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms));
+          } catch (e) {}
+          setPrograms(finalPrograms);
         } else {
-          setPrograms((curr) => {
-            let freshLocal: any[] = [];
-            try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
-            const combined = [...freshLocal, ...curr];
-            const uniqueMap = new Map<string, any>();
-            combined.forEach((p) => {
-              if (p && p.title) {
-                const titleKey = p.title.toLowerCase().trim();
-                if (!uniqueMap.has(titleKey)) uniqueMap.set(titleKey, p);
-              }
-            });
-            return Array.from(uniqueMap.values());
-          });
+          let freshLocal: any[] = [];
+          try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
+          setPrograms(freshLocal);
         }
-
         // Fetch News
         if (APPWRITE_CONFIG.collections.news) {
           const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.news, [Query.limit(5000), Query.orderDesc('$createdAt')]);
           if (res.documents.length > 0) {
             setNews(
+
               res.documents.map((doc: any) => ({
                 id: doc.$id,
                 title: doc.title,
