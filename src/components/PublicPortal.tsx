@@ -419,26 +419,26 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             {/* Nos Certifications Internationales Section */}
-            <div className="mt-16 pt-12 border-t border-[#c6c6cf]/40 space-y-6">
+            <div className="mt-16 pt-12 border-t border-[#c6c6cf]/40 space-y-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-[#00020e] flex items-center gap-2">
+                  <h3 className="text-4xl font-extrabold text-[#00020e] flex items-center gap-3">
                     🎓 Nos Certifications Internationales
                   </h3>
-                  <p className="text-sm text-[#45464e] mt-1">
+                  <p className="text-base text-[#45464e] mt-2">
                     Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
                   </p>
                 </div>
                 <button
                   onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
-                  className="px-5 py-2.5 bg-brand-primary text-white font-bold text-xs rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm"
+                  className="px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm whitespace-nowrap"
                 >
                   Voir toutes les certifications
                 </button>
               </div>
 
               {/* Grid of Certification shortcuts */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                   { title: "Cisco CCNA-CCNP", desc: "Administration des réseaux et télécommunications d'entreprise.", icon: "🌐" },
                   { title: "AWS Solutions Architect", desc: "Conception et déploiement d'architectures cloud résilientes.", icon: "☁️" },
@@ -448,11 +448,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <div 
                     key={cert.title}
                     onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
-                    className="p-5 bg-slate-50 border border-[#c6c6cf]/30 rounded-xl hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all cursor-pointer group"
+                    className="p-7 bg-slate-50 border border-[#c6c6cf]/30 rounded-2xl hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all cursor-pointer group shadow-sm hover:shadow-md"
                   >
-                    <span className="text-2xl mb-3 block">{cert.icon}</span>
-                    <h4 className="font-bold text-sm text-[#00020e] group-hover:text-brand-primary transition-colors">{cert.title}</h4>
-                    <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">{cert.desc}</p>
+                    <span className="text-4xl mb-4 block">{cert.icon}</span>
+                    <h4 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors">{cert.title}</h4>
+                    <p className="text-sm text-text-secondary mt-2 leading-relaxed">{cert.desc}</p>
                   </div>
                 ))}
               </div>
