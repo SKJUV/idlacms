@@ -113,8 +113,13 @@ export default function ProgramsManagement({
     setCloudError(null);
     setCloudSuccess(null);
 
+    // Vérification doublon : exclure le programme en cours d'édition par son ID ET son titre actuel
+    const currentProg = programs.find((p) => p.id === editingProgramId);
     const isDuplicate = programs.some(
-      (p) => p.title.trim().toLowerCase() === newProgramTitle.trim().toLowerCase() && p.id !== editingProgramId
+      (p) =>
+        p.title.trim().toLowerCase() === newProgramTitle.trim().toLowerCase() &&
+        p.id !== editingProgramId &&
+        p.title.trim().toLowerCase() !== (currentProg?.title.trim().toLowerCase() ?? '')
     );
     if (isDuplicate) {
       setCloudError(`Un programme nommé "${newProgramTitle}" existe déjà.`);
@@ -122,19 +127,19 @@ export default function ProgramsManagement({
     }
 
     if (editingProgramId) {
+      const updatedData = {
+        title: newProgramTitle,
+        description: newProgramDescription,
+        type: newProgramType,
+        category: newProgramCategory,
+        duration: newProgramDuration,
+        image: newProgramImage,
+        isNew: newProgramIsNew,
+      };
+
+      // Mise à jour en mémoire et localStorage
       const updated = programs.map((p) =>
-        p.id === editingProgramId
-          ? {
-              ...p,
-              title: newProgramTitle,
-              description: newProgramDescription,
-              type: newProgramType,
-              category: newProgramCategory,
-              duration: newProgramDuration,
-              image: newProgramImage,
-              isNew: newProgramIsNew,
-            }
-          : p
+        p.id === editingProgramId ? { ...p, ...updatedData } : p
       );
       setPrograms(updated);
       try {
@@ -142,55 +147,61 @@ export default function ProgramsManagement({
       } catch (e) {
         console.error("Erreur d'enregistrement local des programmes:", e);
       }
-      if (isAppwriteDbConfigured()) {
-        try {
+
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.programs) {
+        const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(newProgramCategory)
+          ? newProgramCategory
+          : 'Tech';
+
+        const tryUpdate = async (cat: string) => {
           await databases.updateDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
-            {
-              title: newProgramTitle,
-              description: newProgramDescription,
-              type: newProgramType,
-              category: newProgramCategory,
-              duration: newProgramDuration,
-              image: newProgramImage,
-              isNew: newProgramIsNew,
-            } as any,
+            { ...updatedData, category: cat } as any,
             [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
-          setCloudSuccess("Programme mis à jour avec succès sur le Cloud Appwrite.");
-        } catch (err: any) {
-          console.error("Échec de la mise à jour sur Appwrite:", err);
-          if (err.message && (err.message.includes('one of') || err.message.includes('category'))) {
+        };
+
+        const tryCreate = async (cat: string) => {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.programs,
+            editingProgramId,
+            { ...updatedData, category: cat } as any,
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+          );
+        };
+
+        try {
+          await tryUpdate(newProgramCategory);
+          setCloudSuccess('Programme mis à jour avec succès sur le Cloud Appwrite.');
+        } catch (updateErr: any) {
+          console.warn('updateDocument échoué, tentative createDocument:', updateErr);
+          // Si le doc n'existe pas encore en cloud (programme local), on tente de le créer
+          if (updateErr.code === 404 || updateErr.type === 'document_not_found') {
             try {
-              const fallbackCat = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(newProgramCategory)
-                ? newProgramCategory
-                : 'Management';
-              await databases.updateDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.programs,
-                editingProgramId,
-                {
-                  title: newProgramTitle,
-                  description: newProgramDescription,
-                  type: newProgramType,
-                  category: fallbackCat,
-                  duration: newProgramDuration,
-                  image: newProgramImage,
-                  isNew: newProgramIsNew,
-                } as any,
-                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
-              );
-              setCloudSuccess("Programme mis à jour en ligne (catégorie ajustée automatiquement sur la base distante pour compatibilité avec l'ancien schéma).");
+              await tryCreate(safeCategory);
+              setCloudSuccess('Programme publié sur le Cloud Appwrite (nouveau document créé).');
+            } catch (createErr: any) {
+              setCloudError('Modifications sauvegardées localement. Erreur Cloud : ' + (createErr.message || 'inconnue'));
+            }
+          } else if (updateErr.message && (updateErr.message.includes('one of') || updateErr.message.includes('category'))) {
+            // Catégorie non acceptée par l'ancien schéma Appwrite
+            try {
+              await tryUpdate(safeCategory);
+              setCloudSuccess('Programme mis à jour (catégorie ajustée pour compatibilité Cloud).');
             } catch (retryErr: any) {
-              setCloudError("Erreur Cloud Appwrite : " + (retryErr.message || err.message) + " — Vos modifications sont toutefois actives et sauvegardées en mémoire locale.");
+              setCloudError('Modifications locales OK. Erreur schéma Cloud : ' + (retryErr.message || updateErr.message));
             }
           } else {
-            setCloudError("Erreur Cloud Appwrite : " + err.message + " — Vos modifications sont toutefois actives et sauvegardées en mémoire locale.");
+            setCloudError('Modifications sauvegardées localement. Erreur Cloud : ' + (updateErr.message || 'inconnue'));
           }
         }
+      } else {
+        setCloudSuccess('Programme modifié et sauvegardé localement.');
       }
+
       logActivity('article', 'Super Admin', `a modifié le programme : ${newProgramTitle}.`);
       resetProgramForm();
       return;
