@@ -438,39 +438,36 @@ export default function ProgramsManagement({
         const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(p.category || '')
           ? p.category
           : 'Tech';
+        const docData = {
+          title: p.title,
+          description: p.description || p.title,
+          type: p.type || 'Master',
+          category: safeCategory,
+          duration: p.duration || '1 an',
+          image: p.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+          isNew: !!p.isNew,
+        };
+        const perms = [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())];
+
+        // Toujours utiliser p.id comme ID Appwrite pour garder la coherence
         try {
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.programs,
-            p.id.startsWith('prog-') ? ID.unique() : p.id,
-            {
-              title: p.title,
-              description: p.description || p.title,
-              type: p.type || 'Master',
-              category: safeCategory,
-              duration: p.duration || '1 an',
-              image: p.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-              isNew: !!p.isNew,
-            },
-            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+            p.id,   // ← Meme ID qu'en local
+            docData as any,
+            perms
           );
           count++;
-        } catch (err: any) {
+        } catch (createErr: any) {
+          // Le document existe deja → on le met a jour
           try {
             await databases.updateDocument(
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.programs,
               p.id,
-              {
-                title: p.title,
-                description: p.description || p.title,
-                type: p.type || 'Master',
-                category: safeCategory,
-                duration: p.duration || '1 an',
-                image: p.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-                isNew: !!p.isNew,
-              } as any,
-              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+              docData as any,
+              perms
             );
             count++;
           } catch (updateErr) {
@@ -478,7 +475,7 @@ export default function ProgramsManagement({
           }
         }
       }
-      setCloudSuccess(`🌐 Magnifique ! ${count} programmes ont été publiés en ligne avec accès public absolu. Ils sont maintenant immédiatement visibles sur l'écran de tous les internautes !`);
+      setCloudSuccess(`🌐 ${count} programmes synchronisés avec Appwrite. Les utilisateurs voient maintenant la liste à jour !`);
     } catch (err: any) {
       setCloudError("Erreur lors de la publication en ligne : " + err.message);
     } finally {
