@@ -166,36 +166,36 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       <div className="bg-bg-primary text-text-primary">
         {/* Hero Section */}
         <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
-          {/* Background Image (replacing green glows/carousel) */}
+          {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
               src="/hero-bg.png" 
               alt="Campus IDLA" 
               className="w-full h-full object-cover object-center"
             />
-            {/* Subtle Gradient Overlay: light in light mode, dark in dark mode */}
-            <div className="absolute inset-0 bg-gradient-to-r from-bg-secondary/70 via-bg-secondary/40 to-transparent dark:from-bg-secondary/80 dark:via-bg-secondary/50 dark:to-transparent pointer-events-none"></div>
+            {/* Minimal, highly visible overlay tint so the cover image is clearly visible */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-slate-950/25 to-slate-950/20 pointer-events-none"></div>
           </div>
 
           <div className="relative z-10 max-w-[1440px] mx-auto w-full">
-            <div className="max-w-2xl space-y-6">
-              <div className="inline-flex items-center gap-2 bg-[#6cf8bb]/10 border border-[#006c49]/20 px-4 py-1.5 rounded-full">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#6ffbbe] animate-pulse"></span>
-                <span className="text-[#6ffbbe] font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
+            <div className="max-w-2xl space-y-6 bg-slate-950/35 backdrop-blur-[2px] p-8 md:p-10 rounded-3xl border border-sky-400/20 shadow-2xl">
+              <div className="inline-flex items-center gap-2 bg-sky-500/15 border border-sky-400/30 px-4 py-1.5 rounded-full">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
+                <span className="text-sky-300 font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
               </div>
               
-              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-text-primary leading-tight">
-                L'Éducation d'Élite <span className="text-brand-primary">Accessible</span> en Afrique Centrale
+              <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight drop-shadow-sm">
+                L'Éducation d'Élite <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">Accessible</span> en Afrique
               </h1>
               
-              <p className="font-sans text-lg text-text-secondary max-w-lg leading-relaxed">
+              <p className="font-sans text-lg text-slate-200 max-w-lg leading-relaxed font-medium">
                 IDLA forme les leaders de demain à travers des programmes d'excellence, une infrastructure de pointe et un réseau alumni d'influence.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] via-[#0d9488] to-[#006c49] text-white px-8 py-4 rounded-xl font-bold hover:shadow-[0_0_35px_rgba(0,108,73,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer border border-[#6ffbbe]/30"
+                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-[0_0_35px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer border border-sky-400/30"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     Explorer les programmes 
@@ -205,10 +205,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </button>
                 <button 
                   onClick={() => onApplyNow()}
-                  className="group relative px-8 py-4 rounded-xl font-bold transition-all duration-300 text-center cursor-pointer bg-white/10 hover:bg-white text-[#006c49] border-2 border-[#006c49] hover:border-transparent shadow-md hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
+                  className="group relative px-8 py-4 rounded-xl font-bold transition-all duration-300 text-center cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 hover:border-white shadow-md hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
                   <span>Je pose ma candidature</span>
-                  <span className="w-2 h-2 rounded-full bg-[#006c49] group-hover:animate-ping"></span>
+                  <span className="w-2 h-2 rounded-full bg-sky-400 group-hover:animate-ping"></span>
                 </button>
               </div>
             </div>
@@ -241,11 +241,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         <section className="py-20 px-6 md:px-12 bg-gradient-to-b from-white via-[#eff4ff]/30 to-white">
           <div className="max-w-[1440px] mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#006c49] bg-[#006c49]/10 px-3 py-1.5 rounded-full inline-block mb-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full inline-block mb-3">
                 L'Expérience Académique IDLA
               </span>
               <h2 className="text-3xl md:text-4xl font-extrabold text-[#00020e] leading-tight">
-                Pourquoi l'IDLA est le Choix n°1 en Afrique Centrale ?
+                Pourquoi l'IDLA est le Choix n°1 en Afrique   ?
               </h2>
               <p className="text-[#45464e] mt-3 text-base">
                 Une pédagogie flexible et innovante qui propulse votre carrière vers les sphères décisionnelles internationales.
@@ -254,12 +254,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Carte 1 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#006c49] to-[#0d9488] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <BookOpen className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
                     Pédagogie d'Élite & Flexible
                   </h3>
                   <p className="text-sm text-[#45464e] leading-relaxed mb-6">
@@ -268,22 +268,22 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
                 >
                   <span>En savoir plus</span>
-                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </button>
               </div>
 
               {/* Carte 2 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0d9488] to-[#006c49] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <HeartHandshake className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
                     Réseau Alumni & Mentorat
                   </h3>
                   <p className="text-sm text-[#45464e] leading-relaxed mb-6">
@@ -292,22 +292,22 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
-                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
                 >
                   <span>Voir le réseau</span>
-                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </button>
               </div>
 
               {/* Carte 3 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-[#006c49] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-[#006c49]/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#006c49] to-[#044c35] text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 to-sky-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-[#006c49] transition-colors">
+                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
                     Reconnaissance Internationale
                   </h3>
                   <p className="text-sm text-[#45464e] leading-relaxed mb-6">
@@ -316,10 +316,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-[#006c49] font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
                 >
                   <span>Découvrir l'accréditation</span>
-                  <span className="w-6 h-6 rounded-full bg-[#006c49]/10 group-hover/btn:bg-[#006c49] group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
+                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </button>
@@ -337,23 +337,23 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
               <h3 className="text-2xl font-bold text-[#00020e] leading-snug">Infrastructure et géologie locale</h3>
               <p className="text-sm text-[#45464e] mt-2 leading-relaxed">
-                IDLA étudie attentivement la structure des sols argilo-sableux d'Afrique Centrale pour adapter ses fondations architecturales éco-responsables de demain.
+                IDLA étudie attentivement la structure des sols argilo-sableux d'Afrique   pour adapter ses fondations architecturales éco-responsables de demain.
               </p>
-              <div className="mt-4 flex items-center gap-2 text-xs font-bold text-[#006c49]">
+              <div className="mt-4 flex items-center gap-2 text-xs font-bold text-brand-primary">
                 <ShieldAlert className="w-4 h-4" />
                 <span>Normes anti-sismiques européennes appliquées</span>
               </div>
             </div>
             <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-6 bg-[#eff4ff] rounded-xl border border-[#e5eeff]">
-                <Flame className="text-[#006c49] w-6 h-6 mb-2" />
+                <Flame className="text-brand-primary w-6 h-6 mb-2" />
                 <h4 className="font-bold text-sm text-[#00020e]">Résilience structures</h4>
                 <p className="text-xs text-[#45464e] mt-1 leading-relaxed">
                   Technique de fondation pieu-béton avec drainage intégré pour contrer l'humidité saisonnière équatoriale.
                 </p>
               </div>
               <div className="p-6 bg-[#eff4ff] rounded-xl border border-[#e5eeff]">
-                <Compass className="text-[#006c49] w-6 h-6 mb-2" />
+                <Compass className="text-brand-primary w-6 h-6 mb-2" />
                 <h4 className="font-bold text-sm text-[#00020e]">Éco-Design</h4>
                 <p className="text-xs text-[#45464e] mt-1 leading-relaxed">
                   Lumière naturelle optimisée à 80% pour réduire drastiquement l'empreinte carbone et l'alimentation secteur.
@@ -373,10 +373,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
-                className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#006c49]/10 to-[#0d9488]/10 hover:from-[#006c49] hover:to-[#0d9488] text-[#006c49] hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-[#006c49]/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-[#006c49]/25 hover:-translate-y-0.5 cursor-pointer"
+                className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-sky-600/10 to-blue-600/10 hover:from-sky-600 hover:to-blue-600 text-brand-primary hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-brand-primary/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-sky-500/25 hover:-translate-y-0.5 cursor-pointer"
               >
                 <span>Voir plus — Toutes nos formations</span>
-                <span className="w-7 h-7 rounded-full bg-[#006c49]/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
+                <span className="w-7 h-7 rounded-full bg-brand-primary/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </button>
@@ -386,7 +386,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {activePrograms.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
-                  className={`rounded-2xl overflow-hidden relative group min-h-[380px] shadow-md hover:shadow-2xl hover:shadow-[#006c49]/20 border border-[#c6c6cf]/30 cursor-pointer transition-all duration-500 transform hover:-translate-y-1.5 flex flex-col justify-end ${
+                  className={`rounded-2xl overflow-hidden relative group min-h-[380px] shadow-md hover:shadow-2xl hover:shadow-sky-500/20 border border-[#c6c6cf]/30 cursor-pointer transition-all duration-500 transform hover:-translate-y-1.5 flex flex-col justify-end ${
                     idx === 0 ? 'md:col-span-8' : 'md:col-span-4'
                   }`}
                   onClick={() => setActiveTab('programmes')}
@@ -398,17 +398,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     src={p.image}
                   />
                   <div className="relative z-20 p-6 w-full flex flex-col justify-end">
-                    <span className="bg-[#6cf8bb] text-[#00020e] text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2.5 inline-block w-fit shadow-sm">
+                    <span className="bg-sky-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2.5 inline-block w-fit shadow-sm">
                       {p.category}
                     </span>
-                    <h3 className="text-white font-bold text-xl md:text-2xl mb-2 group-hover:text-[#6cf8bb] transition-colors">{p.title}</h3>
+                    <h3 className="text-white font-bold text-xl md:text-2xl mb-2 group-hover:text-sky-300 transition-colors">{p.title}</h3>
                     <p className="text-white/80 text-xs line-clamp-2 max-w-md mb-5">{p.description}</p>
                     
                     <div className="flex items-center justify-between pt-3 border-t border-white/15 opacity-90 group-hover:opacity-100 transition-all duration-300">
                       <span className="text-white/90 text-xs font-semibold flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-[#6cf8bb]" /> Rentrée {new Date().getFullYear()}
+                        <Clock className="w-3.5 h-3.5 text-sky-400" /> Rentrée {new Date().getFullYear()}
                       </span>
-                      <span className="inline-flex items-center gap-2 bg-white/15 hover:bg-[#6cf8bb] text-white group-hover:text-[#00020e] px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-300 transform group-hover:translate-x-1.5 shadow-md">
+                      <span className="inline-flex items-center gap-2 bg-white/15 hover:bg-sky-500 text-white group-hover:text-white px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-300 transform group-hover:translate-x-1.5 shadow-md">
                         <span>Découvrir & Voir plus</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
@@ -480,7 +480,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div className="flex flex-wrap gap-4 pt-2">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] to-[#0d9488] text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(0,108,73,0.5)] transition-all duration-300 flex items-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer"
+                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer"
                 >
                   <HeartHandshake className="w-4 h-4 group-hover:scale-125 transition-transform duration-300" />
                   <span>Faire un don de soutien</span>
@@ -520,11 +520,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     placeholder="Votre adresse email d'excellence"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-grow md:w-64 p-3.5 rounded-xl border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-[#006c49] text-sm font-medium transition-all shadow-inner"
+                    className="flex-grow md:w-64 p-3.5 rounded-xl border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium transition-all shadow-inner"
                   />
                   <button
                     type="submit"
-                    className="group relative overflow-hidden bg-gradient-to-r from-[#006c49] to-[#0d9488] text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_20px_rgba(0,108,73,0.4)] transition-all duration-300 cursor-pointer shrink-0 flex items-center gap-1.5 transform hover:-translate-y-0.5"
+                    className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_20px_rgba(2,132,199,0.4)] transition-all duration-300 cursor-pointer shrink-0 flex items-center gap-1.5 transform hover:-translate-y-0.5"
                   >
                     <span>S'abonner</span>
                     <Send className="w-3.5 h-3.5 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform duration-300" />
@@ -568,7 +568,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
           <div className="max-w-[1440px] mx-auto border-t border-border-primary/60 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-text-secondary/60 gap-2">
             <p>© {new Date().getFullYear()} IDLA — International Distance Learning Academy. Tous droits réservés.</p>
-            <p>Conçu avec Excellence en Afrique Centrale</p>
+            <p>Conçu avec Excellence en Afrique  </p>
           </div>
         </footer>
 
@@ -582,34 +582,34 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
               {donationSent ? (
                 <div className="p-8 text-center space-y-3">
-                  <CheckCircle2 className="w-12 h-12 text-[#006c49] mx-auto" />
+                  <CheckCircle2 className="w-12 h-12 text-brand-primary mx-auto" />
                   <h4 className="font-bold text-lg">Merci pour votre générosité !</h4>
                   <p className="text-sm text-[#45464e]">Votre don a bien été transmis à notre équipe. Nous vous recontacterons pour finaliser la contribution.</p>
-                  <button onClick={closeDonationModal} className="mt-2 bg-[#006c49] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
+                  <button onClick={closeDonationModal} className="mt-2 bg-brand-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-brand-hover transition-all">Fermer</button>
                 </div>
               ) : (
                 <form onSubmit={submitDonation} className="p-6 space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Votre nom / organisation *</label>
                     <input type="text" value={dDonor} onChange={(e) => setDDonor(e.target.value)} placeholder="ex: Fondation Total"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Email *</label>
                     <input type="email" value={dEmail} onChange={(e) => setDEmail(e.target.value)} placeholder="ex: contact@exemple.com"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Montant du don (FCFA) *</label>
                     <input type="number" min="1" value={dAmount} onChange={(e) => setDAmount(e.target.value)} placeholder="ex: 100000"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Message (facultatif)</label>
                     <textarea value={dMessage} onChange={(e) => setDMessage(e.target.value)} rows={2} placeholder="Affectation souhaitée, mot d'encouragement…"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                   </div>
-                  <button type="submit" className="w-full bg-[#006c49] text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                  <button type="submit" className="w-full bg-brand-primary text-white py-3 rounded-lg font-bold text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" /> Envoyer mon don
                   </button>
                 </form>
@@ -638,7 +638,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input 
-                className="w-full bg-slate-50 border border-[#c6c6cf] rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#006c49] outline-none" 
+                className="w-full bg-slate-50 border border-[#c6c6cf] rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none" 
                 placeholder="Rechercher un programme par mot-clé..." 
                 type="text"
                 value={programSearch}
@@ -674,14 +674,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       src={p.image}
                     />
                     {p.isNew && (
-                      <span className="absolute top-4 right-4 bg-[#006c49] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                      <span className="absolute top-4 right-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded">
                         Nouveau
                       </span>
                     )}
                   </div>
                   
                   <div className="p-6 flex flex-col flex-grow space-y-4">
-                    <div className="flex items-center gap-1.5 text-[#006c49] font-bold text-xs">
+                    <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
                       <BookOpen className="w-3.5 h-3.5" />
                       <span>{p.category}</span>
                     </div>
@@ -699,7 +699,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       </div>
                       <button 
                         onClick={() => onApplyNow(p.title)}
-                        className="flex items-center gap-1 text-sm font-semibold text-[#006c49] group-hover:underline"
+                        className="flex items-center gap-1 text-sm font-semibold text-brand-primary group-hover:underline cursor-pointer"
                       >
                         S'inscrire
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -715,7 +715,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <p className="text-slate-500 font-semibold text-sm">Aucun programme ne correspond à votre recherche.</p>
               <button 
                 onClick={() => { setProgramSearch(''); setSelectedProgramType('Tous'); }}
-                className="mt-4 text-[#006c49] text-sm font-bold hover:underline"
+                className="mt-4 text-brand-primary text-sm font-bold hover:underline cursor-pointer"
               >
                 Réinitialiser les filtres
               </button>
@@ -791,19 +791,19 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                   <div className="md:w-2/5 p-8 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-[#6cf8bb] text-[#00714d] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                      <span className="bg-brand-light text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                         {featuredNewsArticle.category}
                       </span>
                       <span className="text-xs text-slate-400">{featuredNewsArticle.date}</span>
                     </div>
-                    <h2 className="font-bold text-2xl text-[#00020e] group-hover:text-[#006c49] transition-colors leading-tight">
+                    <h2 className="font-bold text-2xl text-[#00020e] group-hover:text-brand-primary transition-colors leading-tight">
                       {featuredNewsArticle.title}
                     </h2>
                     <p className="text-sm text-[#45464e] mt-3 leading-relaxed">
                       {featuredNewsArticle.description}
                     </p>
                     <div className="pt-6">
-                      <span className="text-sm font-bold text-[#006c49] flex items-center gap-1 group-hover:gap-2 transition-all">
+                      <span className="text-sm font-bold text-brand-primary flex items-center gap-1 group-hover:gap-2 transition-all">
                         Lire l'article <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
@@ -837,7 +837,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                             </span>
                             <span className="text-xs text-slate-400">{n.date}</span>
                           </div>
-                          <h3 className="font-bold text-base text-[#00020e] group-hover:text-[#006c49] transition-colors leading-snug">
+                          <h3 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors leading-snug">
                             {n.title}
                           </h3>
                           <p className="text-xs text-[#45464e] leading-relaxed line-clamp-2">
@@ -845,7 +845,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           </p>
                         </div>
                         <div className="pt-2">
-                          <span className="text-xs font-bold text-[#006c49] flex items-center gap-1">
+                          <span className="text-xs font-bold text-brand-primary flex items-center gap-1">
                             Lire l'article <ArrowRight className="w-3.5 h-3.5" />
                           </span>
                         </div>
@@ -892,7 +892,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </button>
                 {/* Catégorie + date en bas de l'image */}
                 <div className="absolute bottom-4 left-5 flex items-center gap-2">
-                  <span className="bg-[#6cf8bb] text-[#00714d] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  <span className="bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                     {selectedArticle.category}
                   </span>
                   <span className="text-white/80 text-xs font-medium">{selectedArticle.date}</span>
@@ -917,7 +917,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </p>
                   <p>
                     Pour toute information complémentaire, n'hésitez pas à contacter notre service des admissions à l'adresse{' '}
-                    <a href="mailto:admission@idlaacademy.online" className="text-[#006c49] font-semibold hover:underline">
+                    <a href="mailto:admission@idlaacademy.online" className="text-brand-primary font-semibold hover:underline">
                       admission@idlaacademy.online
                     </a>{' '}
                     ou via WhatsApp au <span className="font-semibold">+237 680 548 221</span>.
@@ -930,7 +930,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <p className="text-xs text-slate-400">IDLA — {selectedArticle.date}</p>
                 <button
                   onClick={() => setSelectedArticle(null)}
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
+                  className="bg-brand-primary hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
                 >
                   Fermer
                 </button>
@@ -959,7 +959,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
             <button
               onClick={() => { setTestimonialSent(false); setShowTestimonialModal(true); }}
-              className="shrink-0 bg-[#006c49] text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
+              className="shrink-0 bg-brand-primary text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
             >
               <Quote className="w-4 h-4" /> Partager mon témoignage
             </button>
@@ -990,8 +990,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 className="bg-white p-6 rounded-xl border border-[#c6c6cf] flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300 shadow-sm"
               >
                 <div className="space-y-4">
-                  <span className="material-symbols-outlined text-[#006c49] text-4xl block opacity-60">
-                    <Quote className="w-8 h-8 text-[#006c49]" />
+                  <span className="material-symbols-outlined text-brand-primary text-4xl block opacity-60">
+                    <Quote className="w-8 h-8 text-brand-primary" />
                   </span>
                   <p className="text-sm text-[#0b1c30] italic leading-relaxed">
                     "{t.text}"
@@ -1024,36 +1024,36 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
               {testimonialSent ? (
                 <div className="p-8 text-center space-y-3">
-                  <CheckCircle2 className="w-12 h-12 text-[#006c49] mx-auto" />
+                  <CheckCircle2 className="w-12 h-12 text-brand-primary mx-auto" />
                   <h4 className="font-bold text-lg">Merci pour votre témoignage !</h4>
                   <p className="text-sm text-[#45464e]">Il sera publié après validation par notre équipe. Merci de contribuer au rayonnement de l'IDLA.</p>
-                  <button onClick={closeTestimonialModal} className="mt-2 bg-[#006c49] text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
+                  <button onClick={closeTestimonialModal} className="mt-2 bg-brand-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all">Fermer</button>
                 </div>
               ) : (
                 <form onSubmit={submitTestimonial} className="p-6 space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Nom complet *</label>
                     <input type="text" value={tName} onChange={(e) => setTName(e.target.value)} placeholder="ex: Aïcha Diallo"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase">Fonction</label>
                       <input type="text" value={tRole} onChange={(e) => setTRole(e.target.value)} placeholder="ex: Data Analyst"
-                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase">Promotion</label>
                       <input type="text" value={tPromo} onChange={(e) => setTPromo(e.target.value)} placeholder="ex: Promo 2022"
-                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" />
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase">Votre témoignage *</label>
                     <textarea value={tText} onChange={(e) => setTText(e.target.value)} rows={4} placeholder="Racontez votre expérience à l'IDLA…"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-sm" required />
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
-                  <button type="submit" className="w-full bg-[#006c49] text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                  <button type="submit" className="w-full bg-brand-primary text-white py-3 rounded-lg font-bold text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" /> Soumettre mon témoignage
                   </button>
                 </form>
