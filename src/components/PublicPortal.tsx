@@ -169,7 +169,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           {/* Background Image (replacing green glows/carousel) */}
           <div className="absolute inset-0 z-0">
             <img 
-              src="/hero-bg.jpg" 
+              src="/hero-bg.png" 
               alt="Campus IDLA" 
               className="w-full h-full object-cover object-center"
             />
