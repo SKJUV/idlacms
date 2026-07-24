@@ -163,6 +163,12 @@ export default function StudentPortal({
   const docInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // ── Chat de classe ──
+  const [selectedClassChat, setSelectedClassChat] = useState<string | null>(null);
+  const [classChatMessage, setClassChatMessage] = useState('');
+  const [classChatHistory, setClassChatHistory] = useState<any[]>([]);
+  const classChatEndRef = useRef<HTMLDivElement>(null);
+
   // ── Profile ──
   const [profile, setProfile] = useState<StudentProfile>(() => ({
     ...MOCK_PROFILE,
@@ -376,6 +382,35 @@ export default function StudentPortal({
     loadDossierDetails();
   }, [selectedAppId, isLoggedIn]);
 
+  // ── Charger le chat de classe ──
+  useEffect(() => {
+    if (!selectedClassChat || !isLoggedIn) return;
+    const loadClassMessages = async () => {
+      try {
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+          const msgRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.messages,
+            [Query.equal('applicationId', `class_${selectedClassChat}`), Query.orderAsc('createdAt')]
+          );
+          setClassChatHistory(msgRes.documents.map((m: any) => ({
+            sender: m.sender,
+            text: m.text,
+            time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+            senderName: m.senderName || (m.sender === 'candidate' ? 'Moi' : 'Enseignant')
+          })));
+        }
+      } catch (err) {
+        console.warn("Impossible de charger les messages de classe:", err);
+      }
+    };
+    loadClassMessages();
+  }, [selectedClassChat, isLoggedIn]);
+
+  useEffect(() => {
+    classChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [classChatHistory]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || !selectedAppId) return;
@@ -416,6 +451,36 @@ export default function StudentPortal({
         }
       }
     }, 1500);
+  };
+
+  const handleSendClassMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classChatMessage.trim() || !selectedClassChat) return;
+
+    const text = classChatMessage;
+    setClassChatMessage('');
+    const userMsg = { sender: 'candidate', text, time: 'À l\'instant', senderName: profile.name };
+    setClassChatHistory((curr) => [...curr, userMsg]);
+
+    const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
+    if (canPersist) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.messages,
+          ID.unique(),
+          { 
+            applicationId: `class_${selectedClassChat}`, 
+            sender: 'candidate', 
+            text, 
+            createdAt: new Date().toISOString(),
+            senderName: profile.name
+          }
+        );
+      } catch (err) {
+        console.error("Échec de l'enregistrement du message de classe:", err);
+      }
+    }
   };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1163,6 +1228,76 @@ export default function StudentPortal({
     </>
   );
 
+  const renderClassChatModal = () => {
+    if (!selectedClassChat) return null;
+    return (
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-3xl w-full h-[80vh] flex flex-col shadow-2xl animate-fadeIn">
+          {/* Header */}
+          <div className="flex justify-between items-center p-5 border-b border-border-primary bg-bg-primary/50 shrink-0">
+            <div>
+              <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+                <MessageSquareIcon className="w-5 h-5 text-brand-primary" />
+                Discussion de classe
+              </h3>
+              <p className="text-xs text-text-secondary mt-1">{selectedClassChat}</p>
+            </div>
+            <button 
+              onClick={() => setSelectedClassChat(null)}
+              className="p-2 bg-bg-primary border border-border-primary rounded-xl text-text-secondary hover:text-brand-primary hover:border-brand-primary transition-colors cursor-pointer"
+            >
+              Fermer
+            </button>
+          </div>
+          
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {classChatHistory.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-text-secondary space-y-2 opacity-50">
+                <MessageSquareIcon className="w-12 h-12" />
+                <p className="text-sm">Aucun message pour le moment. Dites bonjour à votre classe !</p>
+              </div>
+            ) : (
+              classChatHistory.map((msg, idx) => {
+                const isMe = msg.sender === 'candidate';
+                return (
+                  <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'}`}>
+                      {!isMe && <div className="text-[10px] font-bold text-brand-primary mb-1">{msg.senderName}</div>}
+                      <p className="text-sm">{msg.text}</p>
+                      <div className={`text-[10px] mt-1 ${isMe ? 'text-brand-light/70' : 'text-text-secondary'}`}>{msg.time}</div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={classChatEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <div className="p-4 border-t border-border-primary bg-bg-primary/50 shrink-0">
+            <form onSubmit={handleSendClassMessage} className="flex gap-2">
+              <input
+                type="text"
+                value={classChatMessage}
+                onChange={(e) => setClassChatMessage(e.target.value)}
+                placeholder="Écrivez un message à la classe..."
+                className="flex-1 bg-bg-primary border border-border-primary rounded-xl px-4 py-3 text-sm text-text-primary focus:border-brand-primary outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={!classChatMessage.trim()}
+                className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white p-3 rounded-xl transition-colors cursor-pointer flex items-center justify-center shadow-md"
+              >
+                <SendIcon className="w-5 h-5" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ════════════════════════════════════════════════════════════════════════════
   // DASHBOARD VIEW
   // ════════════════════════════════════════════════════════════════════════════
@@ -1288,9 +1423,14 @@ export default function StudentPortal({
                             <div className="h-full bg-brand-primary rounded-full" style={{ width: `${enr.progressPercent}%` }} />
                           </div>
                         </div>
-                        <button className="self-start inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
-                          <PlayCircleIcon className="w-3.5 h-3.5" /> Continuer
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button className="self-start inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
+                            <PlayCircleIcon className="w-3.5 h-3.5" /> Continuer
+                          </button>
+                          <button onClick={() => setSelectedClassChat(enr.title)} className="self-start inline-flex items-center gap-1.5 bg-bg-primary border border-border-primary hover:border-brand-primary text-text-secondary hover:text-brand-primary text-xs font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                            <MessageSquareIcon className="w-3.5 h-3.5" /> Discussion
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1330,6 +1470,7 @@ export default function StudentPortal({
           </div>
         </div>
         {renderApplicationModals()}
+        {renderClassChatModal()}
       </div>
     );
   }

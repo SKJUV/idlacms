@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CalendarIcon, 
   UsersIcon, 
@@ -6,9 +6,11 @@ import {
   ClockIcon,
   CheckCircle2Icon,
   ArrowLeftIcon,
-  GraduationCapIcon
+  GraduationCapIcon,
+  SendIcon,
+  MessageSquareIcon
 } from './Icons';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../lib/appwrite';
 import { TeacherScheduleSlot } from '../types';
 
 interface TeacherPortalProps {
@@ -23,12 +25,74 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<any[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (activeTab !== 'teacher-students') {
       setSelectedProgram(null);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
+
+  useEffect(() => {
+    if (!selectedProgram || !isLoggedIn) return;
+    const loadClassMessages = async () => {
+      try {
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+          const classId = `class_${selectedProgram}`;
+          const msgRes = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.messages,
+            [Query.equal('applicationId', classId), Query.orderAsc('createdAt')]
+          );
+          setChatHistory(msgRes.documents.map((m: any) => ({
+            sender: m.sender,
+            text: m.text,
+            time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+            senderName: m.senderName || (m.sender === 'teacher' ? 'Moi' : 'Étudiant')
+          })));
+        }
+      } catch (err) {
+        console.warn("Erreur chargement messages de classe:", err);
+      }
+    };
+    loadClassMessages();
+  }, [selectedProgram, isLoggedIn]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim() || !selectedProgram) return;
+
+    const text = chatMessage;
+    setChatMessage('');
+    const userMsg = { sender: 'teacher', text, time: 'À l\'instant', senderName: profile.name };
+    setChatHistory((curr) => [...curr, userMsg]);
+
+    const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
+    if (canPersist) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.messages,
+          ID.unique(),
+          { 
+            applicationId: `class_${selectedProgram}`, 
+            sender: 'teacher', 
+            text, 
+            createdAt: new Date().toISOString(),
+            senderName: profile.name
+          }
+        );
+      } catch (err) {
+        console.error("Erreur envoi message Appwrite:", err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -225,8 +289,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const filteredStudents = students.filter(s => s.program === selectedProgram);
 
     return (
-      <div className="space-y-6 animate-fadeIn">
-        <div className="flex items-center gap-4">
+      <div className="space-y-6 animate-fadeIn h-[calc(100vh-140px)] flex flex-col">
+        <div className="flex items-center gap-4 shrink-0">
           <button 
             onClick={() => setSelectedProgram(null)}
             className="p-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-primary text-text-secondary cursor-pointer transition-colors"
@@ -236,40 +300,95 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           </button>
           <div>
             <h2 className="text-xl font-bold text-text-primary font-sans flex items-center gap-2">
-              Étudiants <span className="text-text-secondary font-normal text-sm">/ {selectedProgram}</span>
+              Classe <span className="text-text-secondary font-normal text-sm">/ {selectedProgram}</span>
             </h2>
-            <p className="text-sm text-text-secondary">Liste des étudiants inscrits dans cette classe.</p>
+            <p className="text-sm text-text-secondary">Gérez vos étudiants et discutez avec la classe.</p>
           </div>
         </div>
         
-        <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-bg-primary/50 border-b border-border-primary text-xs uppercase font-bold text-text-secondary">
-              <tr>
-                <th className="p-4">Étudiant</th>
-                <th className="p-4">Email</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-primary">
-              {filteredStudents.length > 0 ? filteredStudents.map(s => (
-                <tr key={s.$id} className="hover:bg-bg-primary/30 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-bold text-xs">
-                        {s.initials || s.name.substring(0, 2).toUpperCase()}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+          {/* Colonne Liste des étudiants (1/3) */}
+          <div className="lg:col-span-1 bg-bg-secondary border border-border-primary rounded-xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border-primary bg-bg-primary/50 shrink-0">
+              <h3 className="font-bold text-sm text-text-primary uppercase flex items-center gap-2">
+                <UsersIcon className="w-4 h-4" /> Étudiants ({filteredStudents.length})
+              </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <table className="w-full text-left text-sm">
+                <tbody className="divide-y divide-border-primary">
+                  {filteredStudents.length > 0 ? filteredStudents.map(s => (
+                    <tr key={s.$id} className="hover:bg-bg-primary/30 transition-colors">
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-bold text-xs shrink-0">
+                            {s.initials || s.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-text-primary truncate">{s.name}</div>
+                            <div className="text-[10px] text-text-secondary truncate">{s.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td className="p-8 text-center text-text-secondary text-xs">Aucun étudiant dans cette classe.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Colonne Chat de classe (2/3) */}
+          <div className="lg:col-span-2 bg-bg-secondary border border-border-primary rounded-xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border-primary bg-bg-primary/50 shrink-0 flex justify-between items-center">
+              <h3 className="font-bold text-sm text-text-primary uppercase flex items-center gap-2">
+                <MessageSquareIcon className="w-4 h-4" /> Discussion de classe
+              </h3>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto space-y-4">
+              {chatHistory.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-text-secondary space-y-2 opacity-50">
+                  <MessageSquareIcon className="w-12 h-12" />
+                  <p className="text-sm">Aucun message pour le moment. Soyez le premier à écrire à la classe !</p>
+                </div>
+              ) : (
+                chatHistory.map((msg, idx) => {
+                  const isMe = msg.sender === 'teacher';
+                  return (
+                    <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'}`}>
+                        {!isMe && <div className="text-[10px] font-bold text-brand-primary mb-1">{msg.senderName}</div>}
+                        <p className="text-sm">{msg.text}</p>
+                        <div className={`text-[10px] mt-1 ${isMe ? 'text-brand-light/70' : 'text-text-secondary'}`}>{msg.time}</div>
                       </div>
-                      <span className="font-semibold text-text-primary">{s.name}</span>
                     </div>
-                  </td>
-                  <td className="p-4 text-text-secondary">{s.email}</td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={2} className="p-8 text-center text-text-secondary">Aucun étudiant dans cette classe.</td>
-                </tr>
+                  );
+                })
               )}
-            </tbody>
-          </table>
+              <div ref={chatEndRef} />
+            </div>
+            <div className="p-4 border-t border-border-primary bg-bg-primary/50 shrink-0">
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  placeholder="Écrivez un message à la classe..."
+                  className="flex-1 bg-bg-primary border border-border-primary rounded-lg px-4 py-2 text-sm text-text-primary focus:border-brand-primary outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatMessage.trim()}
+                  className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white p-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+                >
+                  <SendIcon className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     );
