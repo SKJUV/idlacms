@@ -29,6 +29,15 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const getClassChatId = (programName: string) => {
+    let hash = 0;
+    for (let i = 0; i < programName.length; i++) {
+      hash = ((hash << 5) - hash) + programName.charCodeAt(i);
+      hash |= 0;
+    }
+    return `cls_${Math.abs(hash)}`;
+  };
+
   useEffect(() => {
     if (activeTab !== 'teacher-students') {
       setSelectedProgram(null);
@@ -44,18 +53,30 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const loadClassMessages = async () => {
       try {
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-          const classId = `class_${selectedProgram}`;
+          const classId = getClassChatId(selectedProgram);
           const msgRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
             [Query.equal('applicationId', classId), Query.orderAsc('createdAt')]
           );
-          setChatHistory(msgRes.documents.map((m: any) => ({
-            sender: m.sender,
-            text: m.text,
-            time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-            senderName: m.senderName || (m.sender === 'teacher' ? 'Moi' : 'Étudiant')
-          })));
+          setChatHistory(msgRes.documents.map((m: any) => {
+            let parsedText = m.text;
+            let sName = m.sender === 'advisor' ? 'Enseignant' : 'Étudiant';
+            try {
+              const data = JSON.parse(m.text);
+              if (data.t) {
+                parsedText = data.t;
+                sName = data.n || sName;
+              }
+            } catch (e) {}
+
+            return {
+              sender: m.sender,
+              text: parsedText,
+              time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              senderName: sName
+            };
+          }));
         }
       } catch (err) {
         console.warn("Erreur chargement messages de classe:", err);
@@ -70,22 +91,22 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
     const text = chatMessage;
     setChatMessage('');
-    const userMsg = { sender: 'teacher', text, time: 'À l\'instant', senderName: profile.name };
+    const userMsg = { sender: 'advisor', text, time: 'À l\'instant', senderName: profile.name };
     setChatHistory((curr) => [...curr, userMsg]);
 
     const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
     if (canPersist) {
       try {
+        const payloadStr = JSON.stringify({ n: profile.name, t: text });
         await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           { 
-            applicationId: `class_${selectedProgram}`, 
-            sender: 'teacher', 
-            text, 
-            createdAt: new Date().toISOString(),
-            senderName: profile.name
+            applicationId: getClassChatId(selectedProgram), 
+            sender: 'advisor', 
+            text: payloadStr, 
+            createdAt: new Date().toISOString()
           }
         );
       } catch (err) {
@@ -356,7 +377,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                 </div>
               ) : (
                 chatHistory.map((msg, idx) => {
-                  const isMe = msg.sender === 'teacher';
+                  const isMe = msg.sender === 'advisor' && msg.senderName === profile?.name;
                   return (
                     <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'}`}>

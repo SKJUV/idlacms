@@ -169,6 +169,15 @@ export default function StudentPortal({
   const [classChatHistory, setClassChatHistory] = useState<any[]>([]);
   const classChatEndRef = useRef<HTMLDivElement>(null);
 
+  const getClassChatId = (programName: string) => {
+    let hash = 0;
+    for (let i = 0; i < programName.length; i++) {
+      hash = ((hash << 5) - hash) + programName.charCodeAt(i);
+      hash |= 0;
+    }
+    return `cls_${Math.abs(hash)}`;
+  };
+
   // ── Profile ──
   const [profile, setProfile] = useState<StudentProfile>(() => ({
     ...MOCK_PROFILE,
@@ -388,17 +397,30 @@ export default function StudentPortal({
     const loadClassMessages = async () => {
       try {
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+          const classId = getClassChatId(selectedClassChat);
           const msgRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
-            [Query.equal('applicationId', `class_${selectedClassChat}`), Query.orderAsc('createdAt')]
+            [Query.equal('applicationId', classId), Query.orderAsc('createdAt')]
           );
-          setClassChatHistory(msgRes.documents.map((m: any) => ({
-            sender: m.sender,
-            text: m.text,
-            time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-            senderName: m.senderName || (m.sender === 'candidate' ? 'Moi' : 'Enseignant')
-          })));
+          setClassChatHistory(msgRes.documents.map((m: any) => {
+            let parsedText = m.text;
+            let sName = m.sender === 'candidate' ? 'Moi' : 'Enseignant';
+            try {
+              const data = JSON.parse(m.text);
+              if (data.t) {
+                parsedText = data.t;
+                sName = data.n || sName;
+              }
+            } catch (e) {}
+
+            return {
+              sender: m.sender,
+              text: parsedText,
+              time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              senderName: sName
+            };
+          }));
         }
       } catch (err) {
         console.warn("Impossible de charger les messages de classe:", err);
@@ -465,16 +487,16 @@ export default function StudentPortal({
     const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
     if (canPersist) {
       try {
+        const payloadStr = JSON.stringify({ n: profile.name, t: text });
         await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           { 
-            applicationId: `class_${selectedClassChat}`, 
+            applicationId: getClassChatId(selectedClassChat), 
             sender: 'candidate', 
-            text, 
-            createdAt: new Date().toISOString(),
-            senderName: profile.name
+            text: payloadStr, 
+            createdAt: new Date().toISOString()
           }
         );
       } catch (err) {
