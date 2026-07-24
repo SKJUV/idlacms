@@ -4,7 +4,9 @@ import {
   UsersIcon, 
   BookOpenIcon, 
   ClockIcon,
-  CheckCircle2Icon
+  CheckCircle2Icon,
+  ArrowLeftIcon,
+  GraduationCapIcon
 } from './Icons';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../lib/appwrite';
 import { TeacherScheduleSlot } from '../types';
@@ -20,6 +22,13 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<any[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeTab !== 'teacher-students') {
+      setSelectedProgram(null);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -176,42 +185,95 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     );
   };
 
-  const renderStudents = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-text-primary font-sans">Mes Étudiants</h2>
-      <p className="text-sm text-text-secondary">Liste des étudiants inscrits à vos programmes.</p>
-      
-      <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-bg-primary/50 border-b border-border-primary text-xs uppercase font-bold text-text-secondary">
-            <tr>
-              <th className="p-4">Étudiant</th>
-              <th className="p-4">Programme</th>
-              <th className="p-4">Email</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-primary">
-            {students.length > 0 ? students.map(s => (
-              <tr key={s.$id} className="hover:bg-bg-primary/30 transition-colors">
-                <div className="p-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-bold text-xs">
-                    {s.initials || s.name.substring(0, 2).toUpperCase()}
+  const renderStudents = () => {
+    if (!selectedProgram) {
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          <h2 className="text-xl font-bold text-text-primary font-sans">Mes Classes</h2>
+          <p className="text-sm text-text-secondary">Sélectionnez une classe pour voir la liste des étudiants inscrits.</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {profile.assignedPrograms.map((programName: string) => {
+              const studentsInProgram = students.filter(s => s.program === programName).length;
+              return (
+                <div 
+                  key={programName}
+                  onClick={() => setSelectedProgram(programName)}
+                  className="bg-bg-secondary border border-border-primary hover:border-brand-primary/50 hover:shadow-lg rounded-xl p-6 cursor-pointer transition-all duration-300 group flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-brand-primary/10 group-hover:bg-brand-primary/20 flex items-center justify-center text-brand-primary transition-colors">
+                    <GraduationCapIcon className="w-8 h-8" />
                   </div>
-                  <span className="font-semibold text-text-primary">{s.name}</span>
+                  <div>
+                    <h3 className="font-bold text-text-primary text-lg group-hover:text-brand-primary transition-colors">{programName}</h3>
+                    <p className="text-sm text-text-secondary mt-1">{studentsInProgram} étudiant{studentsInProgram !== 1 ? 's' : ''}</p>
+                  </div>
                 </div>
-                <td className="p-4 text-text-secondary">{s.program}</td>
-                <td className="p-4 text-text-secondary">{s.email}</td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={3} className="p-8 text-center text-text-secondary">Aucun étudiant trouvé pour vos programmes.</td>
-              </tr>
+              );
+            })}
+            
+            {profile.assignedPrograms.length === 0 && (
+              <div className="col-span-full p-8 text-center bg-bg-secondary border border-border-primary rounded-xl">
+                <p className="text-text-secondary">Vous n'avez pas de classes assignées.</p>
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
+      );
+    }
+
+    const filteredStudents = students.filter(s => s.program === selectedProgram);
+
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setSelectedProgram(null)}
+            className="p-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-primary text-text-secondary cursor-pointer transition-colors"
+            title="Retour aux classes"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary font-sans flex items-center gap-2">
+              Étudiants <span className="text-text-secondary font-normal text-sm">/ {selectedProgram}</span>
+            </h2>
+            <p className="text-sm text-text-secondary">Liste des étudiants inscrits dans cette classe.</p>
+          </div>
+        </div>
+        
+        <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-bg-primary/50 border-b border-border-primary text-xs uppercase font-bold text-text-secondary">
+              <tr>
+                <th className="p-4">Étudiant</th>
+                <th className="p-4">Email</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-primary">
+              {filteredStudents.length > 0 ? filteredStudents.map(s => (
+                <tr key={s.$id} className="hover:bg-bg-primary/30 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-bold text-xs">
+                        {s.initials || s.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-semibold text-text-primary">{s.name}</span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-text-secondary">{s.email}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={2} className="p-8 text-center text-text-secondary">Aucun étudiant dans cette classe.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex-1 p-6 md:p-8 pt-24 lg:pt-8 min-h-screen">
