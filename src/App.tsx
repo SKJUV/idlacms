@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
-import PublicPortal from './components/PublicPortal';
-import ApplicationForm from './components/ApplicationForm';
-import ApplicationSuccess from './components/ApplicationSuccess';
-import StudentPortal from './components/StudentPortal';
-import AdminPortal from './components/AdminPortal';
-import TeacherPortal from './components/TeacherPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role } from './lib/appwrite';
+
+// Lazy loading des gros composants pour le Code Splitting
+const PublicPortal = lazy(() => import('./components/PublicPortal'));
+const ApplicationForm = lazy(() => import('./components/ApplicationForm'));
+const ApplicationSuccess = lazy(() => import('./components/ApplicationSuccess'));
+const StudentPortal = lazy(() => import('./components/StudentPortal'));
+const AdminPortal = lazy(() => import('./components/AdminPortal'));
+const TeacherPortal = lazy(() => import('./components/TeacherPortal'));
+const PasswordReset = lazy(() => import('./components/PasswordReset'));
 
 export type ActiveTab =
   | 'home'
@@ -633,6 +636,14 @@ export default function App() {
       )}
 
       <main className={`transition-all duration-300 w-full ${isDashboardLayout ? 'lg:pl-[280px]' : ''}`}>
+        <Suspense fallback={
+          <div className="flex-1 min-h-[50vh] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-semibold text-text-secondary animate-pulse">Chargement en cours...</p>
+            </div>
+          </div>
+        }>
         {/* PUBLIC WEBPAGE PORTAL */}
         {PUBLIC_TABS.includes(activeTab) && (
           <PublicPortal
@@ -742,6 +753,7 @@ export default function App() {
             programs={programs}
           />
         )}
+        </Suspense>
       </main>
     </div>
   );
