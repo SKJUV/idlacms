@@ -19,7 +19,7 @@ import {
   LockIcon,
   FileTextIcon,
 } from './Icons';
-import { Program, NewsArticle, Testimonial } from '../types';
+import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -42,18 +42,77 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Public Form Modal state
+  const [activeFormModal, setActiveFormModal] = useState<CustomForm | null>(null);
+  const [activeFormValues, setActiveFormValues] = useState<Record<string, any>>({});
+  const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
+
+  const handleOpenFormModal = (formId: string) => {
+    try {
+      const savedForms: CustomForm[] = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
+      const targetForm = savedForms.find((f) => f.id === formId);
+      if (targetForm) {
+        setActiveFormModal(targetForm);
+        setActiveFormValues({});
+        setFormSubmittedSuccess(false);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#form-')) {
+      const formId = hash.replace('#form-', '');
+      handleOpenFormModal(formId);
+    }
+  }, []);
+
+  const handlePublicFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!activeFormModal) return;
+
+    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || 'Visiteur';
+    const respondentEmail = activeFormValues['Adresse e-mail'] || activeFormValues['Email'] || activeFormValues['E-mail'] || '';
+
+    const newResponse: CustomFormResponse = {
+      id: `resp-${Date.now()}`,
+      formId: activeFormModal.id,
+      formTitle: activeFormModal.title,
+      newsId: selectedArticle?.id,
+      newsTitle: selectedArticle?.title,
+      submittedAt: new Date().toLocaleDateString('fr-FR', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      }),
+      respondentName,
+      respondentEmail,
+      data: activeFormValues
+    };
+
+    try {
+      const existing: CustomFormResponse[] = JSON.parse(localStorage.getItem('idla_form_responses') || '[]');
+      localStorage.setItem('idla_form_responses', JSON.stringify([newResponse, ...existing]));
+    } catch (err) {}
+
+    setFormSubmittedSuccess(true);
+  };
+
   // Fermer la modal avec Echap
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedArticle(null); };
+    const handler = (e: KeyboardEvent) => { 
+      if (e.key === 'Escape') {
+        setSelectedArticle(null);
+        setActiveFormModal(null);
+      }
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
   // Bloquer le scroll du body quand la modal est ouverte
   useEffect(() => {
-    document.body.style.overflow = selectedArticle ? 'hidden' : '';
+    document.body.style.overflow = (selectedArticle || activeFormModal) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [selectedArticle]);
+  }, [selectedArticle, activeFormModal]);
 
   const handleNewsletterSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -914,22 +973,42 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <p className="text-[#45464e] dark:text-gray-300 text-sm leading-relaxed">
                   {selectedArticle.description}
                 </p>
-                {/* Contenu étendu simulé */}
-                <div className="space-y-4 text-sm text-[#45464e] dark:text-gray-400 leading-relaxed border-t border-[#c6c6cf]/40 pt-5">
-                  <p>
-                    L'International Distance Learning Academy (IDLA) poursuit son engagement envers l'excellence académique et le développement des talents africains. Cette actualité reflète notre vision d'une éducation accessible, rigoureuse et internationalement reconnue.
-                  </p>
-                  <p>
-                    Nos programmes sont conçus pour répondre aux besoins actuels du marché professionnel, avec un corps professoral de renommée internationale et des partenariats stratégiques qui ouvrent des portes à nos diplômés dans le monde entier.
-                  </p>
-                  <p>
-                    Pour toute information complémentaire, n'hésitez pas à contacter notre service des admissions à l'adresse{' '}
-                    <a href="mailto:admission@idlaacademy.online" className="text-brand-primary font-semibold hover:underline">
-                      admission@idlaacademy.online
-                    </a>{' '}
-                    ou via WhatsApp au <span className="font-semibold">+237 680 548 221</span>.
-                  </p>
-                </div>
+                {/* Dynamic attached form banner inside article */}
+                {selectedArticle.formId && (
+                  <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-5 space-y-3 mt-4">
+                    <div className="flex items-center gap-2 text-brand-primary font-bold text-sm">
+                      <FileTextIcon className="w-5 h-5" />
+                      <span>Formulaire officiel rattaché à cette actualité</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">
+                      Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations.
+                    </p>
+                    <button
+                      onClick={() => handleOpenFormModal(selectedArticle.formId!)}
+                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
+                    >
+                      <FileTextIcon className="w-4 h-4" />
+                      Remplir le formulaire en ligne
+                    </button>
+                  </div>
+                )}
+
+                {selectedArticle.formUrl && (
+                  <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-5 space-y-3 mt-4">
+                    <div className="flex items-center gap-2 text-sky-600 font-bold text-sm">
+                      <FileTextIcon className="w-5 h-5" />
+                      <span>Lien externe de formulaire</span>
+                    </div>
+                    <a
+                      href={selectedArticle.formUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow"
+                    >
+                      Accéder au formulaire externe ↗
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Footer de la modal */}
@@ -942,6 +1021,193 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   Fermer
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODALE PUBLIQUE : Formulaire sur mesure interactif ── */}
+        {activeFormModal && (
+          <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md" onClick={() => setActiveFormModal(null)}>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-border-primary" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-primary">
+                <div>
+                  <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
+                    <FileTextIcon className="w-5 h-5 text-brand-primary" /> {activeFormModal.title}
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-0.5">{activeFormModal.description}</p>
+                </div>
+                <button onClick={() => setActiveFormModal(null)} className="text-text-secondary hover:text-text-primary cursor-pointer p-1">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {formSubmittedSuccess ? (
+                <div className="p-8 text-center space-y-4 my-auto">
+                  <CheckCircle2 className="w-14 h-14 text-brand-primary mx-auto" />
+                  <h4 className="font-bold text-xl text-text-primary">Formulaire transmis avec succès !</h4>
+                  <p className="text-sm text-text-secondary max-w-md mx-auto">
+                    Merci pour votre réponse. Vos informations ont bien été enregistrées et transmises à l'administration académique IDLA.
+                  </p>
+                  <button
+                    onClick={() => setActiveFormModal(null)}
+                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer shadow"
+                  >
+                    Fermer la fenêtre
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handlePublicFormSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
+                  {activeFormModal.fields.map((f) => {
+                    const val = activeFormValues[f.label] || '';
+                    return (
+                      <div key={f.id} className="space-y-1.5">
+                        <label className="text-xs font-bold text-text-primary flex items-center justify-between">
+                          <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
+                          {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
+                        </label>
+
+                        {/* Input text */}
+                        {f.type === 'text' && (
+                          <input
+                            type="text"
+                            required={f.required}
+                            value={val}
+                            placeholder={f.placeholder || ''}
+                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                          />
+                        )}
+
+                        {/* Textarea */}
+                        {f.type === 'textarea' && (
+                          <textarea
+                            rows={3}
+                            required={f.required}
+                            value={val}
+                            placeholder={f.placeholder || ''}
+                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                          />
+                        )}
+
+                        {/* Number */}
+                        {f.type === 'number' && (
+                          <input
+                            type="number"
+                            required={f.required}
+                            value={val}
+                            placeholder={f.placeholder || ''}
+                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                          />
+                        )}
+
+                        {/* Date */}
+                        {f.type === 'date' && (
+                          <input
+                            type="date"
+                            required={f.required}
+                            value={val}
+                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                          />
+                        )}
+
+                        {/* Select */}
+                        {f.type === 'select' && (
+                          <select
+                            required={f.required}
+                            value={val}
+                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
+                          >
+                            <option value="">-- Sélectionnez une option --</option>
+                            {(f.options || []).map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        )}
+
+                        {/* Radio */}
+                        {f.type === 'radio' && (
+                          <div className="space-y-1.5 pt-1">
+                            {(f.options || []).map((opt) => (
+                              <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={f.id}
+                                  required={f.required && !val}
+                                  checked={val === opt}
+                                  onChange={() => setActiveFormValues({ ...activeFormValues, [f.label]: opt })}
+                                  className="w-4 h-4 text-brand-primary accent-brand-primary"
+                                />
+                                {opt}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Checkbox */}
+                        {f.type === 'checkbox' && (
+                          <div className="space-y-1.5 pt-1">
+                            {(f.options || ['Oui']).map((opt) => {
+                              const currArr: string[] = Array.isArray(val) ? val : [];
+                              const checked = currArr.includes(opt);
+                              return (
+                                <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      const next = e.target.checked
+                                        ? [...currArr, opt]
+                                        : currArr.filter((item) => item !== opt);
+                                      setActiveFormValues({ ...activeFormValues, [f.label]: next });
+                                    }}
+                                    className="w-4 h-4 text-brand-primary rounded accent-brand-primary"
+                                  />
+                                  {opt}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* File Upload */}
+                        {f.type === 'file' && (
+                          <input
+                            type="file"
+                            required={f.required}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setActiveFormValues({ ...activeFormValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                              }
+                            }}
+                            className="w-full text-xs text-text-secondary border border-border-primary rounded-lg p-2 bg-bg-primary cursor-pointer"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div className="pt-4 border-t border-border-primary flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFormModal(null)}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
+                    >
+                      <Send className="w-4 h-4" /> Soumettre le formulaire
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}

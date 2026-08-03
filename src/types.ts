@@ -63,6 +63,37 @@ export interface NewsArticle {
   category: 'Événements' | 'Académique' | 'Partenariats' | 'Annonces' | 'Alumni';
   image: string;
   isFeatured?: boolean;
+  formId?: string;
+  formUrl?: string;
+}
+
+export interface CustomFormField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'number' | 'select' | 'radio' | 'checkbox' | 'date' | 'file';
+  required: boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
+export interface CustomForm {
+  id: string;
+  title: string;
+  description: string;
+  fields: CustomFormField[];
+  createdAt: string;
+}
+
+export interface CustomFormResponse {
+  id: string;
+  formId: string;
+  formTitle: string;
+  newsId?: string;
+  newsTitle?: string;
+  submittedAt: string;
+  respondentName?: string;
+  respondentEmail?: string;
+  data: Record<string, any>;
 }
 
 export interface Testimonial {
