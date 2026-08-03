@@ -208,6 +208,7 @@ export default function StudentPortal({
   const [applyResumeFile, setApplyResumeFile] = useState<File | null>(null);
   const [applyError, setApplyError] = useState('');
   const [applySuccessProgram, setApplySuccessProgram] = useState<string | null>(null);
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
   // ── Sessions / Rentrées Universitaires gérées par l'Administrateur ──
   const [availableSessions, setAvailableSessions] = useState<AcademicSession[]>(() => {

@@ -8,7 +8,7 @@ import StudentPortal from './components/StudentPortal';
 import AdminPortal from './components/AdminPortal';
 import TeacherPortal from './components/TeacherPortal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role } from './lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role as AppwriteRole } from './lib/appwrite';
 
 export type ActiveTab =
   | 'home'
@@ -428,7 +428,7 @@ export default function App() {
                   image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
                   isNew: !!lp.isNew,
                 },
-                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+                [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
               ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
             }
           }

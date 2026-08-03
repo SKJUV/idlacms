@@ -105,6 +105,7 @@ export default function PreRegistrations({
   // Données dérivées
   const selected = preRegistrations.find((p) => p.id === selectedPreRegId) || null;
   const candidateApps = selected ? preRegistrations.filter((p) => p.email === selected.email) : [];
+  const isRegisteredOnly = selected ? !candidateApps.some((a) => a.program && a.program !== 'Inscription seule') : false;
 
   // Charger documents Appwrite et chat quand on ouvre un dossier
   useEffect(() => {
@@ -171,7 +172,7 @@ export default function PreRegistrations({
     if (!selected || !manualEnrollProgram) return;
     setIsEnrollingManual(true);
     try {
-      const blankApp = selected.applications.find((a: any) => !a.program || a.program === 'Inscription seule');
+      const blankApp = candidateApps.find((a) => !a.program || a.program === 'Inscription seule');
       let updatedOrNewId = `app_${Date.now()}`;
       if (blankApp) {
         updatedOrNewId = blankApp.id;
@@ -205,7 +206,7 @@ export default function PreRegistrations({
         }
       } else {
         const newApp: PreRegistration = {
-          ...selected.applications[0],
+          ...selected,
           id: updatedOrNewId,
           program: manualEnrollProgram,
           motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
@@ -347,7 +348,7 @@ export default function PreRegistrations({
             </div>
 
             {/* Notification & Inscription Manuelle pour candidat sans cours */}
-            {selected.isRegisteredOnly && (
+            {isRegisteredOnly && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
