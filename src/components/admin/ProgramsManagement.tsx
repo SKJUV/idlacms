@@ -267,10 +267,10 @@ export default function ProgramsManagement({
             );
             setCloudSuccess("Nouveau programme créé en ligne (catégorie Cloud ajustée automatiquement sur 'Tech'/'Management' pour compatibilité avec l'ancien schéma Appwrite de la base).");
           } catch (retryErr: any) {
-            setCloudError("⚠️ Le Cloud Appwrite a refusé l'ajout (" + (retryErr.message || err.message) + "). Pas de panique : le programme est sauvegardé en toute sécurité dans votre stockage local !");
+            setCloudError("Le Cloud Appwrite a refusé l'ajout (" + (retryErr.message || err.message) + "). Pas de panique : le programme est sauvegardé en toute sécurité dans votre stockage local !");
           }
         } else {
-          setCloudError("⚠️ Le Cloud Appwrite a refusé l'ajout (" + (err.message || "Erreur réseau/permissions") + "). Pas de panique : le programme est sauvegardé et visible dans votre stockage local !");
+          setCloudError("Le Cloud Appwrite a refusé l'ajout (" + (err.message || "Erreur réseau/permissions") + "). Pas de panique : le programme est sauvegardé et visible dans votre stockage local !");
         }
       }
     }
@@ -763,9 +763,9 @@ export default function ProgramsManagement({
                     onChange={(e) => setNewSessionStatus(e.target.value as any)}
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e] cursor-pointer"
                   >
-                    <option value="ouverte">🟢 Ouverte aux candidatures</option>
-                    <option value="bientot">🟡 Bientôt ouverte</option>
-                    <option value="fermee">🔴 Clôturée / Fermée</option>
+                    <option value="ouverte">Ouverte aux candidatures</option>
+                    <option value="bientot">Bientôt ouverte</option>
+                    <option value="fermee">Clôturée / Fermée</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">

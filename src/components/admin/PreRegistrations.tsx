@@ -468,7 +468,7 @@ export default function PreRegistrations({
               {confirmAction && currentApp && (
                 <div className="bg-slate-50 border-2 border-amber-400 rounded-xl p-4 space-y-3">
                   <p className="text-sm font-bold text-[#00020e]">
-                    {confirmAction === 'accept' ? '✅ Confirmer l\'admission' : '❌ Confirmer le refus'} pour :<br />
+                    {confirmAction === 'accept' ? 'Confirmer l\'admission' : 'Confirmer le refus'} pour :<br />
                     <span className="text-brand-primary">{currentApp.program}</span>
                   </p>
                   <p className="text-xs text-slate-500">Cette action sera enregistrée dans la base de données et notifiée au candidat.</p>
@@ -585,7 +585,7 @@ export default function PreRegistrations({
                   { step: 1, label: 'Dossier déposé', desc: `Par ${selected.name}`, done: true },
                   { step: 2, label: 'En cours d\'analyse', desc: 'Examen académique des pièces', done: currentApp?.status === 'In Review' || currentApp?.status === 'Accepted' },
                   { step: 3, label: 'Entretien de motivation', desc: 'Jury académique IDLA', done: currentApp?.status === 'Accepted' },
-                  { step: 4, label: 'Décision finale', desc: currentApp?.status === 'Accepted' ? '✅ Admis — félicitations !' : currentApp?.status === 'Rejected' ? '❌ Candidature non retenue' : 'En attente', done: currentApp?.status === 'Accepted' || currentApp?.status === 'Rejected' },
+                  { step: 4, label: 'Décision finale', desc: currentApp?.status === 'Accepted' ? 'Admis — félicitations !' : currentApp?.status === 'Rejected' ? 'Candidature non retenue' : 'En attente', done: currentApp?.status === 'Accepted' || currentApp?.status === 'Rejected' },
                 ].map(({ step, label, desc, done }) => (
                   <div key={step} className="relative mb-5 last:mb-0 pl-5">
                     <div className={`absolute -left-3 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold ${done ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-[#c6c6cf] text-slate-400'}`}>
@@ -725,7 +725,7 @@ export default function PreRegistrations({
                     <div className="flex flex-wrap gap-1.5 items-center">
                       {c.isRegisteredOnly ? (
                         <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300/60 px-2.5 py-1 rounded-md text-[10px] font-bold">
-                          ⚡ Inscrit au portail IDLA (En attente d'inscription à un cours)
+                          <AlertCircleIcon className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Inscrit au portail IDLA (En attente d'inscription à un cours)
                         </span>
                       ) : (
                         c.courseApplications.map((app: any) => {

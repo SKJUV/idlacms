@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2Icon, ArrowRightIcon, ArrowLeftIcon, MailIcon, FileTextIcon } from './Icons';
+import { CheckCircle2Icon, ArrowRightIcon, ArrowLeftIcon, MailIcon, FileTextIcon, LockIcon } from './Icons';
 
 interface ApplicationSuccessProps {
   candidateName: string;
@@ -93,8 +93,8 @@ export default function ApplicationSuccess({
 
         {tempPassword && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 text-left space-y-3">
-            <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
-              🔑 Vos identifiants de connexion :
+            <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <LockIcon className="w-4 h-4 text-emerald-600" /> Vos identifiants de connexion :
             </h4>
             <div className="space-y-2 text-xs">
               <p className="text-text-secondary">
@@ -104,8 +104,8 @@ export default function ApplicationSuccess({
                 <div>Email : <span className="font-bold text-brand-primary">{email || 'saisi lors de l\'inscription'}</span></div>
                 <div>Mot de passe : <span className="font-bold text-emerald-600 dark:text-emerald-400">Celui choisi lors de l'inscription ({tempPassword.replace(/./g, '•')})</span></div>
               </div>
-              <p className="text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
-                🔒 Vous pouvez cliquer sur "Accéder à mon espace" ci-dessous pour vous connecter directement.
+              <p className="text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+                <LockIcon className="w-3.5 h-3.5 shrink-0" /> Vous pouvez cliquer sur "Accéder à mon espace" ci-dessous pour vous connecter directement.
               </p>
             </div>
           </div>

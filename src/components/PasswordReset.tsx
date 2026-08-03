@@ -177,8 +177,8 @@ export default function PasswordReset({ onBackToHome, onGoToLogin }: PasswordRes
               {newPassword.length > 0 && (
                 <p className="text-[10px] text-text-secondary">
                   {newPassword.length < 8 ? 'Trop court' :
-                   newPassword.length >= 12 && /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword) ? '✅ Très sécurisé' :
-                   newPassword.length >= 8 && /[0-9]/.test(newPassword) ? '🔒 Correct' : '⚠️ Ajoutez des chiffres et majuscules'}
+                   newPassword.length >= 12 && /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword) ? 'Très sécurisé' :
+                   newPassword.length >= 8 && /[0-9]/.test(newPassword) ? 'Correct' : 'Ajoutez des chiffres et majuscules'}
                 </p>
               )}
             </div>
@@ -204,8 +204,8 @@ export default function PasswordReset({ onBackToHome, onGoToLogin }: PasswordRes
                   required
                 />
                 {confirmPassword.length > 0 && (
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs">
-                    {confirmPassword === newPassword ? '✅' : '❌'}
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs flex items-center">
+                    {confirmPassword === newPassword ? <CheckCircle2Icon className="w-4 h-4 text-emerald-500" /> : <AlertCircleIcon className="w-4 h-4 text-rose-500" />}
                   </span>
                 )}
               </div>

@@ -5,7 +5,7 @@ import {
   LinkedinIcon, DownloadIcon, FilterIcon, StarIcon, CalendarIcon, SearchIcon,
   BellIcon, SaveIcon, ClockIcon, BookOpenIcon,
   ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon, SettingsIcon,
-  SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon,
+  SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon, GraduationCapIcon,
 } from './Icons';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
 import {
@@ -870,7 +870,9 @@ export default function StudentPortal({
               <button onClick={() => setShowReset(false)} className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-primary transition-colors mb-4 border border-border-primary px-3 py-1 rounded cursor-pointer">
                 <ArrowLeftIcon className="w-3 h-3" /> Retour à la connexion
               </button>
-              <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center text-2xl mx-auto">🔑</div>
+              <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center text-brand-primary mx-auto">
+                <LockIcon className="w-6 h-6" />
+              </div>
               <h1 className="font-sans font-bold text-2xl text-text-primary">Mot de passe oublié</h1>
               <p className="text-text-secondary text-xs">Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
             </div>
@@ -917,7 +919,9 @@ export default function StudentPortal({
             <button onClick={onBackToHome} className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-primary transition-colors mb-4 border border-border-primary px-3 py-1 rounded cursor-pointer">
               <ArrowLeftIcon className="w-3 h-3" /> Retour au site public
             </button>
-            <div className="w-12 h-12 bg-brand-light text-brand-primary rounded-xl flex items-center justify-center font-bold text-2xl mx-auto shadow-sm">📚</div>
+            <div className="w-12 h-12 bg-brand-light text-brand-primary rounded-xl flex items-center justify-center font-bold text-2xl mx-auto shadow-sm">
+              <BookOpenIcon className="w-6 h-6" />
+            </div>
             <h1 className="font-sans font-bold text-2xl text-text-primary">Espace Étudiant</h1>
             <p className="text-text-secondary text-xs">Accédez à vos cours, candidatures et progression</p>
           </div>
@@ -969,7 +973,9 @@ export default function StudentPortal({
           <LockIcon className="w-4 h-4" />
         </div>
         <div>
-          <p className="font-bold text-sm text-amber-700 dark:text-amber-400">⚠️ Mot de passe temporaire actif</p>
+          <p className="font-bold text-sm text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+            <AlertCircleIcon className="w-4 h-4 text-amber-600 shrink-0" /> Mot de passe temporaire actif
+          </p>
           <p className="text-xs text-text-secondary mt-0.5">Pour sécuriser votre compte, modifiez votre mot de passe dès maintenant.</p>
         </div>
       </div>
@@ -990,7 +996,7 @@ export default function StudentPortal({
             <div className="flex items-center justify-between border-b border-border-primary/40 pb-3">
               <div>
                 <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
-                  🎓 Soumettre ma candidature
+                  <GraduationCapIcon className="w-5 h-5 text-brand-primary" /> Soumettre ma candidature
                 </h3>
                 <p className="text-[11px] font-semibold text-brand-primary mt-0.5">
                   {applyStep === 1 && "Étape 1 sur 3 — Choix de session & Motivation"}
@@ -1076,8 +1082,9 @@ export default function StudentPortal({
             {/* ── Étape 2 : Dépôt des documents ── */}
             {applyStep === 2 && (
               <div className="space-y-4 text-xs text-text-secondary">
-                <div className="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-800 dark:text-amber-300 text-[11px] font-medium leading-relaxed">
-                  📎 Pour que votre admissibilité soit prononcée par le jury, veuillez joindre vos justificatifs (formats PDF, JPG ou PNG acceptés, max 10 Mo par fichier).
+                <div className="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-800 dark:text-amber-300 text-[11px] font-medium leading-relaxed flex items-start gap-2">
+                  <AlertCircleIcon className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>Pour que votre admissibilité soit prononcée par le jury, veuillez joindre vos justificatifs (formats PDF, JPG ou PNG acceptés, max 10 Mo par fichier).</span>
                 </div>
 
                 <div className="space-y-3">
@@ -1085,7 +1092,7 @@ export default function StudentPortal({
                   <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                        🪪 Pièce d'identité (CNI ou Passeport) *
+                        <FileTextIcon className="w-3.5 h-3.5 text-brand-primary" /> Pièce d'identité (CNI ou Passeport) *
                       </span>
                       {applyCniFile && (
                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -1105,7 +1112,7 @@ export default function StudentPortal({
                   <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                        🎓 Dernier Diplôme obtenu ou Attestation *
+                        <GraduationCapIcon className="w-3.5 h-3.5 text-brand-primary" /> Dernier Diplôme obtenu ou Attestation *
                       </span>
                       {applyDiplomaFile && (
                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -1125,7 +1132,7 @@ export default function StudentPortal({
                   <div className="p-3 bg-bg-primary border border-border-primary rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                        📄 CV ou Relevés de notes <span className="text-text-secondary font-normal">(Optionnel)</span>
+                        <FileTextIcon className="w-3.5 h-3.5 text-brand-primary" /> CV ou Relevés de notes <span className="text-text-secondary font-normal">(Optionnel)</span>
                       </span>
                       {applyResumeFile && (
                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -1143,8 +1150,9 @@ export default function StudentPortal({
                 </div>
 
                 {applyError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
-                    ⚠️ {applyError}
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px] flex items-center gap-1.5">
+                    <AlertCircleIcon className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>{applyError}</span>
                   </div>
                 )}
 
@@ -1176,7 +1184,9 @@ export default function StudentPortal({
             {applyStep === 3 && (
               <div className="space-y-4 text-xs text-text-secondary">
                 <div className="bg-bg-primary p-4 rounded-xl border border-border-primary space-y-2.5">
-                  <h4 className="font-bold text-text-primary text-xs border-b border-border-primary/40 pb-2">📋 Récapitulatif de candidature</h4>
+                  <h4 className="font-bold text-text-primary text-xs border-b border-border-primary/40 pb-2 flex items-center gap-1.5">
+                    <FileTextIcon className="w-3.5 h-3.5 text-brand-primary" /> Récapitulatif de candidature
+                  </h4>
                   <div className="grid grid-cols-3 gap-1 py-1">
                     <span className="font-semibold text-text-secondary">Candidat :</span>
                     <span className="col-span-2 font-bold text-text-primary">{profile.name} ({profile.email})</span>
@@ -1192,9 +1202,9 @@ export default function StudentPortal({
                   <div className="grid grid-cols-3 gap-1 py-1">
                     <span className="font-semibold text-text-secondary">Pièces jointes :</span>
                     <div className="col-span-2 space-y-1 font-mono text-[11px] text-text-primary">
-                      <div>✅ CNI : <span className="font-bold">{applyCniFile?.name}</span></div>
-                      <div>✅ Diplôme : <span className="font-bold">{applyDiplomaFile?.name}</span></div>
-                      {applyResumeFile && <div>✅ Optionnel : <span className="font-bold">{applyResumeFile.name}</span></div>}
+                      <div className="flex items-center gap-1"><CheckCircle2Icon className="w-3 h-3 text-emerald-500" /> CNI : <span className="font-bold">{applyCniFile?.name}</span></div>
+                      <div className="flex items-center gap-1"><CheckCircle2Icon className="w-3 h-3 text-emerald-500" /> Diplôme : <span className="font-bold">{applyDiplomaFile?.name}</span></div>
+                      {applyResumeFile && <div className="flex items-center gap-1"><CheckCircle2Icon className="w-3 h-3 text-emerald-500" /> Optionnel : <span className="font-bold">{applyResumeFile.name}</span></div>}
                     </div>
                   </div>
                 </div>
@@ -1207,8 +1217,9 @@ export default function StudentPortal({
                 </label>
 
                 {applyError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px]">
-                    ⚠️ {applyError}
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 font-semibold text-[11px] flex items-center gap-1.5">
+                    <AlertCircleIcon className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>{applyError}</span>
                   </div>
                 )}
 
@@ -1225,7 +1236,7 @@ export default function StudentPortal({
                     disabled={isSubmittingApplication}
                     className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
-                    {isSubmittingApplication ? 'Envoi en cours...' : 'Transmettre mon dossier au jury 🚀'}
+                    {isSubmittingApplication ? 'Envoi en cours...' : 'Transmettre mon dossier au jury'}
                   </button>
                 </div>
               </div>
@@ -1249,7 +1260,7 @@ export default function StudentPortal({
             </div>
             <div className="bg-bg-primary p-4 rounded-xl border border-border-primary/40 text-left text-xs text-text-secondary space-y-2">
               <p className="font-bold text-text-primary flex items-center gap-1.5">
-                📋 Ce qui va se passer ensuite :
+                <FileTextIcon className="w-4 h-4 text-brand-primary shrink-0" /> Ce qui va se passer ensuite :
               </p>
               <ul className="list-disc list-inside space-y-1.5 leading-relaxed">
                 <li>Votre conseiller pédagogique va étudier votre candidature.</li>
@@ -1843,7 +1854,7 @@ export default function StudentPortal({
                           <div className="bg-bg-primary p-4 flex items-center justify-between border-b border-border-primary">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center border border-brand-primary/30 shrink-0">
-                                🎓
+                                <GraduationCapIcon className="w-5 h-5 text-brand-primary" />
                               </div>
                               <div>
                                 <h4 className="font-bold text-xs text-text-primary">Sophie Vallet</h4>
@@ -2238,7 +2249,9 @@ export default function StudentPortal({
                   <LockIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-amber-700 dark:text-amber-400">⚠️ Modification du mot de passe obligatoire</h3>
+                  <h3 className="font-bold text-base text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                    <AlertCircleIcon className="w-4 h-4 text-amber-600 shrink-0" /> Modification du mot de passe obligatoire
+                  </h3>
                   <p className="text-xs text-text-secondary mt-1">Votre compte utilise encore un mot de passe temporaire. Modifiez-le ci-dessous pour sécuriser votre accès.</p>
                 </div>
               </div>

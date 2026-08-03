@@ -13,6 +13,11 @@ import {
   SendIcon as Send,
   HeartHandshakeIcon as HeartHandshake,
   CheckCircle2Icon as CheckCircle2,
+  GraduationCapIcon,
+  GlobeIcon,
+  UploadCloudIcon,
+  LockIcon,
+  FileTextIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial } from '../types';
 
@@ -423,7 +428,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h3 className="text-4xl font-extrabold text-[#00020e] flex items-center gap-3">
-                    🎓 Nos Certifications Internationales
+                    <GraduationCapIcon className="w-9 h-9 text-brand-primary" /> Nos Certifications Internationales
                   </h3>
                   <p className="text-base text-[#45464e] mt-2">
                     Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
@@ -440,19 +445,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {/* Grid of Certification shortcuts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { title: "Cisco CCNA-CCNP", desc: "Administration des réseaux et télécommunications d'entreprise.", icon: "🌐" },
-                  { title: "AWS Solutions Architect", desc: "Conception et déploiement d'architectures cloud résilientes.", icon: "☁️" },
-                  { title: "CompTIA Security+", desc: "Fondamentaux de la cybersécurité et protection des données.", icon: "🔒" },
-                  { title: "Project Management (PMP)", desc: "Gestion de projets complexes avec les standards du PMI.", icon: "📋" }
-                ].map((cert) => (
+                  { title: "Cisco CCNA-CCNP", desc: "Administration des réseaux et télécommunications d'entreprise.", Icon: GlobeIcon },
+                  { title: "AWS Solutions Architect", desc: "Conception et déploiement d'architectures cloud résilientes.", Icon: UploadCloudIcon },
+                  { title: "CompTIA Security+", desc: "Fondamentaux de la cybersécurité et protection des données.", Icon: LockIcon },
+                  { title: "Project Management (PMP)", desc: "Gestion de projets complexes avec les standards du PMI.", Icon: FileTextIcon }
+                ].map(({ title, desc, Icon }) => (
                   <div 
-                    key={cert.title}
+                    key={title}
                     onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
                     className="p-7 bg-slate-50 border border-[#c6c6cf]/30 rounded-2xl hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all cursor-pointer group shadow-sm hover:shadow-md"
                   >
-                    <span className="text-4xl mb-4 block">{cert.icon}</span>
-                    <h4 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors">{cert.title}</h4>
-                    <p className="text-sm text-text-secondary mt-2 leading-relaxed">{cert.desc}</p>
+                    <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors">{title}</h4>
+                    <p className="text-sm text-text-secondary mt-2 leading-relaxed">{desc}</p>
                   </div>
                 ))}
               </div>

@@ -598,8 +598,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               {/* Sub-dropdown option for Cisco/AWS/CompTIA when choosing International Certification */}
               {selectedProgram === "International Professional Certification Program" && (
                 <div className="space-y-1.5 p-3.5 bg-brand-primary/5 border border-brand-primary/20 rounded-xl animate-fadeIn">
-                  <label className="text-xs font-bold text-brand-primary uppercase tracking-wider block">
-                    🎯 Spécialité de Certification Choisie *
+                  <label className="text-xs font-bold text-brand-primary uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4" /> Spécialité de Certification Choisie *
                   </label>
                   <select
                     value={selectedCertOption}
@@ -652,8 +652,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               {/* Password definition section */}
               {!isExistingUser && (
                 <div className="pt-4 border-t border-border-primary/40 space-y-4">
-                  <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider">
-                    🔐 Définissez votre mot de passe de connexion
+                  <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4" /> Définissez votre mot de passe de connexion
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
