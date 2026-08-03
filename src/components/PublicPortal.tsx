@@ -221,59 +221,59 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Stats Counter Bar */}
-        <section className="py-12 bg-white border-y border-[#c6c6cf]">
+        <section className="py-12 bg-bg-secondary border-y border-border-primary">
           <div className="max-w-[1440px] mx-auto px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-xs text-[#45464e] uppercase font-bold tracking-widest mb-1">Alumni Actifs</div>
-              <div className="text-3xl font-bold text-[#00020e]">5,000+</div>
+              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Alumni Actifs</div>
+              <div className="text-3xl font-bold text-text-primary">5,000+</div>
             </div>
             <div>
-              <div className="text-xs text-[#45464e] uppercase font-bold tracking-widest mb-1">Programmes</div>
-              <div className="text-3xl font-bold text-[#00020e]">24</div>
+              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Programmes</div>
+              <div className="text-3xl font-bold text-text-primary">24</div>
             </div>
             <div>
-              <div className="text-xs text-[#45464e] uppercase font-bold tracking-widest mb-1">Pays Représentés</div>
-              <div className="text-3xl font-bold text-[#00020e]">8</div>
+              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Pays Représentés</div>
+              <div className="text-3xl font-bold text-text-primary">8</div>
             </div>
             <div>
-              <div className="text-xs text-[#45464e] uppercase tracking-wider mb-1">Partenaires</div>
-              <div className="text-3xl font-bold text-[#00020e]">120+</div>
+              <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">Partenaires</div>
+              <div className="text-3xl font-bold text-text-primary">120+</div>
             </div>
           </div>
         </section>
 
         {/* Section interactive : Pourquoi choisir l'IDLA ? (3 Piliers d'Excellence) */}
-        <section className="py-20 px-6 md:px-12 bg-gradient-to-b from-white via-[#eff4ff]/30 to-white">
+        <section className="py-20 px-6 md:px-12 bg-gradient-to-b from-bg-primary via-brand-primary/5 to-bg-primary">
           <div className="max-w-[1440px] mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <span className="text-xs font-bold uppercase tracking-widest text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full inline-block mb-3">
                 L'Expérience Académique IDLA
               </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#00020e] leading-tight">
-                Pourquoi l'IDLA est le Choix n°1 en Afrique   ?
+              <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary leading-tight">
+                Pourquoi l'IDLA est le Choix n°1 en Afrique ?
               </h2>
-              <p className="text-[#45464e] mt-3 text-base">
+              <p className="text-text-secondary mt-3 text-base">
                 Une pédagogie flexible et innovante qui propulse votre carrière vers les sphères décisionnelles internationales.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Carte 1 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <BookOpen className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
+                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
                     Pédagogie d'Élite & Flexible
                   </h3>
-                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
                     Accédez à des cours interactifs en direct ou à la demande, conçus par des professeurs et professionnels internationaux prestigieux.
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
                   <span>En savoir plus</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
@@ -283,21 +283,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
 
               {/* Carte 2 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <HeartHandshake className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
+                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
                     Réseau Alumni & Mentorat
                   </h3>
-                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
                     Bénéficiez d'un accompagnement personnalisé par des mentors de haut niveau et intégrez un réseau influent de plus de 5 000 anciens élèves.
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
                   <span>Voir le réseau</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
@@ -307,21 +307,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
 
               {/* Carte 3 */}
-              <div className="group relative bg-white border border-[#c6c6cf]/50 hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
+              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
                 <div>
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 to-sky-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#00020e] mb-3 group-hover:text-brand-primary transition-colors">
+                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
                     Reconnaissance Internationale
                   </h3>
-                  <p className="text-sm text-[#45464e] leading-relaxed mb-6">
+                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
                     Nos cursus sont accrédités et conçus pour répondre aux standards internationaux, vous ouvrant les portes des grandes organisations.
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-gray-100 cursor-pointer"
+                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
                   <span>Découvrir l'accréditation</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
@@ -335,14 +335,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {/* Dynamic soil structure alert card representation / Bento information */}
         <section className="py-16 px-6 md:px-12 max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white border border-[#c6c6cf] rounded-2xl p-8 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-bg-secondary border border-border-primary rounded-2xl p-8 shadow-sm">
             <div className="lg:col-span-4 flex flex-col justify-center">
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="text-2xl font-bold text-[#00020e] leading-snug">Infrastructure et géologie locale</h3>
-              <p className="text-sm text-[#45464e] mt-2 leading-relaxed">
-                IDLA étudie attentivement la structure des sols argilo-sableux d'Afrique   pour adapter ses fondations architecturales éco-responsables de demain.
+              <h3 className="text-2xl font-bold text-text-primary leading-snug">Infrastructure et géologie locale</h3>
+              <p className="text-sm text-text-secondary mt-2 leading-relaxed">
+                IDLA étudie attentivement la structure des sols argilo-sableux d'Afrique pour adapter ses fondations architecturales éco-responsables de demain.
               </p>
               <div className="mt-4 flex items-center gap-2 text-xs font-bold text-brand-primary">
                 <ShieldAlert className="w-4 h-4" />
@@ -350,17 +350,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
             </div>
             <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-6 bg-[#eff4ff] rounded-xl border border-[#e5eeff]">
+              <div className="p-6 bg-brand-primary/5 rounded-xl border border-brand-primary/10">
                 <Flame className="text-brand-primary w-6 h-6 mb-2" />
-                <h4 className="font-bold text-sm text-[#00020e]">Résilience structures</h4>
-                <p className="text-xs text-[#45464e] mt-1 leading-relaxed">
+                <h4 className="font-bold text-sm text-text-primary">Résilience structures</h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
                   Technique de fondation pieu-béton avec drainage intégré pour contrer l'humidité saisonnière équatoriale.
                 </p>
               </div>
-              <div className="p-6 bg-[#eff4ff] rounded-xl border border-[#e5eeff]">
+              <div className="p-6 bg-brand-primary/5 rounded-xl border border-brand-primary/10">
                 <Compass className="text-brand-primary w-6 h-6 mb-2" />
-                <h4 className="font-bold text-sm text-[#00020e]">Éco-Design</h4>
-                <p className="text-xs text-[#45464e] mt-1 leading-relaxed">
+                <h4 className="font-bold text-sm text-text-primary">Éco-Design</h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
                   Lumière naturelle optimisée à 80% pour réduire drastiquement l'empreinte carbone et l'alimentation secteur.
                 </p>
               </div>
@@ -369,12 +369,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Featured programs snippet preview */}
-        <section className="py-16 px-6 md:px-12 bg-white border-t border-[#c6c6cf]">
+        <section className="py-16 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
           <div className="max-w-[1440px] mx-auto">
             <div className="flex justify-between items-end mb-12">
               <div>
-                <h2 className="text-3xl font-bold text-[#00020e]">Nos Filières d'Excellence</h2>
-                <p className="text-sm text-[#45464e] mt-1">Nos certifications internationales.</p>
+                <h2 className="text-3xl font-bold text-text-primary">Nos Filières d'Excellence</h2>
+                <p className="text-sm text-text-secondary mt-1">Nos certifications internationales.</p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
@@ -424,13 +424,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             {/* Nos Certifications Internationales Section */}
-            <div className="mt-16 pt-12 border-t border-[#c6c6cf]/40 space-y-8">
+            <div className="mt-16 pt-12 border-t border-border-primary space-y-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="text-4xl font-extrabold text-[#00020e] flex items-center gap-3">
+                  <h3 className="text-4xl font-extrabold text-text-primary flex items-center gap-3">
                     <GraduationCapIcon className="w-9 h-9 text-brand-primary" /> Nos Certifications Internationales
                   </h3>
-                  <p className="text-base text-[#45464e] mt-2">
+                  <p className="text-base text-text-secondary mt-2">
                     Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
                   </p>
                 </div>
@@ -453,12 +453,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <div 
                     key={title}
                     onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
-                    className="p-7 bg-slate-50 border border-[#c6c6cf]/30 rounded-2xl hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                    className="p-7 bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-2xl transition-all cursor-pointer group shadow-sm hover:shadow-md"
                   >
                     <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <h4 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors">{title}</h4>
+                    <h4 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors">{title}</h4>
                     <p className="text-sm text-text-secondary mt-2 leading-relaxed">{desc}</p>
                   </div>
                 ))}
@@ -641,11 +641,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-xl border border-[#c6c6cf] shadow-sm">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-bg-secondary p-6 rounded-xl border border-border-primary shadow-sm">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input 
-                className="w-full bg-slate-50 border border-[#c6c6cf] rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none" 
+                className="w-full bg-bg-primary border border-border-primary text-text-primary rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none" 
                 placeholder="Rechercher un programme par mot-clé..." 
                 type="text"
                 value={programSearch}
@@ -673,7 +673,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           {filteredPrograms.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPrograms.map((p) => (
-                <div key={p.id} className="bg-white rounded-xl border border-[#c6c6cf] overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
+                <div key={p.id} className="bg-bg-secondary rounded-xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
                   <div className="h-48 w-full relative">
                     <img 
                       className="w-full h-full object-cover" 
@@ -693,15 +693,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <span>{p.category}</span>
                     </div>
 
-                    <h3 className="font-bold text-lg text-[#00020e]">{p.title}</h3>
+                    <h3 className="font-bold text-lg text-text-primary">{p.title}</h3>
                     
-                    <p className="text-xs text-[#45464e] leading-relaxed flex-grow">
+                    <p className="text-xs text-text-secondary leading-relaxed flex-grow">
                       {p.description}
                     </p>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-[#c6c6cf]/30">
-                      <div className="flex items-center gap-1 text-slate-400 text-xs">
-                        <Clock className="w-3.5 h-3.5" />
+                    <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
+                      <div className="flex items-center gap-1 text-text-secondary text-xs">
+                        <Clock className="w-3.5 h-3.5 text-brand-primary" />
                         <span>{p.duration}</span>
                       </div>
                       <button 
@@ -717,9 +717,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               ))}
             </div>
           ) : (
-            <div className="bg-white p-12 text-center rounded-xl border border-[#c6c6cf]">
-              <Search className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500 font-semibold text-sm">Aucun programme ne correspond à votre recherche.</p>
+            <div className="bg-bg-secondary p-12 text-center rounded-xl border border-border-primary">
+              <Search className="w-12 h-12 text-text-secondary/40 mx-auto mb-2" />
+              <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond à votre recherche.</p>
               <button 
                 onClick={() => { setProgramSearch(''); setSelectedProgramType('Tous'); }}
                 className="mt-4 text-brand-primary text-sm font-bold hover:underline cursor-pointer"
@@ -783,7 +783,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {featuredNewsArticle && selectedNewsCategory === 'Tous' && (
                 <article
                   onClick={() => setSelectedArticle(featuredNewsArticle)}
-                  className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-all"
+                  className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-all"
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(featuredNewsArticle)}
@@ -801,12 +801,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <span className="bg-brand-light text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                         {featuredNewsArticle.category}
                       </span>
-                      <span className="text-xs text-slate-400">{featuredNewsArticle.date}</span>
+                      <span className="text-xs text-text-secondary">{featuredNewsArticle.date}</span>
                     </div>
-                    <h2 className="font-bold text-2xl text-[#00020e] group-hover:text-brand-primary transition-colors leading-tight">
+                    <h2 className="font-bold text-2xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight">
                       {featuredNewsArticle.title}
                     </h2>
-                    <p className="text-sm text-[#45464e] mt-3 leading-relaxed">
+                    <p className="text-sm text-text-secondary mt-3 leading-relaxed">
                       {featuredNewsArticle.description}
                     </p>
                     <div className="pt-6">
@@ -827,7 +827,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       tabIndex={0}
                       onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(n)}
                       aria-label={`Lire l'article : ${n.title}`}
-                      className="bg-white border border-[#c6c6cf] rounded-xl overflow-hidden group cursor-pointer hover:shadow-sm transition-all flex flex-col"
+                      className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden group cursor-pointer hover:shadow-sm transition-all flex flex-col"
                     >
                       <div className="aspect-video overflow-hidden">
                         <img 
@@ -839,15 +839,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="bg-[#eff4ff] text-[#0b1c30] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                            <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                               {n.category}
                             </span>
-                            <span className="text-xs text-slate-400">{n.date}</span>
+                            <span className="text-xs text-text-secondary">{n.date}</span>
                           </div>
-                          <h3 className="font-bold text-base text-[#00020e] group-hover:text-brand-primary transition-colors leading-snug">
+                          <h3 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors leading-snug">
                             {n.title}
                           </h3>
-                          <p className="text-xs text-[#45464e] leading-relaxed line-clamp-2">
+                          <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
                             {n.description}
                           </p>
                         </div>
@@ -862,8 +862,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
               ) : (
                 selectedNewsCategory !== 'Tous' && (
-                  <div className="bg-white p-12 text-center rounded-xl border border-[#c6c6cf]">
-                    <p className="text-slate-500 font-semibold text-sm">Aucun article disponible dans cette catégorie.</p>
+                  <div className="bg-bg-secondary p-12 text-center rounded-xl border border-border-primary">
+                    <p className="text-text-secondary font-semibold text-sm">Aucun article disponible dans cette catégorie.</p>
                   </div>
                 )
               )}
@@ -994,26 +994,26 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             {filteredTestimonials.map((t) => (
               <div 
                 key={t.id} 
-                className="bg-white p-6 rounded-xl border border-[#c6c6cf] flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300 shadow-sm"
+                className="bg-bg-secondary p-6 rounded-xl border border-border-primary flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300 shadow-sm"
               >
                 <div className="space-y-4">
                   <span className="material-symbols-outlined text-brand-primary text-4xl block opacity-60">
                     <Quote className="w-8 h-8 text-brand-primary" />
                   </span>
-                  <p className="text-sm text-[#0b1c30] italic leading-relaxed">
+                  <p className="text-sm text-text-primary italic leading-relaxed">
                     "{t.text}"
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 pt-6 mt-6 border-t border-[#c6c6cf]/30">
+                <div className="flex items-center gap-3 pt-6 mt-6 border-t border-border-primary/50">
                   <img 
-                    className="w-12 h-12 rounded-full object-cover border border-[#c6c6cf]" 
+                    className="w-12 h-12 rounded-full object-cover border border-border-primary" 
                     alt={t.name} 
                     src={t.image}
                   />
                   <div>
-                    <h4 className="font-bold text-sm text-[#00020e]">{t.name}</h4>
-                    <p className="text-xs text-slate-400">{t.role} • {t.promo}</p>
+                    <h4 className="font-bold text-sm text-text-primary">{t.name}</h4>
+                    <p className="text-xs text-text-secondary">{t.role} • {t.promo}</p>
                   </div>
                 </div>
               </div>
