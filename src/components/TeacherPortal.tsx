@@ -11,7 +11,6 @@ import {
   MessageSquareIcon
 } from './Icons';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../lib/appwrite';
-import { TeacherScheduleSlot } from '../types';
 
 interface TeacherPortalProps {
   activeTab: 'teacher-dashboard' | 'teacher-schedule' | 'teacher-students';
@@ -130,10 +129,16 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           );
           if (res.documents.length > 0) {
             const userDoc = res.documents[0];
+            let assigned = userDoc.assignedPrograms || [];
+            if (typeof assigned === 'string') {
+              try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+            }
+            if (!Array.isArray(assigned)) assigned = [];
+
             setProfile({
               name: userDoc.name || u.name,
               email: u.email,
-              assignedPrograms: userDoc.assignedPrograms || [],
+              assignedPrograms: assigned,
               scheduleData: userDoc.scheduleData ? JSON.parse(userDoc.scheduleData) : []
             });
             

@@ -284,47 +284,64 @@ export default function StudentPortal({
         setProfile((p) => ({ ...p, email: userEmail, name: resolvedName }));
         setDraftName(resolvedName);
 
+        let loadedApps: any[] = [];
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
-          const res = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.applications,
-            [Query.equal('email', userEmail)]
-          );
-          setApplications(res.documents);
-
-          // Récupérer le téléphone et la nationalité depuis les dossiers existants
-          const existingApp = res.documents.find((a: any) => a.phone || a.nationality);
-          if (existingApp) {
-            setProfile((p) => ({
-              ...p,
-              phone: existingApp.phone || p.phone,
-              nationality: existingApp.nationality || p.nationality,
-            }));
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              [Query.equal('email', userEmail)]
+            );
+            loadedApps = [...res.documents];
+          } catch (err) {
+            console.warn("Erreur chargement candidatures Appwrite:", err);
           }
+        }
 
-          if (APPWRITE_CONFIG.collections.cmsUsers) {
-            try {
-              const teachersRes = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.cmsUsers,
-                [Query.equal('role', 'teacher')]
-              );
-              
-              const schedules: any[] = [];
-              teachersRes.documents.forEach((doc: any) => {
-                if (doc.scheduleData) {
-                  try {
-                    const parsed = JSON.parse(doc.scheduleData);
-                    parsed.forEach((slot: any) => {
-                      schedules.push({ ...slot, teacherName: doc.name });
-                    });
-                  } catch (e) {}
-                }
-              });
-              setTeachersSchedules(schedules);
-            } catch (err) {
-              console.warn("Erreur chargement emplois du temps:", err);
+        // Fusionner candidatures locales (localStorage / inscriptions manuelles)
+        try {
+          const localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+          const userLocal = localApps.filter((a: any) => (a.email || '').toLowerCase().trim() === userEmail);
+          userLocal.forEach((localApp: any) => {
+            if (!loadedApps.some((a) => a.$id === localApp.id || a.id === localApp.id || (a.program === localApp.program && a.program))) {
+              loadedApps.push(localApp);
             }
+          });
+        } catch (e) {}
+
+        setApplications(loadedApps);
+
+        const existingApp = loadedApps.find((a: any) => a.phone || a.nationality);
+        if (existingApp) {
+          setProfile((p) => ({
+            ...p,
+            phone: existingApp.phone || p.phone,
+            nationality: existingApp.nationality || p.nationality,
+          }));
+        }
+
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+          try {
+            const teachersRes = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.cmsUsers,
+              [Query.equal('role', 'teacher')]
+            );
+            
+            const schedules: any[] = [];
+            teachersRes.documents.forEach((doc: any) => {
+              if (doc.scheduleData) {
+                try {
+                  const parsed = JSON.parse(doc.scheduleData);
+                  parsed.forEach((slot: any) => {
+                    schedules.push({ ...slot, teacherName: doc.name });
+                  });
+                } catch (e) {}
+              }
+            });
+            setTeachersSchedules(schedules);
+          } catch (err) {
+            console.warn("Erreur chargement emplois du temps:", err);
           }
         }
       } catch (err) {
@@ -1503,10 +1520,14 @@ export default function StudentPortal({
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-schedule') {
     const acceptedPrograms = applications
-      .filter((a) => a.status === 'Accepted' && a.program)
-      .map((a) => a.program);
+      .filter((a) => (a.status || '').toLowerCase() === 'accepted' && a.program)
+      .map((a) => (a.program || '').trim().toLowerCase());
 
-    const mySchedules = teachersSchedules.filter((slot) => acceptedPrograms.includes(slot.program));
+    const mySchedules = teachersSchedules.filter((slot) => {
+      if (!slot.program) return false;
+      const slotProgNorm = slot.program.trim().toLowerCase();
+      return acceptedPrograms.some((ap) => ap === slotProgNorm || ap.includes(slotProgNorm) || slotProgNorm.includes(ap));
+    });
     const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
     return (

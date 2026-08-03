@@ -53,7 +53,15 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           APPWRITE_CONFIG.collections.cmsUsers,
           [Query.equal('role', 'teacher')]
         );
-        setTeachers(res.documents);
+        const docs = res.documents.map((doc: any) => {
+          let assigned = doc.assignedPrograms;
+          if (typeof assigned === 'string') {
+            try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+          }
+          if (!Array.isArray(assigned)) assigned = [];
+          return { ...doc, assignedPrograms: assigned };
+        });
+        setTeachers(docs);
       }
     } catch (err) {
       console.warn("Erreur chargement enseignants:", err);
@@ -109,7 +117,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
   const openScheduleManager = (teacher: any) => {
     setEditingSchedule(teacher);
-    setEditingAssignedPrograms(teacher.assignedPrograms || []);
+    let assigned = teacher.assignedPrograms || [];
+    if (typeof assigned === 'string') {
+      try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+    }
+    if (!Array.isArray(assigned)) assigned = [];
+    setEditingAssignedPrograms(assigned);
     try {
       setScheduleData(teacher.scheduleData ? JSON.parse(teacher.scheduleData) : []);
     } catch {
@@ -120,6 +133,9 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const handleAddSlot = () => {
     if (!newSlot.course || !newSlot.program) return;
     setScheduleData([...scheduleData, { ...newSlot }]);
+    if (!editingAssignedPrograms.includes(newSlot.program)) {
+      setEditingAssignedPrograms([...editingAssignedPrograms, newSlot.program]);
+    }
     setNewSlot({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '' });
   };
 
@@ -141,7 +157,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             assignedPrograms: editingAssignedPrograms
           }
         );
-        setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? updatedDoc : t));
+        let assigned = updatedDoc.assignedPrograms;
+        if (typeof assigned === 'string') {
+          try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+        }
+        if (!Array.isArray(assigned)) assigned = [];
+        const normalizedDoc = { ...updatedDoc, assignedPrograms: assigned };
+
+        setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? normalizedDoc : t));
         logActivity('article', 'Admin', `a mis à jour le profil de l'enseignant ${editingSchedule.name}`);
         setEditingSchedule(null);
         setEditingAssignedPrograms([]);
@@ -199,8 +222,11 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
               <div>
                 <label className="text-[10px] font-bold text-text-secondary uppercase">Programme</label>
                 <select value={newSlot.program} onChange={(e) => setNewSlot({...newSlot, program: e.target.value})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
-                  <option value="">Sélectionner</option>
-                  {editingAssignedPrograms.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                  <option value="">Sélectionner un programme</option>
+                  {programs.map((p: any) => {
+                    const title = typeof p === 'string' ? p : p.title;
+                    return <option key={title} value={title}>{title}</option>;
+                  })}
                 </select>
               </div>
               <div>
