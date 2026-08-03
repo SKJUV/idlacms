@@ -32,6 +32,28 @@ interface PublicPortalProps {
   onSubmitDonation: (d: { donor: string; email: string; amount: number; message?: string }) => void;
 }
 
+const EVENT_REGISTRATION_FORM: CustomForm = {
+  id: 'system_event_registration',
+  title: "Inscription à l'événement",
+  description: "Veuillez remplir ce formulaire pour valider votre participation à cet événement.",
+  createdAt: new Date().toISOString(),
+  fields: [
+    { id: 'nom', label: 'Nom', type: 'text', required: true },
+    { id: 'prenom', label: 'Prénom', type: 'text', required: true },
+    { id: 'email', label: 'Adresse e-mail', type: 'text', required: true },
+    { id: 'telephone', label: 'Numéro de téléphone', type: 'text', required: true },
+    { id: 'sexe', label: 'Sexe', type: 'radio', required: true, options: ['Homme', 'Femme', 'Préfère ne pas répondre'] },
+    { id: 'date_naissance', label: 'Date de naissance', type: 'date', required: false },
+    { id: 'statut', label: 'Statut', type: 'select', required: true, options: ['Étudiant', 'Jeune diplômé', 'Salarié', 'Entrepreneur', 'Demandeur d\'emploi', 'Autre'] },
+    { id: 'etablissement', label: 'Établissement / Entreprise', type: 'text', required: false },
+    { id: 'filiere', label: 'Filière ou domaine d\'activité', type: 'text', required: false },
+    { id: 'niveau', label: 'Niveau d\'étude', type: 'select', required: true, options: ['Bac', 'Bac+1', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5', 'Doctorat', 'Autre'] },
+    { id: 'pourquoi', label: 'Pourquoi souhaitez-vous participer à cet événement ?', type: 'textarea', required: true },
+    { id: 'comment', label: 'Comment avez-vous entendu parler de cet événement ?', type: 'checkbox', required: true, options: ['Facebook', 'LinkedIn', 'Instagram', 'WhatsApp', 'Site web', 'Ami / collègue', 'École / Université', 'Autre'] },
+    { id: 'deja_participe', label: 'Avez-vous déjà participé à nos événements ?', type: 'radio', required: true, options: ['Oui', 'Non'] },
+  ]
+};
+
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
 
   // Newsletter Subscription States
@@ -48,6 +70,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
 
   const handleOpenFormModal = (formId: string) => {
+    if (formId === 'system_event_registration') {
+      setActiveFormModal(EVENT_REGISTRATION_FORM);
+      setActiveFormValues({});
+      setFormSubmittedSuccess(false);
+      return;
+    }
+    
     try {
       const savedForms: CustomForm[] = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
       const targetForm = savedForms.find((f) => f.id === formId);
@@ -974,21 +1003,27 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   {selectedArticle.description}
                 </p>
                 {/* Dynamic attached form banner inside article */}
-                {selectedArticle.formId && (
+                {(selectedArticle.formId || selectedArticle.category === 'Événements') && (
                   <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-5 space-y-3 mt-4">
                     <div className="flex items-center gap-2 text-brand-primary font-bold text-sm">
                       <FileTextIcon className="w-5 h-5" />
-                      <span>Formulaire officiel rattaché à cette actualité</span>
+                      <span>
+                        {selectedArticle.category === 'Événements' 
+                          ? "Inscription à l'événement" 
+                          : "Formulaire officiel rattaché à cette actualité"}
+                      </span>
                     </div>
                     <p className="text-xs text-text-secondary">
-                      Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations.
+                      {selectedArticle.category === 'Événements' 
+                        ? "Veuillez remplir ce formulaire pour valider votre participation à cet événement."
+                        : "Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations."}
                     </p>
                     <button
-                      onClick={() => handleOpenFormModal(selectedArticle.formId!)}
+                      onClick={() => handleOpenFormModal(selectedArticle.category === 'Événements' ? 'system_event_registration' : selectedArticle.formId!)}
                       className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
                     >
                       <FileTextIcon className="w-4 h-4" />
-                      Remplir le formulaire en ligne
+                      {selectedArticle.category === 'Événements' ? "S'inscrire à l'événement" : "Remplir le formulaire en ligne"}
                     </button>
                   </div>
                 )}
