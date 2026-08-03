@@ -65,6 +65,8 @@ export interface NewsArticle {
   isFeatured?: boolean;
   formId?: string;
   formUrl?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CustomFormField {

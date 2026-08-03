@@ -101,6 +101,8 @@ export default function NewsManagement({
   const [newNewsCategory, setNewNewsCategory] = useState<'Événements' | 'Académique' | 'Partenariats' | 'Annonces' | 'Alumni'>('Annonces');
   const [attachedFormId, setAttachedFormId] = useState<string>('');
   const [attachedFormUrl, setAttachedFormUrl] = useState<string>('');
+  const [eventStartDate, setEventStartDate] = useState<string>('');
+  const [eventEndDate, setEventEndDate] = useState<string>('');
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -121,6 +123,8 @@ export default function NewsManagement({
     setImagePreview('');
     setImageUrl('');
     setUploadError('');
+    setEventStartDate('');
+    setEventEndDate('');
     setEditingNewsId(null);
     setShowAddNewsForm(false);
   };
@@ -132,6 +136,8 @@ export default function NewsManagement({
     setNewNewsCategory(n.category);
     setAttachedFormId(n.formId || '');
     setAttachedFormUrl(n.formUrl || '');
+    setEventStartDate(n.startDate || '');
+    setEventEndDate(n.endDate || '');
     setImagePreview(n.image || '');
     setImageUrl(n.image || '');
     setImageFile(null);
@@ -202,6 +208,8 @@ export default function NewsManagement({
                 image: finalImage,
                 formId: attachedFormId || undefined,
                 formUrl: attachedFormUrl || undefined,
+                startDate: newNewsCategory === 'Événements' ? eventStartDate : undefined,
+                endDate: newNewsCategory === 'Événements' ? eventEndDate : undefined,
               }
             : n
         )
@@ -243,6 +251,8 @@ export default function NewsManagement({
       image: finalImage,
       formId: attachedFormId || undefined,
       formUrl: attachedFormUrl || undefined,
+      startDate: newNewsCategory === 'Événements' ? eventStartDate : undefined,
+      endDate: newNewsCategory === 'Événements' ? eventEndDate : undefined,
     };
 
     setNews((curr) => [newArticle, ...curr]);
@@ -530,6 +540,30 @@ export default function NewsManagement({
                     <option value="Alumni">Alumni</option>
                   </select>
                 </div>
+
+                {/* Dates de l'événement */}
+                {newNewsCategory === 'Événements' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-text-secondary uppercase">Date de début</label>
+                      <input
+                        type="date"
+                        value={eventStartDate}
+                        onChange={(e) => setEventStartDate(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-text-secondary uppercase">Date de fin</label>
+                      <input
+                        type="date"
+                        value={eventEndDate}
+                        onChange={(e) => setEventEndDate(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Rattaché à un Formulaire sur mesure */}
                 <div className="space-y-1.5">

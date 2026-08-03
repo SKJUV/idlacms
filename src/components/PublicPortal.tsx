@@ -891,6 +891,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       </span>
                       <span className="text-xs text-text-secondary">{featuredNewsArticle.date}</span>
                     </div>
+                    {featuredNewsArticle.category === 'Événements' && (featuredNewsArticle.startDate || featuredNewsArticle.endDate) && (
+                      <p className="text-xs font-bold text-brand-primary/80 mb-2">
+                        📅 Du {featuredNewsArticle.startDate || '?'} au {featuredNewsArticle.endDate || '?'}
+                      </p>
+                    )}
                     <h2 className="font-bold text-2xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight">
                       {featuredNewsArticle.title}
                     </h2>
@@ -932,6 +937,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                             </span>
                             <span className="text-xs text-text-secondary">{n.date}</span>
                           </div>
+                          {n.category === 'Événements' && (n.startDate || n.endDate) && (
+                            <p className="text-xs font-bold text-brand-primary/80">
+                              📅 Du {n.startDate || '?'} au {n.endDate || '?'}
+                            </p>
+                          )}
                           <h3 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors leading-snug">
                             {n.title}
                           </h3>
@@ -999,32 +1009,50 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <h2 className="font-sans font-bold text-2xl text-[#00020e] dark:text-white leading-tight">
                   {selectedArticle.title}
                 </h2>
+                {selectedArticle.category === 'Événements' && (selectedArticle.startDate || selectedArticle.endDate) && (
+                  <div className="flex items-center gap-2 text-sm font-bold text-brand-primary bg-brand-primary/10 w-fit px-4 py-2 rounded-lg">
+                    📅 Du {selectedArticle.startDate || '?'} au {selectedArticle.endDate || '?'}
+                  </div>
+                )}
                 <p className="text-[#45464e] dark:text-gray-300 text-sm leading-relaxed">
                   {selectedArticle.description}
                 </p>
                 {/* Dynamic attached form banner inside article */}
                 {(selectedArticle.formId || selectedArticle.category === 'Événements') && (
                   <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-5 space-y-3 mt-4">
-                    <div className="flex items-center gap-2 text-brand-primary font-bold text-sm">
-                      <FileTextIcon className="w-5 h-5" />
-                      <span>
-                        {selectedArticle.category === 'Événements' 
-                          ? "Inscription à l'événement" 
-                          : "Formulaire officiel rattaché à cette actualité"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-secondary">
-                      {selectedArticle.category === 'Événements' 
-                        ? "Veuillez remplir ce formulaire pour valider votre participation à cet événement."
-                        : "Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations."}
-                    </p>
-                    <button
-                      onClick={() => handleOpenFormModal(selectedArticle.category === 'Événements' ? 'system_event_registration' : selectedArticle.formId!)}
-                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
-                    >
-                      <FileTextIcon className="w-4 h-4" />
-                      {selectedArticle.category === 'Événements' ? "S'inscrire à l'événement" : "Remplir le formulaire en ligne"}
-                    </button>
+                    {(() => {
+                      const isEvent = selectedArticle.category === 'Événements';
+                      const isExpired = isEvent && selectedArticle.endDate && new Date(selectedArticle.endDate + 'T23:59:59').getTime() < Date.now();
+                      
+                      return (
+                        <>
+                          <div className="flex items-center gap-2 text-brand-primary font-bold text-sm">
+                            <FileTextIcon className="w-5 h-5" />
+                            <span>
+                              {isEvent 
+                                ? isExpired ? "Inscription terminée" : "Inscription à l'événement" 
+                                : "Formulaire officiel rattaché à cette actualité"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-text-secondary">
+                            {isEvent 
+                              ? isExpired 
+                                ? "La date limite pour s'inscrire à cet événement est dépassée."
+                                : "Veuillez remplir ce formulaire pour valider votre participation à cet événement."
+                              : "Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations."}
+                          </p>
+                          {!isExpired && (
+                            <button
+                              onClick={() => handleOpenFormModal(isEvent ? 'system_event_registration' : selectedArticle.formId!)}
+                              className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
+                            >
+                              <FileTextIcon className="w-4 h-4" />
+                              {isEvent ? "S'inscrire à l'événement" : "Remplir le formulaire en ligne"}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 
