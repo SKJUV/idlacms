@@ -4,20 +4,27 @@ import {
   FileText, Link as LinkIcon, Copy, Check, Eye, Download, Sparkles, 
   FileSpreadsheet, HelpCircle, Layers, CheckSquare, Calendar, ChevronDown, AlignLeft
 } from 'lucide-react';
-import { NewsArticle, CustomForm, CustomFormField, CustomFormResponse } from '../../types';
+import { NewsArticle, CustomForm, CustomFormField, CustomFormResponse, User } from '../../types';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../../lib/appwrite';
+import emailjs from '@emailjs/browser';
 
 interface NewsManagementProps {
   news: NewsArticle[];
   setNews: React.Dispatch<React.SetStateAction<NewsArticle[]>>;
   logActivity: (type: 'registration' | 'article' | 'error' | 'alumni', user: string, text: string) => Promise<void>;
+  usersList: User[];
 }
 
 export default function NewsManagement({
   news,
   setNews,
   logActivity,
+  usersList
 }: NewsManagementProps) {
+  // Configuration EmailJS depuis les variables d'environnement (ou valeurs par défaut)
+  const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+  const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+  const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
   const [activeTab, setActiveTab] = useState<'articles' | 'forms' | 'responses'>('articles');
 
   // ---------------------------------------------------------------------------
@@ -281,7 +288,36 @@ export default function NewsManagement({
       }
     }
 
-    logActivity('article', 'Super Admin', `a publié l'actualité : ${newNewsTitle}.`);
+    logActivity('article', 'Super Admin', `a publié une nouvelle actualité : ${newNewsTitle}.`);
+      
+    // Envoi de l'e-mail de notification
+    if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
+      const nonAdminUsers = usersList.filter(u => u.role !== 'Admin' && u.email);
+      if (nonAdminUsers.length > 0) {
+        const bccList = nonAdminUsers.map(u => u.email).join(',');
+        
+        emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            to_name: 'Communauté IDLA',
+            bcc: bccList,
+            article_title: newArticle.title,
+            article_category: newArticle.category,
+            article_description: newArticle.description,
+            link: window.location.origin + '/actualites',
+          },
+          EMAILJS_PUBLIC_KEY
+        ).then(() => {
+          console.log('E-mails de notification envoyés avec succès.');
+        }).catch((err) => {
+          console.error('Erreur lors de l\'envoi des e-mails :', err);
+        });
+      }
+    } else {
+      console.warn("Configuration EmailJS manquante. Les notifications par e-mail n'ont pas été envoyées.");
+    }
+
     setIsUploading(false);
     resetNewsForm();
   };

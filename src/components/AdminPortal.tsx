@@ -640,6 +640,7 @@ export default function AdminPortal({
           news={news}
           setNews={setNews}
           logActivity={logActivity}
+          usersList={usersList}
         />
       )}
 
