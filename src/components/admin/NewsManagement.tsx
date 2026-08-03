@@ -187,12 +187,17 @@ export default function NewsManagement({
 
     let finalImage = imageUrl || imagePreview || DEFAULT_IMAGE;
     if (imageFile) {
+      const currentFile = imageFile;
       try {
-        finalImage = await uploadImageToAppwrite(imageFile);
+        finalImage = await uploadImageToAppwrite(currentFile);
       } catch (err) {
         console.error('Échec upload image:', err);
-        setUploadError('Échec du téléversement de l\'image.');
-        finalImage = DEFAULT_IMAGE;
+        setUploadError('Appwrite indisponible, utilisation de l\'image en mode local.');
+        finalImage = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(currentFile);
+        });
       }
     }
 
