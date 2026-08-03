@@ -110,6 +110,7 @@ export default function NewsManagement({
   const [attachedFormUrl, setAttachedFormUrl] = useState<string>('');
   const [eventStartDate, setEventStartDate] = useState<string>('');
   const [eventEndDate, setEventEndDate] = useState<string>('');
+  const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -340,6 +341,14 @@ export default function NewsManagement({
     if (target) {
       logActivity('article', 'Super Admin', `a supprimé l'actualité : ${target.title}.`);
     }
+  };
+
+  const handleCopyLink = (id: string) => {
+    const url = window.location.origin + '/actualites?article=' + id;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopySuccessId(id);
+      setTimeout(() => setCopySuccessId(null), 2000);
+    });
   };
 
   // ---------------------------------------------------------------------------
@@ -779,6 +788,13 @@ export default function NewsManagement({
                       <td className="p-4 text-text-secondary">{n.date}</td>
                       <td className="p-4">
                         <div className="flex justify-center items-center gap-1">
+                          <button
+                            onClick={() => handleCopyLink(n.id)}
+                            title={copySuccessId === n.id ? "Lien copié !" : "Copier le lien public"}
+                            className="text-sky-500 hover:text-sky-700 p-1.5 hover:bg-sky-500/10 rounded transition-all cursor-pointer"
+                          >
+                            {copySuccessId === n.id ? <Check className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
+                          </button>
                           <button
                             onClick={() => startEditNews(n)}
                             title="Modifier"
