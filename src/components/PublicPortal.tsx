@@ -18,6 +18,8 @@ import {
   UploadCloudIcon,
   LockIcon,
   FileTextIcon,
+  ShareIcon,
+  CopyIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 
@@ -63,6 +65,46 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   // Modal article
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Sync article selection from URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const articleId = searchParams.get('article');
+    if (articleId && news.length > 0) {
+      const found = news.find((n) => n.id === articleId);
+      if (found) {
+        if (activeTab !== 'actualites') {
+          setActiveTab('actualites');
+        }
+        if (!selectedArticle || selectedArticle.id !== articleId) {
+          setSelectedArticle(found);
+        }
+      }
+    }
+  }, [news, activeTab]);
+
+  // Sync URL when article is selected
+  useEffect(() => {
+    if (activeTab === 'actualites') {
+      const url = new URL(window.location.href);
+      if (selectedArticle) {
+        url.searchParams.set('article', selectedArticle.id);
+      } else {
+        url.searchParams.delete('article');
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [selectedArticle, activeTab]);
+
+  const handleShareArticle = (article: NewsArticle) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('article', article.id);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
 
   // Public Form Modal state
   const [activeFormModal, setActiveFormModal] = useState<CustomForm | null>(null);
@@ -983,18 +1025,29 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               className="relative bg-white dark:bg-[#0f1117] w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[#c6c6cf]/60 dark:border-white/10"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Image header */}
+                {/* Image header */}
               <div className="relative h-56 shrink-0 overflow-hidden">
                 <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                {/* Bouton fermeture */}
-                <button
-                  onClick={() => setSelectedArticle(null)}
-                  className="absolute top-4 right-4 w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer backdrop-blur-sm"
-                  aria-label="Fermer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                
+                {/* Actions Top Right */}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleShareArticle(selectedArticle); }}
+                    className="h-9 px-4 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer backdrop-blur-sm gap-2 text-xs font-bold border border-white/30"
+                    aria-label="Partager"
+                  >
+                    {copySuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShareIcon className="w-3.5 h-3.5" />}
+                    {copySuccess ? 'Lien copié !' : 'Partager'}
+                  </button>
+                  <button
+                    onClick={() => setSelectedArticle(null)}
+                    className="w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer backdrop-blur-sm"
+                    aria-label="Fermer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
                 {/* Catégorie + date en bas de l'image */}
                 <div className="absolute bottom-4 left-5 flex items-center gap-2">
                   <span className="bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
