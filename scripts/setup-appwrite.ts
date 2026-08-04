@@ -284,6 +284,46 @@ const collectionDefs: CollectionDef[] = [
       { key: 'idx_created', type: 'key', attributes: ['createdAt'] },
     ],
   },
+  {
+    id: 'custom_forms',
+    name: 'Formulaires sur mesure',
+    permissions: [
+      Permission.read(Role.any()),
+      Permission.create(Role.team(ADMIN_TEAM_ID)),
+      Permission.update(Role.team(ADMIN_TEAM_ID)),
+      Permission.delete(Role.team(ADMIN_TEAM_ID)),
+    ],
+    attributes: [
+      { kind: 'string', key: 'title', size: 255, required: true },
+      { kind: 'string', key: 'description', size: 2000, required: false },
+      { kind: 'string', key: 'fields', size: 10000, required: true },
+      { kind: 'string', key: 'createdAt', size: 100, required: true },
+    ],
+    indexes: [],
+  },
+  {
+    id: 'form_responses',
+    name: 'Réponses aux formulaires',
+    permissions: [
+      Permission.read(Role.team(ADMIN_TEAM_ID)),
+      Permission.create(Role.any()),
+      Permission.update(Role.team(ADMIN_TEAM_ID)),
+      Permission.delete(Role.team(ADMIN_TEAM_ID)),
+    ],
+    attributes: [
+      { kind: 'string', key: 'formId', size: 36, required: true },
+      { kind: 'string', key: 'formTitle', size: 255, required: true },
+      { kind: 'string', key: 'newsId', size: 36, required: false },
+      { kind: 'string', key: 'newsTitle', size: 255, required: false },
+      { kind: 'string', key: 'respondentName', size: 150, required: true },
+      { kind: 'string', key: 'respondentEmail', size: 150, required: false },
+      { kind: 'string', key: 'data', size: 10000, required: true },
+      { kind: 'string', key: 'submittedAt', size: 100, required: true },
+    ],
+    indexes: [
+      { key: 'idx_formId', type: 'key', attributes: ['formId'] },
+    ],
+  },
 ];
 
 async function createAttribute(collectionId: string, attr: AttrDef) {
@@ -493,6 +533,8 @@ async function main() {
   console.log(`VITE_APPWRITE_COLLECTION_CMS_USERS="cms_users"`);
   console.log(`VITE_APPWRITE_COLLECTION_CANDIDATE_DOCUMENTS="candidate_documents"`);
   console.log(`VITE_APPWRITE_COLLECTION_MESSAGES="messages"`);
+  console.log(`VITE_APPWRITE_COLLECTION_CUSTOM_FORMS="custom_forms"`);
+  console.log(`VITE_APPWRITE_COLLECTION_FORM_RESPONSES="form_responses"`);
   console.log(`VITE_APPWRITE_BUCKET_DOCUMENTS="${DOCUMENTS_BUCKET_ID}"`);
 }
 

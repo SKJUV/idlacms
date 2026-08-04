@@ -30,63 +30,78 @@ export default function NewsManagement({
   // ---------------------------------------------------------------------------
   // FORMS STATE & PERSISTENCE
   // ---------------------------------------------------------------------------
-  const [customForms, setCustomForms] = useState<CustomForm[]>(() => {
-    try {
-      const saved = localStorage.getItem('idla_custom_forms');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    // Default demo form if empty
-    return [
-      {
-        id: 'form-demo-1',
-        title: 'Formulaire de Pré-candidature Express 2026',
-        description: 'Veuillez renseigner vos informations pour faire valider votre profil académique.',
-        createdAt: new Date().toLocaleDateString('fr-FR'),
-        fields: [
-          { id: 'f1', label: 'Nom complet', type: 'text', required: true, placeholder: 'ex: Jean Dupont' },
-          { id: 'f2', label: 'Adresse e-mail', type: 'text', required: true, placeholder: 'jean.dupont@exemple.com' },
-          { id: 'f3', label: 'Niveau d\'études actuel', type: 'select', required: true, options: ['Baccalauréat', 'Licence / Bachelor', 'Master', 'Doctorat'] },
-          { id: 'f4', label: 'Motivations', type: 'textarea', required: false, placeholder: 'Décrivez brièvement votre projet professionnel…' },
-          { id: 'f5', label: 'Relevé de notes / CNI (Document)', type: 'file', required: false }
-        ]
-      }
-    ];
-  });
-
-  const [formResponses, setFormResponses] = useState<CustomFormResponse[]>(() => {
-    try {
-      const saved = localStorage.getItem('idla_form_responses');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [
-      {
-        id: 'resp-demo-1',
-        formId: 'form-demo-1',
-        formTitle: 'Formulaire de Pré-candidature Express 2026',
-        submittedAt: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        respondentName: 'Paul Kengne',
-        respondentEmail: 'paul.kengne@exemple.com',
-        data: {
-          'Nom complet': 'Paul Kengne',
-          'Adresse e-mail': 'paul.kengne@exemple.com',
-          'Niveau d\'études actuel': 'Licence / Bachelor',
-          'Motivations': 'Je souhaite poursuivre en Master Ingénierie Logicielle à l\'IDLA.',
-          'Relevé de notes / CNI (Document)': 'cni_kengne.pdf (Joint)'
-        }
-      }
-    ];
-  });
+  const [customForms, setCustomForms] = useState<CustomForm[]>([]);
+  const [formResponses, setFormResponses] = useState<CustomFormResponse[]>([]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('idla_custom_forms', JSON.stringify(customForms));
-    } catch (e) {}
+    const fetchForms = async () => {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
+        try {
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms);
+          const forms: CustomForm[] = res.documents.map(d => ({
+            id: d.$id,
+            title: d.title,
+            description: d.description || '',
+            createdAt: d.createdAt,
+            fields: JSON.parse(d.fields || '[]')
+          }));
+          setCustomForms(forms);
+        } catch (e) {
+          console.error("Error fetching custom forms from Appwrite", e);
+        }
+      } else {
+        try {
+          const saved = localStorage.getItem('idla_custom_forms');
+          if (saved) setCustomForms(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+
+    const fetchResponses = async () => {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses) {
+        try {
+          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.formResponses);
+          const responses: CustomFormResponse[] = res.documents.map(d => ({
+            id: d.$id,
+            formId: d.formId,
+            formTitle: d.formTitle,
+            newsId: d.newsId,
+            newsTitle: d.newsTitle,
+            respondentName: d.respondentName,
+            respondentEmail: d.respondentEmail,
+            submittedAt: d.submittedAt,
+            data: JSON.parse(d.data || '{}')
+          }));
+          setFormResponses(responses);
+        } catch (e) {
+          console.error("Error fetching form responses from Appwrite", e);
+        }
+      } else {
+        try {
+          const saved = localStorage.getItem('idla_form_responses');
+          if (saved) setFormResponses(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+
+    fetchForms();
+    fetchResponses();
+  }, []);
+
+  useEffect(() => {
+    if (!isAppwriteDbConfigured() || !APPWRITE_CONFIG.collections.customForms) {
+      try {
+        localStorage.setItem('idla_custom_forms', JSON.stringify(customForms));
+      } catch (e) {}
+    }
   }, [customForms]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('idla_form_responses', JSON.stringify(formResponses));
-    } catch (e) {}
+    if (!isAppwriteDbConfigured() || !APPWRITE_CONFIG.collections.formResponses) {
+      try {
+        localStorage.setItem('idla_form_responses', JSON.stringify(formResponses));
+      } catch (e) {}
+    }
   }, [formResponses]);
 
   // Copy link handler
@@ -393,7 +408,7 @@ export default function NewsManagement({
     );
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
+  const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!builderTitle.trim()) return;
 
@@ -405,9 +420,27 @@ export default function NewsManagement({
             : f
         )
       );
+      
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
+        try {
+          await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.customForms,
+            editingFormId,
+            {
+              title: builderTitle,
+              description: builderDescription,
+              fields: JSON.stringify(builderFields)
+            }
+          );
+        } catch (err) {
+          console.error("Échec de la mise à jour du formulaire sur Appwrite:", err);
+        }
+      }
+      
       logActivity('article', 'Super Admin', `a mis à jour le formulaire : ${builderTitle}.`);
     } else {
-      const newFormId = `form-${Date.now()}`;
+      const newFormId = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms ? ID.unique() : `form-${Date.now()}`;
       const createdForm: CustomForm = {
         id: newFormId,
         title: builderTitle,
@@ -416,6 +449,25 @@ export default function NewsManagement({
         createdAt: new Date().toLocaleDateString('fr-FR')
       };
       setCustomForms((prev) => [createdForm, ...prev]);
+      
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
+        try {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.customForms,
+            newFormId,
+            {
+              title: createdForm.title,
+              description: createdForm.description,
+              fields: JSON.stringify(createdForm.fields),
+              createdAt: createdForm.createdAt
+            }
+          );
+        } catch (err) {
+          console.error("Échec de la création du formulaire sur Appwrite:", err);
+        }
+      }
+
       logActivity('article', 'Super Admin', `a créé le formulaire sur mesure : ${builderTitle}.`);
     }
 
@@ -430,9 +482,22 @@ export default function NewsManagement({
     setShowAddFormModal(true);
   };
 
-  const handleDeleteForm = (formId: string) => {
+  const handleDeleteForm = async (formId: string) => {
     const target = customForms.find((f) => f.id === formId);
     setCustomForms((prev) => prev.filter((f) => f.id !== formId));
+    
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
+      try {
+        await databases.deleteDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.customForms,
+          formId
+        );
+      } catch (err) {
+        console.error("Échec de la suppression du formulaire sur Appwrite:", err);
+      }
+    }
+    
     if (target) {
       logActivity('article', 'Super Admin', `a supprimé le formulaire : ${target.title}.`);
     }
