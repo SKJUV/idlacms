@@ -22,6 +22,7 @@ import {
   CopyIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -111,7 +112,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [activeFormValues, setActiveFormValues] = useState<Record<string, any>>({});
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
 
-  const handleOpenFormModal = (formId: string) => {
+  const handleOpenFormModal = async (formId: string) => {
     if (formId === 'system_event_registration') {
       setActiveFormModal(EVENT_REGISTRATION_FORM);
       setActiveFormValues({});
@@ -119,6 +120,24 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       return;
     }
     
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
+      try {
+        const doc = await databases.getDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, formId);
+        setActiveFormModal({
+          id: doc.$id,
+          title: doc.title,
+          description: doc.description || '',
+          createdAt: doc.createdAt,
+          fields: JSON.parse(doc.fields || '[]')
+        });
+        setActiveFormValues({});
+        setFormSubmittedSuccess(false);
+        return;
+      } catch (err) {
+        console.error("Échec du chargement du formulaire depuis Appwrite:", err);
+      }
+    }
+
     try {
       const savedForms: CustomForm[] = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
       const targetForm = savedForms.find((f) => f.id === formId);
@@ -138,15 +157,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
-  const handlePublicFormSubmit = (e: FormEvent) => {
+  const handlePublicFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!activeFormModal) return;
 
     const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || 'Visiteur';
     const respondentEmail = activeFormValues['Adresse e-mail'] || activeFormValues['Email'] || activeFormValues['E-mail'] || '';
 
+    const newResponseId = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses ? ID.unique() : `resp-${Date.now()}`;
     const newResponse: CustomFormResponse = {
-      id: `resp-${Date.now()}`,
+      id: newResponseId,
       formId: activeFormModal.id,
       formTitle: activeFormModal.title,
       newsId: selectedArticle?.id,
@@ -159,10 +179,32 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       data: activeFormValues
     };
 
-    try {
-      const existing: CustomFormResponse[] = JSON.parse(localStorage.getItem('idla_form_responses') || '[]');
-      localStorage.setItem('idla_form_responses', JSON.stringify([newResponse, ...existing]));
-    } catch (err) {}
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses) {
+      try {
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.formResponses,
+          newResponseId,
+          {
+            formId: newResponse.formId,
+            formTitle: newResponse.formTitle,
+            newsId: newResponse.newsId,
+            newsTitle: newResponse.newsTitle,
+            respondentName: newResponse.respondentName,
+            respondentEmail: newResponse.respondentEmail,
+            submittedAt: newResponse.submittedAt,
+            data: JSON.stringify(newResponse.data)
+          }
+        );
+      } catch (err) {
+        console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);
+      }
+    } else {
+      try {
+        const existing: CustomFormResponse[] = JSON.parse(localStorage.getItem('idla_form_responses') || '[]');
+        localStorage.setItem('idla_form_responses', JSON.stringify([newResponse, ...existing]));
+      } catch (err) {}
+    }
 
     setFormSubmittedSuccess(true);
   };
