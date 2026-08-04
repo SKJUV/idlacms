@@ -13,6 +13,7 @@ import {
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
 } from '../types';
 import { programsData } from '../data/mockData';
+import { Paperclip, Video, FileText, Download, ExternalLink } from 'lucide-react';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -424,17 +425,32 @@ export default function StudentPortal({
           setClassChatHistory(msgRes.documents.map((m: any) => {
             let parsedText = m.text;
             let sName = m.sender === 'candidate' ? 'Moi' : 'Enseignant';
+            let msgType = 'text';
+            let extraData: any = {};
             try {
               const data = JSON.parse(m.text);
-              if (data.t) {
-                parsedText = data.t;
+              if (data.t || data.type) {
+                parsedText = data.t || '';
                 sName = data.n || sName;
+                msgType = data.type || 'text';
+                extraData = {
+                  fileName: data.fileName,
+                  fileUrl: data.fileUrl,
+                  fileSize: data.fileSize,
+                  fileType: data.fileType,
+                  meetingUrl: data.meetingUrl,
+                  meetingTitle: data.meetingTitle,
+                  meetingPlatform: data.meetingPlatform,
+                  meetingTime: data.meetingTime,
+                };
               }
             } catch (e) {}
 
             return {
               sender: m.sender,
               text: parsedText,
+              type: msgType,
+              ...extraData,
               time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
               senderName: sName
             };
@@ -1303,10 +1319,10 @@ export default function StudentPortal({
           </div>
           
           {/* Chat History */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-bg-primary/20">
             {classChatHistory.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-text-secondary space-y-2 opacity-50">
-                <MessageSquareIcon className="w-12 h-12" />
+                <MessageSquareIcon className="w-12 h-12 text-brand-primary" />
                 <p className="text-sm">Aucun message pour le moment. Dites bonjour à votre classe !</p>
               </div>
             ) : (
@@ -1314,10 +1330,75 @@ export default function StudentPortal({
                 const isMe = msg.sender === 'candidate';
                 return (
                   <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'}`}>
-                      {!isMe && <div className="text-[10px] font-bold text-brand-primary mb-1">{msg.senderName}</div>}
-                      <p className="text-sm">{msg.text}</p>
-                      <div className={`text-[10px] mt-1 ${isMe ? 'text-brand-light/70' : 'text-text-secondary'}`}>{msg.time}</div>
+                    <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 shadow-sm ${
+                      isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'
+                    }`}>
+                      {!isMe && <div className="text-[11px] font-bold text-brand-primary mb-1.5">{msg.senderName || 'Enseignant'}</div>}
+
+                      {/* 1. FILE MESSAGE */}
+                      {msg.type === 'file' ? (
+                        <div className={`p-3.5 rounded-xl border flex flex-col gap-2.5 ${
+                          isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-bg-secondary border-border-primary text-text-primary'
+                        }`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                              isMe ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'
+                            }`}>
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-xs truncate">{msg.fileName || msg.text}</p>
+                              {msg.fileSize && <p className={`text-[10px] ${isMe ? 'text-white/80' : 'text-text-secondary'}`}>{msg.fileSize}</p>}
+                            </div>
+                          </div>
+                          {msg.fileUrl && (
+                            <a
+                              href={msg.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={msg.fileName}
+                              className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                isMe ? 'bg-white text-brand-primary hover:bg-white/90' : 'bg-brand-primary text-white hover:bg-brand-hover'
+                              }`}
+                            >
+                              <Download className="w-3.5 h-3.5" /> Télécharger / Consulter
+                            </a>
+                          )}
+                        </div>
+                      ) : msg.type === 'meeting' ? (
+                        /* 2. MEETING MESSAGE */
+                        <div className={`p-4 rounded-xl border flex flex-col gap-3 ${
+                          isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-indigo-500/10 border-sky-500/30 text-text-primary'
+                        }`}>
+                          <div className="flex items-center justify-between gap-2 border-b border-current/20 pb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-sky-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Video className="w-3 h-3 animate-pulse" /> {msg.meetingPlatform || 'Visioconférence'}
+                            </span>
+                            {msg.meetingTime && <span className="text-[10px] opacity-80 font-medium">{msg.meetingTime}</span>}
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-sm leading-snug">{msg.meetingTitle || msg.text}</p>
+                            <p className="text-[11px] opacity-80 mt-1">Session de cours en direct préparée par l'enseignant.</p>
+                          </div>
+
+                          {msg.meetingUrl && (
+                            <a
+                              href={msg.meetingUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                            >
+                              <Video className="w-4 h-4" /> Rejoindre le cours en direct 🚀
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        /* 3. STANDARD TEXT MESSAGE */
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                      )}
+
+                      <div className={`text-[10px] mt-1.5 text-right ${isMe ? 'text-brand-light/70' : 'text-text-secondary'}`}>{msg.time}</div>
                     </div>
                   </div>
                 );
