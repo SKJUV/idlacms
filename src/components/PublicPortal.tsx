@@ -563,31 +563,34 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {activePrograms.slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
-                  className={`rounded-2xl overflow-hidden relative group min-h-[380px] shadow-md hover:shadow-2xl hover:shadow-sky-500/20 border border-[#c6c6cf]/30 cursor-pointer transition-all duration-500 transform hover:-translate-y-1.5 flex flex-col justify-end ${
+                  className={`bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-xl hover:border-brand-primary/30 cursor-pointer ${
                     idx === 0 ? 'md:col-span-8' : 'md:col-span-4'
                   }`}
                   onClick={() => setActiveTab('programmes')}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#00020e]/95 via-[#00020e]/50 to-transparent z-10 transition-opacity duration-300 group-hover:opacity-95"></div>
-                  <img 
-                    className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" 
-                    alt={p.title} 
-                    src={p.image}
-                  />
-                  <div className="relative z-20 p-6 w-full flex flex-col justify-end">
-                    <span className="bg-sky-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2.5 inline-block w-fit shadow-sm">
+                  <div className={`relative w-full overflow-hidden ${idx === 0 ? 'h-64 md:h-80' : 'h-64'}`}>
+                    <img 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                      alt={p.title} 
+                      src={p.image}
+                    />
+                    <div className="absolute top-5 left-5 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1.5 shadow-sm">
+                      <BookOpen className="w-3.5 h-3.5" />
                       {p.category}
-                    </span>
-                    <h3 className="text-white font-bold text-xl md:text-2xl mb-2 group-hover:text-sky-300 transition-colors">{p.title}</h3>
-                    <p className="text-white/80 text-xs line-clamp-2 max-w-md mb-5">{p.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 md:p-8 flex flex-col flex-grow text-left">
+                    <h3 className="font-bold text-2xl text-text-primary mb-3 group-hover:text-brand-primary transition-colors leading-tight">{p.title}</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-6 flex-grow">{p.description}</p>
                     
-                    <div className="flex items-center justify-between pt-3 border-t border-white/15 opacity-90 group-hover:opacity-100 transition-all duration-300">
-                      <span className="text-white/90 text-xs font-semibold flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-sky-400" /> Rentrée {new Date().getFullYear()}
+                    <div className="flex items-center justify-between pt-5 border-t border-border-primary/50 mt-auto">
+                      <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-brand-primary" /> Rentrée {new Date().getFullYear()}
                       </span>
-                      <span className="inline-flex items-center gap-2 bg-white/15 hover:bg-sky-500 text-white group-hover:text-white px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-300 transform group-hover:translate-x-1.5 shadow-md">
-                        <span>Découvrir & Voir plus</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
+                        <span>Voir plus</span>
+                        <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
                   </div>
