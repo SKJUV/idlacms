@@ -165,17 +165,22 @@ export default function App() {
           }
         }
       } catch (err) {
-        console.log("Aucune session active détectée côté Appwrite.");
-        sessionStorage.removeItem('idla_portal_session_email');
-        setRole('guest');
-        
-        // Redirection conditionnelle si la session est expirée/inexistante
-        if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
-          setActiveTab('admin-login');
-        } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
-          setActiveTab('student-login');
-        } else if (TEACHER_TABS.includes(activeTab)) {
-          setActiveTab('student-login');
+        console.log("Aucune session active détectée côté Appwrite, vérification du mode local...");
+        const localRole = (localStorage.getItem('idla_portal_role') || sessionStorage.getItem('idla_portal_role')) as Role;
+        if (localRole && ['student', 'teacher', 'admin'].includes(localRole)) {
+          setRole(localRole);
+        } else {
+          sessionStorage.removeItem('idla_portal_session_email');
+          setRole('guest');
+          
+          // Redirection conditionnelle si la session est expirée/inexistante
+          if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
+            setActiveTab('admin-login');
+          } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
+            setActiveTab('student-login');
+          } else if (TEACHER_TABS.includes(activeTab)) {
+            setActiveTab('student-login');
+          }
         }
       } finally {
         setIsSessionChecking(false);
