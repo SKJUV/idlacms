@@ -9,7 +9,8 @@ import {
   MailIcon,
   CalendarIcon,
   BookOpenIcon,
-  SaveIcon
+  SaveIcon,
+  ClockIcon
 } from '../Icons';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../../lib/appwrite';
 
@@ -36,9 +37,58 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
   const [editingAssignedPrograms, setEditingAssignedPrograms] = useState<string[]>([]);
   const [scheduleData, setScheduleData] = useState<any[]>([]);
-  const [newSlot, setNewSlot] = useState({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '' });
+  const [newSlot, setNewSlot] = useState({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '', type: 'CM' as 'CM' | 'TD' | 'TP' });
 
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  const STANDARD_TIME_BLOCKS = [
+    { start: '08:00', end: '10:00' },
+    { start: '10:15', end: '12:15' },
+    { start: '13:30', end: '15:30' },
+    { start: '15:45', end: '17:45' }
+  ];
+
+  // Algorithme d'analyse automatique pour trouver le 1er créneau 100% libre sans aucun chevauchement
+  const findOptimalSlot = (targetProgram: string, currentSchedules: any[]) => {
+    for (const day of days) {
+      for (const block of STANDARD_TIME_BLOCKS) {
+        const isOverlap = currentSchedules.some((slot: any) => {
+          if (slot.day !== day) return false;
+          return (block.start < slot.endTime && slot.startTime < block.end);
+        });
+        if (!isOverlap) {
+          return { day, startTime: block.start, endTime: block.end };
+        }
+      }
+    }
+    return { day: 'Lundi', startTime: '08:00', endTime: '10:00' };
+  };
+
+  const handleCourseSelection = (courseVal: string) => {
+    let matchedProgram = newSlot.program;
+    try {
+      const courses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
+      const found = courses.find((c: any) => 
+        c.title === courseVal || 
+        `${c.code ? c.code + ' - ' : ''}${c.title} (${c.level || 'L1'})` === courseVal ||
+        courseVal.includes(c.title)
+      );
+      if (found && found.program) {
+        matchedProgram = found.program;
+      }
+    } catch (e) {}
+
+    // Recherche automatique du premier créneau libre pour ce cours/programme
+    const optimal = findOptimalSlot(matchedProgram, scheduleData);
+
+    setNewSlot((prev) => ({
+      ...prev,
+      course: courseVal,
+      program: matchedProgram,
+      day: optimal.day,
+      startTime: optimal.startTime,
+      endTime: optimal.endTime
+    }));
+  };
 
   useEffect(() => {
     loadTeachers();
@@ -132,11 +182,87 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
   const handleAddSlot = () => {
     if (!newSlot.course || !newSlot.program) return;
-    setScheduleData([...scheduleData, { ...newSlot }]);
+
+    // Analyse et réorganisation automatique sans popup
+    let targetDay = newSlot.day;
+    let targetStart = newSlot.startTime;
+    let targetEnd = newSlot.endTime;
+
+    const hasOverlap = scheduleData.some((slot: any) => {
+      if (slot.day !== targetDay) return false;
+      return (targetStart < slot.endTime && slot.startTime < targetEnd);
+    });
+
+    if (hasOverlap) {
+      const optimal = findOptimalSlot(newSlot.program, scheduleData);
+      targetDay = optimal.day;
+      targetStart = optimal.startTime;
+      targetEnd = optimal.endTime;
+    }
+
+    const slotToAdd = {
+      ...newSlot,
+      day: targetDay,
+      startTime: targetStart,
+      endTime: targetEnd
+    };
+
+    const nextSchedule = [...scheduleData, slotToAdd];
+    setScheduleData(nextSchedule);
+
     if (!editingAssignedPrograms.includes(newSlot.program)) {
       setEditingAssignedPrograms([...editingAssignedPrograms, newSlot.program]);
     }
-    setNewSlot({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '' });
+
+    const nextOptimal = findOptimalSlot(newSlot.program, nextSchedule);
+    setNewSlot({
+      day: nextOptimal.day,
+      startTime: nextOptimal.startTime,
+      endTime: nextOptimal.endTime,
+      course: '',
+      program: newSlot.program,
+      type: 'CM'
+    });
+  };
+
+  // Génération automatique d'un emploi du temps optimal 100% sans conflit pour tous les cours du programme
+  const handleAutoPlanAll = () => {
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+    const selectedPrograms = editingAssignedPrograms.length > 0 ? editingAssignedPrograms : programs.map((p: any) => typeof p === 'string' ? p : p.title);
+    const targetCourses = localCourses.filter((c: any) => selectedPrograms.includes(c.program));
+
+    if (targetCourses.length === 0) {
+      alert("Aucun cours enregistré trouvé pour les programmes de cet enseignant. Soumettez d'abord des cours dans le Portail Enseignant.");
+      return;
+    }
+
+    let currentSchedule: any[] = [];
+    targetCourses.forEach((c: any) => {
+      // Ajouter une séance CM et une séance TD pour chaque cours
+      const optCM = findOptimalSlot(c.program, currentSchedule);
+      currentSchedule.push({
+        day: optCM.day,
+        startTime: optCM.startTime,
+        endTime: optCM.endTime,
+        course: c.title,
+        program: c.program,
+        type: 'CM'
+      });
+
+      const optTD = findOptimalSlot(c.program, currentSchedule);
+      currentSchedule.push({
+        day: optTD.day,
+        startTime: optTD.startTime,
+        endTime: optTD.endTime,
+        course: c.title,
+        program: c.program,
+        type: 'TD'
+      });
+    });
+
+    setScheduleData(currentSchedule);
   };
 
   const handleRemoveSlot = (index: number) => {
@@ -192,9 +318,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
               <p className="text-xs text-text-secondary">Gérez les programmes assignés et l'emploi du temps</p>
             </div>
           </div>
-          <button onClick={saveSchedule} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-brand-hover cursor-pointer">
-            <SaveIcon className="w-4 h-4" /> Enregistrer
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={handleAutoPlanAll} className="flex items-center gap-2 bg-[#006c49] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 cursor-pointer shadow-sm transition-all">
+              ⚡ Générer l'emploi du temps 100% sans conflit
+            </button>
+            <button onClick={saveSchedule} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-hover cursor-pointer">
+              <SaveIcon className="w-4 h-4" /> Enregistrer
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -220,19 +351,52 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-text-secondary uppercase">Programme</label>
-                <select value={newSlot.program} onChange={(e) => setNewSlot({...newSlot, program: e.target.value})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
-                  <option value="">Sélectionner un programme</option>
-                  {programs.map((p: any) => {
-                    const title = typeof p === 'string' ? p : p.title;
-                    return <option key={title} value={title}>{title}</option>;
-                  })}
-                </select>
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Matière / Cours (Auto-remplit le programme)</label>
+                <input 
+                  type="text" 
+                  list="teacher-courses-datalist"
+                  value={newSlot.course} 
+                  onChange={(e) => handleCourseSelection(e.target.value)} 
+                  placeholder="Ex: INF301 - Algorithmique" 
+                  className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary font-semibold" 
+                />
+                <datalist id="teacher-courses-datalist">
+                  {(() => {
+                    try {
+                      const courses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
+                      return courses
+                        .filter((c: any) => !newSlot.program || c.program === newSlot.program)
+                        .map((c: any) => (
+                          <option key={c.id || c.code} value={c.title} />
+                        ));
+                    } catch {
+                      return null;
+                    }
+                  })()}
+                </datalist>
               </div>
-              <div>
-                <label className="text-[10px] font-bold text-text-secondary uppercase">Matière / Cours</label>
-                <input type="text" value={newSlot.course} onChange={(e) => setNewSlot({...newSlot, course: e.target.value})} placeholder="Ex: Algèbre linéaire" className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary" />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Programme Auto-lié</label>
+                  <select value={newSlot.program} onChange={(e) => setNewSlot({...newSlot, program: e.target.value})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary font-bold">
+                    <option value="">Sélectionner un programme</option>
+                    {programs.map((p: any) => {
+                      const title = typeof p === 'string' ? p : p.title;
+                      return <option key={title} value={title}>{title}</option>;
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Type de Séance</label>
+                  <select value={newSlot.type} onChange={(e) => setNewSlot({...newSlot, type: e.target.value as any})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary font-bold">
+                    <option value="CM">CM (Cours Magistral)</option>
+                    <option value="TD">TD (Travaux Dirigés)</option>
+                    <option value="TP">TP (Travaux Pratiques)</option>
+                  </select>
+                </div>
               </div>
+
               <button onClick={handleAddSlot} disabled={!newSlot.course || !newSlot.program} className="w-full mt-2 bg-emerald-500/10 text-emerald-600 font-bold py-2 rounded hover:bg-emerald-500/20 disabled:opacity-50 transition-colors cursor-pointer text-sm">
                 Ajouter au planning
               </button>
@@ -291,6 +455,87 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* Tableau de Comptabilisation des Heures Synchronisées par Cours */}
+        <div className="bg-bg-secondary border border-border-primary rounded-xl p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-sm text-text-primary uppercase flex items-center gap-2">
+              <ClockIcon className="w-4 h-4 text-brand-primary" /> Synchronisation du Volume Horaire &amp; Heures Planifiées
+            </h3>
+            <span className="text-[10px] bg-brand-primary/10 text-brand-primary font-bold px-2.5 py-1 rounded-full">Calcul en temps réel</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border-primary/60 text-text-secondary text-[10px] uppercase">
+                  <th className="py-2 px-3">Cours / Enseignement</th>
+                  <th className="py-2 px-3">Programme</th>
+                  <th className="py-2 px-3 text-center">Séances Prévues</th>
+                  <th className="py-2 px-3 text-center">Heures Planifiées</th>
+                  <th className="py-2 px-3 text-center">Volume Prévu (UE)</th>
+                  <th className="py-2 px-3 text-right">Progression</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-primary/40 text-text-primary">
+                {(() => {
+                  const courseMap: Record<string, { program: string; count: number; totalHours: number }> = {};
+                  scheduleData.forEach((slot: any) => {
+                    const cKey = slot.course || 'Cours non spécifié';
+                    if (!courseMap[cKey]) {
+                      courseMap[cKey] = { program: slot.program || 'N/A', count: 0, totalHours: 0 };
+                    }
+                    courseMap[cKey].count += 1;
+                    
+                    // Duration calculation
+                    const [sH, sM] = (slot.startTime || '00:00').split(':').map(Number);
+                    const [eH, eM] = (slot.endTime || '00:00').split(':').map(Number);
+                    const hours = Math.max(0, (eH * 60 + eM - (sH * 60 + sM)) / 60);
+                    courseMap[cKey].totalHours += hours;
+                  });
+
+                  let localCourses: any[] = [];
+                  try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+                  const entries = Object.entries(courseMap);
+                  if (entries.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={6} className="py-4 text-center text-text-secondary italic text-xs">
+                          Aucun créneau planifié pour le moment.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return entries.map(([cName, data]) => {
+                    const matchedCourse = localCourses.find((lc: any) => lc.title === cName || cName.includes(lc.title));
+                    const volumeTotal = matchedCourse ? (matchedCourse.volumeCM || 0) + (matchedCourse.volumeTD || 0) + (matchedCourse.volumeTP || 0) : 30;
+                    const percent = Math.min(100, Math.round((data.totalHours / (volumeTotal || 1)) * 100));
+
+                    return (
+                      <tr key={cName} className="hover:bg-bg-primary/40">
+                        <td className="py-2.5 px-3 font-bold">{cName}</td>
+                        <td className="py-2.5 px-3 text-text-secondary">{data.program}</td>
+                        <td className="py-2.5 px-3 text-center font-bold text-brand-primary">{data.count} créneau(x)</td>
+                        <td className="py-2.5 px-3 text-center font-semibold">{data.totalHours.toFixed(1)}h</td>
+                        <td className="py-2.5 px-3 text-center text-text-secondary">{volumeTotal > 0 ? `${volumeTotal}h` : 'Non défini'}</td>
+                        <td className="py-2.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-24 bg-bg-primary border border-border-primary h-2 rounded-full overflow-hidden">
+                              <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: `${percent}%` }} />
+                            </div>
+                            <span className="font-bold text-[11px] text-brand-primary min-w-[32px]">{percent}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -35,10 +35,24 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
   const [selectedProgram, setSelectedProgram] = useState(initialProgram || '');
   const [selectedProgramType, setSelectedProgramType] = useState('Master');
   const [selectedCertOption, setSelectedCertOption] = useState('Cisco CCNA / CCNP');
+  const [entryLevel, setEntryLevel] = useState('Niveau 1 (M1 - Bac+3 Requis)');
   const [highestDegree, setHighestDegree] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Auto-adjust default entryLevel when program type changes
+  useEffect(() => {
+    if (selectedProgramType === 'Bachelor') {
+      setEntryLevel('Niveau 1 (L1 - Rentrée Initiale Bac)');
+    } else if (selectedProgramType === 'Master') {
+      setEntryLevel('Niveau 1 (M1 - Bac+3 Requis)');
+    } else if (selectedProgramType === 'Doctorat') {
+      setEntryLevel('Niveau 1 (D1 - Master 2 Requis)');
+    } else {
+      setEntryLevel('Niveau Certifiant');
+    }
+  }, [selectedProgramType]);
 
   // Form State — Etape 3
   const [files, setFiles] = useState<{ name: string; size: string; type: string; fileId: string }[]>([]);
@@ -351,6 +365,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             nationality,
             highestDegree: isCertification ? undefined : highestDegree,
             graduationYear: isCertification ? undefined : (Number(graduationYear) || undefined),
+            motivation: `[Niveau convoité: ${entryLevel}]`,
             status: 'New',
             dateApplied: new Date().toISOString(),
             declarationChecked,
@@ -395,8 +410,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             phone,
             program: finalProgramName,
             nationality,
+            entryLevel,
             highestDegree: isCertification ? undefined : highestDegree,
             graduationYear: isCertification ? undefined : Number(graduationYear),
+            motivation: `[Niveau convoité: ${entryLevel}]`,
             status: 'New',
             dateApplied: new Date().toISOString(),
             declarationChecked,
@@ -595,6 +612,63 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
               </div>
 
+              {/* Affichage des procédures d'admission du programme si renseignées */}
+              {(() => {
+                const matchedProg = programs.find((p) => p.title === selectedProgram);
+                if (matchedProg?.procedures) {
+                  return (
+                    <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-text-primary space-y-1">
+                      <div className="font-bold flex items-center gap-1.5 uppercase text-[10px] text-amber-600">
+                        <AlertCircle className="w-3.5 h-3.5" /> Procédures d'admission & Pièces par Niveau
+                      </div>
+                      <p className="leading-relaxed text-[11px] text-text-secondary">{matchedProg.procedures}</p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Sélection du Niveau d'Entrée */}
+              {!isCertification && (
+                <div className="space-y-1.5 p-3.5 bg-bg-primary border border-border-primary rounded-xl">
+                  <label className="text-xs font-bold text-brand-primary uppercase tracking-wider flex items-center gap-1.5">
+                    Niveau d'Entrée Convoité *
+                  </label>
+                  <select 
+                    value={entryLevel}
+                    onChange={(e) => setEntryLevel(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-bg-secondary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
+                  >
+                    {selectedProgramType === 'Bachelor' && (
+                      <>
+                        <option value="Niveau 1 (L1 - Rentrée Initiale Bac)">Niveau 1 (L1 - Rentrée Initiale Post-Bac)</option>
+                        <option value="Niveau 2 (L2 - Admission Parallèle / Acquis)">Niveau 2 (L2 - Passerelle / Justificatifs L1 requis)</option>
+                        <option value="Niveau 3 (L3 - Passerelle HND / BTS / Licence 2)">Niveau 3 (L3 - Passerelle / Diplôme Bac+2 & Relevés requis)</option>
+                      </>
+                    )}
+                    {selectedProgramType === 'Master' && (
+                      <>
+                        <option value="Niveau 1 (M1 - Bac+3 Requis)">Niveau 1 (M1 - Cursus Master / Licence ou Bac+3 Validé)</option>
+                        <option value="Niveau 2 (M2 - Bac+4 Requis)">Niveau 2 (M2 - Passerelle / Master 1 ou Bac+4 Validé)</option>
+                      </>
+                    )}
+                    {selectedProgramType === 'Doctorat' && (
+                      <>
+                        <option value="Niveau 1 (D1 - Master 2 Requis)">Niveau 1 (D1 - Thèse / Master 2 Validé)</option>
+                        <option value="Niveau 2 (D2)">Niveau 2 (D2)</option>
+                        <option value="Niveau 3 (D3)">Niveau 3 (D3)</option>
+                      </>
+                    )}
+                  </select>
+                  <p className="text-[11px] text-text-secondary">
+                    {!entryLevel.includes('Niveau 1') 
+                      ? '⚠️ Rentrée en admission parallèle (Niveau supérieur) : Vous devez fournir à l\'étape suivante vos relevés de notes des années universitaires précédentes.'
+                      : 'Rentrée initiale standard au premier niveau du cursus.'
+                    }
+                  </p>
+                </div>
+              )}
+
               {/* Sub-dropdown option for Cisco/AWS/CompTIA when choosing International Certification */}
               {selectedProgram === "International Professional Certification Program" && (
                 <div className="space-y-1.5 p-3.5 bg-brand-primary/5 border border-brand-primary/20 rounded-xl animate-fadeIn">
@@ -694,6 +768,13 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               <p className="text-xs text-text-secondary">
                 Vous pouvez charger vos pièces justificatives dès maintenant ou finaliser votre dossier plus tard depuis votre espace étudiant.
               </p>
+
+              {!entryLevel.includes('Niveau 1') && !isCertification && (
+                <div className="p-4 bg-amber-500/10 border-l-4 border-amber-500 rounded-lg text-xs text-text-primary leading-relaxed space-y-1">
+                  <span className="font-bold text-amber-600 uppercase block">⚠️ Examen des Équivalences pour : {entryLevel}</span>
+                  Pour valider votre entrée directe en niveau supérieur, l'administrateur examinera vos <strong>relevés de notes universitaires antérieurs</strong> et votre <strong>dernier diplôme obtenu</strong>. Veuillez charger ces pièces justificatives ci-dessous.
+                </div>
+              )}
 
               {(() => {
                 const cniFile = files.find(f => f.name.startsWith('[CNI]'));

@@ -24,6 +24,7 @@ export type ActiveTab =
   | 'student-dashboard'
   | 'student-programs'
   | 'student-schedule'
+  | 'student-chat'
   | 'student-catalog'
   | 'student-profile'
   | 'student-settings'
@@ -48,7 +49,7 @@ export type Role = 'guest' | 'student' | 'admin' | 'teacher';
 
 const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
 const STUDENT_TABS: ActiveTab[] = [
-  'student-login', 'student-dashboard', 'student-schedule', 'student-programs', 'student-catalog',
+  'student-login', 'student-dashboard', 'student-schedule', 'student-chat', 'student-programs', 'student-catalog',
   'student-profile', 'student-settings',
 ];
 const ADMIN_TABS: ActiveTab[] = [
@@ -69,6 +70,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
   'student-schedule': '/etudiant/emploi-du-temps',
+  'student-chat': '/etudiant/discussion',
   'student-programs': '/etudiant/programmes',
   'student-catalog': '/etudiant/catalogue',
   'student-profile': '/etudiant/profil',

@@ -27,15 +27,21 @@ export default function DemoToolbar({ activeTab, setActiveTab, setCandidateLogge
     { label: 'Confirmation Soumission', tab: 'success', group: 'Admissions' },
     
     { 
-      label: 'Connexion Candidat', 
-      tab: 'candidate-login', 
-      group: 'Espace Candidat',
+      label: 'Connexion Étudiant', 
+      tab: 'student-login', 
+      group: 'Espace Étudiant',
       setup: () => setCandidateLoggedIn(false)
     },
     { 
-      label: 'Dashboard Candidat (Jean Dupont)', 
-      tab: 'candidate-dashboard', 
-      group: 'Espace Candidat',
+      label: 'Dashboard Étudiant', 
+      tab: 'student-dashboard', 
+      group: 'Espace Étudiant',
+      setup: () => setCandidateLoggedIn(true)
+    },
+    { 
+      label: 'Messagerie de cours', 
+      tab: 'student-chat', 
+      group: 'Espace Étudiant',
       setup: () => setCandidateLoggedIn(true)
     },
     

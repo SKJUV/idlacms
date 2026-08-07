@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { programsData } from '../data/mockData';
 import { Paperclip, Video, FileText, Download, ExternalLink } from 'lucide-react';
+import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -164,16 +165,33 @@ export default function StudentPortal({
   const docInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // ── Chat de classe ──
-  const [selectedClassChat, setSelectedClassChat] = useState<string | null>(null);
+  // ── Chat de classe par cours & niveau ──
+  const [selectedClassChat, setSelectedClassChat] = useState<string | null>(() => localStorage.getItem('idla_student_selected_chat') || null);
+  const [selectedClassCourse, setSelectedClassCourseState] = useState<string | null>(() => localStorage.getItem('idla_student_selected_course') || null);
+  const [selectedClassLevel, setSelectedClassLevelState] = useState<string>(() => localStorage.getItem('idla_student_selected_level') || 'L1');
+
+  const setSelectedClassCourse = (course: string | null) => {
+    setSelectedClassCourseState(course);
+    if (course) localStorage.setItem('idla_student_selected_course', course);
+    else localStorage.removeItem('idla_student_selected_course');
+  };
+
+  const setSelectedClassLevel = (lvl: string) => {
+    setSelectedClassLevelState(lvl);
+    if (lvl) localStorage.setItem('idla_student_selected_level', lvl);
+  };
   const [classChatMessage, setClassChatMessage] = useState('');
   const [classChatHistory, setClassChatHistory] = useState<any[]>([]);
   const classChatEndRef = useRef<HTMLDivElement>(null);
 
-  const getClassChatId = (programName: string) => {
+  const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
+    const c = (courseName || 'general').trim().toLowerCase();
+    const l = (levelName || 'L1').trim().toLowerCase();
+    const key = `course___${c}___${l}`;
+
     let hash = 0;
-    for (let i = 0; i < programName.length; i++) {
-      hash = ((hash << 5) - hash) + programName.charCodeAt(i);
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash) + key.charCodeAt(i);
       hash |= 0;
     }
     return `cls_${Math.abs(hash)}`;
@@ -410,21 +428,80 @@ export default function StudentPortal({
     loadDossierDetails();
   }, [selectedAppId, isLoggedIn]);
 
+  // ── Helpers Persistance Hybride (LocalStorage + Appwrite) ──
+  const getStoredLocalClassMessages = (channelId: string) => {
+    try {
+      const list: any[] = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+      return list.filter(m => m.channelId === channelId);
+    } catch {
+      return [];
+    }
+  };
+
+  const storeLocalClassMessage = (msg: any) => {
+    try {
+      const list: any[] = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+      list.push(msg);
+      localStorage.setItem('idla_local_class_messages', JSON.stringify(list));
+    } catch (e) {
+      console.error("Erreur enregistrement localStorage message:", e);
+    }
+  };
+
   // ── Charger le chat de classe ──
   useEffect(() => {
-    if (!selectedClassChat || !isLoggedIn) return;
+    if (!isLoggedIn) return;
+
+    let localApps: any[] = [];
+    try { localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch {}
+    const allApps = [...applications, ...localApps];
+
+    const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
+    const progTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
+    const studentLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
+
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+    const filteredCourses = localCourses.filter((c: any) =>
+      (!c.level || c.level === studentLevel) &&
+      (!c.program || c.program === progTitle || progTitle.includes(c.program) || c.program.includes(progTitle))
+    );
+    const myCourseList = filteredCourses.length > 0 
+      ? filteredCourses 
+      : localCourses.filter((c: any) => !c.level || c.level === studentLevel || localCourses.length <= 5);
+
+    const courseName = selectedClassCourse || (myCourseList.length > 0 ? myCourseList[0].title : 'Général');
+    const channelId = getClassChatId(progTitle, courseName, studentLevel);
+
     const loadClassMessages = async () => {
+      const localMsgs = getStoredLocalClassMessages(channelId).map((m: any) => ({
+        sender: m.sender,
+        text: m.text,
+        type: m.type || 'text',
+        fileName: m.fileName,
+        fileUrl: m.fileUrl,
+        fileSize: m.fileSize,
+        meetingUrl: m.meetingUrl,
+        meetingTitle: m.meetingTitle,
+        meetingPlatform: m.meetingPlatform,
+        meetingTime: m.meetingTime,
+        time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        senderName: m.senderName,
+        createdAt: m.createdAt
+      }));
+
+      let combined = [...localMsgs];
+
       try {
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-          const classId = getClassChatId(selectedClassChat);
           const msgRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
-            [Query.equal('applicationId', classId), Query.orderAsc('createdAt')]
+            [Query.equal('applicationId', channelId), Query.orderAsc('createdAt')]
           );
-          setClassChatHistory(msgRes.documents.map((m: any) => {
+          const appwriteMsgs = msgRes.documents.map((m: any) => {
             let parsedText = m.text;
-            let sName = m.sender === 'candidate' ? 'Moi' : 'Enseignant';
+            let sName = m.sender === 'candidate' ? profile.name : 'Enseignant';
             let msgType = 'text';
             let extraData: any = {};
             try {
@@ -452,16 +529,27 @@ export default function StudentPortal({
               type: msgType,
               ...extraData,
               time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-              senderName: sName
+              senderName: sName,
+              createdAt: m.createdAt
             };
-          }));
+          });
+
+          appwriteMsgs.forEach((aw: any) => {
+            if (!combined.some(c => c.text === aw.text && c.sender === aw.sender)) {
+              combined.push(aw);
+            }
+          });
         }
       } catch (err) {
         console.warn("Impossible de charger les messages de classe:", err);
       }
+
+      combined.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setClassChatHistory(combined);
     };
+
     loadClassMessages();
-  }, [selectedClassChat, isLoggedIn]);
+  }, [selectedClassChat, selectedClassCourse, selectedClassLevel, isLoggedIn]);
 
   useEffect(() => {
     classChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -511,30 +599,70 @@ export default function StudentPortal({
 
   const handleSendClassMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!classChatMessage.trim() || !selectedClassChat) return;
+    if (!classChatMessage.trim()) return;
+
+    let localApps: any[] = [];
+    try { localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch {}
+    const allApps = [...applications, ...localApps];
+
+    const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
+    const progTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
+    const studentLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
+
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+    const filteredCourses = localCourses.filter((c: any) =>
+      (!c.level || c.level === studentLevel) &&
+      (!c.program || c.program === progTitle || progTitle.includes(c.program) || c.program.includes(progTitle))
+    );
+    const myCourseList = filteredCourses.length > 0 
+      ? filteredCourses 
+      : localCourses.filter((c: any) => !c.level || c.level === studentLevel || localCourses.length <= 5);
+
+    const courseName = selectedClassCourse || (myCourseList.length > 0 ? myCourseList[0].title : 'Général');
+    const channelId = getClassChatId(progTitle, courseName, studentLevel);
 
     const text = classChatMessage;
+    const nowIso = new Date().toISOString();
     setClassChatMessage('');
-    const userMsg = { sender: 'candidate', text, time: 'À l\'instant', senderName: profile.name };
+
+    const userMsg = {
+      sender: 'candidate',
+      text,
+      type: 'text',
+      time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      senderName: profile.name,
+      createdAt: nowIso
+    };
+
+    storeLocalClassMessage({
+      channelId,
+      sender: 'candidate',
+      senderName: profile.name,
+      text,
+      type: 'text',
+      createdAt: nowIso
+    });
+
     setClassChatHistory((curr) => [...curr, userMsg]);
 
     const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
     if (canPersist) {
       try {
-        const payloadStr = JSON.stringify({ n: profile.name, t: text });
+        const payloadStr = JSON.stringify({ n: profile.name, t: text, type: 'text' });
         await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           { 
-            applicationId: getClassChatId(selectedClassChat), 
+            applicationId: channelId, 
             sender: 'candidate', 
             text: payloadStr, 
-            createdAt: new Date().toISOString()
+            createdAt: nowIso
           }
         );
       } catch (err) {
-        console.error("Échec de l'enregistrement du message de classe:", err);
+        console.error("Échec de l'enregistrement du message de classe sur Appwrite:", err);
       }
     }
   };
@@ -1298,24 +1426,53 @@ export default function StudentPortal({
 
   const renderClassChatModal = () => {
     if (!selectedClassChat) return null;
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+    const availableCourses = localCourses.filter((c: any) =>
+      (!selectedClassChat || c.program === selectedClassChat) &&
+      (!selectedClassLevel || c.level === selectedClassLevel)
+    );
+
     return (
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-3xl w-full h-[80vh] flex flex-col shadow-2xl animate-fadeIn">
-          {/* Header */}
-          <div className="flex justify-between items-center p-5 border-b border-border-primary bg-bg-primary/50 shrink-0">
+          {/* Header avec sélection par cours et par niveau */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-5 border-b border-border-primary bg-bg-primary/50 shrink-0">
             <div>
-              <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
+              <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
                 <MessageSquareIcon className="w-5 h-5 text-brand-primary" />
-                Discussion de classe
+                Discussion de classe par Cours &amp; Niveau
               </h3>
-              <p className="text-xs text-text-secondary mt-1">{selectedClassChat}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{selectedClassChat}</p>
             </div>
-            <button 
-              onClick={() => setSelectedClassChat(null)}
-              className="p-2 bg-bg-primary border border-border-primary rounded-xl text-text-secondary hover:text-brand-primary hover:border-brand-primary transition-colors cursor-pointer"
-            >
-              Fermer
-            </button>
+
+            <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+              <span className="bg-brand-primary/10 text-brand-primary border border-brand-primary/30 font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                <span>Niveau :</span>
+                <strong>{selectedClassLevel}</strong>
+              </span>
+
+              <select
+                value={selectedClassCourse || ''}
+                onChange={(e) => setSelectedClassCourse(e.target.value || null)}
+                className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-brand-primary max-w-[220px]"
+              >
+                <option value="">-- Chat Général du Programme --</option>
+                {availableCourses.map((c: any) => (
+                  <option key={c.id || c.code} value={c.title}>
+                    {c.code ? `${c.code} - ` : ''}{c.title}
+                  </option>
+                ))}
+              </select>
+
+              <button 
+                onClick={() => setSelectedClassChat(null)}
+                className="p-1.5 bg-bg-primary border border-border-primary rounded-lg text-text-secondary hover:text-brand-primary transition-colors cursor-pointer text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
           </div>
           
           {/* Chat History */}
@@ -1434,6 +1591,13 @@ export default function StudentPortal({
   // ════════════════════════════════════════════════════════════════════════════
   // DASHBOARD VIEW
   // ════════════════════════════════════════════════════════════════════════════
+  const openStudentClassChat = (progTitle: string) => {
+    const matchedApp = applications.find(a => a.program === progTitle || (a.program && (progTitle.includes(a.program) || a.program.includes(progTitle))));
+    const studentLevel = matchedApp?.entryLevel || 'L1';
+    setSelectedClassLevel(studentLevel);
+    setSelectedClassChat(progTitle);
+  };
+
   if (activeTab === 'student-dashboard') {
     return (
       <div className="bg-bg-primary min-h-screen text-text-primary py-8 px-6 md:px-12 transition-all duration-200">
@@ -1464,6 +1628,37 @@ export default function StudentPortal({
               </button>
             </div>
           </div>
+
+          {/* Bandeau d'admission confirmé & bienvenue personnalisé */}
+          {(() => {
+            const acceptedApp = applications.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
+            if (acceptedApp) {
+              const matricule = acceptedApp.matricule || generateMatricule(acceptedApp.email || profile.email);
+              const entryLevel = acceptedApp.entryLevel || 'Niveau 1';
+              return (
+                <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white rounded-2xl p-6 md:p-8 shadow-lg space-y-4 animate-fadeIn border border-emerald-500/30">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="space-y-1.5">
+                      <span className="bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full backdrop-blur-sm inline-block">
+                        ✓ Admission Confirmée • IDLA
+                      </span>
+                      <h2 className="text-xl md:text-2xl font-extrabold leading-tight">
+                        Bonjour {profile.name}, votre candidature a été acceptée pour le programme {acceptedApp.program} !
+                      </h2>
+                      <p className="text-emerald-100 text-xs md:text-sm">
+                        Niveau d'entrée validé : <strong>{entryLevel}</strong> | Matricule Officiel : <span className="font-mono bg-black/25 px-2.5 py-0.5 rounded text-yellow-300 font-bold tracking-wider">{matricule}</span>
+                      </p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shrink-0 flex items-center gap-2">
+                      <MailIcon className="w-4 h-4 text-emerald-200" />
+                      <span>Confirmation officielle transmise à <strong>{profile.email}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           {/* KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1563,7 +1758,7 @@ export default function StudentPortal({
                           <button className="self-start inline-flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
                             <PlayCircleIcon className="w-3.5 h-3.5" /> Continuer
                           </button>
-                          <button onClick={() => setSelectedClassChat(enr.title)} className="self-start inline-flex items-center gap-1.5 bg-bg-primary border border-border-primary hover:border-brand-primary text-text-secondary hover:text-brand-primary text-xs font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                          <button onClick={() => openStudentClassChat(enr.title)} className="self-start inline-flex items-center gap-1.5 bg-bg-primary border border-border-primary hover:border-brand-primary text-text-secondary hover:text-brand-primary text-xs font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors">
                             <MessageSquareIcon className="w-3.5 h-3.5" /> Discussion
                           </button>
                         </div>
@@ -1626,6 +1821,25 @@ export default function StudentPortal({
     });
     const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
+    // Détection stricte de tous les chevauchements d'horaires sur la même journée
+    const conflicts: { day: string; time: string; courseA: string; programA: string; courseB: string; programB: string }[] = [];
+    mySchedules.forEach((slot1, i) => {
+      mySchedules.forEach((slot2, j) => {
+        if (i < j && slot1.day === slot2.day) {
+          if (slot1.startTime < slot2.endTime && slot2.startTime < slot1.endTime) {
+            conflicts.push({
+              day: slot1.day,
+              time: `${slot1.startTime}-${slot1.endTime}`,
+              courseA: slot1.course,
+              programA: slot1.program,
+              courseB: slot2.course,
+              programB: slot2.program
+            });
+          }
+        }
+      });
+    });
+
     return (
       <div className="flex-1 p-6 md:p-8 lg:p-12 pt-24 lg:pt-12 min-h-screen">
         <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
@@ -1638,6 +1852,25 @@ export default function StudentPortal({
               <p className="text-text-secondary text-sm">Consultez les horaires de cours de vos programmes validés.</p>
             </div>
           </div>
+
+          {conflicts.length > 0 && (
+            <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-xl text-rose-900 dark:text-rose-200 space-y-2 text-xs">
+              <div className="font-bold flex items-center gap-2 text-sm text-rose-600 uppercase">
+                <AlertCircleIcon className="w-5 h-5 shrink-0" />
+                <span>Attention : Chevauchement d'Emplois du Temps Détecté ({conflicts.length})</span>
+              </div>
+              <p className="leading-relaxed">
+                Des créneaux horaires sont planifiés simultanément le même jour. Veuillez contacter le secrétariat académique pour réorganiser votre emploi du temps.
+              </p>
+              <ul className="list-disc pl-5 space-y-1 font-semibold">
+                {conflicts.map((c, idx) => (
+                  <li key={idx}>
+                    <strong>{c.day} ({c.time})</strong> : "{c.courseA}" ({c.programA}) ⚡ EN CONFLIT AVEC ⚡ "{c.courseB}" ({c.programB})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden shadow-sm">
             {acceptedPrograms.length === 0 ? (
@@ -1663,17 +1896,29 @@ export default function StudentPortal({
                     const daySlots = mySchedules.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
                     return (
                       <div key={day} className="border-r border-border-primary last:border-0 p-2 space-y-2">
-                        {daySlots.map((slot: any, idx: number) => (
-                          <div key={idx} className="bg-brand-light border border-brand-primary/20 rounded-lg p-3 text-sm hover:shadow-md transition-shadow">
-                            <div className="font-bold text-brand-primary text-xs mb-1">{slot.startTime} - {slot.endTime}</div>
-                            <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
-                            <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
-                              <UsersIcon className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">{slot.teacherName}</span>
+                        {daySlots.map((slot: any, idx: number) => {
+                          const isConflicting = daySlots.some(
+                            (other: any) => other !== slot && (slot.startTime < other.endTime && other.startTime < slot.endTime)
+                          );
+                          return (
+                            <div key={idx} className={`p-3 rounded-lg text-sm transition-all border ${
+                              isConflicting 
+                                ? 'bg-rose-500/10 border-rose-500 text-rose-900 shadow-sm animate-pulse' 
+                                : 'bg-brand-light border-brand-primary/20 hover:shadow-md'
+                            }`}>
+                              <div className="flex items-center justify-between font-bold text-xs mb-1">
+                                <span className={isConflicting ? 'text-rose-600' : 'text-brand-primary'}>{slot.startTime} - {slot.endTime}</span>
+                                {isConflicting && <span className="bg-rose-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase">CONFLIT</span>}
+                              </div>
+                              <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
+                              <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
+                                <UsersIcon className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">{slot.teacherName}</span>
+                              </div>
+                              <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
                             </div>
-                            <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {daySlots.length === 0 && (
                           <div className="text-center py-6 text-xs text-text-secondary/40">--</div>
                         )}
@@ -1683,6 +1928,221 @@ export default function StudentPortal({
                 </div>
               </>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // DEDICATED STUDENT CHAT & COURSES VIEW
+  // ════════════════════════════════════════════════════════════════════════════
+  if (activeTab === 'student-chat') {
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+    let localApps: any[] = [];
+    try { localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch {}
+    const allApps = [...applications, ...localApps];
+
+    const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
+    const progTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
+    const studentLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
+
+    const filteredCourses = localCourses.filter((c: any) =>
+      (!c.level || c.level === studentLevel) &&
+      (!c.program || c.program === progTitle || progTitle.includes(c.program) || c.program.includes(progTitle))
+    );
+    const myCourseList = filteredCourses.length > 0 
+      ? filteredCourses 
+      : localCourses.filter((c: any) => !c.level || c.level === studentLevel || localCourses.length <= 5);
+
+    return (
+      <div className="flex-1 p-4 md:p-8 pt-20 md:pt-8 min-h-screen bg-bg-primary text-text-primary">
+        <div className="max-w-[1440px] mx-auto space-y-6 animate-fadeIn">
+          {MustChangePwdBanner}
+
+          {/* En-tête de section */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-bg-secondary p-6 rounded-2xl border border-border-primary shadow-sm">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-brand-primary/20">
+                  Espace d'Échanges Pédagogiques
+                </span>
+                <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/20">
+                  Niveau Validé : {studentLevel}
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold text-text-primary font-sans mt-1.5 flex items-center gap-2">
+                <MessageSquareIcon className="w-6 h-6 text-brand-primary" /> Messagerie de Classe &amp; Cours
+              </h1>
+              <p className="text-xs text-text-secondary mt-0.5">{progTitle}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab && setActiveTab('student-schedule')}
+                className="bg-bg-primary border border-border-primary hover:border-brand-primary text-text-secondary hover:text-brand-primary font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+              >
+                <CalendarIcon className="w-4 h-4" /> Voir mon Emploi du temps
+              </button>
+            </div>
+          </div>
+
+          {/* Layout 2 colonnes ergonomique */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[640px]">
+            {/* Colonne Gauche : Canaux de Cours par Matière (1/3) */}
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4 flex flex-col">
+              <div className="flex items-center justify-between border-b border-border-primary pb-3">
+                <h3 className="font-bold text-sm text-text-primary flex items-center gap-2">
+                  <BookOpenIcon className="w-4 h-4 text-brand-primary" /> Canaux de Cours ({myCourseList.length})
+                </h3>
+                <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">{studentLevel}</span>
+              </div>
+
+              <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                {myCourseList.map((c: any) => {
+                  const isSelected = selectedClassCourse === c.title || (!selectedClassCourse && myCourseList[0]?.title === c.title);
+                  return (
+                    <button
+                      key={c.id || c.code}
+                      onClick={() => setSelectedClassCourse(c.title)}
+                      className={`w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'bg-brand-primary text-white border-brand-primary shadow-sm font-bold' 
+                          : 'bg-bg-primary hover:bg-border-primary/40 border-border-primary/60 text-text-primary'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
+                          {c.code || 'UE'}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                          {c.level || studentLevel}
+                        </span>
+                      </div>
+                      <div className="font-bold text-xs truncate" title={c.title}>{c.title}</div>
+                      <div className="text-[10px] opacity-75 mt-1 flex items-center gap-2">
+                        <span>CM: {c.volumeCM || 0}h</span>
+                        <span>TD: {c.volumeTD || 0}h</span>
+                        <span>TP: {c.volumeTP || 0}h</span>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {myCourseList.length === 0 && (
+                  <div className="p-6 text-center text-text-secondary text-xs italic bg-bg-primary rounded-xl border border-border-primary space-y-2">
+                    <p className="font-bold text-text-primary">Aucun cours disponible pour le niveau {studentLevel}</p>
+                    <p>Les canaux de discussion par cours s'afficheront automatiquement dès qu'un enseignant aura soumis une matière pour votre niveau.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Colonne Droite : Fil de Discussion Interactif (2/3) */}
+            <div className="lg:col-span-2 bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden flex flex-col shadow-sm">
+              {/* Header du Chat */}
+              <div className="p-4 border-b border-border-primary bg-bg-primary flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold">
+                    <MessageSquareIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-text-primary">
+                      {selectedClassCourse ? selectedClassCourse : (myCourseList[0]?.title || 'Discussion du cours')}
+                    </h3>
+                    <p className="text-[10px] text-text-secondary flex items-center gap-2 mt-0.5">
+                      <span>{progTitle}</span> • <span className="font-bold text-brand-primary">Niveau {studentLevel}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat History */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-bg-primary/20 min-h-[420px]">
+                {classChatHistory.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-text-secondary space-y-2 opacity-60 py-12">
+                    <MessageSquareIcon className="w-12 h-12 text-brand-primary/40" />
+                    <p className="text-sm font-bold text-text-primary">Aucun message pour ce cours.</p>
+                    <p className="text-xs text-text-secondary text-center max-w-sm">
+                      Posez une question sur le cours <strong>{selectedClassCourse || progTitle}</strong> ou lancez la discussion avec votre classe.
+                    </p>
+                  </div>
+                ) : (
+                  classChatHistory.map((msg, idx) => {
+                    const isMe = msg.sender === 'candidate';
+                    return (
+                      <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 shadow-sm ${
+                          isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-bg-primary border border-border-primary text-text-primary rounded-bl-none'
+                        }`}>
+                          {!isMe && <div className="text-[11px] font-bold text-brand-primary mb-1.5">{msg.senderName || 'Enseignant'}</div>}
+
+                          {msg.type === 'file' ? (
+                            <div className={`p-3.5 rounded-xl border flex flex-col gap-2.5 ${isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-bg-secondary border-border-primary text-text-primary'}`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isMe ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-bold text-xs truncate">{msg.fileName}</p>
+                                  {msg.fileSize && <p className="text-[10px] opacity-75">{fmtSize(msg.fileSize)}</p>}
+                                </div>
+                              </div>
+                              {msg.fileUrl && (
+                                <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 bg-brand-primary text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+                                  <Download className="w-3.5 h-3.5" /> Télécharger
+                                </a>
+                              )}
+                            </div>
+                          ) : msg.type === 'meeting' ? (
+                            <div className={`p-4 rounded-xl border flex flex-col gap-3 ${isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-indigo-500/10 border-sky-500/30 text-text-primary'}`}>
+                              <div className="flex items-center justify-between gap-2 border-b border-current/20 pb-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider bg-sky-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Video className="w-3 h-3 animate-pulse" /> {msg.meetingPlatform || 'Visio'}
+                                </span>
+                              </div>
+                              <p className="font-bold text-sm leading-snug">{msg.meetingTitle || msg.text}</p>
+                              {msg.meetingUrl && (
+                                <a href={msg.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-md">
+                                  <Video className="w-4 h-4" /> Rejoindre le cours en direct
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                          )}
+
+                          <div className={`text-[10px] mt-1.5 text-right ${isMe ? 'text-white/80' : 'text-text-secondary'}`}>{msg.time}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={classChatEndRef} />
+              </div>
+
+              {/* Formulaire d'envoi */}
+              <div className="p-4 border-t border-border-primary bg-bg-primary shrink-0">
+                <form onSubmit={handleSendClassMessage} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={classChatMessage}
+                    onChange={(e) => setClassChatMessage(e.target.value)}
+                    placeholder={`Posez une question sur ${selectedClassCourse || 'le cours'}...`}
+                    className="flex-1 bg-bg-secondary border border-border-primary rounded-xl px-4 py-3 text-xs text-text-primary focus:border-brand-primary outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all font-medium"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!classChatMessage.trim()}
+                    className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white px-5 py-3 rounded-xl transition-colors cursor-pointer flex items-center justify-center shadow-md font-bold text-xs"
+                  >
+                    <SendIcon className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

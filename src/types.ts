@@ -1,4 +1,9 @@
-export type RoleType = 'visitor' | 'candidate' | 'admin';
+export const DEFAULT_PROGRAM_DURATIONS: Record<'Master' | 'Doctorat' | 'Certification' | 'Bachelor', string> = {
+  Bachelor: '3 ans (6 Semestres - L1 à L3)',
+  Master: '5 ans (Cursus Bac+5 / M1 & M2)',
+  Doctorat: '3 ans (Recherche / Thèse - D1 à D3)',
+  Certification: '6 mois (Formation continue & Certifiante)'
+};
 
 export interface Program {
   id: string;
@@ -9,6 +14,8 @@ export interface Program {
   duration: string;
   image: string;
   isNew?: boolean;
+  procedures?: string;
+  availableLevels?: string[];
 }
 
 export interface AcademicSession {
@@ -120,6 +127,44 @@ export interface User {
   avatar?: string;
 }
 
+export interface Course {
+  id: string;
+  code: string;         // ex: INF301
+  title: string;        // ex: Algorithmique & Structures de Données
+  program: string;      // Nom du programme
+  level: string;        // ex: L1, L2, L3, M1, M2, D1, D2, D3, Certifiant
+  teacherId?: string;
+  teacherName?: string;
+  volumeCM?: number;    // Heures CM prévues
+  volumeTD?: number;    // Heures TD prévues
+  volumeTP?: number;    // Heures TP prévues
+  completedCM?: number; // Heures CM effectuées
+  completedTD?: number; // Heures TD effectuées
+  completedTP?: number; // Heures TP effectuées
+  description?: string;
+}
+
+export interface ScheduleSlot {
+  id: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+  course: string;
+  program: string;
+  teacherName?: string;
+  teacherId?: string;
+  type?: 'CM' | 'TD' | 'TP';
+  durationHours?: number;
+  isCompleted?: boolean;
+}
+
+export interface EquivalenceChecklist {
+  previousTranscriptsVerified: boolean;
+  previousDiplomaVerified: boolean;
+  identityVerified: boolean;
+  notes?: string;
+}
+
 export interface PreRegistration {
   id: string;
   name: string;
@@ -139,6 +184,12 @@ export interface PreRegistration {
   graduationYear?: string | number;
   motivation?: string;
   documents?: string[];
+  // Niveaux, équivalences et matricule
+  entryLevel?: string;
+  equivalenceDocs?: string[];
+  levelValidationStatus?: 'Approved' | 'Pending' | 'Adjusted';
+  matricule?: string;
+  equivalenceChecklist?: EquivalenceChecklist;
 }
 
 export interface ActivityLog {

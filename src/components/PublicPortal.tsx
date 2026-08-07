@@ -863,9 +863,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                   
                   <div className="p-6 flex flex-col flex-grow space-y-4">
-                    <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>{p.category}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>{p.category}</span>
+                      </div>
+                      <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-primary/20">
+                        {p.type}
+                      </span>
                     </div>
 
                     <h3 className="font-bold text-lg text-text-primary">{p.title}</h3>
@@ -874,14 +879,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       {p.description}
                     </p>
 
+                    {p.procedures && (
+                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-text-secondary space-y-0.5">
+                        <span className="font-bold text-amber-600 uppercase text-[9px] block">Procédure & Équivalences</span>
+                        <p className="line-clamp-2">{p.procedures}</p>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
-                      <div className="flex items-center gap-1 text-text-secondary text-xs">
+                      <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
                         <Clock className="w-3.5 h-3.5 text-brand-primary" />
                         <span>{p.duration}</span>
                       </div>
                       <button 
                         onClick={() => onApplyNow(p.title)}
-                        className="flex items-center gap-1 text-sm font-semibold text-brand-primary group-hover:underline cursor-pointer"
+                        className="flex items-center gap-1 text-sm font-bold text-brand-primary group-hover:underline cursor-pointer"
                       >
                         S'inscrire
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

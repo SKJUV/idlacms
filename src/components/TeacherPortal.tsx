@@ -27,7 +27,44 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<any[]>([]);
-  const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
+  const [selectedProgram, setSelectedProgramState] = useState<string | null>(() => localStorage.getItem('idla_teacher_selected_program') || null);
+  const [selectedCourse, setSelectedCourseState] = useState<string | null>(() => localStorage.getItem('idla_teacher_selected_course') || null);
+  const [selectedLevel, setSelectedLevelState] = useState<string>(() => localStorage.getItem('idla_teacher_selected_level') || 'L1');
+
+  const setSelectedProgram = (p: string | null) => {
+    setSelectedProgramState(p);
+    if (p) localStorage.setItem('idla_teacher_selected_program', p);
+    else localStorage.removeItem('idla_teacher_selected_program');
+  };
+
+  const setSelectedCourse = (c: string | null) => {
+    setSelectedCourseState(c);
+    if (c) localStorage.setItem('idla_teacher_selected_course', c);
+    else localStorage.removeItem('idla_teacher_selected_course');
+  };
+
+  const setSelectedLevel = (l: string) => {
+    setSelectedLevelState(l);
+    if (l) localStorage.setItem('idla_teacher_selected_level', l);
+  };
+
+  // Soumission et gestion des cours par l'enseignant
+  const [myCourses, setMyCourses] = useState<any[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [cCode, setCCode] = useState('');
+  const [cTitle, CSetTitle] = useState('');
+  const [cLevel, setCLevel] = useState('L1');
+  const [cProgram, setCProgram] = useState('');
+  const [cCM, setCCM] = useState(20);
+  const [cTD, setCTD] = useState(10);
+  const [cTP, setCTP] = useState(10);
+  const [cDesc, setCDesc] = useState('');
 
   // Chat states
   const [chatMessage, setChatMessage] = useState('');
@@ -43,18 +80,49 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [isUploadingChatFile, setIsUploadingChatFile] = useState(false);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
 
-  const getClassChatId = (programName: string) => {
+  const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
+    const c = (courseName || 'general').trim().toLowerCase();
+    const l = (levelName || 'L1').trim().toLowerCase();
+    const key = `course___${c}___${l}`;
+
     let hash = 0;
-    for (let i = 0; i < programName.length; i++) {
-      hash = ((hash << 5) - hash) + programName.charCodeAt(i);
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash) + key.charCodeAt(i);
       hash |= 0;
     }
     return `cls_${Math.abs(hash)}`;
   };
 
+  const handleCreateCourse = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cTitle || !cProgram) return;
+    const newCourseObj = {
+      id: `crs_${Date.now()}`,
+      code: cCode || `INF-${Math.floor(100 + Math.random() * 900)}`,
+      title: cTitle,
+      program: cProgram,
+      level: cLevel,
+      teacherId: profile?.$id || profile?.id,
+      teacherName: profile?.name || 'Enseignant',
+      volumeCM: Number(cCM) || 0,
+      volumeTD: Number(cTD) || 0,
+      volumeTP: Number(cTP) || 0,
+      description: cDesc
+    };
+    const updated = [newCourseObj, ...myCourses];
+    setMyCourses(updated);
+    try {
+      localStorage.setItem('idla_local_courses', JSON.stringify(updated));
+    } catch (e) {}
+
+    setShowCourseModal(false);
+    setCCode(''); CSetTitle(''); setCDesc('');
+  };
+
   useEffect(() => {
     if (activeTab !== 'teacher-students') {
       setSelectedProgram(null);
+      setSelectedCourse(null);
     }
   }, [activeTab]);
 
@@ -62,20 +130,60 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
+  // ── Helpers Persistance Hybride (LocalStorage + Appwrite) ──
+  const getStoredLocalClassMessages = (channelId: string) => {
+    try {
+      const list: any[] = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+      return list.filter(m => m.channelId === channelId);
+    } catch {
+      return [];
+    }
+  };
+
+  const storeLocalClassMessage = (msg: any) => {
+    try {
+      const list: any[] = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+      list.push(msg);
+      localStorage.setItem('idla_local_class_messages', JSON.stringify(list));
+    } catch (e) {
+      console.error("Erreur enregistrement localStorage message:", e);
+    }
+  };
+
+  // ── Charger le chat de classe ──
   useEffect(() => {
     if (!selectedProgram || !isLoggedIn) return;
+    const classId = getClassChatId(selectedProgram, selectedCourse, selectedLevel);
+
     const loadClassMessages = async () => {
+      const localMsgs = getStoredLocalClassMessages(classId).map((m: any) => ({
+        sender: m.sender,
+        text: m.text,
+        type: m.type || 'text',
+        fileName: m.fileName,
+        fileUrl: m.fileUrl,
+        fileSize: m.fileSize,
+        meetingUrl: m.meetingUrl,
+        meetingTitle: m.meetingTitle,
+        meetingPlatform: m.meetingPlatform,
+        meetingTime: m.meetingTime,
+        time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        senderName: m.senderName,
+        createdAt: m.createdAt
+      }));
+
+      let combined = [...localMsgs];
+
       try {
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-          const classId = getClassChatId(selectedProgram);
           const msgRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
             [Query.equal('applicationId', classId), Query.orderAsc('createdAt')]
           );
-          setChatHistory(msgRes.documents.map((m: any) => {
+          const appwriteMsgs = msgRes.documents.map((m: any) => {
             let parsedText = m.text;
-            let sName = m.sender === 'advisor' ? 'Enseignant' : 'Étudiant';
+            let sName = m.sender === 'advisor' ? (profile?.name || 'Enseignant') : 'Étudiant';
             let msgType = 'text';
             let extraData: any = {};
 
@@ -104,24 +212,55 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               type: msgType,
               ...extraData,
               time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-              senderName: sName
+              senderName: sName,
+              createdAt: m.createdAt
             };
-          }));
+          });
+
+          appwriteMsgs.forEach((aw: any) => {
+            if (!combined.some(c => c.text === aw.text && c.sender === aw.sender)) {
+              combined.push(aw);
+            }
+          });
         }
       } catch (err) {
-        console.warn("Erreur chargement messages de classe:", err);
+        console.warn("Erreur chargement messages de classe Appwrite:", err);
       }
+
+      combined.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setChatHistory(combined);
     };
+
     loadClassMessages();
-  }, [selectedProgram, isLoggedIn]);
+  }, [selectedProgram, selectedCourse, selectedLevel, isLoggedIn]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || !selectedProgram) return;
 
+    const classId = getClassChatId(selectedProgram, selectedCourse, selectedLevel);
     const text = chatMessage;
+    const nowIso = new Date().toISOString();
     setChatMessage('');
-    const userMsg = { sender: 'advisor', text, type: 'text', time: 'À l\'instant', senderName: profile?.name || 'Enseignant' };
+
+    const userMsg = {
+      sender: 'advisor',
+      text,
+      type: 'text',
+      time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      senderName: profile?.name || 'Enseignant',
+      createdAt: nowIso
+    };
+
+    storeLocalClassMessage({
+      channelId: classId,
+      sender: 'advisor',
+      senderName: profile?.name || 'Enseignant',
+      text,
+      type: 'text',
+      createdAt: nowIso
+    });
+
     setChatHistory((curr) => [...curr, userMsg]);
 
     const canPersist = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages;
@@ -133,10 +272,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           { 
-            applicationId: getClassChatId(selectedProgram), 
+            applicationId: classId, 
             sender: 'advisor', 
             text: payloadStr, 
-            createdAt: new Date().toISOString()
+            createdAt: nowIso
           }
         );
       } catch (err) {
@@ -172,6 +311,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       return;
     }
 
+    const classId = getClassChatId(selectedProgram, selectedCourse, selectedLevel);
+    const nowIso = new Date().toISOString();
+
     const fileMsg = {
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
@@ -181,8 +323,22 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       fileUrl: finalUrl,
       fileSize: formattedSize,
       fileType: file.type,
-      time: 'À l\'instant'
+      time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowIso
     };
+
+    storeLocalClassMessage({
+      channelId: classId,
+      sender: 'advisor',
+      senderName: profile?.name || 'Enseignant',
+      text: `Document joint : ${file.name}`,
+      type: 'file',
+      fileName: file.name,
+      fileUrl: finalUrl,
+      fileSize: formattedSize,
+      fileType: file.type,
+      createdAt: nowIso
+    });
 
     setChatHistory((curr) => [...curr, fileMsg]);
     setIsUploadingChatFile(false);
@@ -204,10 +360,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           {
-            applicationId: getClassChatId(selectedProgram),
+            applicationId: classId,
             sender: 'advisor',
             text: payloadStr,
-            createdAt: new Date().toISOString()
+            createdAt: nowIso
           }
         );
       } catch (err) {
@@ -220,6 +376,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     e.preventDefault();
     if (!meetingTitle.trim() || !meetingUrl.trim() || !selectedProgram) return;
 
+    const classId = getClassChatId(selectedProgram, selectedCourse, selectedLevel);
+    const nowIso = new Date().toISOString();
+
     const meetingMsg = {
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
@@ -229,8 +388,22 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       meetingPlatform,
       meetingUrl,
       meetingTime: meetingTime || "Aujourd'hui",
-      time: 'À l\'instant'
+      time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowIso
     };
+
+    storeLocalClassMessage({
+      channelId: classId,
+      sender: 'advisor',
+      senderName: profile?.name || 'Enseignant',
+      text: `Réunion en direct : ${meetingTitle}`,
+      type: 'meeting',
+      meetingTitle,
+      meetingPlatform,
+      meetingUrl,
+      meetingTime: meetingTime || "Aujourd'hui",
+      createdAt: nowIso
+    });
 
     setChatHistory((curr) => [...curr, meetingMsg]);
     setShowMeetingModal(false);
@@ -255,10 +428,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
           {
-            applicationId: getClassChatId(selectedProgram),
+            applicationId: classId,
             sender: 'advisor',
             text: payloadStr,
-            createdAt: new Date().toISOString()
+            createdAt: nowIso
           }
         );
       } catch (err) {
@@ -404,9 +577,47 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         </div>
       </div>
 
-      {/* Mes Cours / Formations */}
+      {/* Mes Cours / Formations & Soumission de Cours LMD */}
       <div className="space-y-4">
-        <h2 className="font-sans font-bold text-lg text-text-primary">Mes Matières &amp; Formations</h2>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="font-sans font-bold text-lg text-text-primary">Mes Matières &amp; Formations Enseignées</h2>
+            <p className="text-xs text-text-secondary mt-0.5">Soumettez vos enseignements (cours/UE) pour mise à jour immédiate dans la plateforme.</p>
+          </div>
+          <button
+            onClick={() => { setCProgram(myPrograms[0] || ''); setShowCourseModal(true); }}
+            className="bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm cursor-pointer flex items-center gap-2 transition-all"
+          >
+            <Plus className="w-4 h-4" /> Soumettre un nouveau cours
+          </button>
+        </div>
+
+        {/* Liste des cours soumis par l'enseignant */}
+        {myCourses.length > 0 && (
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-brand-primary flex items-center gap-2">
+              <BookOpenIcon className="w-4 h-4" /> Mes Cours Soumis en Base ({myCourses.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {myCourses.map((c: any) => (
+                <div key={c.id || c.code} className="p-3.5 bg-bg-primary border border-border-primary/60 rounded-xl space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] bg-brand-primary/10 text-brand-primary font-bold px-2 py-0.5 rounded">{c.code}</span>
+                    <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">{c.level || 'L1'}</span>
+                  </div>
+                  <h4 className="font-bold text-text-primary truncate" title={c.title}>{c.title}</h4>
+                  <p className="text-[11px] text-text-secondary truncate">{c.program}</p>
+                  <div className="flex items-center gap-3 text-[10px] text-text-secondary pt-1 border-t border-border-primary/40">
+                    <span>CM: <strong>{c.volumeCM || 0}h</strong></span>
+                    <span>TD: <strong>{c.volumeTD || 0}h</strong></span>
+                    <span>TP: <strong>{c.volumeTP || 0}h</strong></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {myPrograms.map((progTitle: string) => {
             const classStudents = students.filter(s => s.program === progTitle);
@@ -439,52 +650,181 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           })}
         </div>
       </div>
-    </div>
-  );
 
-  const renderSchedule = () => (
-    <div className="space-y-6 animate-fadeIn">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="font-sans font-bold text-2xl text-text-primary">Mon Emploi du Temps</h2>
-          <p className="text-xs text-text-secondary mt-1">Consultez vos créneaux d'enseignement hebdomadaires.</p>
-        </div>
-      </div>
+      {/* Modale de soumission d'un cours */}
+      {showCourseModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-border-primary pb-3">
+              <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
+                <BookOpenIcon className="w-5 h-5 text-brand-primary" /> Soumettre un nouveau cours (UE)
+              </h3>
+              <button onClick={() => setShowCourseModal(false)} className="text-text-secondary hover:text-text-primary font-bold">✕</button>
+            </div>
 
-      <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].map((day, idx) => (
-            <div key={day} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3">
-              <div className="font-bold text-sm text-text-primary pb-2 border-b border-border-primary flex items-center justify-between">
-                <span>{day}</span>
-                <span className="text-[10px] text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full font-bold">Jour {idx + 1}</span>
+            <form onSubmit={handleCreateCourse} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Code du Cours *</label>
+                  <input type="text" value={cCode} onChange={e => setCCode(e.target.value)} placeholder="ex: INF301" required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Niveau (LMD) *</label>
+                  <select value={cLevel} onChange={e => setCLevel(e.target.value)} className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold">
+                    <option value="L1">L1 (Niveau 1)</option>
+                    <option value="L2">L2 (Niveau 2)</option>
+                    <option value="L3">L3 (Niveau 3)</option>
+                    <option value="M1">M1 (Master 1)</option>
+                    <option value="M2">M2 (Master 2)</option>
+                    <option value="D1">D1 (Doctorat 1)</option>
+                    <option value="Certifiant">Certifiant</option>
+                  </select>
+                </div>
               </div>
 
-              {idx === 0 || idx === 2 ? (
-                <div className="bg-bg-secondary border-l-4 border-brand-primary p-3 rounded-lg space-y-1 shadow-sm">
-                  <div className="text-[10px] font-bold text-brand-primary flex items-center gap-1">
-                    <ClockIcon className="w-3 h-3" /> 09h00 - 11h00
-                  </div>
-                  <div className="font-bold text-xs text-text-primary">Cours en direct (Visio)</div>
-                  <div className="text-[10px] text-text-secondary">{myPrograms[0] || 'Master Ingénierie'}</div>
+              <div>
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Intitulé du Cours / Matière *</label>
+                <input type="text" value={cTitle} onChange={e => CSetTitle(e.target.value)} placeholder="ex: Algorithmique et Structures de Données" required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-semibold" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Programme Associé *</label>
+                <select value={cProgram} onChange={e => setCProgram(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold">
+                  {programs.map((p: any) => {
+                    const title = typeof p === 'string' ? p : p.title;
+                    return <option key={title} value={title}>{title}</option>;
+                  })}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures CM</label>
+                  <input type="number" value={cCM} onChange={e => setCCM(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
                 </div>
-              ) : idx === 1 || idx === 3 ? (
-                <div className="bg-bg-secondary border-l-4 border-emerald-500 p-3 rounded-lg space-y-1 shadow-sm">
-                  <div className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                    <ClockIcon className="w-3 h-3" /> 14h00 - 16h00
-                  </div>
-                  <div className="font-bold text-xs text-text-primary">Travaux Pratiques / Projets</div>
-                  <div className="text-[10px] text-text-secondary">{myPrograms[1] || myPrograms[0] || 'Programme IDLA'}</div>
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures TD</label>
+                  <input type="number" value={cTD} onChange={e => setCTD(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
                 </div>
-              ) : (
-                <div className="p-4 text-center text-text-secondary/40 text-xs italic">Aucun créneau</div>
-              )}
-            </div>
-          ))}
+                <div>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures TP</label>
+                  <input type="number" value={cTP} onChange={e => setCTP(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-text-secondary uppercase">Description / Syllabus résumé</label>
+                <textarea value={cDesc} onChange={e => setCDesc(e.target.value)} rows={2} placeholder="Objectifs pédagogiques et thématiques abordées..." className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-border-primary">
+                <button type="button" onClick={() => setShowCourseModal(false)} className="px-4 py-2 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary">Annuler</button>
+                <button type="submit" className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-5 py-2 rounded-lg cursor-pointer">Enregistrer le cours</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
+
+  const renderSchedule = () => {
+    let teacherSchedule: any[] = [];
+    try {
+      if (profile?.scheduleData) {
+        teacherSchedule = typeof profile.scheduleData === 'string' ? JSON.parse(profile.scheduleData) : profile.scheduleData;
+      }
+    } catch (e) {}
+
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="font-sans font-bold text-2xl text-text-primary">Mon Emploi du Temps &amp; Volume Horaire Synchronisé</h2>
+            <p className="text-xs text-text-secondary mt-1">Consultez vos créneaux d'enseignement hebdomadaires et suivez les heures accomplies.</p>
+          </div>
+        </div>
+
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {days.map((day, idx) => {
+              const daySlots = teacherSchedule.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
+              return (
+                <div key={day} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3">
+                  <div className="font-bold text-sm text-text-primary pb-2 border-b border-border-primary flex items-center justify-between">
+                    <span>{day}</span>
+                    <span className="text-[10px] text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full font-bold">J{idx + 1}</span>
+                  </div>
+
+                  {daySlots.length > 0 ? (
+                    daySlots.map((slot: any, sIdx: number) => (
+                      <div key={sIdx} className="bg-bg-secondary border-l-4 border-brand-primary p-3 rounded-lg space-y-1 shadow-sm">
+                        <div className="text-[10px] font-bold text-brand-primary flex items-center justify-between">
+                          <span className="flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {slot.startTime} - {slot.endTime}</span>
+                          <span className="bg-brand-primary/10 px-1.5 py-0.5 rounded text-[9px]">{slot.type || 'CM'}</span>
+                        </div>
+                        <div className="font-bold text-xs text-text-primary truncate" title={slot.course}>{slot.course}</div>
+                        <div className="text-[10px] text-text-secondary truncate">{slot.program}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-text-secondary/40 text-xs italic">Aucun créneau</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bilan du Volume Horaire Enseigné */}
+        {myCourses.length > 0 && (
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
+            <h3 className="font-bold text-sm text-text-primary uppercase flex items-center gap-2">
+              <ClockIcon className="w-4 h-4 text-brand-primary" /> Bilan des Heures Synchronisées par Enseignement
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myCourses.map((c: any) => {
+                const courseSlots = teacherSchedule.filter((s: any) => s.course === c.title || (s.course && s.course.includes(c.title)));
+                let hoursSpent = 0;
+                courseSlots.forEach((s: any) => {
+                  const [sH, sM] = (s.startTime || '00:00').split(':').map(Number);
+                  const [eH, eM] = (s.endTime || '00:00').split(':').map(Number);
+                  hoursSpent += Math.max(0, (eH * 60 + eM - (sH * 60 + sM)) / 60);
+                });
+
+                const totalVolume = (c.volumeCM || 0) + (c.volumeTD || 0) + (c.volumeTP || 0);
+                const percent = Math.min(100, Math.round((hoursSpent / (totalVolume || 1)) * 100));
+
+                return (
+                  <div key={c.id || c.code} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] font-bold bg-brand-primary/10 text-brand-primary px-2 py-0.5 rounded">{c.code}</span>
+                      <span className="font-bold text-brand-primary">{percent}% effectué</span>
+                    </div>
+                    <h4 className="font-bold text-text-primary">{c.title}</h4>
+                    <p className="text-[10px] text-text-secondary truncate">{c.program}</p>
+                    
+                    <div className="space-y-1 pt-1">
+                      <div className="flex justify-between text-[10px] text-text-secondary font-semibold">
+                        <span>Heures planifiées : {hoursSpent.toFixed(1)}h</span>
+                        <span>Total prévu : {totalVolume > 0 ? `${totalVolume}h` : '30h'}</span>
+                      </div>
+                      <div className="w-full bg-bg-secondary border border-border-primary h-2 rounded-full overflow-hidden">
+                        <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderStudents = () => {
     const classStudents = selectedProgram 
@@ -499,16 +839,45 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             <p className="text-xs text-text-secondary mt-1">Échangez avec vos étudiants, partagez des cours et créez des réunions en direct.</p>
           </div>
 
-          <div className="w-full sm:w-72">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto">
             <select
               value={selectedProgram || ''}
               onChange={(e) => setSelectedProgram(e.target.value || null)}
-              className="w-full bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"
+              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
             >
-              <option value="">-- Sélectionner une classe --</option>
+              <option value="">-- Sélectionner un programme --</option>
               {myPrograms.map((p: string) => (
                 <option key={p} value={p}>{p}</option>
               ))}
+            </select>
+
+            <select
+              value={selectedLevel}
+              onChange={(e) => setSelectedLevel(e.target.value)}
+              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"
+            >
+              <option value="L1">L1 (Niveau 1)</option>
+              <option value="L2">L2 (Niveau 2)</option>
+              <option value="L3">L3 (Niveau 3)</option>
+              <option value="M1">M1 (Master 1)</option>
+              <option value="M2">M2 (Master 2)</option>
+              <option value="D1">D1 (Doctorat 1)</option>
+              <option value="Certifiant">Certifiant</option>
+            </select>
+
+            <select
+              value={selectedCourse || ''}
+              onChange={(e) => setSelectedCourse(e.target.value || null)}
+              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
+            >
+              <option value="">-- Sélectionner une matière / cours --</option>
+              {myCourses
+                .filter((c: any) => (!selectedProgram || c.program === selectedProgram) && (!selectedLevel || c.level === selectedLevel))
+                .map((c: any) => (
+                  <option key={c.id || c.code} value={c.title}>
+                    {c.code ? `${c.code} - ` : ''}{c.title}
+                  </option>
+                ))}
             </select>
           </div>
         </div>

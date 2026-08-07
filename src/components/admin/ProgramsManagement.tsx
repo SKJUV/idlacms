@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
-import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
+import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS, DEFAULT_PROGRAM_DURATIONS } from '../../types';
 import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 
 interface ProgramsManagementProps {
@@ -26,9 +26,15 @@ export default function ProgramsManagement({
   const [newProgramDescription, setNewProgramDescription] = useState('');
   const [newProgramType, setNewProgramType] = useState<'Master' | 'Doctorat' | 'Certification' | 'Bachelor'>('Master');
   const [newProgramCategory, setNewProgramCategory] = useState<string>('Tech');
-  const [newProgramDuration, setNewProgramDuration] = useState('2 ans (Full-time)');
+  const [newProgramDuration, setNewProgramDuration] = useState(DEFAULT_PROGRAM_DURATIONS['Master']);
+  const [newProgramProcedures, setNewProgramProcedures] = useState('');
   const [newProgramImage, setNewProgramImage] = useState('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
   const [newProgramIsNew, setNewProgramIsNew] = useState(true);
+
+  const handleProgramTypeChange = (type: 'Master' | 'Doctorat' | 'Certification' | 'Bachelor') => {
+    setNewProgramType(type);
+    setNewProgramDuration(DEFAULT_PROGRAM_DURATIONS[type] || '3 ans');
+  };
 
   // ─── Academic Sessions State & Form ───
   const [sessions, setSessions] = useState<AcademicSession[]>(() => {
@@ -66,7 +72,8 @@ export default function ProgramsManagement({
     setNewProgramDescription('');
     setNewProgramType('Master');
     setNewProgramCategory('Tech');
-    setNewProgramDuration('2 ans (Full-time)');
+    setNewProgramDuration(DEFAULT_PROGRAM_DURATIONS['Master']);
+    setNewProgramProcedures('');
     setNewProgramImage('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
     setNewProgramIsNew(true);
     setEditingProgramId(null);
@@ -89,7 +96,8 @@ export default function ProgramsManagement({
     setNewProgramDescription(prog.description);
     setNewProgramType((prog.type as any) || 'Master');
     setNewProgramCategory(prog.category || 'Tech');
-    setNewProgramDuration(prog.duration);
+    setNewProgramDuration(prog.duration || DEFAULT_PROGRAM_DURATIONS[(prog.type as any) || 'Master']);
+    setNewProgramProcedures(prog.procedures || '');
     setNewProgramImage(prog.image);
     setNewProgramIsNew(!!prog.isNew);
     setShowAddProgramForm(true);
@@ -133,6 +141,7 @@ export default function ProgramsManagement({
         type: newProgramType,
         category: newProgramCategory,
         duration: newProgramDuration,
+        procedures: newProgramProcedures,
         image: newProgramImage,
         isNew: newProgramIsNew,
       };
@@ -178,7 +187,6 @@ export default function ProgramsManagement({
           setCloudSuccess('Programme mis à jour avec succès sur le Cloud Appwrite.');
         } catch (updateErr: any) {
           console.warn('updateDocument échoué, tentative createDocument:', updateErr);
-          // Si le doc n'existe pas encore en cloud (programme local), on tente de le créer
           if (updateErr.code === 404 || updateErr.type === 'document_not_found') {
             try {
               await tryCreate(safeCategory);
@@ -187,7 +195,6 @@ export default function ProgramsManagement({
               setCloudError('Modifications sauvegardées localement. Erreur Cloud : ' + (createErr.message || 'inconnue'));
             }
           } else if (updateErr.message && (updateErr.message.includes('one of') || updateErr.message.includes('category'))) {
-            // Catégorie non acceptée par l'ancien schéma Appwrite
             try {
               await tryUpdate(safeCategory);
               setCloudSuccess('Programme mis à jour (catégorie ajustée pour compatibilité Cloud).');
@@ -215,6 +222,7 @@ export default function ProgramsManagement({
       type: newProgramType,
       category: newProgramCategory,
       duration: newProgramDuration,
+      procedures: newProgramProcedures,
       image: newProgramImage,
       isNew: newProgramIsNew,
     };
@@ -510,16 +518,16 @@ export default function ProgramsManagement({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Type *</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Type (Durée auto-assignée) *</label>
                   <select
                     value={newProgramType}
-                    onChange={(e) => setNewProgramType(e.target.value as any)}
+                    onChange={(e) => handleProgramTypeChange(e.target.value as any)}
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
                   >
-                    <option value="Master">Master</option>
-                    <option value="Doctorat">Doctorat</option>
-                    <option value="Certification">Certification</option>
-                    <option value="Bachelor">Bachelor</option>
+                    <option value="Bachelor">Bachelor (3 ans / L1-L3)</option>
+                    <option value="Master">Master (5 ans / Bac+5)</option>
+                    <option value="Doctorat">Doctorat (3 ans / Thèse)</option>
+                    <option value="Certification">Certification (6 mois / Certifiante)</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -585,11 +593,12 @@ export default function ProgramsManagement({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Durée *</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Durée de formation *</label>
                   <input
                     type="text"
                     value={newProgramDuration}
                     onChange={(e) => setNewProgramDuration(e.target.value)}
+                    placeholder="ex: 3 ans (6 Semestres)"
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
                     required
                   />
@@ -604,6 +613,17 @@ export default function ProgramsManagement({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
+                <textarea
+                  value={newProgramProcedures}
+                  onChange={(e) => setNewProgramProcedures(e.target.value)}
+                  placeholder="ex: Niveau 1: Bac + CNI. Niveau 2 & 3 (Passerelle): Relevés de notes L1/L2 + Diplôme précédent requis. Entretien individuel obligatoire."
+                  rows={3}
+                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                />
               </div>
 
               <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">

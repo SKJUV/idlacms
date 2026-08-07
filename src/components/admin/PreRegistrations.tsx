@@ -13,6 +13,7 @@ import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown
 import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
 import { programsData } from '../../data/mockData';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
+import { downloadAdmissionLetterPdf, generateMatricule } from '../../lib/admissionLetter';
 
 interface PreRegistrationsProps {
   preRegistrations: PreRegistration[];
@@ -71,12 +72,20 @@ export default function PreRegistrations({
 
   // Handlers statut
   const handleApprovePreRegistration = async (id: string) => {
-    setPreRegistrations((curr) => curr.map((p) => (p.id === id ? { ...p, status: 'Accepted' } : p)));
+    const target = preRegistrations.find((p) => p.id === id);
+    const assignedMatricule = target?.matricule || generateMatricule(id);
+
+    setPreRegistrations((curr) =>
+      curr.map((p) => (p.id === id ? { ...p, status: 'Accepted', matricule: assignedMatricule } : p))
+    );
     setConfirmAction(null);
     if (isAppwriteDbConfigured()) {
       try {
-        await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, { status: 'Accepted' });
-        logActivity('registration', 'Admin', `a approuvé la candidature #${id.slice(-6).toUpperCase()}.`);
+        await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, {
+          status: 'Accepted',
+          motivation: target?.motivation ? `${target.motivation} | Matricule: ${assignedMatricule}` : `Matricule: ${assignedMatricule}`
+        });
+        logActivity('registration', 'Admin', `a approuvé la candidature #${id.slice(-6).toUpperCase()} (Matricule: ${assignedMatricule}).`);
       } catch (err) { console.error('Approve error:', err); }
     }
   };
@@ -428,9 +437,17 @@ export default function PreRegistrations({
                       className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? 'border-brand-primary bg-brand-light/30' : 'border-border-primary/50 hover:bg-slate-50'}`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[#00020e] line-clamp-2">{app.program || 'Inscription seule (pas encore postulé)'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-[#00020e] line-clamp-2">{app.program || 'Inscription seule (pas encore postulé)'}</p>
+                            {(app.entryLevel || (app.motivation && app.motivation.includes('Niveau convoité'))) && (
+                              <span className="bg-amber-500/10 text-amber-700 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                {app.entryLevel || app.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] || 'Admission Parallèle'}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[11px] text-slate-400 mt-0.5">
                             Déposé le {new Date(app.dateApplied || '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            {app.entryLevel && <span className="ml-2 text-brand-primary font-semibold">• {app.entryLevel}</span>}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -552,6 +569,82 @@ export default function PreRegistrations({
                 </div>
               )}
             </div>
+
+            {/* Checklist de Validation des Équivalences pour Niveaux > 1 */}
+            {selected && (selected.entryLevel || (selected.motivation && selected.motivation.includes('Niveau convoité'))) && (
+              <div className="bg-amber-50/60 border border-amber-300/80 rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-amber-900 uppercase tracking-wider flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-600" /> Checklist de Validation des Équivalences ({selected.entryLevel || 'Passerelle'})
+                  </h4>
+                  <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">Examen Académique</span>
+                </div>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Vérifiez la conformité des pièces fournies pour valider l'entrée directe au niveau demandé par le candidat.
+                </p>
+                <div className="space-y-2 bg-white/80 p-3.5 rounded-xl border border-amber-200 text-xs font-semibold text-slate-700">
+                  <label className="flex items-center gap-2 cursor-pointer hover:text-amber-900">
+                    <input 
+                      type="checkbox"
+                      defaultChecked={selected.equivalenceChecklist?.previousTranscriptsVerified ?? true}
+                      onChange={(e) => {
+                        const nextChecklist = { ...(selected.equivalenceChecklist || { previousTranscriptsVerified: true, previousDiplomaVerified: true, identityVerified: true }), previousTranscriptsVerified: e.target.checked };
+                        setPreRegistrations(curr => curr.map(p => p.id === selected.id ? { ...p, equivalenceChecklist: nextChecklist } : p));
+                      }}
+                      className="accent-amber-600"
+                    />
+                    <span>Relevés de notes des années universitaires antérieures contrôlés</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:text-amber-900">
+                    <input 
+                      type="checkbox"
+                      defaultChecked={selected.equivalenceChecklist?.previousDiplomaVerified ?? true}
+                      onChange={(e) => {
+                        const nextChecklist = { ...(selected.equivalenceChecklist || { previousTranscriptsVerified: true, previousDiplomaVerified: true, identityVerified: true }), previousDiplomaVerified: e.target.checked };
+                        setPreRegistrations(curr => curr.map(p => p.id === selected.id ? { ...p, equivalenceChecklist: nextChecklist } : p));
+                      }}
+                      className="accent-amber-600"
+                    />
+                    <span>Dernier diplôme / Attestation de réussite certifié conforme</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer hover:text-amber-900">
+                    <input 
+                      type="checkbox"
+                      defaultChecked={selected.equivalenceChecklist?.identityVerified ?? true}
+                      onChange={(e) => {
+                        const nextChecklist = { ...(selected.equivalenceChecklist || { previousTranscriptsVerified: true, previousDiplomaVerified: true, identityVerified: true }), identityVerified: e.target.checked };
+                        setPreRegistrations(curr => curr.map(p => p.id === selected.id ? { ...p, equivalenceChecklist: nextChecklist } : p));
+                      }}
+                      className="accent-amber-600"
+                    />
+                    <span>Identité et authenticité des pièces validées</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Bouton Téléchargement Lettre d'Admission si Admis */}
+            {selected && selected.status === 'Accepted' && (
+              <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm text-emerald-900 uppercase">Lettre d'Admission Officielle (PDF)</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">Matricule Étudiant : <strong>{selected.matricule || generateMatricule(selected.id)}</strong></p>
+                </div>
+                <button
+                  onClick={() => downloadAdmissionLetterPdf({
+                    name: selected.name,
+                    email: selected.email,
+                    program: selected.program || 'Programme IDLA',
+                    entryLevel: selected.entryLevel,
+                    matricule: selected.matricule || generateMatricule(selected.id),
+                    dateApplied: selected.dateApplied
+                  })}
+                  className="bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm cursor-pointer flex items-center gap-2 transition-all"
+                >
+                  <Download className="w-4 h-4" /> Générer / Imprimer PDF
+                </button>
+              </div>
+            )}
 
             {/* Notes internes admin */}
             <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm space-y-3">

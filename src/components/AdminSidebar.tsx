@@ -18,6 +18,7 @@ import {
   UserIcon,
   SearchIcon,
   CalendarIcon,
+  MessageSquareIcon,
 } from './Icons';
 
 interface AdminSidebarProps {
@@ -43,6 +44,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
   const studentLinks: NavLink[] = [
     { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'student-dashboard', activeOn: ['student-dashboard'] },
     { label: 'Emploi du temps', icon: CalendarIcon, target: 'student-schedule', activeOn: ['student-schedule'] },
+    { label: 'Messagerie de cours', icon: MessageSquareIcon, target: 'student-chat', activeOn: ['student-chat'] },
     { label: 'Mes Programmes', icon: BookOpenIcon, target: 'student-programs', activeOn: ['student-programs'] },
     { label: 'Catalogue', icon: SearchIcon, target: 'student-catalog', activeOn: ['student-catalog'] },
     { label: 'Profil', icon: UserIcon, target: 'student-profile', activeOn: ['student-profile'] },
