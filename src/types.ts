@@ -120,11 +120,12 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC';
+  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC' | 'teacher' | 'Enseignant';
   status: 'Actif' | 'Inactif' | 'Bloqué';
   lastLogin: string;
   initials: string;
   avatar?: string;
+  assignedPrograms?: string[];
 }
 
 export interface Course {

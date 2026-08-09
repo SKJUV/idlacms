@@ -13,6 +13,7 @@ import {
   ClockIcon
 } from '../Icons';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../../lib/appwrite';
+import { initialUsers } from '../../data/mockData';
 
 interface TeachersManagementProps {
   programs: any[];
@@ -37,7 +38,9 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
   const [editingAssignedPrograms, setEditingAssignedPrograms] = useState<string[]>([]);
   const [scheduleData, setScheduleData] = useState<any[]>([]);
-  const [newSlot, setNewSlot] = useState({ day: 'Lundi', startTime: '08:00', endTime: '10:00', course: '', program: '', type: 'CM' as 'CM' | 'TD' | 'TP' });
+  const [newSlot, setNewSlot] = useState<{ course: string; program: string; day: string; startTime: string; endTime: string; type: 'CM' | 'TD' | 'TP' }>({ 
+    course: '', program: '', day: 'Lundi', startTime: '08:00', endTime: '10:00', type: 'CM' 
+  });
 
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   const STANDARD_TIME_BLOCKS = [
@@ -63,19 +66,17 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     return { day: 'Lundi', startTime: '08:00', endTime: '10:00' };
   };
 
-  const handleCourseSelection = (courseVal: string) => {
+  const handleCourseChange = (courseVal: string) => {
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+    const matchCourse = localCourses.find((c: any) => c.title === courseVal);
     let matchedProgram = newSlot.program;
-    try {
-      const courses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
-      const found = courses.find((c: any) => 
-        c.title === courseVal || 
-        `${c.code ? c.code + ' - ' : ''}${c.title} (${c.level || 'L1'})` === courseVal ||
-        courseVal.includes(c.title)
-      );
-      if (found && found.program) {
-        matchedProgram = found.program;
-      }
-    } catch (e) {}
+    if (matchCourse && matchCourse.program) {
+      matchedProgram = matchCourse.program;
+    } else if (editingSchedule && editingSchedule.assignedPrograms && editingSchedule.assignedPrograms.length > 0) {
+      matchedProgram = editingSchedule.assignedPrograms[0];
+    }
 
     // Recherche automatique du premier créneau libre pour ce cours/programme
     const optimal = findOptimalSlot(matchedProgram, scheduleData);
@@ -96,6 +97,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
   const loadTeachers = async () => {
     setLoading(true);
+    let cloudDocs: any[] = [];
     try {
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
         const res = await databases.listDocuments(
@@ -103,7 +105,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           APPWRITE_CONFIG.collections.cmsUsers,
           [Query.equal('role', 'teacher')]
         );
-        const docs = res.documents.map((doc: any) => {
+        cloudDocs = res.documents.map((doc: any) => {
           let assigned = doc.assignedPrograms;
           if (typeof assigned === 'string') {
             try { assigned = JSON.parse(assigned); } catch { assigned = []; }
@@ -111,13 +113,25 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           if (!Array.isArray(assigned)) assigned = [];
           return { ...doc, assignedPrograms: assigned };
         });
-        setTeachers(docs);
       }
     } catch (err) {
-      console.warn("Erreur chargement enseignants:", err);
-    } finally {
-      setLoading(false);
+      console.warn("Erreur chargement enseignants Appwrite:", err);
     }
+
+    let localTeachers: any[] = [];
+    try { localTeachers = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]'); } catch {}
+
+    const defaultTeachers = initialUsers.filter(u => u.role === 'teacher' || u.role === 'Enseignant');
+    const combined = [...cloudDocs, ...localTeachers];
+    defaultTeachers.forEach(dt => {
+      if (!combined.some(c => c.id === dt.id || c.email === dt.email || c.$id === dt.id)) {
+        combined.push(dt);
+      }
+    });
+
+    setTeachers(combined);
+    try { localStorage.setItem('idla_local_teachers', JSON.stringify(combined)); } catch {}
+    setLoading(false);
   };
 
   const handleAddTeacher = async (e: React.FormEvent) => {
@@ -125,25 +139,49 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     try {
       // 1. Create Appwrite Account
       const userId = ID.unique();
-      await account.create(userId, newEmail, newPassword, newName);
+      try {
+        await account.create(userId, newEmail, newPassword, newName);
+      } catch (e: any) {
+        console.warn("Remarque création compte Auth enseignant:", e.message);
+      }
       
       // 2. Create in cmsUsers
+      let newDoc: any = {
+        id: userId,
+        $id: userId,
+        name: newName,
+        email: newEmail,
+        role: 'teacher',
+        assignedPrograms: newAssignedPrograms,
+        initials: newName.substring(0, 2).toUpperCase(),
+        status: 'Actif',
+      };
+
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-        const doc = await databases.createDocument(
-          APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.cmsUsers,
-          userId,
-          {
-            name: newName,
-            email: newEmail,
-            role: 'teacher',
-            assignedPrograms: newAssignedPrograms,
-            scheduleData: '[]',
-            initials: newName.substring(0, 2).toUpperCase()
-          }
-        );
-        setTeachers([doc, ...teachers]);
+        try {
+          const doc = await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.cmsUsers,
+            userId,
+            {
+              name: newName,
+              email: newEmail,
+              role: 'teacher',
+              assignedPrograms: newAssignedPrograms,
+              scheduleData: '[]',
+              initials: newName.substring(0, 2).toUpperCase()
+            }
+          );
+          newDoc = { ...doc, assignedPrograms: newAssignedPrograms };
+        } catch (e: any) {
+          console.warn("Erreur création document cmsUsers:", e.message);
+        }
       }
+
+      const updatedList = [newDoc, ...teachers];
+      setTeachers(updatedList);
+      try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedList)); } catch {}
+
       logActivity('registration', 'Admin', `a créé l'enseignant ${newName}`);
       setIsAdding(false);
       setNewName(''); setNewEmail(''); setNewPassword(''); setNewAssignedPrograms([]);
@@ -156,9 +194,13 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     if (!confirm(`Voulez-vous vraiment supprimer l'enseignant ${name} ?`)) return;
     try {
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-        await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.cmsUsers, id);
+        try {
+          await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.cmsUsers, id);
+        } catch (e) {}
       }
-      setTeachers(teachers.filter(t => t.$id !== id && t.id !== id));
+      const updatedList = teachers.filter(t => t.$id !== id && t.id !== id);
+      setTeachers(updatedList);
+      try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedList)); } catch {}
       logActivity('error', 'Admin', `a supprimé l'enseignant ${name}`);
     } catch (err: any) {
       alert("Erreur: " + err.message);
@@ -356,7 +398,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   type="text" 
                   list="teacher-courses-datalist"
                   value={newSlot.course} 
-                  onChange={(e) => handleCourseSelection(e.target.value)} 
+                  onChange={(e) => handleCourseChange(e.target.value)} 
                   placeholder="Ex: INF301 - Algorithmique" 
                   className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary font-semibold" 
                 />
