@@ -1937,7 +1937,8 @@ export default function StudentPortal({
   // ════════════════════════════════════════════════════════════════════════════
   // DEDICATED STUDENT CHAT & COURSES VIEW
   // ════════════════════════════════════════════════════════════════════════════
-  if (activeTab === 'student-chat') {
+  // Memoized Student Course List for optimized rendering
+  const { myCourseList, progTitle, studentLevel } = useMemo(() => {
     let localCourses: any[] = [];
     try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
 
@@ -1946,16 +1947,21 @@ export default function StudentPortal({
     const allApps = [...applications, ...localApps];
 
     const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
-    const progTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
-    const studentLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
+    const pTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
+    const sLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
 
     const filteredCourses = localCourses.filter((c: any) =>
-      (!c.level || c.level === studentLevel) &&
-      (!c.program || c.program === progTitle || progTitle.includes(c.program) || c.program.includes(progTitle))
+      (!c.level || c.level === sLevel) &&
+      (!c.program || c.program === pTitle || pTitle.includes(c.program) || c.program.includes(pTitle))
     );
-    const myCourseList = filteredCourses.length > 0 
+    const list = filteredCourses.length > 0 
       ? filteredCourses 
-      : localCourses.filter((c: any) => !c.level || c.level === studentLevel || localCourses.length <= 5);
+      : localCourses.filter((c: any) => !c.level || c.level === sLevel || localCourses.length <= 5);
+
+    return { myCourseList: list, progTitle: pTitle, studentLevel: sLevel };
+  }, [applications, selectedClassChat, selectedClassLevel, programs]);
+
+  if (activeTab === 'student-chat') {
 
     return (
       <div className="flex-1 p-4 md:p-8 pt-20 md:pt-8 min-h-screen bg-bg-primary text-text-primary">

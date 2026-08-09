@@ -3,6 +3,7 @@ import {
   SearchIcon as Search,
   ClockIcon as Clock,
   ArrowRightIcon as ArrowRight,
+  ChevronRightIcon as ChevronRight,
   AlertTriangleIcon as AlertTriangle,
   ShieldAlertIcon as ShieldAlert,
   FlameIcon as Flame,
@@ -286,6 +287,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   // Testimonials View States
   const [selectedTestimonialType, setSelectedTestimonialType] = useState<string>('Tous');
+
+  // Accounting & Bookkeeping Pricing Modal State
+  const [showAccountingPricingModal, setShowAccountingPricingModal] = useState(false);
 
   // Active merged programs (combines props.programs with instant idla_local_programs cache)
   const activePrograms = useMemo(() => {
@@ -807,12 +811,28 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     return (
       <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-text-primary">Nos Programmes d'Excellence</h1>
-            <p className="text-[#45464e] text-lg max-w-2xl">
-              Découvrez des parcours académiques d'élite conçus pour propulser votre carrière. Des formations rigoureuses encadrées par des experts internationaux.
-            </p>
+          {/* Accounting & Bookkeeping Pricing Banner */}
+          <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border border-emerald-500/30 rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-3xl">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 uppercase tracking-wider">
+                <span>International Distance Learning Academy</span>
+                <span>•</span>
+                <span>Certifications Comptabilité & Bookkeeping</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-extrabold text-white">
+                Tarifs Officiels & Modalités d'Examens de Certifications
+              </h2>
+              <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+                Wharton School, Darden School of Business, IESE Business School, Intuit & The Open University UK. Frais d'évaluation standardisés à 95 $ et accès direct Academy.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAccountingPricingModal(true)}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-emerald-500/30 whitespace-nowrap cursor-pointer flex items-center gap-2 shrink-0"
+            >
+              <span>📊 Consulter la Grille Tarifaire</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Search & Filter Bar */}
@@ -1504,6 +1524,128 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </button>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* MODALE — Grille Tarifaire Accounting & Bookkeeping */}
+        {showAccountingPricingModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn" onClick={() => setShowAccountingPricingModal(false)}>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-border-primary p-6 md:p-8 space-y-6" onClick={(e) => e.stopPropagation()}>
+              
+              <div className="flex items-start justify-between border-b border-border-primary/60 pb-4">
+                <div>
+                  <div className="text-xs font-extrabold text-brand-primary uppercase tracking-wider">
+                    International Distance Learning Academy — Centre de Formation Continue
+                  </div>
+                  <h3 className="text-2xl font-black text-text-primary mt-1">
+                    Professional Accounting & Bookkeeping Programs
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Qualifications professionnelles nord-américaines (USA / Canada) & britanniques directement accessibles en ligne.
+                  </p>
+                </div>
+                <button onClick={() => setShowAccountingPricingModal(false)} className="p-2 text-text-secondary hover:text-text-primary cursor-pointer rounded-lg hover:bg-bg-primary">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto border border-border-primary rounded-2xl shadow-sm">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-bg-primary text-text-secondary uppercase font-bold border-b border-border-primary">
+                    <tr>
+                      <th className="p-4">Program / Certification</th>
+                      <th className="p-4">Curriculum & Certifying Body</th>
+                      <th className="p-4 text-center">Examination Price</th>
+                      <th className="p-4 text-right">Academy Student Direct Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-primary/60 text-text-primary font-medium">
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Intuit Bookkeeping Professional Certificate</td>
+                      <td className="p-4">Intuit</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $308.70 <span className="text-slate-400">($403.70)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Introduction to Financial Accounting</td>
+                      <td className="p-4">Wharton School (University of Pennsylvania)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $308.70 <span className="text-slate-400">($403.70)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Financial Accounting Fundamentals</td>
+                      <td className="p-4">Darden School of Business (University of Virginia)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $308.70 <span className="text-slate-400">($403.70)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Principles of Financial Accounting</td>
+                      <td className="p-4">IESE Business School</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $308.70 <span className="text-slate-400">($403.70)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Accounting & Bookkeeping Masterclass</td>
+                      <td className="p-4">Irfan Sharif (CA & ACCA Lead)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $250.00 <span className="text-slate-400">($345.00)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Easily Conquer Double-Entry Bookkeeping</td>
+                      <td className="p-4">Sonya Ashbarry (Accounting Specialist)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $250.00 <span className="text-slate-400">($345.00)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Accounting 101: Financial Accounting</td>
+                      <td className="p-4">Stefan Ignatovski (CPA, PhD)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $250.00 <span className="text-slate-400">($345.00)</span></td>
+                    </tr>
+                    <tr className="hover:bg-bg-primary/50">
+                      <td className="p-4 font-bold text-brand-primary">Introduction to Bookkeeping & Accounting</td>
+                      <td className="p-4">The Open University (UK)</td>
+                      <td className="p-4 text-center font-bold text-amber-600">$95</td>
+                      <td className="p-4 text-right font-mono font-bold">$95 + $308.70 <span className="text-slate-400">($403.70)</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Policy Section (Bilingual) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-5 bg-bg-primary rounded-2xl border border-border-primary space-y-2">
+                  <h4 className="font-extrabold text-xs text-brand-primary uppercase tracking-wider">
+                    Key Examination & Enrollment Policy
+                  </h4>
+                  <ul className="text-xs text-text-secondary space-y-1.5 leading-relaxed">
+                    <li>• <strong>Standardized Assessment Fee</strong>: All listed certification exams are offered at a flat rate of $95 per attempt.</li>
+                    <li>• <strong>Institutional Credentials</strong>: Official verified certificates and digital transcripts are issued directly by the respective certifying bodies upon passing the examination.</li>
+                  </ul>
+                </div>
+
+                <div className="p-5 bg-bg-primary rounded-2xl border border-border-primary space-y-2">
+                  <h4 className="font-extrabold text-xs text-brand-primary uppercase tracking-wider">
+                    Politique d'examen et d'inscription
+                  </h4>
+                  <ul className="text-xs text-text-secondary space-y-1.5 leading-relaxed">
+                    <li>• <strong>Frais d'évaluation standardisés</strong> : Tous les examens de certification répertoriés sont proposés au tarif unique de 95 $ (tentatives incluses).</li>
+                    <li>• <strong>Titres académiques officiels</strong> : Les certificats vérifiés et les relevés de notes numériques sont délivrés directement par les organismes de certification respectifs après la réussite à l'examen.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setShowAccountingPricingModal(false)}
+                  className="bg-brand-primary hover:bg-brand-hover text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  Fermer la Grille Tarifaire
+                </button>
+              </div>
+
             </div>
           </div>
         )}

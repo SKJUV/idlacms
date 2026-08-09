@@ -85,11 +85,11 @@ async function runCli() {
       }
       console.log(`⚡ Attribution du rôle Admin à <${param1}>...`);
       const search = await users.list([Query.equal('email', param1.trim().toLowerCase())]);
-      if (search.documents.length === 0) {
+      if (search.users.length === 0) {
         console.error(`❌ Aucun compte utilisateur trouvé pour ${param1}`);
         process.exit(1);
       }
-      const targetUser = search.documents[0];
+      const targetUser = search.users[0];
       const existingLabels = targetUser.labels || [];
       if (!existingLabels.includes('admin')) {
         existingLabels.push('admin');
