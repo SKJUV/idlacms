@@ -374,7 +374,6 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               nationality,
               highestDegree: isCertification ? undefined : highestDegree,
               graduationYear: isCertification ? undefined : (Number(graduationYear) || undefined),
-              motivation: `[Niveau convoité: ${entryLevel}]`,
               status: 'New',
               dateApplied: new Date().toISOString(),
               declarationChecked,

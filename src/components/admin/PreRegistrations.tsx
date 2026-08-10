@@ -83,7 +83,6 @@ export default function PreRegistrations({
       try {
         await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, {
           status: 'Accepted',
-          motivation: target?.motivation ? `${target.motivation} | Matricule: ${assignedMatricule}` : `Matricule: ${assignedMatricule}`
         });
         logActivity('registration', 'Admin', `a approuvé la candidature #${id.slice(-6).toUpperCase()} (Matricule: ${assignedMatricule}).`);
       } catch (err) { console.error('Approve error:', err); }
