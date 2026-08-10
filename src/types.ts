@@ -128,6 +128,19 @@ export interface User {
   assignedPrograms?: string[];
 }
 
+export interface TeacherProfile {
+  id: string;
+  authUserId?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  title?: 'Professeur' | 'Docteur' | 'Ingénieur' | 'Expert' | 'Intervenant';
+  speciality?: string;
+  assignedPrograms?: string[];
+  scheduleData?: string;
+  status: 'Actif' | 'Inactif' | 'Suspendu';
+}
+
 export interface Course {
   id: string;
   code: string;         // ex: INF301

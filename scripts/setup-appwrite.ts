@@ -324,6 +324,31 @@ const collectionDefs: CollectionDef[] = [
       { key: 'idx_formId', type: 'key', attributes: ['formId'] },
     ],
   },
+  {
+    id: 'teachers',
+    name: 'Enseignants',
+    permissions: [
+      Permission.read(Role.any()),
+      Permission.create(Role.team(ADMIN_TEAM_ID)),
+      Permission.update(Role.team(ADMIN_TEAM_ID)),
+      Permission.delete(Role.team(ADMIN_TEAM_ID)),
+    ],
+    attributes: [
+      { kind: 'string', key: 'authUserId', size: 36, required: false },
+      { kind: 'string', key: 'firstName', size: 100, required: true },
+      { kind: 'string', key: 'lastName', size: 100, required: true },
+      { kind: 'email', key: 'email', required: true },
+      { kind: 'enum', key: 'title', elements: ['Professeur', 'Docteur', 'Ingénieur', 'Expert', 'Intervenant'], required: false, default: 'Intervenant' },
+      { kind: 'string', key: 'speciality', size: 255, required: false },
+      { kind: 'string', key: 'assignedPrograms', size: 255, required: false, array: true },
+      { kind: 'string', key: 'scheduleData', size: 65000, required: false },
+      { kind: 'enum', key: 'status', elements: ['Actif', 'Inactif', 'Suspendu'], required: false, default: 'Actif' },
+    ],
+    indexes: [
+      { key: 'idx_email_unique', type: 'unique', attributes: ['email'] },
+      { key: 'idx_status', type: 'key', attributes: ['status'] },
+    ],
+  },
 ];
 
 async function createAttribute(collectionId: string, attr: AttrDef) {
@@ -535,6 +560,7 @@ async function main() {
   console.log(`VITE_APPWRITE_COLLECTION_MESSAGES="messages"`);
   console.log(`VITE_APPWRITE_COLLECTION_CUSTOM_FORMS="custom_forms"`);
   console.log(`VITE_APPWRITE_COLLECTION_FORM_RESPONSES="form_responses"`);
+  console.log(`VITE_APPWRITE_COLLECTION_TEACHERS="teachers"`);
   console.log(`VITE_APPWRITE_BUCKET_DOCUMENTS="${DOCUMENTS_BUCKET_ID}"`);
 }
 

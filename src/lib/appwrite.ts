@@ -32,6 +32,7 @@ export const APPWRITE_CONFIG = {
     messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || '',
     customForms: import.meta.env.VITE_APPWRITE_COLLECTION_CUSTOM_FORMS || '',
     formResponses: import.meta.env.VITE_APPWRITE_COLLECTION_FORM_RESPONSES || '',
+    teachers: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHERS || 'teachers',
   },
   buckets: {
     documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || '',

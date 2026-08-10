@@ -29,9 +29,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const [selectedTeacher, setSelectedTeacher] = useState<any | null>(null);
   
   // Create Form State
-  const [newName, setNewName] = useState('');
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [newTitle, setNewTitle] = useState('Intervenant');
+  const [newSpeciality, setNewSpeciality] = useState('');
   const [newAssignedPrograms, setNewAssignedPrograms] = useState<string[]>([]);
   
   // Schedule Manager State
@@ -99,11 +102,10 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     setLoading(true);
     let cloudDocs: any[] = [];
     try {
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
         const res = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.cmsUsers,
-          [Query.equal('role', 'teacher')]
+          APPWRITE_CONFIG.collections.teachers
         );
         cloudDocs = res.documents.map((doc: any) => {
           let assigned = doc.assignedPrograms;
@@ -145,36 +147,44 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
         console.warn("Remarque création compte Auth enseignant:", e.message);
       }
       
-      // 2. Create in cmsUsers
+      // 2. Create in teachers
+      const fullName = `${newFirstName} ${newLastName}`;
       let newDoc: any = {
         id: userId,
         $id: userId,
-        name: newName,
+        authUserId: userId,
+        firstName: newFirstName,
+        lastName: newLastName,
+        name: fullName,
         email: newEmail,
-        role: 'teacher',
+        title: newTitle,
+        speciality: newSpeciality,
         assignedPrograms: newAssignedPrograms,
-        initials: newName.substring(0, 2).toUpperCase(),
+        initials: newFirstName.substring(0, 1).toUpperCase() + newLastName.substring(0, 1).toUpperCase(),
         status: 'Actif',
       };
 
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
         try {
           const doc = await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.cmsUsers,
+            APPWRITE_CONFIG.collections.teachers,
             userId,
             {
-              name: newName,
+              authUserId: userId,
+              firstName: newFirstName,
+              lastName: newLastName,
               email: newEmail,
-              role: 'teacher',
+              title: newTitle,
+              speciality: newSpeciality,
               assignedPrograms: newAssignedPrograms,
               scheduleData: '[]',
-              initials: newName.substring(0, 2).toUpperCase()
+              status: 'Actif'
             }
           );
-          newDoc = { ...doc, assignedPrograms: newAssignedPrograms };
+          newDoc = { ...doc, name: fullName, initials: newDoc.initials, assignedPrograms: newAssignedPrograms };
         } catch (e: any) {
-          console.warn("Erreur création document cmsUsers:", e.message);
+          console.warn("Erreur création document teachers:", e.message);
         }
       }
 
@@ -182,9 +192,9 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
       setTeachers(updatedList);
       try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedList)); } catch {}
 
-      logActivity('registration', 'Admin', `a créé l'enseignant ${newName}`);
+      logActivity('registration', 'Admin', `a créé l'enseignant ${fullName}`);
       setIsAdding(false);
-      setNewName(''); setNewEmail(''); setNewPassword(''); setNewAssignedPrograms([]);
+      setNewFirstName(''); setNewLastName(''); setNewEmail(''); setNewPassword(''); setNewTitle('Intervenant'); setNewSpeciality(''); setNewAssignedPrograms([]);
     } catch (err: any) {
       alert("Erreur: " + err.message);
     }
@@ -193,9 +203,9 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const handleDeleteTeacher = async (id: string, name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer l'enseignant ${name} ?`)) return;
     try {
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
         try {
-          await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.cmsUsers, id);
+          await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.teachers, id);
         } catch (e) {}
       }
       const updatedList = teachers.filter(t => t.$id !== id && t.id !== id);
@@ -314,11 +324,11 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const saveSchedule = async () => {
     if (!editingSchedule) return;
     try {
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
         const idToUpdate = editingSchedule.$id || editingSchedule.id;
         const updatedDoc = await databases.updateDocument(
           APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.cmsUsers,
+          APPWRITE_CONFIG.collections.teachers,
           idToUpdate,
           {
             scheduleData: JSON.stringify(scheduleData),
@@ -606,8 +616,26 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           <h3 className="font-bold text-lg mb-4 text-text-primary">Créer un compte Enseignant</h3>
           <form onSubmit={handleAddTeacher} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-text-secondary uppercase">Nom complet</label>
-              <input type="text" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary" />
+              <label className="text-xs font-bold text-text-secondary uppercase">Prénom</label>
+              <input type="text" value={newFirstName} onChange={e => setNewFirstName(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-text-secondary uppercase">Nom</label>
+              <input type="text" value={newLastName} onChange={e => setNewLastName(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-text-secondary uppercase">Titre</label>
+              <select value={newTitle} onChange={e => setNewTitle(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary">
+                <option value="Professeur">Professeur</option>
+                <option value="Docteur">Docteur</option>
+                <option value="Ingénieur">Ingénieur</option>
+                <option value="Expert">Expert</option>
+                <option value="Intervenant">Intervenant</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-text-secondary uppercase">Spécialité</label>
+              <input type="text" value={newSpeciality} onChange={e => setNewSpeciality(e.target.value)} className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary" />
             </div>
             <div>
               <label className="text-xs font-bold text-text-secondary uppercase">Email</label>
@@ -681,8 +709,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                           {t.initials || (t.name ? t.name.substring(0, 2).toUpperCase() : 'EN')}
                         </div>
                         <div>
-                          <div className="font-semibold text-text-primary">{t.name}</div>
-                          <div className="text-[10px] text-text-secondary">{t.email}</div>
+                          <div className="font-semibold text-text-primary">
+                            {t.firstName && t.lastName ? `${t.firstName} ${t.lastName}` : t.name}
+                          </div>
+                          <div className="text-[10px] text-text-secondary">
+                            {t.title ? `${t.title} • ` : ''}{t.speciality ? `${t.speciality} • ` : ''}{t.email}
+                          </div>
                         </div>
                       </div>
                     </td>
