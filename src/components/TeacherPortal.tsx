@@ -1175,12 +1175,83 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     );
   };
 
+  const renderProfile = () => {
+    return (
+      <div className="space-y-8 animate-fadeIn">
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <div className="w-20 h-20 rounded-2xl bg-brand-light border border-brand-primary/30 flex items-center justify-center shrink-0 text-brand-primary font-bold text-3xl">
+              {profile?.name?.charAt(0) || 'E'}
+            </div>
+            <div className="flex-1 space-y-1">
+              <h1 className="font-sans font-bold text-2xl text-text-primary">{profile?.name || 'Enseignant IDLA'}</h1>
+              <p className="text-sm text-text-secondary">{profile?.email || 'enseignant@idla.edu'}</p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-light text-brand-primary border border-brand-primary/20">
+                  Enseignant IDLA
+                </span>
+                <span className="text-xs text-text-secondary">Statut: Actif</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
+            <h2 className="text-base font-bold text-text-primary border-b border-border-primary pb-3 flex items-center gap-2">
+              <UsersIcon className="w-5 h-5 text-brand-primary" /> Informations Personnelles
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase">Nom Complet</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={profile?.name || ''}
+                  className="w-full mt-1 p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-sm font-medium outline-none opacity-80 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase">Adresse E-mail</label>
+                <input
+                  type="email"
+                  readOnly
+                  value={profile?.email || ''}
+                  className="w-full mt-1 p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-sm outline-none opacity-80 cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
+            <h2 className="text-base font-bold text-text-primary border-b border-border-primary pb-3 flex items-center gap-2">
+              <BookOpenIcon className="w-5 h-5 text-brand-primary" /> Programmes & Matières Enseignées
+            </h2>
+            {myPrograms.length > 0 ? (
+              <ul className="space-y-2.5">
+                {myPrograms.map((prog: string, idx: number) => (
+                  <li key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border-primary/50 text-xs font-semibold text-text-primary">
+                    <div className="w-2 h-2 rounded-full bg-brand-primary shrink-0" />
+                    <span>{prog}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-text-secondary italic">Aucun programme actuellement attribué.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 p-6 md:p-8 pt-24 lg:pt-8 min-h-screen">
       <div className="max-w-6xl mx-auto">
         {activeTab === 'teacher-dashboard' && renderDashboard()}
         {activeTab === 'teacher-schedule' && renderSchedule()}
         {activeTab === 'teacher-students' && renderStudents()}
+        {activeTab === 'teacher-profile' && renderProfile()}
       </div>
     </div>
   );

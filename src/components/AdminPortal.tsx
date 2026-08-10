@@ -710,6 +710,58 @@ export default function AdminPortal({
           logActivity={logActivity}
         />
       )}
+
+      {view === 'admin-profile' && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-2xl bg-brand-light border border-brand-primary/30 flex items-center justify-center text-brand-primary font-bold text-3xl shrink-0">
+                {settingsName.charAt(0) || 'A'}
+              </div>
+              <div className="space-y-1">
+                <h1 className="font-sans font-bold text-2xl text-text-primary">{settingsName}</h1>
+                <p className="text-sm text-text-secondary">{settingsEmail}</p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-light text-brand-primary border border-brand-primary/20">
+                    Administrateur Système IDLA
+                  </span>
+                  <span className="text-xs text-text-secondary">Statut: Actif</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('admin-settings')}
+              className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow cursor-pointer"
+            >
+              Modifier les paramètres
+            </button>
+          </div>
+
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="text-base font-bold text-text-primary border-b border-border-primary pb-3">
+              Informations du Compte Admin
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl bg-bg-primary border border-border-primary/50 space-y-1">
+                <span className="text-text-secondary uppercase font-bold tracking-wider">Nom Administrateur</span>
+                <p className="text-sm font-bold text-text-primary">{settingsName}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-bg-primary border border-border-primary/50 space-y-1">
+                <span className="text-text-secondary uppercase font-bold tracking-wider">Adresse E-mail Officielle</span>
+                <p className="text-sm font-bold text-text-primary">{settingsEmail}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-bg-primary border border-border-primary/50 space-y-1">
+                <span className="text-text-secondary uppercase font-bold tracking-wider">Nom de la Plateforme</span>
+                <p className="text-sm font-bold text-text-primary">{settingsSiteName}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-bg-primary border border-border-primary/50 space-y-1">
+                <span className="text-text-secondary uppercase font-bold tracking-wider">État des Inscriptions</span>
+                <p className="text-sm font-bold text-emerald-600">{settingsAdmissionsOpen ? 'Ouvertes' : 'Fermées'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

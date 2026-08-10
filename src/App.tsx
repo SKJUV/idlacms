@@ -42,9 +42,11 @@ export type ActiveTab =
   | 'admin-donations'
   | 'admin-marketing'
   | 'admin-settings'
+  | 'admin-profile'
   | 'teacher-dashboard'
   | 'teacher-schedule'
-  | 'teacher-students';
+  | 'teacher-students'
+  | 'teacher-profile';
 
 export type Role = 'guest' | 'student' | 'admin' | 'teacher';
 
@@ -56,10 +58,10 @@ const STUDENT_TABS: ActiveTab[] = [
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
-  'admin-settings',
+  'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
-  'teacher-dashboard', 'teacher-schedule', 'teacher-students'
+  'teacher-dashboard', 'teacher-schedule', 'teacher-students', 'teacher-profile',
 ];
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
@@ -81,6 +83,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-dashboard': '/admin/tableau-de-bord',
   'admin-users': '/admin/utilisateurs',
   'admin-add-user': '/admin/utilisateurs/nouveau',
+  'admin-teachers': '/admin/enseignants',
   'admin-programmes': '/admin/programmes',
   'admin-testimonials': '/admin/temoignages',
   'admin-news': '/admin/actualites',
@@ -88,10 +91,11 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-settings': '/admin/parametres',
-  'admin-teachers': '/admin/enseignants',
+  'admin-profile': '/admin/profil',
   'teacher-dashboard': '/enseignant/tableau-de-bord',
   'teacher-schedule': '/enseignant/emploi-du-temps',
   'teacher-students': '/enseignant/etudiants',
+  'teacher-profile': '/enseignant/profil',
 };
 
 const tabFromPath = (pathname: string): ActiveTab => {
