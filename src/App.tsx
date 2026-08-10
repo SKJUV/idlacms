@@ -129,8 +129,24 @@ export default function App() {
           const userEmail = user.email.toLowerCase().trim();
           let userRole: Role = 'student';
 
-          // Check if user is in cmsUsers collection (Admin or Teacher)
-          if (APPWRITE_CONFIG.collections.cmsUsers) {
+          // 1. Check if user is in teachers collection
+          if (APPWRITE_CONFIG.collections.teachers) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.teachers,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) {
+                userRole = 'teacher';
+              }
+            } catch (err) {
+              console.warn("Erreur lors de la vérification de l'accès enseignant :", err);
+            }
+          }
+
+          // 2. Check if user is in cmsUsers collection (Admin)
+          if (userRole !== 'teacher' && APPWRITE_CONFIG.collections.cmsUsers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -138,12 +154,7 @@ export default function App() {
                 [Query.equal('email', userEmail)]
               );
               if (res.documents.length > 0) {
-                const docRole = res.documents[0].role;
-                if (docRole === 'teacher') {
-                  userRole = 'teacher';
-                } else {
-                  userRole = 'admin'; // Par défaut si cmsUsers, on considère admin
-                }
+                userRole = 'admin';
               }
             } catch (err) {
               console.warn("Erreur lors de la vérification de l'accès CMS :", err);
@@ -547,23 +558,42 @@ export default function App() {
       const userEmail = user.email.toLowerCase().trim();
       let userRole: Role = 'student';
       
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-        let docs: any[] = [];
-        try {
-          const res = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.cmsUsers,
-            [Query.equal('email', userEmail)]
-          );
-          docs = res.documents;
-        } catch (dbErr) {
-          console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
+      if (isAppwriteDbConfigured()) {
+        let isTeacher = false;
+        let isAdmin = false;
+
+        // Check Teachers
+        if (APPWRITE_CONFIG.collections.teachers) {
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.teachers,
+              [Query.equal('email', userEmail)]
+            );
+            if (res.documents.length > 0) isTeacher = true;
+          } catch (dbErr) {
+            console.warn("Impossible de lire teachers...", dbErr);
+          }
         }
 
-        if (docs.length > 0) {
-          const docRole = docs[0].role;
-          if (docRole === 'teacher') userRole = 'teacher';
-          else userRole = 'admin';
+        // Check Admins
+        if (!isTeacher && APPWRITE_CONFIG.collections.cmsUsers) {
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.cmsUsers,
+              [Query.equal('email', userEmail)]
+            );
+            if (res.documents.length > 0) isAdmin = true;
+          } catch (dbErr) {
+            console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
+          }
+        }
+
+        if (isTeacher) {
+          userRole = 'teacher';
+        } else if (isAdmin) {
+          userRole = 'admin';
         } else {
           // Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
           if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
