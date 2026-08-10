@@ -73,42 +73,40 @@ function parseFrenchDate(input: string): string {
 }
 
 async function forceSeedCollection(collectionId: string, docs: Array<{ id?: string; data: Record<string, any> }>) {
-  console.log(`\n--- Nettoyage de la collection "${collectionId}" ---`);
+  console.log(`\n--- Synchronisation (Upsert sans suppression) de la collection "${collectionId}" ---`);
   try {
-    // 1. Fetch all documents in the collection with retry
-    const existing = await retryCall(() => databases.listDocuments(DATABASE_ID, collectionId, [Query.limit(100)]));
-    console.log(`Nombre de documents actuels trouvés : ${existing.total}`);
-    
-    // 2. Delete each existing document with retry & spacing delay
-    for (const doc of existing.documents) {
-      try {
-        await new Promise(r => setTimeout(r, 600));
-        await retryCall(() => databases.deleteDocument(DATABASE_ID, collectionId, doc.$id));
-        console.log(`Supprimé : ${doc.$id}`);
-      } catch (err) {
-        console.error(`Erreur de suppression du document ${doc.$id} :`, err);
-      }
-    }
+    const existing = await retryCall(() => databases.listDocuments(DATABASE_ID, collectionId, [Query.limit(5000)]));
+    const existingMap = new Map<string, any>();
+    existing.documents.forEach((d: any) => existingMap.set(d.$id, d));
+    console.log(`Nombre de documents actuels trouvés dans "${collectionId}" : ${existing.total}`);
 
-    // 3. Insert new seed documents with retry & spacing delay
-    console.log(`\nInsertion des nouveaux documents de démo dans "${collectionId}"...`);
     for (const doc of docs) {
       const docId = doc.id || ID.unique();
       try {
-        await new Promise(r => setTimeout(r, 600));
-        await retryCall(() => databases.createDocument(DATABASE_ID, collectionId, docId, doc.data));
-        console.log(`Créé avec succès : ${docId}`);
-      } catch (err) {
-        console.error(`Erreur d'insertion du document ${docId} :`, err);
+        await new Promise(r => setTimeout(r, 100));
+        if (existingMap.has(docId)) {
+          await retryCall(() => databases.updateDocument(DATABASE_ID, collectionId, docId, doc.data));
+          console.log(`[MàJ] Mis à jour : ${docId}`);
+        } else {
+          await retryCall(() => databases.createDocument(DATABASE_ID, collectionId, docId, doc.data));
+          console.log(`[Créé] Créé avec succès : ${docId}`);
+        }
+      } catch (err: any) {
+        try {
+          await retryCall(() => databases.createDocument(DATABASE_ID, collectionId, docId, doc.data));
+          console.log(`[Créé-Fallback] Créé avec succès : ${docId}`);
+        } catch (createErr: any) {
+          console.error(`Erreur d'insertion du document ${docId} :`, createErr.message || createErr);
+        }
       }
     }
   } catch (err: any) {
-    console.error(`Échec du nettoyage/peuplage de la collection "${collectionId}" :`, err.message || err);
+    console.error(`Échec du peuplage de la collection "${collectionId}" :`, err.message || err);
   }
 }
 
 async function run() {
-  console.log("=== DÉBUT DU PROVISIONING FORCE-SEED AVEC RETRIES, DÉLAIS ET DNS STATIC ===");
+  console.log("=== DÉBUT DU PROVISIONING FORCE-SEED (SANS SUPPRESSION - UPSERT SEULEMENT) ===");
   console.log(`Endpoint : ${ENDPOINT}`);
   console.log(`Projet   : ${PROJECT_ID}`);
   console.log(`Database : ${DATABASE_ID}\n`);
@@ -165,64 +163,67 @@ async function run() {
     data: { type: a.type, user: a.user, text: a.text, time: new Date().toISOString() },
   })));
 
-  console.log("\n=== COMPTES AUTHENTIFICATION ===");
+  console.log("\n=== COMPTES AUTHENTIFICATION (UPSERT SANS SUPPRESSION) ===");
   
-  // Create Demo Admin Auth Account
+  // Create / Update Admin Auth Account
   try {
     const adminEmail = 'admin@idla.edu';
     const adminPassword = 'admin123';
     
-    // Clear existing to ensure correct password
     const usersList = await retryCall(() => users.list([Query.equal('email', adminEmail)]));
-    for (const u of usersList.users) {
-      console.log(`Suppression du compte existant ${adminEmail} (id: ${u.$id})...`);
-      await retryCall(() => users.delete(u.$id));
+    let adminId = '';
+    if (usersList.users.length > 0) {
+      adminId = usersList.users[0].$id;
+      await retryCall(() => users.updatePassword(adminId, adminPassword));
+      console.log(`Compte Auth Administrateur existant mis à jour : ${adminEmail}`);
+    } else {
+      const createdAdmin = await retryCall(() => users.create({
+        userId: ID.unique(),
+        email: adminEmail,
+        password: adminPassword,
+        name: 'Jean-Sebastien Dupont'
+      }));
+      adminId = createdAdmin.$id;
+      console.log(`Créé Compte Auth Administrateur : email: "${adminEmail}" / password: "${adminPassword}"`);
     }
 
-    const createdAdmin = await retryCall(() => users.create({
-      userId: ID.unique(),
-      email: adminEmail,
-      password: adminPassword,
-      name: 'Jean-Sebastien Dupont'
-    }));
-    console.log(`Créé Compte Auth Administrateur : email: "${adminEmail}" / password: "${adminPassword}" (id: ${createdAdmin.$id})`);
-
-    // Add admin user to 'admins' team to grant database permissions
-    await retryCall(() => teams.createMembership({
-      teamId: 'admins',
-      roles: ['admin'],
-      userId: createdAdmin.$id,
-      url: 'https://appwrite.io'
-    }));
-    console.log(`  [OK] Administrateur ajouté à l'équipe 'admins'.`);
+    try {
+      await retryCall(() => teams.createMembership({
+        teamId: 'admins',
+        roles: ['admin'],
+        userId: adminId,
+        url: 'https://appwrite.io'
+      }));
+      console.log(`  [OK] Administrateur confirmé dans l'équipe 'admins'.`);
+    } catch (e) {}
   } catch (err: any) {
     console.warn("Remarque Compte Administrateur Auth :", err.message || err);
   }
 
-  // Create Demo Candidate Auth Account
+  // Create / Update Candidate Auth Account
   try {
     const candidateEmail = 'jean.dupont@email.com';
     const candidatePassword = 'password123';
     
-    // Clear existing to ensure correct password
     const usersList = await retryCall(() => users.list([Query.equal('email', candidateEmail)]));
-    for (const u of usersList.users) {
-      console.log(`Suppression du compte existant ${candidateEmail} (id: ${u.$id})...`);
-      await retryCall(() => users.delete(u.$id));
+    if (usersList.users.length > 0) {
+      const candidateId = usersList.users[0].$id;
+      await retryCall(() => users.updatePassword(candidateId, candidatePassword));
+      console.log(`Compte Auth Candidat existant mis à jour : ${candidateEmail}`);
+    } else {
+      await retryCall(() => users.create({
+        userId: ID.unique(),
+        email: candidateEmail,
+        password: candidatePassword,
+        name: 'Jean Dupont'
+      }));
+      console.log(`Créé Compte Auth Candidat : email: "${candidateEmail}" / password: "${candidatePassword}"`);
     }
-
-    await retryCall(() => users.create({
-      userId: ID.unique(),
-      email: candidateEmail,
-      password: candidatePassword,
-      name: 'Jean Dupont'
-    }));
-    console.log(`Créé Compte Auth Candidat : email: "${candidateEmail}" / password: "${candidatePassword}"`);
   } catch (err: any) {
     console.warn("Remarque Compte Candidat Auth :", err.message || err);
   }
 
-  console.log("\n=== NETTOYAGE ET PEUPLAGE TERMINÉ AVEC SUCCÈS ===");
+  console.log("\n=== SYNCHRONISATION ET PEUPLAGE TERMINÉ AVEC SUCCÈS (SANS SUPPRESSION) ===");
 }
 
 run();
