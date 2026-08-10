@@ -124,7 +124,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     try { localTeachers = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]'); } catch {}
 
     const defaultTeachers = initialUsers.filter(u => u.role === 'teacher' || u.role === 'Enseignant');
-    const combined = [...cloudDocs, ...localTeachers];
+    const combined = [...cloudDocs];
+    
+    localTeachers.forEach(lt => {
+      if (!combined.some(c => c.id === lt.id || c.email === lt.email || c.$id === lt.id)) {
+        combined.push(lt);
+      }
+    });
+
     defaultTeachers.forEach(dt => {
       if (!combined.some(c => c.id === dt.id || c.email === dt.email || c.$id === dt.id)) {
         combined.push(dt);
