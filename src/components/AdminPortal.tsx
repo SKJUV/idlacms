@@ -234,12 +234,14 @@ export default function AdminPortal({
           });
         }
 
+        let adminEmails = new Set<string>();
         if (APPWRITE_CONFIG.collections.cmsUsers) {
           const usersRes = await databases.listDocuments(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.cmsUsers,
             [Query.limit(5000), Query.orderDesc('$createdAt')]
           );
+          adminEmails = new Set(usersRes.documents.map((d: any) => (d.email || '').toLowerCase()));
           if (usersRes.documents.length > 0) {
             setUsersList(
               usersRes.documents.map((doc: any) => ({
@@ -281,8 +283,8 @@ export default function AdminPortal({
           let freshLocal: any[] = [];
           try { 
             freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-            // Nettoyage des candidats fictifs du cache local
-            freshLocal = freshLocal.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id));
+            // Nettoyage des candidats fictifs et des admins du cache local
+            freshLocal = freshLocal.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id) && !adminEmails.has((a.email || '').toLowerCase()));
           } catch (e) {}
           
           const uniqueMap = new Map<string, any>();
