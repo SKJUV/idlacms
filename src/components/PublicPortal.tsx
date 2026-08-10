@@ -24,6 +24,7 @@ import {
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -242,9 +243,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     setNewsletterEmail('');
   };
 
-  // Programs View States
-  const [programSearch, setProgramSearch] = useState('');
-  const [selectedProgramType, setSelectedProgramType] = useState<string>('Tous');
+  // Programs View States & Universal Filters
+  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
 
   // Formulaire public de témoignage
   const [showTestimonialModal, setShowTestimonialModal] = useState(false);
@@ -310,18 +310,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     return Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [programs]);
 
-  // FILTER PROGRAMS
+  // FILTER PROGRAMS WITH UNIVERSAL FILTER BAR
   const filteredPrograms = useMemo(() => {
-    return activePrograms.filter(p => {
-      const matchesSearch = p.title.toLowerCase().includes(programSearch.toLowerCase()) || 
-                            p.description.toLowerCase().includes(programSearch.toLowerCase()) ||
-                            (p.type && p.type.toLowerCase().includes(programSearch.toLowerCase())) ||
-                            (p.category && p.category.toLowerCase().includes(programSearch.toLowerCase()));
-      const matchesType = selectedProgramType === 'Tous' || 
-                          (p.type && p.type.trim().toLowerCase() === selectedProgramType.trim().toLowerCase());
-      return matchesSearch && matchesType;
-    });
-  }, [activePrograms, programSearch, selectedProgramType]);
+    return applyProgramFilters(activePrograms, filters);
+  }, [activePrograms, filters]);
 
   // FILTER NEWS
   const filteredNews = useMemo(() => {
@@ -398,22 +390,45 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {/* Stats Counter Bar */}
         <section className="py-12 bg-bg-secondary border-y border-border-primary">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Alumni Actifs</div>
-              <div className="text-3xl font-bold text-text-primary">5,000+</div>
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12 space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Alumni Actifs</div>
+                <div className="text-3xl font-bold text-text-primary">5,000+</div>
+              </div>
+              <div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Programmes & Certifications</div>
+                <div className="text-3xl font-bold text-text-primary">{programs.length || 64}</div>
+              </div>
+              <div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Pays Représentés</div>
+                <div className="text-3xl font-bold text-text-primary">8</div>
+              </div>
+              <div>
+                <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">Partenaires</div>
+                <div className="text-3xl font-bold text-text-primary">120+</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Programmes</div>
-              <div className="text-3xl font-bold text-text-primary">24</div>
-            </div>
-            <div>
-              <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Pays Représentés</div>
-              <div className="text-3xl font-bold text-text-primary">8</div>
-            </div>
-            <div>
-              <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">Partenaires</div>
-              <div className="text-3xl font-bold text-text-primary">120+</div>
+
+            {/* Universal Filter Bar on Home Page */}
+            <div className="pt-4 border-t border-border-primary/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-sans font-bold text-base text-text-primary flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-brand-primary" /> Rechercher & Filtrer un Programme
+                </h3>
+                <button
+                  onClick={() => setActiveTab('programmes')}
+                  className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  Voir tous les diplômes ({programs.length}) <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <ProgramFilterBar
+                filters={filters}
+                onFilterChange={setFilters}
+                onReset={() => setFilters(INITIAL_FILTER_STATE)}
+                totalResults={filteredPrograms.length}
+              />
             </div>
           </div>
         </section>
@@ -614,7 +629,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </p>
                 </div>
                 <button
-                  onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
+                  onClick={() => { setFilters((p) => ({ ...p, type: 'Certification' })); setActiveTab('programmes'); }}
                   className="px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm whitespace-nowrap"
                 >
                   Voir toutes les certifications
@@ -631,7 +646,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 ].map(({ title, desc, Icon }) => (
                   <div 
                     key={title}
-                    onClick={() => { setSelectedProgramType('Certification'); setActiveTab('programmes'); }}
+                    onClick={() => { setFilters((p) => ({ ...p, type: 'Certification' })); setActiveTab('programmes'); }}
                     className="p-7 bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-2xl transition-all cursor-pointer group shadow-sm hover:shadow-md"
                   >
                     <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
@@ -836,33 +851,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-bg-secondary p-6 rounded-xl border border-border-primary shadow-sm">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input 
-                className="w-full bg-bg-primary border border-border-primary text-text-primary rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-brand-primary outline-none" 
-                placeholder="Rechercher un programme par mot-clé..." 
-                type="text"
-                value={programSearch}
-                onChange={(e) => setProgramSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              {['Tous', 'Master', 'Doctorat', 'Bachelor', 'Certification'].map((type) => (
-                <button 
-                  key={type}
-                  onClick={() => setSelectedProgramType(type)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    selectedProgramType === type 
-                      ? 'bg-brand-primary text-white shadow-sm' 
-                      : 'bg-bg-primary hover:bg-border-primary/50 text-text-secondary border border-border-primary/60'
-                  }`}
-                >
-                  {type === 'Tous' ? 'Tous les types' : type}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ProgramFilterBar
+            filters={filters}
+            onFilterChange={setFilters}
+            onReset={() => setFilters(INITIAL_FILTER_STATE)}
+            totalResults={filteredPrograms.length}
+          />
 
           {/* Programs Grid */}
           {filteredPrograms.length > 0 ? (

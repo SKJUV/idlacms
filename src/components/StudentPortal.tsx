@@ -15,6 +15,7 @@ import {
 import { programsData } from '../data/mockData';
 import { Paperclip, Video, FileText, Download, ExternalLink } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
+import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -224,10 +225,8 @@ export default function StudentPortal({
   const [selectedLang, setSelectedLang] = useState<'fr' | 'en'>(profile.language);
   const [langSaved, setLangSaved] = useState(false);
 
-  // ── Catalogue ──
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState('Tous');
-  const [filterLevel, setFilterLevel] = useState('Tous niveaux');
+  // ── Catalogue & Universal Filters ──
+  const [catalogFilters, setCatalogFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
 
   // ── Programmes : section active ──
   const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
@@ -985,20 +984,8 @@ export default function StudentPortal({
   const upcomingDeadlines: any[] = [];
 
   const filteredCatalog = useMemo(() => {
-    return allPrograms.filter((c) => {
-      const q = searchQuery.toLowerCase();
-      const matchQ = !q || c.title?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q);
-      const matchCat = filterCategory === 'Tous' || (c.category && c.category.toLowerCase().trim() === filterCategory.toLowerCase().trim());
-      
-      // Dynamically map course level based on program type if it doesn't exist
-      const calculatedLevel = c.level || 
-        (c.type === 'Doctorat' || c.type === 'Master' ? 'Avancé' : 
-         c.type === 'Bachelor' ? 'Intermédiaire' : 'Débutant');
-      
-      const matchLevel = filterLevel === 'Tous niveaux' || calculatedLevel === filterLevel;
-      return matchQ && matchCat && matchLevel;
-    });
-  }, [allPrograms, searchQuery, filterCategory, filterLevel]);
+    return applyProgramFilters(allPrograms, catalogFilters);
+  }, [allPrograms, catalogFilters]);
 
   // Memoized Student Course List for optimized rendering (placed before early returns)
   const { myCourseList, progTitle, studentLevel } = useMemo(() => {
@@ -2657,30 +2644,12 @@ export default function StudentPortal({
             <h1 className="font-sans font-bold text-2xl text-text-primary">Catalogue de Cours</h1>
             <p className="text-sm text-text-secondary mt-1">Explorez notre offre de formations en ligne.</p>
           </div>
-          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="relative">
-              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un cours, instructeur, tag…"
-                className="w-full bg-bg-primary border border-border-primary rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-primary text-text-primary" />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <FilterIcon className="w-4 h-4 text-text-secondary shrink-0 mt-0.5" />
-              {CATEGORIES.map((cat) => (
-                <button key={cat} onClick={() => setFilterCategory(cat)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
-                  {cat}
-                </button>
-              ))}
-              {LEVELS.map((lvl) => (
-                <button key={lvl} onClick={() => setFilterLevel(lvl)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterLevel === lvl ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-primary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
-                  {lvl}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-text-secondary">{filteredCatalog.length} cours trouvé{filteredCatalog.length !== 1 ? 's' : ''}</p>
-          </div>
+          <ProgramFilterBar
+            filters={catalogFilters}
+            onFilterChange={setCatalogFilters}
+            onReset={() => setCatalogFilters(INITIAL_FILTER_STATE)}
+            totalResults={filteredCatalog.length}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredCatalog.map((course) => {
               const isEnrolled = enrollments.some((e) => e.title === course.title);

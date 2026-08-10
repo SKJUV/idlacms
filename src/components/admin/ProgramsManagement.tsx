@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS, DEFAULT_PROGRAM_DURATIONS } from '../../types';
 import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
+import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from '../ProgramFilterBar';
 
 interface ProgramsManagementProps {
   programs: Program[];
@@ -18,9 +19,15 @@ export default function ProgramsManagement({
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [cloudSuccess, setCloudSuccess] = useState<string | null>(null);
 
-  // ─── Programs State & Form ───
+  // ─── Programs State, Filters & Form ───
   const [showAddProgramForm, setShowAddProgramForm] = useState(false);
   const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
+
+  const [adminFilters, setAdminFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
+
+  const filteredAdminPrograms = React.useMemo(() => {
+    return applyProgramFilters(programs, adminFilters);
+  }, [programs, adminFilters]);
 
   const [newProgramTitle, setNewProgramTitle] = useState('');
   const [newProgramDescription, setNewProgramDescription] = useState('');
@@ -654,6 +661,13 @@ export default function ProgramsManagement({
             </form>
           )}
 
+          <ProgramFilterBar
+            filters={adminFilters}
+            onFilterChange={setAdminFilters}
+            onReset={() => setAdminFilters(INITIAL_FILTER_STATE)}
+            totalResults={filteredAdminPrograms.length}
+          />
+
           <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -666,7 +680,7 @@ export default function ProgramsManagement({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#c6c6cf]/20">
-                {programs.map((p) => (
+                {filteredAdminPrograms.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/40">
                     <td className="p-4 font-semibold text-[#00020e]">
                       <div className="flex items-center gap-2">
