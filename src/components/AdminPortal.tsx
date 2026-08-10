@@ -127,6 +127,7 @@ export default function AdminPortal({
       let localPrograms: any[] = [];
       try {
         localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+        localApps = localApps.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id));
         const parsedProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
         let changed = false;
         localPrograms = parsedProgs.map((p: any) => {
@@ -278,7 +279,11 @@ export default function AdminPortal({
 
         setPreRegistrations((curr) => {
           let freshLocal: any[] = [];
-          try { freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch (e) {}
+          try { 
+            freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+            // Nettoyage des candidats fictifs du cache local
+            freshLocal = freshLocal.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id));
+          } catch (e) {}
           
           const uniqueMap = new Map<string, any>();
           
