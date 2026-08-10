@@ -1000,6 +1000,30 @@ export default function StudentPortal({
     });
   }, [allPrograms, searchQuery, filterCategory, filterLevel]);
 
+  // Memoized Student Course List for optimized rendering (placed before early returns)
+  const { myCourseList, progTitle, studentLevel } = useMemo(() => {
+    let localCourses: any[] = [];
+    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
+
+    let localApps: any[] = [];
+    try { localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch {}
+    const allApps = [...applications, ...localApps];
+
+    const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
+    const pTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
+    const sLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
+
+    const filteredCourses = localCourses.filter((c: any) =>
+      (!c.level || c.level === sLevel) &&
+      (!c.program || c.program === pTitle || pTitle.includes(c.program) || c.program.includes(pTitle))
+    );
+    const list = filteredCourses.length > 0 
+      ? filteredCourses 
+      : localCourses.filter((c: any) => !c.level || c.level === sLevel || localCourses.length <= 5);
+
+    return { myCourseList: list, progTitle: pTitle, studentLevel: sLevel };
+  }, [applications, selectedClassChat, selectedClassLevel, programs]);
+
   // ════════════════════════════════════════════════════════════════════════════
   // LOGIN VIEW
   // ════════════════════════════════════════════════════════════════════════════
@@ -1937,30 +1961,6 @@ export default function StudentPortal({
   // ════════════════════════════════════════════════════════════════════════════
   // DEDICATED STUDENT CHAT & COURSES VIEW
   // ════════════════════════════════════════════════════════════════════════════
-  // Memoized Student Course List for optimized rendering
-  const { myCourseList, progTitle, studentLevel } = useMemo(() => {
-    let localCourses: any[] = [];
-    try { localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]'); } catch {}
-
-    let localApps: any[] = [];
-    try { localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]'); } catch {}
-    const allApps = [...applications, ...localApps];
-
-    const acceptedProg = allApps.find(a => (a.status || '').toLowerCase() === 'accepted' && a.program);
-    const pTitle = selectedClassChat || acceptedProg?.program || (programs && programs[0]?.title) || 'Programme IDLA';
-    const sLevel = selectedClassLevel || acceptedProg?.entryLevel || 'L1';
-
-    const filteredCourses = localCourses.filter((c: any) =>
-      (!c.level || c.level === sLevel) &&
-      (!c.program || c.program === pTitle || pTitle.includes(c.program) || c.program.includes(pTitle))
-    );
-    const list = filteredCourses.length > 0 
-      ? filteredCourses 
-      : localCourses.filter((c: any) => !c.level || c.level === sLevel || localCourses.length <= 5);
-
-    return { myCourseList: list, progTitle: pTitle, studentLevel: sLevel };
-  }, [applications, selectedClassChat, selectedClassLevel, programs]);
-
   if (activeTab === 'student-chat') {
 
     return (

@@ -148,7 +148,7 @@ export default function AdminPortal({
       }
 
       try {
-        import('../../lib/appwrite').then(async ({ account }) => {
+        import('../lib/appwrite').then(async ({ account }) => {
           const user = await account.get();
           if (user) {
             setSettingsName(user.name || 'Administrateur');
