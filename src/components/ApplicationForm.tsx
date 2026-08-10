@@ -8,7 +8,7 @@ import {
   AlertCircleIcon,
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account } from '../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query } from '../lib/appwrite';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, email: string, tempPass?: string) => void;
@@ -251,12 +251,48 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     }
   };
 
-  const handleNextStep = () => {
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+
+  const handleNextStep = async () => {
     setErrorMessage('');
     if (step === 1) {
       if (!firstName || !lastName || !email || !phone) {
         setErrorMessage('Veuillez remplir tous les champs requis.');
         return;
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        setErrorMessage('Veuillez saisir une adresse e-mail valide.');
+        return;
+      }
+
+      setIsCheckingEmail(true);
+      try {
+        if (isAppwriteDbConfigured()) {
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.applications,
+            [Query.equal('email', cleanEmail)]
+          );
+          if (res.documents.length > 0) {
+            setErrorMessage('Un compte ou un dossier de candidature existe déjà avec cette adresse e-mail. Veuillez vous connecter ou utiliser un autre e-mail.');
+            setIsCheckingEmail(false);
+            return;
+          }
+        }
+
+        const localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+        if (localApps.some((a: any) => (a.email || '').trim().toLowerCase() === cleanEmail)) {
+          setErrorMessage('Un compte ou un dossier de candidature existe déjà avec cette adresse e-mail. Veuillez vous connecter ou utiliser un autre e-mail.');
+          setIsCheckingEmail(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Erreur lors de la vérification d'unicité e-mail:", err);
+      } finally {
+        setIsCheckingEmail(false);
       }
     }
     if (step === 2) {
@@ -314,6 +350,19 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       : selectedProgram;
 
     if (isAppwriteDbConfigured()) {
+      try {
+        const checkExisting = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.applications,
+          [Query.equal('email', cleanEmail)]
+        );
+        if (checkExisting.documents.length > 0) {
+          setErrorMessage('Un dossier de candidature existe déjà avec cette adresse e-mail. Inscription impossible.');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {}
+
       try {
         if (!isExistingUser) {
           // 1. Create Appwrite Auth Account with user-defined password
@@ -1045,9 +1094,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               <button 
                 type="button"
                 onClick={handleNextStep}
-                className="bg-brand-primary hover:bg-brand-hover text-white flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ml-auto cursor-pointer"
+                disabled={isCheckingEmail}
+                className="bg-brand-primary hover:bg-brand-hover text-white flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-xs font-bold transition-all ml-auto cursor-pointer disabled:opacity-55 disabled:cursor-not-allowed"
               >
-                Suivant
+                {isCheckingEmail ? 'Vérification...' : 'Suivant'}
                 <ArrowRightIcon className="w-4 h-4" />
               </button>
             ) : (
