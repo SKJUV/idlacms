@@ -83,8 +83,8 @@ export default function AdminPortal({
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
   // CMS Settings States
-  const [settingsName, setSettingsName] = useState('Jean-Sébastien Dupont');
-  const [settingsEmail, setSettingsEmail] = useState('js.dupont@idla.edu');
+  const [settingsName, setSettingsName] = useState('Administrateur');
+  const [settingsEmail, setSettingsEmail] = useState('admin@idla.edu');
   const [settingsSiteName, setSettingsSiteName] = useState('IDLA CMS');
   const [settingsAdmissionsOpen, setSettingsAdmissionsOpen] = useState(true);
   const [settingsEmailNotif, setSettingsEmailNotif] = useState(true);
@@ -146,6 +146,16 @@ export default function AdminPortal({
       } catch (e) {
         console.warn("Erreur lecture localStorage:", e);
       }
+
+      try {
+        import('../../lib/appwrite').then(async ({ account }) => {
+          const user = await account.get();
+          if (user) {
+            setSettingsName(user.name || 'Administrateur');
+            setSettingsEmail(user.email || '');
+          }
+        }).catch(() => {});
+      } catch (e) {}
 
       if (!isAppwriteDbConfigured()) {
         console.warn("Appwrite DB n'est pas configurée. Affichage en stockage local/mémoire.");
