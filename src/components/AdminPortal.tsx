@@ -127,7 +127,10 @@ export default function AdminPortal({
       let localPrograms: any[] = [];
       try {
         localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-        localApps = localApps.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id));
+        localApps = localApps.filter((a: any) => {
+          const name = (a.name || '').toLowerCase();
+          return !['pre-1', 'pre-2', 'pre-3'].includes(a.id) && !name.includes('jean dupont') && !name.includes('jean-sebastien') && !name.includes('jean sebastien');
+        });
         const parsedProgs = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
         let changed = false;
         localPrograms = parsedProgs.map((p: any) => {
@@ -284,7 +287,12 @@ export default function AdminPortal({
           try { 
             freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
             // Nettoyage des candidats fictifs et des admins du cache local
-            freshLocal = freshLocal.filter((a: any) => !['pre-1', 'pre-2', 'pre-3'].includes(a.id) && !adminEmails.has((a.email || '').toLowerCase()));
+            freshLocal = freshLocal.filter((a: any) => {
+              const email = (a.email || '').toLowerCase();
+              const name = (a.name || '').toLowerCase();
+              const isFake = ['pre-1', 'pre-2', 'pre-3'].includes(a.id) || name.includes('jean dupont') || name.includes('jean-sebastien') || name.includes('jean sebastien');
+              return !isFake && !adminEmails.has(email);
+            });
           } catch (e) {}
           
           const uniqueMap = new Map<string, any>();
