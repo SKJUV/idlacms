@@ -102,10 +102,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     setLoading(true);
     let cloudDocs: any[] = [];
     try {
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
+      const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+      if (isAppwriteDbConfigured() && cmsUsersColl) {
         const res = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.teachers
+          cmsUsersColl,
+          [Query.equal('role', 'teacher')]
         );
         cloudDocs = res.documents.map((doc: any) => {
           let assigned = doc.assignedPrograms;
@@ -113,11 +115,17 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             try { assigned = JSON.parse(assigned); } catch { assigned = []; }
           }
           if (!Array.isArray(assigned)) assigned = [];
-          return { ...doc, assignedPrograms: assigned };
+
+          let schedule = doc.scheduleData;
+          if (typeof schedule === 'string') {
+            try { schedule = JSON.parse(schedule); } catch { schedule = []; }
+          }
+
+          return { ...doc, id: doc.$id, assignedPrograms: assigned, scheduleData: schedule };
         });
       }
     } catch (err) {
-      console.warn("Erreur chargement enseignants Appwrite:", err);
+      console.warn("Erreur chargement enseignants Appwrite (cms_users):", err);
     }
 
     let localTeachers: any[] = [];
@@ -171,27 +179,27 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
         status: 'Actif',
       };
 
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
+      const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+      if (isAppwriteDbConfigured() && cmsUsersColl) {
         try {
           const doc = await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.teachers,
+            cmsUsersColl,
             userId,
             {
               authUserId: userId,
-              firstName: newFirstName,
-              lastName: newLastName,
+              name: fullName,
               email: newEmail,
-              title: newTitle,
-              speciality: newSpeciality,
+              role: 'teacher',
+              status: 'Actif',
+              initials: newDoc.initials,
               assignedPrograms: newAssignedPrograms,
-              scheduleData: '[]',
-              status: 'Actif'
+              scheduleData: '[]'
             }
           );
-          newDoc = { ...doc, name: fullName, initials: newDoc.initials, assignedPrograms: newAssignedPrograms };
+          newDoc = { ...doc, id: doc.$id, name: fullName, initials: newDoc.initials, assignedPrograms: newAssignedPrograms };
         } catch (e: any) {
-          console.warn("Erreur création document teachers:", e.message);
+          console.warn("Erreur création document cms_users enseignant:", e.message);
         }
       }
 
@@ -331,11 +339,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const saveSchedule = async () => {
     if (!editingSchedule) return;
     try {
-      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachers) {
+      const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+      if (isAppwriteDbConfigured() && cmsUsersColl) {
         const idToUpdate = editingSchedule.$id || editingSchedule.id;
         const updatedDoc = await databases.updateDocument(
           APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.collections.teachers,
+          cmsUsersColl,
           idToUpdate,
           {
             scheduleData: JSON.stringify(scheduleData),
@@ -347,10 +356,15 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
           try { assigned = JSON.parse(assigned); } catch { assigned = []; }
         }
         if (!Array.isArray(assigned)) assigned = [];
-        const normalizedDoc = { ...updatedDoc, assignedPrograms: assigned };
+        let sched = updatedDoc.scheduleData;
+        if (typeof sched === 'string') {
+          try { sched = JSON.parse(sched); } catch { sched = []; }
+        }
+
+        const normalizedDoc = { ...updatedDoc, id: updatedDoc.$id, assignedPrograms: assigned, scheduleData: sched };
 
         setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? normalizedDoc : t));
-        logActivity('article', 'Admin', `a mis à jour le profil de l'enseignant ${editingSchedule.name}`);
+        logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
         setEditingSchedule(null);
         setEditingAssignedPrograms([]);
       }

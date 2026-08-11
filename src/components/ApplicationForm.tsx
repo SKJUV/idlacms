@@ -435,6 +435,37 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
           application = { id: `app-${Date.now()}`, $id: `app-${Date.now()}` };
         }
 
+        // 5. Create / Sync student profile in cms_users collection with role 'student'
+        const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+        if (cmsUsersColl) {
+          try {
+            const existingCmsUser = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              cmsUsersColl,
+              [Query.equal('email', cleanEmail)]
+            );
+            if (existingCmsUser.documents.length === 0) {
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                cmsUsersColl,
+                ID.unique(),
+                {
+                  name: candidateName,
+                  email: cleanEmail,
+                  role: 'student',
+                  status: 'Actif',
+                  initials,
+                  assignedPrograms: [finalProgramName],
+                  scheduleData: '[]'
+                }
+              );
+              console.log("Fiche profil étudiant avec rôle 'student' créée dans cms_users !");
+            }
+          } catch (cmsErr) {
+            console.warn("Échec non-bloquant création profil cms_users pour étudiant:", cmsErr);
+          }
+        }
+
         // ── Enregistrement des documents joints dans Appwrite candidateDocuments ──
         if (APPWRITE_CONFIG.collections.candidateDocuments && application && (application.$id || application.id)) {
           for (const fileObj of files) {

@@ -460,10 +460,18 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             if (typeof assigned === 'string') {
               try { assigned = JSON.parse(assigned); } catch (e) { assigned = []; }
             }
+
+            let schedule = userDoc.scheduleData || [];
+            if (typeof schedule === 'string') {
+              try { schedule = JSON.parse(schedule); } catch (e) { schedule = []; }
+            }
+
             setProfile({
+              $id: userDoc.$id,
               name: userDoc.name,
               email: userDoc.email,
-              assignedPrograms: assigned
+              assignedPrograms: assigned,
+              scheduleData: schedule
             });
           } else {
             setProfile({
