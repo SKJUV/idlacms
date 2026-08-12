@@ -604,9 +604,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-6 flex-grow">{p.description}</p>
                     
                     <div className="flex items-center justify-between pt-5 border-t border-border-primary/50 mt-auto">
-                      <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-brand-primary" /> Rentrée {new Date().getFullYear()}
-                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-brand-primary" /> Rentrée {new Date().getFullYear()}
+                        </span>
+                        {p.price && (
+                          <div className="text-brand-primary text-xs font-extrabold bg-brand-primary/10 px-2 py-0.5 rounded-md inline-block w-fit">
+                            {p.price}
+                          </div>
+                        )}
+                      </div>
                       <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
                         <span>Voir plus</span>
                         <ArrowRight className="w-4 h-4" />
@@ -879,9 +886,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     )}
 
                     <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
-                      <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
-                        <Clock className="w-3.5 h-3.5 text-brand-primary" />
-                        <span>{p.duration}</span>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
+                          <Clock className="w-3.5 h-3.5 text-brand-primary" />
+                          <span>{p.duration}</span>
+                        </div>
+                        {p.price && (
+                          <div className="text-brand-primary text-[11px] font-extrabold bg-brand-primary/10 px-2 py-0.5 rounded-md inline-block w-fit">
+                            {p.price}
+                          </div>
+                        )}
                       </div>
                       <button 
                         onClick={() => onApplyNow(p.title)}
