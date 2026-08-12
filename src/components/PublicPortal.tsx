@@ -609,7 +609,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           <Clock className="w-4 h-4 text-brand-primary" /> Rentrée {new Date().getFullYear()}
                         </span>
                         {p.price && (
-                          <div className="text-brand-primary text-xs font-extrabold bg-brand-primary/10 px-2 py-0.5 rounded-md inline-block w-fit">
+                          <div className="mt-1 text-white text-sm font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-1 rounded-md shadow-md inline-block w-fit">
                             {p.price}
                           </div>
                         )}
@@ -878,13 +878,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       {p.description}
                     </p>
 
-                    {p.procedures && (
-                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-text-secondary space-y-0.5">
-                        <span className="font-bold text-amber-600 uppercase text-[9px] block">Procédure & Équivalences</span>
-                        <p className="line-clamp-2">{p.procedures}</p>
-                      </div>
-                    )}
-
                     <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
@@ -892,7 +885,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           <span>{p.duration}</span>
                         </div>
                         {p.price && (
-                          <div className="text-brand-primary text-[11px] font-extrabold bg-brand-primary/10 px-2 py-0.5 rounded-md inline-block w-fit">
+                          <div className="mt-1 text-white text-sm font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-1 rounded-md shadow-md inline-block w-fit">
                             {p.price}
                           </div>
                         )}
