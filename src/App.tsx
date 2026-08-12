@@ -498,7 +498,10 @@ export default function App() {
     setActiveTab('success');
   };
 
+  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>();
+
   const handleApplyToProgram = (programTitle?: string) => {
+    setSelectedApplicationProgram(programTitle);
     setActiveTab('candidature');
   };
 
@@ -733,6 +736,7 @@ export default function App() {
               }
             }}
             programs={programs}
+            initialProgram={selectedApplicationProgram}
           />
         )}
 
