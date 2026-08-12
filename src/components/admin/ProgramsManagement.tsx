@@ -640,13 +640,22 @@ export default function ProgramsManagement({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
-                  <textarea
+                  <select
                     value={newProgramProcedures}
                     onChange={(e) => setNewProgramProcedures(e.target.value)}
-                    placeholder="ex: Niveau 1: Bac + CNI. Niveau 2 & 3 (Passerelle): Relevés de notes L1/L2 + Diplôme précédent requis. Entretien individuel obligatoire."
-                    rows={3}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                  />
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium bg-white"
+                  >
+                    <option value="">-- Sélectionnez un diplôme requis --</option>
+                    <option value="BEPC">BEPC</option>
+                    <option value="BAC">BAC</option>
+                    <option value="Licence 1">Licence 1</option>
+                    <option value="Licence 2">Licence 2</option>
+                    <option value="Licence 3">Licence 3</option>
+                    <option value="Master 1">Master 1</option>
+                    <option value="Master 2">Master 2</option>
+                    <option value="GCE Ordinary Level (GCE O/L)">GCE Ordinary Level (GCE O/L)</option>
+                    <option value="GCE Advanced Level (GCE A/L)">GCE Advanced Level (GCE A/L)</option>
+                  </select>
                 </div>
 
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
