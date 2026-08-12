@@ -95,11 +95,7 @@ export default function ProgramFilterBar({
         </div>
 
         <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
-          {totalResults !== undefined && (
-            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-brand-light text-brand-primary border border-brand-primary/20 whitespace-nowrap">
-              {totalResults} {totalResults > 1 ? 'programmes trouvés' : 'programme trouvé'}
-            </span>
-          )}
+
 
           {hasActiveFilters && (
             <button
