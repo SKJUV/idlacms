@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS, DEFAULT_PROGRAM_DURATIONS } from '../../types';
 import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from '../ProgramFilterBar';
@@ -36,6 +36,7 @@ export default function ProgramsManagement({
   const [newProgramDuration, setNewProgramDuration] = useState(DEFAULT_PROGRAM_DURATIONS['Master']);
   const [newProgramProcedures, setNewProgramProcedures] = useState('');
   const [newProgramImage, setNewProgramImage] = useState('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
+  const [newProgramPrice, setNewProgramPrice] = useState('');
   const [newProgramIsNew, setNewProgramIsNew] = useState(true);
 
   const handleProgramTypeChange = (type: 'Master' | 'Doctorat' | 'Certification' | 'Bachelor') => {
@@ -82,6 +83,7 @@ export default function ProgramsManagement({
     setNewProgramDuration(DEFAULT_PROGRAM_DURATIONS['Master']);
     setNewProgramProcedures('');
     setNewProgramImage('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
+    setNewProgramPrice('');
     setNewProgramIsNew(true);
     setEditingProgramId(null);
     setShowAddProgramForm(false);
@@ -106,6 +108,7 @@ export default function ProgramsManagement({
     setNewProgramDuration(prog.duration || DEFAULT_PROGRAM_DURATIONS[(prog.type as any) || 'Master']);
     setNewProgramProcedures(prog.procedures || '');
     setNewProgramImage(prog.image);
+    setNewProgramPrice(prog.price || '');
     setNewProgramIsNew(!!prog.isNew);
     setShowAddProgramForm(true);
     setCloudError(null);
@@ -148,6 +151,7 @@ export default function ProgramsManagement({
         type: newProgramType,
         category: newProgramCategory,
         duration: newProgramDuration,
+        price: newProgramPrice,
         procedures: newProgramProcedures,
         image: newProgramImage,
         isNew: newProgramIsNew,
@@ -229,6 +233,7 @@ export default function ProgramsManagement({
       type: newProgramType,
       category: newProgramCategory,
       duration: newProgramDuration,
+      price: newProgramPrice,
       procedures: newProgramProcedures,
       image: newProgramImage,
       isNew: newProgramIsNew,
@@ -252,6 +257,7 @@ export default function ProgramsManagement({
             type: newProgram.type,
             category: newProgram.category,
             duration: newProgram.duration,
+            price: newProgram.price,
             image: newProgram.image,
             isNew: newProgram.isNew,
           },
@@ -275,6 +281,7 @@ export default function ProgramsManagement({
                 type: newProgram.type,
                 category: fallbackCat,
                 duration: newProgram.duration,
+                price: newProgram.price,
                 image: newProgram.image,
                 isNew: newProgram.isNew,
               },
@@ -480,80 +487,97 @@ export default function ProgramsManagement({
       {activeSubTab === 'programs' ? (
         /* ─── ONGLET PROGRAMMES ─── */
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="font-sans font-bold text-lg text-[#00020e]">Programmes académiques IDLA</h3>
-            <button
-              onClick={() => (showAddProgramForm ? resetProgramForm() : setShowAddProgramForm(true))}
-              className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              {showAddProgramForm ? 'Fermer le formulaire' : 'Ajouter un programme'}
-            </button>
-          </div>
-
-          {showAddProgramForm && (
-            <form
-              onSubmit={handleSubmitProgram}
-              className="bg-white border border-[#c6c6cf] rounded-2xl p-6 space-y-4 shadow-sm"
-            >
-              <p className="text-sm font-bold text-[#00020e]">
-                {editingProgramId ? 'Modifier le programme' : 'Nouveau programme'}
-              </p>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Titre du programme *</label>
-                <input
-                  type="text"
-                  value={newProgramTitle}
-                  onChange={(e) => setNewProgramTitle(e.target.value)}
-                  placeholder="ex: Master en Cybersécurité"
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                  required
-                />
+          {showAddProgramForm ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={resetProgramForm}
+                  className="bg-white border border-[#c6c6cf] text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Retour
+                </button>
+                <h3 className="font-sans font-bold text-lg text-[#00020e]">
+                  {editingProgramId ? 'Modifier le programme' : 'Nouveau programme'}
+                </h3>
               </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Description *</label>
-                <textarea
-                  value={newProgramDescription}
-                  onChange={(e) => setNewProgramDescription(e.target.value)}
-                  placeholder="Description courte du programme"
-                  rows={3}
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <form
+                onSubmit={handleSubmitProgram}
+                className="bg-white border border-[#c6c6cf] rounded-2xl p-6 space-y-4 shadow-sm"
+              >
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Type (Durée auto-assignée) *</label>
-                  <select
-                    value={newProgramType}
-                    onChange={(e) => handleProgramTypeChange(e.target.value as any)}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
-                  >
-                    <option value="Bachelor">Bachelor (3 ans / L1-L3)</option>
-                    <option value="Master">Master (5 ans / Bac+5)</option>
-                    <option value="Doctorat">Doctorat (3 ans / Thèse)</option>
-                    <option value="Certification">Certification (6 mois / Certifiante)</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Catégorie (Saisie libre ou Liste) *</label>
-                    <span className="text-[10px] text-slate-400 font-normal">Tapez ou cliquez un badge</span>
-                  </div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Titre du programme *</label>
                   <input
                     type="text"
-                    list="category-options-list"
-                    value={newProgramCategory}
-                    onChange={(e) => setNewProgramCategory(e.target.value)}
-                    placeholder="ex: Tech, Finance, IA & Data, Cybersécurité..."
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                    value={newProgramTitle}
+                    onChange={(e) => setNewProgramTitle(e.target.value)}
+                    placeholder="ex: Master en Cybersécurité"
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
                     required
                   />
-                  <datalist id="category-options-list">
-                    {Array.from(
-                      new Set([
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Description *</label>
+                  <textarea
+                    value={newProgramDescription}
+                    onChange={(e) => setNewProgramDescription(e.target.value)}
+                    placeholder="Description courte du programme"
+                    rows={3}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Type (Durée auto-assignée) *</label>
+                    <select
+                      value={newProgramType}
+                      onChange={(e) => handleProgramTypeChange(e.target.value as any)}
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                    >
+                      <option value="Bachelor">Bachelor (3 ans / L1-L3)</option>
+                      <option value="Master">Master (5 ans / Bac+5)</option>
+                      <option value="Doctorat">Doctorat (3 ans / Thèse)</option>
+                      <option value="Certification">Certification (6 mois / Certifiante)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-500 uppercase">Catégorie (Saisie libre ou Liste) *</label>
+                      <span className="text-[10px] text-slate-400 font-normal">Tapez ou cliquez un badge</span>
+                    </div>
+                    <input
+                      type="text"
+                      list="category-options-list"
+                      value={newProgramCategory}
+                      onChange={(e) => setNewProgramCategory(e.target.value)}
+                      placeholder="ex: Tech, Finance, IA & Data, Cybersécurité..."
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                      required
+                    />
+                    <datalist id="category-options-list">
+                      {Array.from(
+                        new Set([
+                          'Sciences',
+                          'Management',
+                          'Tech',
+                          'Droit',
+                          'Santé',
+                          'Communication',
+                          'Finance & Audit',
+                          'IA & Data',
+                          'Cybersécurité',
+                          'Marketing',
+                          ...programs.map((p) => p.category),
+                        ])
+                      ).map((cat) => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[
                         'Sciences',
                         'Management',
                         'Tech',
@@ -562,170 +586,176 @@ export default function ProgramsManagement({
                         'Communication',
                         'Finance & Audit',
                         'IA & Data',
-                        'Cybersécurité',
-                        'Marketing',
-                        ...programs.map((p) => p.category),
-                      ])
-                    ).map((cat) => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {[
-                      'Sciences',
-                      'Management',
-                      'Tech',
-                      'Droit',
-                      'Santé',
-                      'Communication',
-                      'Finance & Audit',
-                      'IA & Data',
-                    ].map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setNewProgramCategory(cat)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                          newProgramCategory === cat
-                            ? 'bg-[#006c49] text-white shadow-sm'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        + {cat}
-                      </button>
-                    ))}
+                      ].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setNewProgramCategory(cat)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                            newProgramCategory === cat
+                              ? 'bg-[#006c49] text-white shadow-sm'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          + {cat}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Durée de formation *</label>
+                    <input
+                      type="text"
+                      value={newProgramDuration}
+                      onChange={(e) => setNewProgramDuration(e.target.value)}
+                      placeholder="ex: 3 ans (6 Semestres)"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Prix</label>
+                    <input
+                      type="text"
+                      value={newProgramPrice}
+                      onChange={(e) => setNewProgramPrice(e.target.value)}
+                      placeholder="ex: 2000 € / an"
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase">URL Image *</label>
+                    <input
+                      type="text"
+                      value={newProgramImage}
+                      onChange={(e) => setNewProgramImage(e.target.value)}
+                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Durée de formation *</label>
-                  <input
-                    type="text"
-                    value={newProgramDuration}
-                    onChange={(e) => setNewProgramDuration(e.target.value)}
-                    placeholder="ex: 3 ans (6 Semestres)"
+                  <label className="text-xs font-bold text-slate-500 uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
+                  <textarea
+                    value={newProgramProcedures}
+                    onChange={(e) => setNewProgramProcedures(e.target.value)}
+                    placeholder="ex: Niveau 1: Bac + CNI. Niveau 2 & 3 (Passerelle): Relevés de notes L1/L2 + Diplôme précédent requis. Entretien individuel obligatoire."
+                    rows={3}
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                    required
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">URL Image *</label>
+
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
                   <input
-                    type="text"
-                    value={newProgramImage}
-                    onChange={(e) => setNewProgramImage(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                    required
+                    type="checkbox"
+                    checked={newProgramIsNew}
+                    onChange={(e) => setNewProgramIsNew(e.target.checked)}
+                    className="w-4 h-4 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49]"
                   />
+                  Marquer comme "Nouveau"
+                </label>
+
+                <div className="pt-4 flex justify-end gap-3 border-t border-[#c6c6cf]/30">
+                  <button
+                    type="button"
+                    onClick={resetProgramForm}
+                    className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40 transition-colors cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all cursor-pointer"
+                  >
+                    {editingProgramId ? 'Mettre à jour' : 'Enregistrer le programme'}
+                  </button>
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
-                <textarea
-                  value={newProgramProcedures}
-                  onChange={(e) => setNewProgramProcedures(e.target.value)}
-                  placeholder="ex: Niveau 1: Bac + CNI. Niveau 2 & 3 (Passerelle): Relevés de notes L1/L2 + Diplôme précédent requis. Entretien individuel obligatoire."
-                  rows={3}
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                />
-              </div>
-
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
-                <input
-                  type="checkbox"
-                  checked={newProgramIsNew}
-                  onChange={(e) => setNewProgramIsNew(e.target.checked)}
-                  className="w-4 h-4 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49]"
-                />
-                Marquer comme "Nouveau"
-              </label>
-
-              <div className="pt-4 flex justify-end gap-3 border-t border-[#c6c6cf]/30">
+              </form>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="font-sans font-bold text-lg text-[#00020e]">Programmes académiques IDLA</h3>
                 <button
-                  type="button"
-                  onClick={resetProgramForm}
-                  className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40 transition-colors cursor-pointer"
+                  onClick={() => setShowAddProgramForm(true)}
+                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
                 >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all cursor-pointer"
-                >
-                  {editingProgramId ? 'Mettre à jour' : 'Enregistrer le programme'}
+                  <Plus className="w-4 h-4" />
+                  Ajouter un programme
                 </button>
               </div>
-            </form>
+
+              <ProgramFilterBar
+                filters={adminFilters}
+                onFilterChange={setAdminFilters}
+                onReset={() => setAdminFilters(INITIAL_FILTER_STATE)}
+                totalResults={filteredAdminPrograms.length}
+              />
+
+              <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+                      <th className="p-4">Programme</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4">Catégorie</th>
+                      <th className="p-4">Durée</th>
+                      <th className="p-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#c6c6cf]/20">
+                    {filteredAdminPrograms.map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50/40">
+                        <td className="p-4 font-semibold text-[#00020e]">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="w-3.5 h-3.5 text-[#006c49] shrink-0" />
+                            <span>{p.title}</span>
+                            {p.isNew && (
+                              <span className="bg-[#006c49]/10 text-[#006c49] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
+                                Nouveau
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 font-medium text-slate-600">{p.type}</td>
+                        <td className="p-4 font-medium text-slate-600">{p.category}</td>
+                        <td className="p-4 text-slate-400">{p.duration}</td>
+                        <td className="p-4">
+                          <div className="flex justify-center items-center gap-1">
+                            <button
+                              onClick={() => handleEditProgram(p)}
+                              className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
+                              title="Modifier le programme"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProgram(p.id)}
+                              className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all cursor-pointer"
+                              title="Supprimer le programme"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {programs.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                          Aucun programme enregistré.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
-
-          <ProgramFilterBar
-            filters={adminFilters}
-            onFilterChange={setAdminFilters}
-            onReset={() => setAdminFilters(INITIAL_FILTER_STATE)}
-            totalResults={filteredAdminPrograms.length}
-          />
-
-          <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
-                  <th className="p-4">Programme</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Catégorie</th>
-                  <th className="p-4">Durée</th>
-                  <th className="p-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#c6c6cf]/20">
-                {filteredAdminPrograms.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/40">
-                    <td className="p-4 font-semibold text-[#00020e]">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-3.5 h-3.5 text-[#006c49] shrink-0" />
-                        <span>{p.title}</span>
-                        {p.isNew && (
-                          <span className="bg-[#006c49]/10 text-[#006c49] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
-                            Nouveau
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 font-medium text-slate-600">{p.type}</td>
-                    <td className="p-4 font-medium text-slate-600">{p.category}</td>
-                    <td className="p-4 text-slate-400">{p.duration}</td>
-                    <td className="p-4">
-                      <div className="flex justify-center items-center gap-1">
-                        <button
-                          onClick={() => handleEditProgram(p)}
-                          className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
-                          title="Modifier le programme"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProgram(p.id)}
-                          className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all cursor-pointer"
-                          title="Supprimer le programme"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {programs.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">
-                      Aucun programme enregistré.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       ) : (
         /* ─── ONGLET SESSIONS & RENTRÉES UNIVERSITAIRES ─── */

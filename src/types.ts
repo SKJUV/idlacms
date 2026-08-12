@@ -13,6 +13,7 @@ export interface Program {
   category: string;
   duration: string;
   image: string;
+  price?: string;
   isNew?: boolean;
   procedures?: string;
   availableLevels?: string[];

@@ -826,29 +826,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     return (
       <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
         <div className="max-w-[1440px] mx-auto space-y-12">
-          {/* Accounting & Bookkeeping Pricing Banner */}
-          <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border border-emerald-500/30 rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-3xl">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30 uppercase tracking-wider">
-                <span>International Distance Learning Academy</span>
-                <span>•</span>
-                <span>Certifications Comptabilité & Bookkeeping</span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-white">
-                Tarifs Officiels & Modalités d'Examens de Certifications
-              </h2>
-              <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                Wharton School, Darden School of Business, IESE Business School, Intuit & The Open University UK. Frais d'évaluation standardisés à 95 $ et accès direct Academy.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAccountingPricingModal(true)}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-emerald-500/30 whitespace-nowrap cursor-pointer flex items-center gap-2 shrink-0"
-            >
-              <span>📊 Consulter la Grille Tarifaire</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+
 
           {/* Search & Filter Bar */}
           <ProgramFilterBar
