@@ -340,6 +340,8 @@ export default function App() {
             duration: doc.duration,
             image: doc.image,
             isNew: !!doc.isNew,
+            price: doc.price,
+            procedures: doc.procedures,
           }));
 
           const combined = [...remoteProgs];
@@ -474,6 +476,8 @@ export default function App() {
                   duration: lp.duration || '1 an',
                   image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
                   isNew: !!lp.isNew,
+                  price: lp.price,
+                  procedures: lp.procedures,
                 },
                 [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
               ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
