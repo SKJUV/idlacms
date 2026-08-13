@@ -168,6 +168,13 @@ export default function App() {
             }
           }
 
+          // 3. Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
+          if (userRole !== 'admin' && userRole !== 'teacher') {
+             if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
+                userRole = 'admin';
+             }
+          }
+
           setRole(userRole);
           if (userRole === 'admin') {
             if (activeTab === 'admin-login' || STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {

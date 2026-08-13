@@ -40,10 +40,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   // Schedule Manager State
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
   const [editingAssignedPrograms, setEditingAssignedPrograms] = useState<string[]>([]);
+  const [editingProgToAdd, setEditingProgToAdd] = useState('');
+  const [editingClassToAdd, setEditingClassToAdd] = useState('Toutes les classes');
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [newSlot, setNewSlot] = useState<{ course: string; program: string; day: string; startTime: string; endTime: string; type: 'CM' | 'TD' | 'TP' }>({ 
     course: '', program: '', day: 'Lundi', startTime: '08:00', endTime: '10:00', type: 'CM' 
   });
+  const [selectedProgToAdd, setSelectedProgToAdd] = useState('');
+  const [selectedClassToAdd, setSelectedClassToAdd] = useState('Toutes les classes');
 
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   const STANDARD_TIME_BLOCKS = [
@@ -476,24 +480,37 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             
             <div className="bg-bg-secondary border border-border-primary rounded-xl p-5 space-y-4">
               <h3 className="font-bold text-sm text-text-primary uppercase">Programmes assignés</h3>
-              <div className="mt-1 h-48 overflow-y-auto bg-bg-primary border border-border-primary rounded-lg p-2 space-y-1">
-                {programs.map((p: any) => (
-                  <label key={p.id || p.title} className="flex items-center gap-2 p-1 hover:bg-bg-secondary rounded cursor-pointer text-sm text-text-primary">
-                    <input 
-                      type="checkbox" 
-                      checked={editingAssignedPrograms.includes(p.title)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setEditingAssignedPrograms([...editingAssignedPrograms, p.title]);
-                        } else {
-                          setEditingAssignedPrograms(editingAssignedPrograms.filter(prog => prog !== p.title));
-                        }
-                      }}
-                      className="rounded border-border-primary text-brand-primary focus:ring-brand-primary"
-                    />
-                    <span className="truncate" title={p.title}>{p.title}</span>
-                  </label>
-                ))}
+              <div className="space-y-2 mt-1">
+                <div className="flex flex-col gap-2">
+                  <select value={editingProgToAdd} onChange={e => setEditingProgToAdd(e.target.value)} className="w-full p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
+                    <option value="">Sélectionner un programme</option>
+                    {programs.map((p: any) => {
+                      const title = typeof p === 'string' ? p : p.title;
+                      return <option key={title} value={title}>{title}</option>;
+                    })}
+                  </select>
+                  <div className="flex gap-2">
+                    <select value={editingClassToAdd} onChange={e => setEditingClassToAdd(e.target.value)} className="flex-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
+                      {['Toutes les classes', 'L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3', 'Certifiant'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <button type="button" onClick={() => {
+                      if (editingProgToAdd) {
+                        const entry = editingClassToAdd === 'Toutes les classes' ? editingProgToAdd : `${editingProgToAdd} - ${editingClassToAdd}`;
+                        if (!editingAssignedPrograms.includes(entry)) setEditingAssignedPrograms([...editingAssignedPrograms, entry]);
+                        setEditingProgToAdd('');
+                      }
+                    }} className="bg-brand-primary text-white px-3 py-2 rounded text-sm font-bold hover:bg-brand-hover">Ajouter</button>
+                  </div>
+                </div>
+                <div className="h-40 overflow-y-auto bg-bg-primary border border-border-primary rounded-lg p-2 space-y-1">
+                  {editingAssignedPrograms.map((p, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm p-1.5 hover:bg-bg-secondary rounded">
+                      <span className="text-text-primary truncate">{p}</span>
+                      <button type="button" onClick={() => setEditingAssignedPrograms(editingAssignedPrograms.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-700 font-bold px-2 cursor-pointer">X</button>
+                    </div>
+                  ))}
+                  {editingAssignedPrograms.length === 0 && <div className="text-xs text-text-secondary italic text-center py-2">Aucun programme assigné</div>}
+                </div>
               </div>
             </div>
           </div>
@@ -664,23 +681,37 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
               <label className="text-xs font-bold text-text-secondary uppercase">Mot de passe provisoire</label>
               <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={8} className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-sm outline-none text-text-primary" />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="text-xs font-bold text-text-secondary uppercase">Programmes assignés</label>
-              <div className="mt-1 h-32 overflow-y-auto bg-bg-primary border border-border-primary rounded-lg p-2 space-y-1">
-                {programs.map((p: any) => (
-                  <label key={p.id || p.title} className="flex items-center gap-2 p-1 hover:bg-bg-secondary rounded cursor-pointer text-sm text-text-primary">
-                    <input 
-                      type="checkbox" 
-                      checked={newAssignedPrograms.includes(p.title)}
-                      onChange={(e) => {
-                        if (e.target.checked) setNewAssignedPrograms([...newAssignedPrograms, p.title]);
-                        else setNewAssignedPrograms(newAssignedPrograms.filter(title => title !== p.title));
-                      }}
-                      className="accent-brand-primary"
-                    />
-                    <span className="truncate">{p.title}</span>
-                  </label>
-                ))}
+              <div className="space-y-2 mt-1">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select value={selectedProgToAdd} onChange={e => setSelectedProgToAdd(e.target.value)} className="flex-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
+                    <option value="">Sélectionner un programme</option>
+                    {programs.map((p: any) => {
+                      const title = typeof p === 'string' ? p : p.title;
+                      return <option key={title} value={title}>{title}</option>;
+                    })}
+                  </select>
+                  <select value={selectedClassToAdd} onChange={e => setSelectedClassToAdd(e.target.value)} className="sm:w-1/3 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
+                    {['Toutes les classes', 'L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3', 'Certifiant'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button type="button" onClick={() => {
+                    if (selectedProgToAdd) {
+                      const entry = selectedClassToAdd === 'Toutes les classes' ? selectedProgToAdd : `${selectedProgToAdd} - ${selectedClassToAdd}`;
+                      if (!newAssignedPrograms.includes(entry)) setNewAssignedPrograms([...newAssignedPrograms, entry]);
+                      setSelectedProgToAdd('');
+                    }
+                  }} className="bg-brand-primary text-white px-3 py-2 rounded text-sm font-bold hover:bg-brand-hover">Ajouter</button>
+                </div>
+                <div className="h-24 overflow-y-auto bg-bg-primary border border-border-primary rounded-lg p-2 space-y-1">
+                  {newAssignedPrograms.map((p, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm p-1.5 hover:bg-bg-secondary rounded">
+                      <span className="text-text-primary truncate">{p}</span>
+                      <button type="button" onClick={() => setNewAssignedPrograms(newAssignedPrograms.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-700 font-bold px-2 cursor-pointer">X</button>
+                    </div>
+                  ))}
+                  {newAssignedPrograms.length === 0 && <div className="text-xs text-text-secondary italic text-center py-2">Aucun programme assigné</div>}
+                </div>
               </div>
             </div>
             <div className="md:col-span-2 pt-2">

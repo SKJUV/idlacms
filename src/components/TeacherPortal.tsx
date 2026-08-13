@@ -568,7 +568,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           </div>
           <div>
             <div className="text-2xl font-bold text-text-primary">
-              {students.filter(s => myPrograms.includes(s.program)).length}
+              {students.filter(s => myPrograms.some(p => p.split(" - ")[0] === s.program)).length}
             </div>
             <div className="text-xs text-text-secondary font-medium mt-0.5">Étudiants suivis</div>
           </div>
@@ -628,7 +628,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {myPrograms.map((progTitle: string) => {
-            const classStudents = students.filter(s => s.program === progTitle);
+            const classStudents = students.filter(s => s.program === progTitle.split(' - ')[0]);
             return (
               <div key={progTitle} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
@@ -836,7 +836,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
   const renderStudents = () => {
     const classStudents = selectedProgram 
-      ? students.filter(s => s.program === selectedProgram)
+      ? students.filter(s => s.program === selectedProgram.split(' - ')[0])
       : [];
 
     return (
