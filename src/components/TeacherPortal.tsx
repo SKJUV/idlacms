@@ -525,6 +525,28 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
   const myPrograms = profile?.assignedPrograms || [];
 
+  const uniqueBasePrograms = Array.from(new Set<string>(myPrograms.map((p: string) => p.split(' - ')[0])));
+  
+  const getAssignedLevelsForProgram = (baseProgram: string | null) => {
+    if (!baseProgram) return [];
+    const levels = new Set<string>();
+    let hasAll = false;
+    myPrograms.forEach((p: string) => {
+      const parts = p.split(' - ');
+      if (parts[0] === baseProgram) {
+        if (parts.length > 1 && parts[1] !== 'Toutes les classes') {
+          levels.add(parts[1]);
+        } else {
+          hasAll = true;
+        }
+      }
+    });
+    if (hasAll) {
+      return ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3', 'Certifiant'];
+    }
+    return Array.from(levels);
+  };
+
   const renderDashboard = () => (
     <div className="space-y-8 animate-fadeIn">
       {/* Welcome Banner */}
@@ -627,8 +649,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {myPrograms.map((progTitle: string) => {
-            const classStudents = students.filter(s => s.program === progTitle.split(' - ')[0]);
+          {uniqueBasePrograms.map((progTitle: string) => {
+            const classStudents = students.filter(s => s.program === progTitle);
             return (
               <div key={progTitle} className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
@@ -679,13 +701,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                 <div>
                   <label className="text-[10px] font-bold text-text-secondary uppercase">Niveau (LMD) *</label>
                   <select value={cLevel} onChange={e => setCLevel(e.target.value)} className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold">
-                    <option value="L1">L1 (Niveau 1)</option>
-                    <option value="L2">L2 (Niveau 2)</option>
-                    <option value="L3">L3 (Niveau 3)</option>
-                    <option value="M1">M1 (Master 1)</option>
-                    <option value="M2">M2 (Master 2)</option>
-                    <option value="D1">D1 (Doctorat 1)</option>
-                    <option value="Certifiant">Certifiant</option>
+                    {getAssignedLevelsForProgram(cProgram).map(l => (
+                      <option key={l} value={l}>{l === 'L1' ? 'L1 (Niveau 1)' : l === 'L2' ? 'L2 (Niveau 2)' : l === 'L3' ? 'L3 (Niveau 3)' : l === 'M1' ? 'M1 (Master 1)' : l === 'M2' ? 'M2 (Master 2)' : l === 'D1' ? 'D1 (Doctorat 1)' : l}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -697,11 +715,21 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
               <div>
                 <label className="text-[10px] font-bold text-text-secondary uppercase">Programme Associé *</label>
-                <select value={cProgram} onChange={e => setCProgram(e.target.value)} required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold">
-                  {programs.map((p: any) => {
-                    const title = typeof p === 'string' ? p : p.title;
-                    return <option key={title} value={title}>{title}</option>;
-                  })}
+                <select 
+                  value={cProgram} 
+                  onChange={e => {
+                    setCProgram(e.target.value);
+                    const allowed = getAssignedLevelsForProgram(e.target.value);
+                    if (allowed.length > 0 && !allowed.includes(cLevel)) {
+                      setCLevel(allowed[0]);
+                    }
+                  }} 
+                  required 
+                  className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold"
+                >
+                  {uniqueBasePrograms.map((pTitle: string) => (
+                    <option key={pTitle} value={pTitle}>{pTitle}</option>
+                  ))}
                 </select>
               </div>
 
@@ -850,11 +878,20 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto">
             <select
               value={selectedProgram || ''}
-              onChange={(e) => setSelectedProgram(e.target.value || null)}
+              onChange={(e) => {
+                const val = e.target.value || null;
+                setSelectedProgram(val);
+                if (val) {
+                  const allowed = getAssignedLevelsForProgram(val);
+                  if (allowed.length > 0 && !allowed.includes(selectedLevel)) {
+                    setSelectedLevel(allowed[0]);
+                  }
+                }
+              }}
               className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
             >
               <option value="">-- Sélectionner un programme --</option>
-              {myPrograms.map((p: string) => (
+              {uniqueBasePrograms.map((p: string) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
@@ -864,13 +901,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               onChange={(e) => setSelectedLevel(e.target.value)}
               className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"
             >
-              <option value="L1">L1 (Niveau 1)</option>
-              <option value="L2">L2 (Niveau 2)</option>
-              <option value="L3">L3 (Niveau 3)</option>
-              <option value="M1">M1 (Master 1)</option>
-              <option value="M2">M2 (Master 2)</option>
-              <option value="D1">D1 (Doctorat 1)</option>
-              <option value="Certifiant">Certifiant</option>
+              {getAssignedLevelsForProgram(selectedProgram).map(l => (
+                <option key={l} value={l}>{l === 'L1' ? 'L1 (Niveau 1)' : l === 'L2' ? 'L2 (Niveau 2)' : l === 'L3' ? 'L3 (Niveau 3)' : l === 'M1' ? 'M1 (Master 1)' : l === 'M2' ? 'M2 (Master 2)' : l === 'D1' ? 'D1 (Doctorat 1)' : l}</option>
+              ))}
             </select>
 
             <select
