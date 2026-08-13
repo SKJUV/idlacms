@@ -810,44 +810,71 @@ export default function StudentPortal({
       }
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
+        const payload: any = {
+          firstName: profile.name.split(' ')[0] || profile.name,
+          lastName: profile.name.split(' ').slice(1).join(' ') || '',
+          name: profile.name,
+          email: userEmail,
+          phone: profile.phone || '',
+          nationality: profile.nationality || '',
+          program: applyingProgram.title,
+          dateApplied: new Date().toISOString(),
+          status: 'New',
+          motivation: formattedMotivation,
+          initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
+        };
+
         // Vérifier si un dossier initial d'inscription (sans programme ou 'Inscription seule') existe
         const blankApp = applications.find((a) => !a.program || a.program === 'Inscription seule');
         if (blankApp) {
           newAppId = blankApp.$id || blankApp.id;
-          const updatedDoc = await databases.updateDocument(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.applications,
-            newAppId,
-            {
-              program: applyingProgram.title,
-              dateApplied: new Date().toISOString(),
-              status: 'New',
-              motivation: formattedMotivation,
-            }
-          );
+          let updatedDoc: any;
+          try {
+            updatedDoc = await databases.updateDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              newAppId,
+              {
+                program: applyingProgram.title,
+                dateApplied: new Date().toISOString(),
+                status: 'New',
+                motivation: formattedMotivation,
+              }
+            );
+          } catch (e: any) {
+            updatedDoc = await databases.updateDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              newAppId,
+              {
+                program: applyingProgram.title,
+                dateApplied: new Date().toISOString(),
+                status: 'New',
+              }
+            );
+          }
           setApplications((apps) =>
             apps.map((a) => ((a.$id === blankApp.$id || a.id === blankApp.id) ? { ...a, ...updatedDoc, program: applyingProgram.title } : a))
           );
         } else {
           // Créer une nouvelle candidature pour ce programme spécifique
-          const createdDoc = await databases.createDocument(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.applications,
-            ID.unique(),
-            {
-              firstName: profile.name.split(' ')[0] || profile.name,
-              lastName: profile.name.split(' ').slice(1).join(' ') || '',
-              name: profile.name,
-              email: userEmail,
-              phone: profile.phone || '',
-              nationality: profile.nationality || '',
-              program: applyingProgram.title,
-              dateApplied: new Date().toISOString(),
-              status: 'New',
-              motivation: formattedMotivation,
-              initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
-            }
-          );
+          let createdDoc: any;
+          try {
+            createdDoc = await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              ID.unique(),
+              payload
+            );
+          } catch (e: any) {
+            delete payload.motivation;
+            createdDoc = await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              ID.unique(),
+              payload
+            );
+          }
           newAppId = createdDoc.$id || createdDoc.id;
           setApplications((apps) => [createdDoc, ...apps]);
         }
