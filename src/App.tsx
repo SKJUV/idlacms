@@ -158,7 +158,10 @@ export default function App() {
                 [Query.equal('email', userEmail)]
               );
               if (res.documents.length > 0) {
-                userRole = 'admin';
+                const doc = res.documents[0];
+                if (doc.role === 'admin') {
+                  userRole = 'admin';
+                }
               }
             } catch (err) {
               console.warn("Erreur lors de la vérification de l'accès CMS :", err);
@@ -167,15 +170,15 @@ export default function App() {
 
           setRole(userRole);
           if (userRole === 'admin') {
-            if (activeTab === 'admin-login') {
+            if (activeTab === 'admin-login' || STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
               setActiveTab('admin-dashboard');
             }
           } else if (userRole === 'teacher') {
-            if (activeTab === 'admin-login' || activeTab === 'student-login') {
+            if (activeTab === 'admin-login' || activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || STUDENT_TABS.includes(activeTab)) {
               setActiveTab('teacher-dashboard');
             }
           } else {
-            if (activeTab === 'student-login') {
+            if (activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
               setActiveTab('student-dashboard');
             }
           }
@@ -204,6 +207,33 @@ export default function App() {
     };
     checkSession();
   }, []);
+
+  // Enforce role-based access control on tab changes
+  useEffect(() => {
+    if (isSessionChecking) return;
+    
+    if (role === 'guest') {
+      if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
+        setActiveTab('admin-login');
+      } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
+        setActiveTab('student-login');
+      } else if (TEACHER_TABS.includes(activeTab)) {
+        setActiveTab('student-login');
+      }
+    } else if (role === 'student') {
+      if (ADMIN_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
+        setActiveTab('student-dashboard');
+      }
+    } else if (role === 'teacher') {
+      if (ADMIN_TABS.includes(activeTab) || STUDENT_TABS.includes(activeTab)) {
+        setActiveTab('teacher-dashboard');
+      }
+    } else if (role === 'admin') {
+      if (STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
+        setActiveTab('admin-dashboard');
+      }
+    }
+  }, [activeTab, role, isSessionChecking]);
 
   // Theme management (Dark / Light)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -595,7 +625,12 @@ export default function App() {
               APPWRITE_CONFIG.collections.cmsUsers,
               [Query.equal('email', userEmail)]
             );
-            if (res.documents.length > 0) isAdmin = true;
+            if (res.documents.length > 0) {
+              const doc = res.documents[0];
+              if (doc.role === 'admin') {
+                isAdmin = true;
+              }
+            }
           } catch (dbErr) {
             console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
           }
