@@ -67,7 +67,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
   const teacherLinks: NavLink[] = [
     { label: 'Tableau de bord', icon: TrendingUpIcon, target: 'teacher-dashboard', activeOn: ['teacher-dashboard'] },
     { label: 'Emploi du temps', icon: CalendarIcon, target: 'teacher-schedule', activeOn: ['teacher-schedule'] },
-    { label: 'Mes Étudiants', icon: UsersIcon, target: 'teacher-students', activeOn: ['teacher-students'] },
+    { label: 'Classe', icon: UsersIcon, target: 'teacher-students', activeOn: ['teacher-students'] },
     { label: 'Profil', icon: UserIcon, target: 'teacher-profile', activeOn: ['teacher-profile'] },
   ];
 

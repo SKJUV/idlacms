@@ -843,7 +843,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       <div className="space-y-6 animate-fadeIn">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="font-sans font-bold text-2xl text-text-primary">Mes Étudiants &amp; Chat de classe</h2>
+            <h2 className="font-sans font-bold text-2xl text-text-primary">Classe &amp; Chat de classe</h2>
             <p className="text-xs text-text-secondary mt-1">Échangez avec vos étudiants, partagez des cours et créez des réunions en direct.</p>
           </div>
 
