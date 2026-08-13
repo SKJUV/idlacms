@@ -26,7 +26,7 @@ import TeachersManagement from './admin/TeachersManagement';
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
   | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-donations' | 'admin-marketing'
-  | 'admin-settings' | 'admin-teachers';
+  | 'admin-settings' | 'admin-teachers' | 'admin-profile';
 
 interface AdminPortalProps {
   activeTab: AdminTab;

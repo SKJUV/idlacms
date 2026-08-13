@@ -156,14 +156,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     try {
       // 1. Create Appwrite Account
       const userId = ID.unique();
+      const fullName = `${newFirstName} ${newLastName}`;
       try {
-        await account.create(userId, newEmail, newPassword, newName);
+        await account.create(userId, newEmail, newPassword, fullName);
       } catch (e: any) {
         console.warn("Remarque création compte Auth enseignant:", e.message);
       }
-      
-      // 2. Create in teachers
-      const fullName = `${newFirstName} ${newLastName}`;
       let newDoc: any = {
         id: userId,
         $id: userId,

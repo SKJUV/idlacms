@@ -17,7 +17,7 @@ import {
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
 
 interface TeacherPortalProps {
-  activeTab: 'teacher-dashboard' | 'teacher-schedule' | 'teacher-students';
+  activeTab: 'teacher-dashboard' | 'teacher-schedule' | 'teacher-students' | 'teacher-profile';
   setActiveTab: (tab: any) => void;
   isLoggedIn: boolean;
   programs: any[];

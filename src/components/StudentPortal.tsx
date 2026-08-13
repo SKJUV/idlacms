@@ -232,9 +232,12 @@ export default function StudentPortal({
   const [progSection, setProgSection] = useState<'mes-candidatures' | 'explorer'>('mes-candidatures');
 
   // ── Soumission de candidature depuis le catalogue étudiant (Wizard en 3 étapes) ──
-  const [applyingProgram, setApplyingProgram] = useState<{ title: string; category?: string; duration?: string } | null>(null);
+  const [applyingProgram, setApplyingProgram] = useState<{ title: string; category?: string; type?: string; duration?: string; availableLevels?: string[] } | null>(null);
   const [applyStep, setApplyStep] = useState<number>(1);
   const [applySession, setApplySession] = useState("Session d'Octobre 2026");
+  const [applyEntryLevel, setApplyEntryLevel] = useState('M1');
+  const [applyHighestDegree, setApplyHighestDegree] = useState('');
+  const [applyGraduationYear, setApplyGraduationYear] = useState('');
   const [applyMotivation, setApplyMotivation] = useState('');
   const [applyCniFile, setApplyCniFile] = useState<File | null>(null);
   const [applyDiplomaFile, setApplyDiplomaFile] = useState<File | null>(null);
@@ -242,6 +245,47 @@ export default function StudentPortal({
   const [applyError, setApplyError] = useState('');
   const [applySuccessProgram, setApplySuccessProgram] = useState<string | null>(null);
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+
+  // ── Helper pour calculer les options de niveau selon la formation sélectionnée ──
+  const getLevelOptionsForApplyingProgram = () => {
+    if (!applyingProgram) return ['L1', 'M1', 'D1', 'Certifiant'];
+    if (applyingProgram.availableLevels && applyingProgram.availableLevels.length > 0) {
+      return applyingProgram.availableLevels;
+    }
+    const pType = (applyingProgram as any).type || '';
+    if (pType === 'Bachelor') {
+      return [
+        'L1 (Licence 1 - Rentrée Initiale Bac)',
+        'L2 (Licence 2 - Passerelle Bac+1)',
+        'L3 (Licence 3 - Passerelle Bac+2)'
+      ];
+    }
+    if (pType === 'Master') {
+      return [
+        'M1 (Master 1 - Bac+3 Requis)',
+        'M2 (Master 2 - Bac+4 Requis)'
+      ];
+    }
+    if (pType === 'Doctorat') {
+      return [
+        'D1 (Doctorat 1ère année - Master 2 Requis)',
+        'D2 (Doctorat 2ème année)',
+        'D3 (Doctorat 3ème année / Thèse)'
+      ];
+    }
+    if (pType === 'Certification') {
+      return ['Certifiant (Formation continue & Accélérée)'];
+    }
+    return [
+      'L1 (Licence 1 - Rentrée Initiale Bac)',
+      'L2 (Licence 2 - Passerelle Bac+1)',
+      'L3 (Licence 3 - Passerelle Bac+2)',
+      'M1 (Master 1 - Bac+3 Requis)',
+      'M2 (Master 2 - Bac+4 Requis)',
+      'D1 (Doctorat 1ère année)',
+      'Certifiant (Formation continue)'
+    ];
+  };
 
   // ── Sessions / Rentrées Universitaires gérées par l'Administrateur ──
   const [availableSessions, setAvailableSessions] = useState<AcademicSession[]>(() => {
@@ -280,6 +324,12 @@ export default function StudentPortal({
       const openSessions = availableSessions.filter((s) => s.status === 'ouverte' || s.status === 'bientot');
       if (openSessions.length > 0 && !openSessions.some((s) => s.name === applySession)) {
         setApplySession(openSessions[0].name);
+      }
+
+      // Auto-sélection du niveau par défaut
+      const options = getLevelOptionsForApplyingProgram();
+      if (options.length > 0) {
+        setApplyEntryLevel(options[0]);
       }
     }
   }, [applyingProgram, availableSessions]);
@@ -735,6 +785,7 @@ export default function StudentPortal({
       }
 
       let newAppId = `app_${Date.now()}`;
+      const formattedMotivation = `Rentrée: ${applySession} | Niveau: ${applyEntryLevel}${applyHighestDegree ? ` | Diplôme: ${applyHighestDegree} (${applyGraduationYear})` : ''} | ${applyMotivation}`.trim();
 
       // 1. Sauvegarder dans localStorage pour visibilité instantanée dans l'Admin
       try {
@@ -748,7 +799,7 @@ export default function StudentPortal({
           program: applyingProgram.title,
           dateApplied: new Date().toISOString(),
           status: 'New',
-          motivation: `${applySession} | ${applyMotivation}`.trim(),
+          motivation: formattedMotivation,
           initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
         };
         const existingLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
@@ -771,7 +822,7 @@ export default function StudentPortal({
               program: applyingProgram.title,
               dateApplied: new Date().toISOString(),
               status: 'New',
-              motivation: `${applySession} | ${applyMotivation}`.trim(),
+              motivation: formattedMotivation,
             }
           );
           setApplications((apps) =>
@@ -793,7 +844,7 @@ export default function StudentPortal({
               program: applyingProgram.title,
               dateApplied: new Date().toISOString(),
               status: 'New',
-              motivation: `${applySession} | ${applyMotivation}`.trim(),
+              motivation: formattedMotivation,
               initials: profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2),
             }
           );
@@ -1173,16 +1224,45 @@ export default function StudentPortal({
               <div className={`bg-brand-primary h-full transition-all duration-300 ${applyStep === 1 ? 'w-1/3' : applyStep === 2 ? 'w-2/3' : 'w-full'}`} />
             </div>
 
-            {/* ── Étape 1 : Programme & Session ── */}
+            {/* ── Étape 1 : Programme, Niveau & Informations Académiques ── */}
             {applyStep === 1 && (
               <div className="space-y-4 text-xs text-text-secondary">
+                {/* Visual indicator of program */}
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Formation sélectionnée</span>
-                  <div className="mt-1 p-3 bg-brand-light/40 border border-brand-primary/30 rounded-xl text-text-primary font-bold text-sm">
-                    ▸ {applyingProgram.title}
+                  <div className="mt-1 p-3.5 bg-brand-light/40 border border-brand-primary/30 rounded-xl text-text-primary flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {applyingProgram.category && (
+                          <span className="bg-brand-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full">{applyingProgram.category}</span>
+                        )}
+                        {(applyingProgram as any).type && (
+                          <span className="border border-brand-primary/30 text-brand-primary text-[9px] font-bold px-2 py-0.5 rounded-full">{(applyingProgram as any).type}</span>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm text-text-primary">▸ {applyingProgram.title}</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Choix du niveau d'études / Année sollicitée */}
+                <div className="space-y-1.5">
+                  <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider flex items-center justify-between">
+                    <span>Niveau d'entrée sollicité *</span>
+                    <span className="text-[9px] text-brand-primary font-semibold">Parcours académique</span>
+                  </label>
+                  <select
+                    value={applyEntryLevel}
+                    onChange={(e) => setApplyEntryLevel(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-bold cursor-pointer"
+                  >
+                    {getLevelOptionsForApplyingProgram().map((lvl) => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Session d'admission */}
                 <div className="space-y-1.5">
                   <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
                     Rentrée universitaire souhaitée *
@@ -1205,6 +1285,35 @@ export default function StudentPortal({
                   </select>
                 </div>
 
+                {/* Dernier diplôme obtenu & Année */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                      Dernier diplôme ou relevé obtenu
+                    </label>
+                    <input
+                      type="text"
+                      value={applyHighestDegree}
+                      onChange={(e) => setApplyHighestDegree(e.target.value)}
+                      placeholder="ex: Baccalauréat C, Licence..."
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-medium"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
+                      Année d'obtention
+                    </label>
+                    <input
+                      type="text"
+                      value={applyGraduationYear}
+                      onChange={(e) => setApplyGraduationYear(e.target.value)}
+                      placeholder="ex: 2025"
+                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Motivation / Projet pro */}
                 <div className="space-y-1.5">
                   <label className="font-bold text-text-primary uppercase text-[10px] tracking-wider">
                     Motivation / Objectif professionnel (Optionnel)
@@ -1213,7 +1322,7 @@ export default function StudentPortal({
                     value={applyMotivation}
                     onChange={(e) => setApplyMotivation(e.target.value)}
                     placeholder="Pourquoi souhaitez-vous suivre cette formation ? Quels sont vos objectifs à l'issue du cursus ?"
-                    rows={4}
+                    rows={3}
                     className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs text-text-primary resize-none"
                   />
                 </div>
@@ -1352,9 +1461,19 @@ export default function StudentPortal({
                     <span className="col-span-2 font-bold text-brand-primary">{applyingProgram.title}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1 py-1">
+                    <span className="font-semibold text-text-secondary">Niveau sollicité :</span>
+                    <span className="col-span-2 font-bold text-text-primary">{applyEntryLevel}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 py-1">
                     <span className="font-semibold text-text-secondary">Rentrée :</span>
                     <span className="col-span-2 font-bold text-text-primary">{applySession}</span>
                   </div>
+                  {applyHighestDegree && (
+                    <div className="grid grid-cols-3 gap-1 py-1">
+                      <span className="font-semibold text-text-secondary">Diplôme antérieur :</span>
+                      <span className="col-span-2 font-bold text-text-primary">{applyHighestDegree} {applyGraduationYear ? `(${applyGraduationYear})` : ''}</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 gap-1 py-1">
                     <span className="font-semibold text-text-secondary">Pièces jointes :</span>
                     <div className="col-span-2 space-y-1 font-mono text-[11px] text-text-primary">
@@ -2558,7 +2677,7 @@ export default function StudentPortal({
               {/* Barre de recherche */}
               <div className="relative">
                 <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 w-4 h-4" />
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                <input type="text" value={catalogFilters.search} onChange={(e) => setCatalogFilters((prev) => ({ ...prev, search: e.target.value }))}
                   placeholder="Rechercher un programme…"
                   className="w-full bg-bg-secondary border border-border-primary rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-primary text-text-primary" />
               </div>
@@ -2566,8 +2685,8 @@ export default function StudentPortal({
               {/* Filtres catégorie */}
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((cat) => (
-                  <button key={cat} onClick={() => setFilterCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${filterCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
+                  <button key={cat} onClick={() => setCatalogFilters((prev) => ({ ...prev, category: cat }))}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${catalogFilters.category === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-bg-secondary text-text-secondary border-border-primary hover:border-brand-primary hover:text-brand-primary'}`}>
                     {cat}
                   </button>
                 ))}
@@ -2577,9 +2696,9 @@ export default function StudentPortal({
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {allPrograms
                   .filter((p) => {
-                    const q = searchQuery.toLowerCase();
+                    const q = catalogFilters.search.toLowerCase();
                     const matchQ = !q || p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
-                    const matchCat = filterCategory === 'Tous' || (p.category && p.category.toLowerCase().trim() === filterCategory.toLowerCase().trim());
+                    const matchCat = catalogFilters.category === 'Tous' || (p.category && p.category.toLowerCase().trim() === catalogFilters.category.toLowerCase().trim());
                     return matchQ && matchCat;
                   })
                   .map((prog) => {
@@ -2619,7 +2738,7 @@ export default function StudentPortal({
                   })}
               </div>
 
-              {allPrograms.filter((p) => filterCategory === 'Tous' || p.category === filterCategory).length === 0 && (
+              {allPrograms.filter((p) => catalogFilters.category === 'Tous' || p.category === catalogFilters.category).length === 0 && (
                 <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center">
                   <p className="text-sm text-text-secondary">Aucun programme dans cette catégorie.</p>
                 </div>
@@ -2690,7 +2809,7 @@ export default function StudentPortal({
               <div className="col-span-full bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center">
                 <SearchIcon className="w-10 h-10 text-text-secondary/40 mx-auto mb-3" />
                 <p className="text-sm text-text-secondary">Aucun cours ne correspond à votre recherche.</p>
-                <button onClick={() => { setSearchQuery(''); setFilterCategory('Tous'); setFilterLevel('Tous niveaux'); }} className="mt-4 text-brand-primary text-xs font-bold hover:underline cursor-pointer">Réinitialiser</button>
+                <button onClick={() => setCatalogFilters(INITIAL_FILTER_STATE)} className="mt-4 text-brand-primary text-xs font-bold hover:underline cursor-pointer">Réinitialiser</button>
               </div>
             )}
           </div>

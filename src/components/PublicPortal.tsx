@@ -907,7 +907,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <Search className="w-12 h-12 text-text-secondary/40 mx-auto mb-2" />
               <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond à votre recherche.</p>
               <button 
-                onClick={() => { setProgramSearch(''); setSelectedProgramType('Tous'); }}
+                onClick={() => setFilters(INITIAL_FILTER_STATE)}
                 className="mt-4 text-brand-primary text-sm font-bold hover:underline cursor-pointer"
               >
                 Réinitialiser les filtres
