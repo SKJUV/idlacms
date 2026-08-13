@@ -53,13 +53,13 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
 
   const adminLinks: NavLink[] = [
     { label: 'Dashboard', icon: TrendingUpIcon, target: 'admin-dashboard', activeOn: ['admin-dashboard', 'admin-login'] },
-    { label: 'Utilisateurs', icon: UsersIcon, target: 'admin-users', activeOn: ['admin-users', 'admin-add-user'] },
+    { label: 'Mes Étudiants', icon: UsersIcon, target: 'admin-preregistrations', activeOn: ['admin-preregistrations'] },
+    { label: 'Cours', icon: BookOpenIcon, target: 'admin-programmes', activeOn: ['admin-programmes'] },
     { label: 'Enseignants', icon: GraduationCapIcon, target: 'admin-teachers', activeOn: ['admin-teachers'] },
-    { label: 'Programmes', icon: BookOpenIcon, target: 'admin-programmes', activeOn: ['admin-programmes'] },
+    { label: 'Utilisateurs & Accès', icon: UserCheckIcon, target: 'admin-users', activeOn: ['admin-users', 'admin-add-user'] },
     { label: 'Témoignages', icon: QuoteIcon, target: 'admin-testimonials', activeOn: ['admin-testimonials'] },
     { label: 'Actualités', icon: NewspaperIcon, target: 'admin-news', activeOn: ['admin-news'] },
     { label: 'Soutien & Dons', icon: HeartHandshakeIcon, target: 'admin-donations', activeOn: ['admin-donations'] },
-    { label: 'Inscrits & Candidatures', icon: UserCheckIcon, target: 'admin-preregistrations', activeOn: ['admin-preregistrations'] },
     { label: 'Marketing', icon: MegaphoneIcon, target: 'admin-marketing', activeOn: ['admin-marketing'] },
     { label: 'Profil', icon: UserIcon, target: 'admin-profile', activeOn: ['admin-profile'] },
   ];

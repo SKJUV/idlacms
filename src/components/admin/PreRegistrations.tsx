@@ -748,13 +748,13 @@ export default function PreRegistrations({
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="font-bold text-lg text-[#00020e]">Inscrits & Candidatures aux formations</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Consultez tous les étudiants inscrits sur le portail IDLA (avec ou sans cours) et leurs dossiers</p>
+          <h3 className="font-bold text-lg text-[#00020e]">Mes Étudiants (Inscrits sur la plateforme)</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Liste complète de tous les étudiants inscrits sur le portail IDLA avec leurs cours et candidatures</p>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-xl border border-[#c6c6cf]/40 shrink-0 flex-wrap gap-1">
           <button onClick={() => setViewMode('candidates')}
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'candidates' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
-            <Users className="w-3.5 h-3.5" /> Tous les inscrits ({candidatesList.length})
+            <Users className="w-3.5 h-3.5" /> Tous les étudiants inscrits ({candidatesList.length})
           </button>
           <button onClick={() => setViewMode('registered_no_course')}
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'registered_no_course' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-700 hover:bg-amber-50 border border-amber-200/60'}`}>
@@ -762,7 +762,7 @@ export default function PreRegistrations({
           </button>
           <button onClick={() => setViewMode('applications')}
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
-            <FileText className="w-3.5 h-3.5" /> Candidatures cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
+            <FileText className="w-3.5 h-3.5" /> Inscriptions aux cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
           </button>
         </div>
       </div>

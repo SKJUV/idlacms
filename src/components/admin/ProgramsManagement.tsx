@@ -469,7 +469,7 @@ export default function ProgramsManagement({
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Catalogue des Formations ({programs.length})</span>
+          <span>Catalogue des Cours & Formations ({programs.length})</span>
         </button>
         <button
           onClick={() => setActiveSubTab('sessions')}
