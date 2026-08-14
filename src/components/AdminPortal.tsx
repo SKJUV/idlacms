@@ -210,7 +210,7 @@ export default function AdminPortal({
                         image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
                         isNew: !!lp.isNew,
                       },
-                      [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+                      [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
                     ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
                   }
                 }
@@ -222,7 +222,7 @@ export default function AdminPortal({
                       APPWRITE_CONFIG.collections.programs,
                       rp.id,
                       {},
-                      [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+                      [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
                     ).catch(() => {});
                   }
                 }

@@ -179,7 +179,7 @@ export default function ProgramsManagement({
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
             { ...updatedData, category: cat } as any,
-            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+            [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
           );
         };
 
@@ -189,7 +189,7 @@ export default function ProgramsManagement({
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
             { ...updatedData, category: cat } as any,
-            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+            [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
           );
         };
 
@@ -261,7 +261,7 @@ export default function ProgramsManagement({
             image: newProgram.image,
             isNew: newProgram.isNew,
           },
-          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+          [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
         );
         setCloudSuccess("Nouveau programme créé et synchronisé avec succès sur la base Appwrite en ligne !");
       } catch (err: any) {
@@ -285,7 +285,7 @@ export default function ProgramsManagement({
                 image: newProgram.image,
                 isNew: newProgram.isNew,
               },
-              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+              [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
             );
             setCloudSuccess("Nouveau programme créé en ligne (catégorie Cloud ajustée automatiquement sur 'Tech'/'Management' pour compatibilité avec l'ancien schéma Appwrite de la base).");
           } catch (retryErr: any) {

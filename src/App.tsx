@@ -168,13 +168,6 @@ export default function App() {
             }
           }
 
-          // 3. Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
-          if (userRole !== 'admin' && userRole !== 'teacher') {
-             if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
-                userRole = 'admin';
-             }
-          }
-
           setRole(userRole);
           if (userRole === 'admin') {
             if (activeTab === 'admin-login' || STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
@@ -516,7 +509,7 @@ export default function App() {
                   price: lp.price,
                   procedures: lp.procedures,
                 },
-                [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
+                [Permission.read(AppwriteRole.any())]
               ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
             }
           }
@@ -648,45 +641,12 @@ export default function App() {
         } else if (isAdmin) {
           userRole = 'admin';
         } else {
-          // Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
-          if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
-             userRole = 'admin';
-          } else {
-            // Bootstrap : si la collection cmsUsers est totalement vide, le premier qui se connecte devient admin
-            try {
-              const allDocs = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.cmsUsers,
-                [Query.limit(1)]
-              );
-              if (allDocs.documents.length === 0) {
-                await databases.createDocument(
-                  APPWRITE_CONFIG.databaseId,
-                  APPWRITE_CONFIG.collections.cmsUsers,
-                  'unique()',
-                  { 
-                    email: userEmail, 
-                    name: user.name || 'Super Admin', 
-                    role: 'admin',
-                    status: 'Actif',
-                    initials: (user.name || 'SA').substring(0,2).toUpperCase(),
-                    lastLogin: new Date().toISOString()
-                  }
-                );
-                userRole = 'admin';
-              } else if (activeTab === 'admin-login') {
-                alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur. Veuillez vous connecter avec un compte autorisé ou l'ajouter dans la collection cmsUsers sur Appwrite.");
-              }
-            } catch (e) {
-              console.warn("Erreur lors de la vérification de la collection cmsUsers", e);
-              if (activeTab === 'admin-login') {
-                alert("Accès refusé : Impossible de vérifier vos privilèges d'administrateur.");
-              }
-            }
+          if (activeTab === 'admin-login') {
+            alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur.");
           }
         }
       }
-      
+
       setRole(userRole);
       if (userRole === 'teacher') setActiveTab('teacher-dashboard');
       else if (userRole === 'admin') setActiveTab('admin-dashboard');

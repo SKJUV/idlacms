@@ -1,4 +1,26 @@
+function escapeHtml(unsafe: string): string {
+  return String(unsafe || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export default async function handler(req: any, res: any) {
+  // CORS Headers
+  const allowedOrigins = ['https://idlaacademy.online', 'http://localhost:3000'];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: 'Method not allowed' });
@@ -6,14 +28,19 @@ export default async function handler(req: any, res: any) {
 
   const { email, fullName, tempPassword, userDefinedPassword } = req.body || {};
 
-  if (!email || !fullName || !tempPassword) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email) || !fullName || !tempPassword) {
+    return res.status(400).json({ error: 'Invalid or missing required fields' });
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {
     return res.status(500).json({ error: 'Resend API key is not configured' });
   }
+
+  const safeFullName = escapeHtml(fullName);
+  const safeEmail = escapeHtml(email);
+  const safePassword = escapeHtml(tempPassword);
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -33,18 +60,18 @@ export default async function handler(req: any, res: any) {
               <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Service des Admissions</p>
             </div>
             <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
-              <p>Bonjour <strong>${fullName}</strong>,</p>
+              <p>Bonjour <strong>${safeFullName}</strong>,</p>
               <p>Votre inscription à l'International Distance Learning Academy (IDLA) a été enregistrée avec succès.</p>
               <p>Votre compte d'accès a été créé avec succès pour vous permettre d'explorer nos programmes et de postuler. Voici un rappel de vos informations de connexion :</p>
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
                     <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Email :</td>
-                    <td style="padding: 6px 0; font-weight: bold; color: #0d9488;">${email}</td>
+                    <td style="padding: 6px 0; font-weight: bold; color: #0d9488;">${safeEmail}</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Mot de passe :</td>
-                    <td style="padding: 6px 0; font-weight: bold; color: ${userDefinedPassword ? '#0d9488' : '#e11d48'}; font-family: monospace; font-size: ${userDefinedPassword ? '14px' : '16px'};">${userDefinedPassword ? 'Celui que vous avez choisi lors de l\'inscription' : tempPassword}</td>
+                    <td style="padding: 6px 0; font-weight: bold; color: ${userDefinedPassword ? '#0d9488' : '#e11d48'}; font-family: monospace; font-size: ${userDefinedPassword ? '14px' : '16px'};">${userDefinedPassword ? 'Celui que vous avez choisi lors de l\'inscription' : safePassword}</td>
                   </tr>
                 </table>
               </div>
@@ -80,3 +107,4 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
+
