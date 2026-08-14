@@ -741,6 +741,7 @@ export default function StudentPortal({
       }
 
       let newAppId = `app_${Date.now()}`;
+      const newUploadedDocsList: any[] = [];
       const formattedMotivation = `Rentrée: ${applySession} | Niveau: ${applyEntryLevel}${applyHighestDegree ? ` | Diplôme: ${applyHighestDegree} (${applyGraduationYear})` : ''} | ${applyMotivation}`.trim();
 
       // 1. Sauvegarder dans localStorage pour visibilité instantanée dans l'Admin
@@ -836,6 +837,7 @@ export default function StudentPortal({
         }
 
         // ── Enregistrement des documents joints dans Appwrite candidateDocuments ──
+        const newUploadedDocsList: any[] = [];
         if (APPWRITE_CONFIG.collections.candidateDocuments) {
           const docsToUpload = [
             { file: applyCniFile, prefix: '[CNI]' },
@@ -846,27 +848,35 @@ export default function StudentPortal({
           for (const item of docsToUpload) {
             if (!item.file) continue;
             try {
-              let fileUrl = '#';
-              if (APPWRITE_CONFIG.buckets?.documents) {
+              let fileId = '';
+              if (isAppwriteStorageConfigured() && APPWRITE_CONFIG.buckets?.documents) {
                 const uploadedFile = await storage.createFile(
                   APPWRITE_CONFIG.buckets.documents,
                   ID.unique(),
                   item.file
                 );
-                fileUrl = storage.getFileView(APPWRITE_CONFIG.buckets.documents, uploadedFile.$id).toString();
+                fileId = uploadedFile.$id;
               }
+              const docName = `${item.prefix} ${item.file.name}`;
               await databases.createDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.collections.candidateDocuments,
                 ID.unique(),
                 {
                   applicationId: newAppId,
-                  name: `${item.prefix} ${item.file.name}`,
-                  url: fileUrl,
-                  uploadedAt: new Date().toISOString(),
+                  fileId: fileId,
+                  name: docName,
                   sizeBytes: item.file.size,
+                  mimeType: item.file.type,
+                  uploadedBy: 'candidate',
+                  uploadedAt: new Date().toISOString(),
                 }
               );
+              newUploadedDocsList.push({
+                name: docName,
+                size: fmtSize(item.file.size),
+                date: "À l'instant",
+              });
             } catch (docErr) {
               console.warn(`Erreur lors de l'enregistrement du document ${item.file.name}:`, docErr);
             }
@@ -894,6 +904,10 @@ export default function StudentPortal({
       setApplyCniFile(null);
       setApplyDiplomaFile(null);
       setApplyResumeFile(null);
+      setSelectedAppId(newAppId);
+      if (newUploadedDocsList.length > 0) {
+        setCandidateDocs(newUploadedDocsList);
+      }
       setProgSection('mes-candidatures');
     } catch (err: any) {
       console.error("Erreur lors de la soumission de candidature :", err);
