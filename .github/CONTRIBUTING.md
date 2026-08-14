@@ -1,10 +1,10 @@
-# Guide de Contribution IDLA CMS — Règles & Workflow de Développement 🚀
+# Guide de Contribution IDLA CMS — Règles & Workflow de Développement
 
 Bienvenue dans le guide de contribution au projet **IDLA CMS**. Ce document définit le workflow officiel obligatoire pour maintenir un code propre, sécurisé et un historique Git structuré.
 
 ---
 
-## 📋 Cycle de Travail Collaboratif Obligatoire
+## Cycle de Travail Collaboratif Obligatoire
 
 Pour garantir l'équilibre et la stabilité de la production, tout développeur doit suivre scrupuleusement les 6 étapes ci-dessous.
 
@@ -100,8 +100,8 @@ Remplissez intégralement le formulaire de la Pull Request avec :
 
 ---
 
-## 🛡️ Règles de Validation des PRs & Fusion (Merge)
+## Règles de Validation des PRs & Fusion (Merge)
 
 1. **Revue de code** : Toute PR doit être relue et approuvée avant fusion dans `main`.
-2. **Passage de la CI** : Les tests automatiques GitHub Actions (Typecheck & Build) doivent être au vert 🟢.
+2. **Passage de la CI** : Les tests automatiques GitHub Actions (Typecheck & Build) doivent être au vert.
 3. **Squash & Merge** : Privilégiez le *Squash and Merge* pour maintenir un historique `main` propre et linéaire.

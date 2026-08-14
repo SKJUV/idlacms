@@ -1,18 +1,18 @@
-## 📝 Description des modifications
+## Description des modifications
 
 Fournissez un résumé clair et concis des changements apportés dans cette Pull Request.
 
-### 📌 Type de changement
-- [ ] 🚀 Nouvel ajout / Fonctionnalité (`feat`)
-- [ ] 🐛 Correction de bug (`fix`)
-- [ ] 🔒 Amélioration de sécurité (`security`)
-- [ ] 🧹 Refactorisation & Clean Code (`refactor`)
-- [ ] 📚 Documentation (`docs`)
-- [ ] ⚙️ Configuration / CI/CD (`chore`)
+### Type de changement
+- [ ] Nouvel ajout / Fonctionnalité (`feat`)
+- [ ] Correction de bug (`fix`)
+- [ ] Amélioration de sécurité (`security`)
+- [ ] Refactorisation & Clean Code (`refactor`)
+- [ ] Documentation (`docs`)
+- [ ] Configuration / CI/CD (`chore`)
 
 ---
 
-## 🔍 Liste des modifications apportées
+## Liste des modifications apportées
 
 - 
 - 
@@ -20,7 +20,7 @@ Fournissez un résumé clair et concis des changements apportés dans cette Pull
 
 ---
 
-## 🛠️ Vérifications de Qualité & Tests (Obligatoire)
+## Vérifications de Qualité & Tests (Obligatoire)
 
 Avant de soumettre cette PR, assurez-vous d'avoir exécuté et validé les points suivants :
 
@@ -32,6 +32,6 @@ Avant de soumettre cette PR, assurez-vous d'avoir exécuté et validé les point
 
 ---
 
-## 📸 Preuves Visuelles / Capture d'écran (Si applicable)
+## Preuves Visuelles / Capture d'écran (Si applicable)
 
 *(Ajoutez ici vos captures d'écran ou GIFs de démonstration des changements UI)*

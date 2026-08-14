@@ -48,30 +48,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     if (l) localStorage.setItem('idla_teacher_selected_level', l);
   };
 
-  // Soumission et gestion des cours par l'enseignant
-  const [myCourses, setMyCourses] = useState<any[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
-    } catch {
-      return [];
-    }
-  });
-  const [showCourseModal, setShowCourseModal] = useState(false);
-  const [cCode, setCCode] = useState('');
-  const [cTitle, CSetTitle] = useState('');
-  const [cLevel, setCLevel] = useState('L1');
-  const [cProgram, setCProgram] = useState('');
-  const [cCM, setCCM] = useState(20);
-  const [cTD, setCTD] = useState(10);
-  const [cTP, setCTP] = useState(10);
-  const [cDesc, setCDesc] = useState('');
-
-  // Chat states
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Attachment & Meeting States
+  // Meeting & Attachment States
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingPlatform, setMeetingPlatform] = useState<'Google Meet' | 'Zoom' | 'Microsoft Teams' | 'Webex' | 'Autre'>('Google Meet');
@@ -85,39 +62,22 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const l = (levelName || 'L1').trim().toLowerCase();
     const key = `course___${c}___${l}`;
 
-    let hash = 0;
-    for (let i = 0; i < key.length; i++) {
-      hash = ((hash << 5) - hash) + key.charCodeAt(i);
-      hash |= 0;
+  // Chat states
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const assignedCoursesList = useMemo(() => {
+    if (profile?.assignedCourses && profile.assignedCourses.length > 0) {
+      return profile.assignedCourses.map((cName: string) => ({ title: cName, code: 'UE', volumeCM: 20, volumeTD: 10, volumeTP: 10 }));
     }
-    return `cls_${Math.abs(hash)}`;
-  };
-
-  const handleCreateCourse = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cTitle || !cProgram) return;
-    const newCourseObj = {
-      id: `crs_${Date.now()}`,
-      code: cCode || `INF-${Math.floor(100 + Math.random() * 900)}`,
-      title: cTitle,
-      program: cProgram,
-      level: cLevel,
-      teacherId: profile?.$id || profile?.id,
-      teacherName: profile?.name || 'Enseignant',
-      volumeCM: Number(cCM) || 0,
-      volumeTD: Number(cTD) || 0,
-      volumeTP: Number(cTP) || 0,
-      description: cDesc
-    };
-    const updated = [newCourseObj, ...myCourses];
-    setMyCourses(updated);
-    try {
-      localStorage.setItem('idla_local_courses', JSON.stringify(updated));
-    } catch (e) {}
-
-    setShowCourseModal(false);
-    setCCode(''); CSetTitle(''); setCDesc('');
-  };
+    const sched = profile?.scheduleData || [];
+    const titles = Array.from(new Set(sched.map((s: any) => s.course).filter(Boolean)));
+    if (titles.length > 0) {
+      return titles.map((title: any) => ({ title, code: 'UE', volumeCM: 20, volumeTD: 10, volumeTP: 10 }));
+    }
+    return [{ title: 'Intelligence Artificielle & Data Science', code: 'INF301', volumeCM: 20, volumeTD: 10, volumeTP: 10 }];
+  }, [profile]);
 
   useEffect(() => {
     if (activeTab !== 'teacher-students') {
@@ -448,43 +408,68 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         const currentAccount = await account.get();
         const userEmail = currentAccount.email;
 
-        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
-          const userRes = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.cmsUsers,
-            [Query.equal('email', userEmail)]
-          );
-          if (userRes.documents.length > 0) {
-            const userDoc = userRes.documents[0];
-            let assigned = userDoc.assignedPrograms || [];
-            if (typeof assigned === 'string') {
-              try { assigned = JSON.parse(assigned); } catch (e) { assigned = []; }
-            }
+        let teacherDoc: any = null;
 
-            let schedule = userDoc.scheduleData || [];
-            if (typeof schedule === 'string') {
-              try { schedule = JSON.parse(schedule); } catch (e) { schedule = []; }
-            }
-
-            setProfile({
-              $id: userDoc.$id,
-              name: userDoc.name,
-              email: userDoc.email,
-              assignedPrograms: assigned,
-              scheduleData: schedule
-            });
-          } else {
-            setProfile({
-              name: currentAccount.name || 'Enseignant IDLA',
-              email: userEmail,
-              assignedPrograms: ['Master Ingénierie Logicielle']
-            });
+        if (isAppwriteDbConfigured()) {
+          // 1. Try teachers collection
+          if (APPWRITE_CONFIG.collections.teachers) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.teachers,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) teacherDoc = res.documents[0];
+            } catch (e) {}
           }
+          // 2. Try cmsUsers collection
+          if (!teacherDoc && APPWRITE_CONFIG.collections.cmsUsers) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) teacherDoc = res.documents[0];
+            } catch (e) {}
+          }
+        }
+
+        if (teacherDoc) {
+          let assigned = teacherDoc.assignedPrograms || [];
+          if (typeof assigned === 'string') {
+            try { assigned = JSON.parse(assigned); } catch (e) { assigned = []; }
+          }
+          let levels = teacherDoc.assignedLevels || [];
+          if (typeof levels === 'string') {
+            try { levels = JSON.parse(levels); } catch (e) { levels = []; }
+          }
+          let courses = teacherDoc.assignedCourses || [];
+          if (typeof courses === 'string') {
+            try { courses = JSON.parse(courses); } catch (e) { courses = []; }
+          }
+          let schedule = teacherDoc.scheduleData || [];
+          if (typeof schedule === 'string') {
+            try { schedule = JSON.parse(schedule); } catch (e) { schedule = []; }
+          }
+
+          setProfile({
+            $id: teacherDoc.$id,
+            name: teacherDoc.name || `${teacherDoc.firstName || ''} ${teacherDoc.lastName || ''}`.trim() || currentAccount.name || 'Enseignant',
+            email: userEmail,
+            assignedPrograms: assigned,
+            assignedLevels: levels,
+            assignedCourses: courses,
+            scheduleData: schedule
+          });
         } else {
           setProfile({
             name: currentAccount.name || 'Enseignant IDLA',
             email: userEmail,
-            assignedPrograms: ['Master Ingénierie Logicielle', 'Certification Cybersecurity']
+            assignedPrograms: ['Master Ingénierie Logicielle', 'Certification Cybersecurity'],
+            assignedLevels: ['L1', 'L2', 'L3', 'M1', 'M2'],
+            assignedCourses: ['Intelligence Artificielle', 'Cybersécurité Avancée'],
+            scheduleData: []
           });
         }
 
@@ -607,46 +592,12 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         </div>
       </div>
 
-      {/* Mes Cours / Formations & Soumission de Cours LMD */}
+      {/* Mes Cours / Formations Enseignées */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="font-sans font-bold text-lg text-text-primary">Mes Matières &amp; Formations Enseignées</h2>
-            <p className="text-xs text-text-secondary mt-0.5">Soumettez vos enseignements (cours/UE) pour mise à jour immédiate dans la plateforme.</p>
-          </div>
-          <button
-            onClick={() => { setCProgram(myPrograms[0] || ''); setShowCourseModal(true); }}
-            className="bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm cursor-pointer flex items-center gap-2 transition-all"
-          >
-            <Plus className="w-4 h-4" /> Soumettre un nouveau cours
-          </button>
+        <div>
+          <h2 className="font-sans font-bold text-lg text-text-primary">Mes Programmes &amp; Classes Enseignés</h2>
+          <p className="text-xs text-text-secondary mt-0.5">Programmes et niveaux attribués par l'administration pour la session académique.</p>
         </div>
-
-        {/* Liste des cours soumis par l'enseignant */}
-        {myCourses.length > 0 && (
-          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-3">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-brand-primary flex items-center gap-2">
-              <BookOpenIcon className="w-4 h-4" /> Mes Cours Soumis en Base ({myCourses.length})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {myCourses.map((c: any) => (
-                <div key={c.id || c.code} className="p-3.5 bg-bg-primary border border-border-primary/60 rounded-xl space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] bg-brand-primary/10 text-brand-primary font-bold px-2 py-0.5 rounded">{c.code}</span>
-                    <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">{c.level || 'L1'}</span>
-                  </div>
-                  <h4 className="font-bold text-text-primary truncate" title={c.title}>{c.title}</h4>
-                  <p className="text-[11px] text-text-secondary truncate">{c.program}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-text-secondary pt-1 border-t border-border-primary/40">
-                    <span>CM: <strong>{c.volumeCM || 0}h</strong></span>
-                    <span>TD: <strong>{c.volumeTD || 0}h</strong></span>
-                    <span>TP: <strong>{c.volumeTP || 0}h</strong></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {uniqueBasePrograms.map((progTitle: string) => {
@@ -680,87 +631,6 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           })}
         </div>
       </div>
-
-      {/* Modale de soumission d'un cours */}
-      {showCourseModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-border-primary pb-3">
-              <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
-                <BookOpenIcon className="w-5 h-5 text-brand-primary" /> Soumettre un nouveau cours (UE)
-              </h3>
-              <button onClick={() => setShowCourseModal(false)} className="text-text-secondary hover:text-text-primary font-bold">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateCourse} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Code du Cours *</label>
-                  <input type="text" value={cCode} onChange={e => setCCode(e.target.value)} placeholder="ex: INF301" required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Niveau (LMD) *</label>
-                  <select value={cLevel} onChange={e => setCLevel(e.target.value)} className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold">
-                    {getAssignedLevelsForProgram(cProgram).map(l => (
-                      <option key={l} value={l}>{l === 'L1' ? 'L1 (Niveau 1)' : l === 'L2' ? 'L2 (Niveau 2)' : l === 'L3' ? 'L3 (Niveau 3)' : l === 'M1' ? 'M1 (Master 1)' : l === 'M2' ? 'M2 (Master 2)' : l === 'D1' ? 'D1 (Doctorat 1)' : l}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-text-secondary uppercase">Intitulé du Cours / Matière *</label>
-                <input type="text" value={cTitle} onChange={e => CSetTitle(e.target.value)} placeholder="ex: Algorithmique et Structures de Données" required className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-semibold" />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-text-secondary uppercase">Programme Associé *</label>
-                <select 
-                  value={cProgram} 
-                  onChange={e => {
-                    setCProgram(e.target.value);
-                    const allowed = getAssignedLevelsForProgram(e.target.value);
-                    if (allowed.length > 0 && !allowed.includes(cLevel)) {
-                      setCLevel(allowed[0]);
-                    }
-                  }} 
-                  required 
-                  className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary font-bold"
-                >
-                  {uniqueBasePrograms.map((pTitle: string) => (
-                    <option key={pTitle} value={pTitle}>{pTitle}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures CM</label>
-                  <input type="number" value={cCM} onChange={e => setCCM(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures TD</label>
-                  <input type="number" value={cTD} onChange={e => setCTD(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Heures TP</label>
-                  <input type="number" value={cTP} onChange={e => setCTP(Number(e.target.value))} min={0} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-text-secondary uppercase">Description / Syllabus résumé</label>
-                <textarea value={cDesc} onChange={e => setCDesc(e.target.value)} rows={2} placeholder="Objectifs pédagogiques et thématiques abordées..." className="w-full mt-1 p-2.5 bg-bg-primary border border-border-primary rounded-lg text-xs outline-none text-text-primary" />
-              </div>
-
-              <div className="pt-3 flex justify-end gap-2 border-t border-border-primary">
-                <button type="button" onClick={() => setShowCourseModal(false)} className="px-4 py-2 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary">Annuler</button>
-                <button type="submit" className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-5 py-2 rounded-lg cursor-pointer">Enregistrer le cours</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 
@@ -815,14 +685,14 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         </div>
 
         {/* Bilan du Volume Horaire Enseigné */}
-        {myCourses.length > 0 && (
+        {assignedCoursesList.length > 0 && (
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
             <h3 className="font-bold text-sm text-text-primary uppercase flex items-center gap-2">
               <ClockIcon className="w-4 h-4 text-brand-primary" /> Bilan des Heures Synchronisées par Enseignement
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myCourses.map((c: any) => {
+              {assignedCoursesList.map((c: any) => {
                 const courseSlots = teacherSchedule.filter((s: any) => s.course === c.title || (s.course && s.course.includes(c.title)));
                 let hoursSpent = 0;
                 courseSlots.forEach((s: any) => {
@@ -912,10 +782,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
             >
               <option value="">-- Sélectionner une matière / cours --</option>
-              {myCourses
-                .filter((c: any) => (!selectedProgram || c.program === selectedProgram) && (!selectedLevel || c.level === selectedLevel))
+              {assignedCoursesList
                 .map((c: any) => (
-                  <option key={c.id || c.code} value={c.title}>
+                  <option key={c.id || c.code || c.title} value={c.title}>
                     {c.code ? `${c.code} - ` : ''}{c.title}
                   </option>
                 ))}
@@ -1296,4 +1165,5 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       </div>
     </div>
   );
+}
 }
