@@ -2,7 +2,6 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { programsData } from './data/mockData';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role as AppwriteRole } from './lib/appwrite';
 
 // Lazy loading des gros composants pour le Code Splitting
@@ -393,14 +392,7 @@ export default function App() {
 
       if (!isAppwriteDbConfigured()) {
         setDbError("Configuration Appwrite manquante. Affichage des programmes en stockage local.");
-        const combined = [...localPrograms];
-        programsData.forEach((p) => {
-          if (!combined.some((cp) => cp.title?.toLowerCase().trim() === p.title?.toLowerCase().trim())) {
-            combined.push(p);
-          }
-        });
-        localStorage.setItem('idla_local_programs', JSON.stringify(combined));
-        setPrograms(combined);
+        setPrograms(localPrograms);
         return;
       }
 
@@ -423,14 +415,7 @@ export default function App() {
             procedures: doc.procedures,
           }));
 
-          const combined = [...remoteProgs];
-          programsData.forEach((p) => {
-            if (!combined.some((cp) => cp.title?.toLowerCase().trim() === p.title?.toLowerCase().trim())) {
-              combined.push(p);
-            }
-          });
-
-          const finalPrograms = combined.sort((a, b) => a.title.localeCompare(b.title));
+          const finalPrograms = remoteProgs.sort((a, b) => a.title.localeCompare(b.title));
           try {
             localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms));
           } catch (e) {}
@@ -438,13 +423,7 @@ export default function App() {
         } else {
           let freshLocal: any[] = [];
           try { freshLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
-          const combined = [...freshLocal];
-          programsData.forEach((p) => {
-            if (!combined.some((cp) => cp.title?.toLowerCase().trim() === p.title?.toLowerCase().trim())) {
-              combined.push(p);
-            }
-          });
-          setPrograms(combined);
+          setPrograms(freshLocal);
         }
         // Fetch News
         if (APPWRITE_CONFIG.collections.news) {

@@ -11,7 +11,6 @@ import {
 } from '../Icons';
 import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen } from 'lucide-react';
 import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
-import { programsData } from '../../data/mockData';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../../lib/admissionLetter';
 
@@ -21,6 +20,7 @@ interface PreRegistrationsProps {
   selectedPreRegId: string | null;
   setSelectedPreRegId: (id: string | null) => void;
   logActivity: (type: 'registration' | 'article' | 'error' | 'alumni', user: string, text: string) => Promise<void>;
+  programs?: any[];
 }
 
 // Helpers
@@ -33,11 +33,17 @@ const statusConfig = (s: string) => {
 };
 
 export default function PreRegistrations({
-  preRegistrations, setPreRegistrations, selectedPreRegId, setSelectedPreRegId, logActivity,
+  preRegistrations, setPreRegistrations, selectedPreRegId, setSelectedPreRegId, logActivity, programs,
 }: PreRegistrationsProps) {
 
+  const availablePrograms = (programs && programs.length > 0)
+    ? programs
+    : (() => {
+        try { return JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch { return []; }
+      })();
+
   const [viewMode, setViewMode] = useState<'candidates' | 'registered_no_course' | 'applications'>('candidates');
-  const [manualEnrollProgram, setManualEnrollProgram] = useState(programsData[0]?.title || 'Master en Cybersécurité');
+  const [manualEnrollProgram, setManualEnrollProgram] = useState(availablePrograms[0]?.title || 'Master en Cybersécurité');
   const [manualEnrollSession, setManualEnrollSession] = useState(DEFAULT_ACADEMIC_SESSIONS[0]?.name || "Session d'Octobre 2026");
   const [isEnrollingManual, setIsEnrollingManual] = useState(false);
   const [showManualEnrollForm, setShowManualEnrollForm] = useState(false);
@@ -388,9 +394,11 @@ export default function PreRegistrations({
                         onChange={(e) => setManualEnrollProgram(e.target.value)}
                         className="w-full p-2 rounded-lg border border-[#c6c6cf] text-xs font-semibold text-[#00020e] focus:ring-2 focus:ring-[#006c49] outline-none"
                       >
-                        {programsData.map((p) => (
-                          <option key={p.id} value={p.title}>{p.title} ({p.type})</option>
-                        ))}
+                        {availablePrograms.map((p: any) => {
+                          const title = typeof p === 'string' ? p : p.title;
+                          const pType = p.type || 'Bachelor/Master';
+                          return <option key={p.id || title} value={title}>{title} ({pType})</option>;
+                        })}
                       </select>
                       <select
                         value={manualEnrollSession}

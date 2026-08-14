@@ -12,69 +12,24 @@ import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
 } from '../types';
-import { programsData } from '../data/mockData';
 import { Paperclip, Video, FileText, Download, ExternalLink } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
-const MOCK_ENROLLMENTS: CourseEnrollment[] = [
-  {
-    id: 'enr-1', courseId: 'c-1',
-    title: 'Intelligence Artificielle : Fondamentaux',
-    instructor: 'Dr. Amara Diallo', category: 'Tech', level: 'Intermédiaire',
-    duration: '14h 20min', totalLessons: 32, completedLessons: 21,
-    progressPercent: 66, status: 'en cours',
-    enrolledAt: '2025-09-01', lastAccessedAt: '2026-07-12',
-    nextDeadline: '2026-07-20', nextLessonTitle: 'Réseaux de neurones convolutifs',
-    image: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&q=80',
-  },
-  {
-    id: 'enr-2', courseId: 'c-2',
-    title: 'Stratégie & Management Digitale',
-    instructor: 'Prof. Fatou Ndiaye', category: 'Management', level: 'Avancé',
-    duration: '10h 00min', totalLessons: 24, completedLessons: 24,
-    progressPercent: 100, status: 'terminé',
-    enrolledAt: '2025-06-15', lastAccessedAt: '2026-05-30',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',
-  },
-  {
-    id: 'enr-3', courseId: 'c-3',
-    title: 'Droit International des Contrats',
-    instructor: 'Me. Jean-Luc Moreau', category: 'Droit', level: 'Avancé',
-    duration: '8h 45min', totalLessons: 18, completedLessons: 4,
-    progressPercent: 22, status: 'en cours',
-    enrolledAt: '2026-06-01', lastAccessedAt: '2026-07-10',
-    nextDeadline: '2026-07-25', nextLessonTitle: 'Arbitrage commercial international',
-    image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80',
-  },
-];
+const MOCK_ENROLLMENTS: CourseEnrollment[] = [];
 
-const MOCK_DEADLINES: AssignmentDeadline[] = [
-  { id: 'dl-1', courseId: 'c-1', courseTitle: 'Intelligence Artificielle : Fondamentaux', assignmentTitle: "Projet CNN — Classification d'images", dueDate: '2026-07-20', isSubmitted: false, priority: 'high' },
-  { id: 'dl-2', courseId: 'c-3', courseTitle: 'Droit International des Contrats', assignmentTitle: 'Analyse de cas — Affaire Suez', dueDate: '2026-07-25', isSubmitted: false, priority: 'medium' },
-  { id: 'dl-3', courseId: 'c-1', courseTitle: 'Intelligence Artificielle : Fondamentaux', assignmentTitle: 'Quiz hebdomadaire — Module 7', dueDate: '2026-07-17', isSubmitted: true, priority: 'low' },
-];
+const MOCK_DEADLINES: AssignmentDeadline[] = [];
 
-const MOCK_CERTIFICATES: Certificate[] = [
-  { id: 'cert-1', courseTitle: 'Stratégie & Management Digitale', issueDate: '2026-06-02', credentialId: 'IDLA-MGT-2026-4F2A', category: 'Management', instructor: 'Prof. Fatou Ndiaye' },
-  { id: 'cert-2', courseTitle: 'Introduction à la Data Science', issueDate: '2025-12-15', credentialId: 'IDLA-DS-2025-9C1B', category: 'Tech', instructor: 'Dr. Kofi Asante' },
-];
+const MOCK_CERTIFICATES: Certificate[] = [];
 
-const MOCK_CATALOG: CourseCatalogItem[] = [
-  { id: 'c-1', title: 'Intelligence Artificielle : Fondamentaux', instructor: 'Dr. Amara Diallo', category: 'Tech', level: 'Intermédiaire', duration: '14h 20min', rating: 4.8, totalStudents: 1240, image: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&q=80', isNew: true, tags: ['IA', 'Machine Learning', 'Python'] },
-  { id: 'c-2', title: 'Stratégie & Management Digitale', instructor: 'Prof. Fatou Ndiaye', category: 'Management', level: 'Avancé', duration: '10h 00min', rating: 4.6, totalStudents: 870, image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80', tags: ['Stratégie', 'Digital', 'Leadership'] },
-  { id: 'c-3', title: 'Droit International des Contrats', instructor: 'Me. Jean-Luc Moreau', category: 'Droit', level: 'Avancé', duration: '8h 45min', rating: 4.5, totalStudents: 430, image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80', tags: ['Droit', 'Contrats', 'International'] },
-  { id: 'c-4', title: 'Biostatistiques & Épidémiologie', instructor: 'Dr. Claire Mensah', category: 'Santé', level: 'Intermédiaire', duration: '11h 15min', rating: 4.7, totalStudents: 610, image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80', tags: ['Statistiques', 'Santé', 'Recherche'] },
-  { id: 'c-5', title: 'Communication & Leadership', instructor: 'Dr. Sylvie Kouassi', category: 'Management', level: 'Débutant', duration: '6h 30min', rating: 4.4, totalStudents: 2100, image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=80', isFeatured: true, tags: ['Communication', 'Leadership'] },
-  { id: 'c-6', title: 'Introduction à la Data Science', instructor: 'Dr. Kofi Asante', category: 'Tech', level: 'Débutant', duration: '9h 00min', rating: 4.9, totalStudents: 3200, image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80', isFeatured: true, tags: ['Data', 'Python', 'Statistiques'] },
-];
+const MOCK_CATALOG: CourseCatalogItem[] = [];
 
 const MOCK_PROFILE: StudentProfile = {
-  id: 'stu-1', name: 'Étudiant', email: '',
+  id: '', name: '', email: '',
   bio: "Étudiant de l'International Distance Learning Academy (IDLA).",
-  language: 'fr', joinedAt: '2025-09-01',
+  language: 'fr', joinedAt: '',
 };
 
 const CATEGORIES = ['Tous', 'Tech', 'Management', 'Droit', 'Santé', 'Sciences', 'Communication'];
