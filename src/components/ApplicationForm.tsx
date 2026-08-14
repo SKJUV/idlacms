@@ -427,6 +427,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               dateApplied: new Date().toISOString(),
               declarationChecked,
               initials,
+              academicSession: "Session d'Octobre 2026",
+              entryLevel: entryLevel,
             }
           );
           console.log("Dossier de candidature inséré dans Appwrite Cloud DB:", application);

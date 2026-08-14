@@ -79,7 +79,7 @@ export default function PreRegistrations({
   // Handlers statut
   const handleApprovePreRegistration = async (id: string) => {
     const target = preRegistrations.find((p) => p.id === id);
-    const assignedMatricule = target?.matricule || generateMatricule(id);
+    const assignedMatricule = target?.matricule || generateMatricule(target?.program || id);
 
     setPreRegistrations((curr) =>
       curr.map((p) => (p.id === id ? { ...p, status: 'Accepted', matricule: assignedMatricule } : p))
@@ -89,7 +89,48 @@ export default function PreRegistrations({
       try {
         await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, {
           status: 'Accepted',
+          matricule: assignedMatricule,
         });
+
+        // Sync or create cmsUsers record for student portal login with matricule
+        if (APPWRITE_CONFIG.collections.cmsUsers && target?.email) {
+          try {
+            const userRes = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.cmsUsers,
+              [Query.equal('email', target.email)]
+            );
+            if (userRes.documents.length > 0) {
+              await databases.updateDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                userRes.documents[0].$id,
+                {
+                  role: 'student',
+                  matricule: assignedMatricule,
+                  program: target.program,
+                }
+              );
+            } else {
+              await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.cmsUsers,
+                ID.unique(),
+                {
+                  name: target.name,
+                  email: target.email,
+                  role: 'student',
+                  matricule: assignedMatricule,
+                  program: target.program,
+                  createdAt: new Date().toISOString(),
+                }
+              );
+            }
+          } catch (uErr) {
+            console.warn("Échec mise à jour / création cmsUsers lors de l'approbation:", uErr);
+          }
+        }
+
         logActivity('registration', 'Admin', `a approuvé la candidature #${id.slice(-6).toUpperCase()} (Matricule: ${assignedMatricule}).`);
       } catch (err) { console.error('Approve error:', err); }
     }

@@ -2600,9 +2600,26 @@ export default function StudentPortal({
 
                           {/* Message statut */}
                           {app.status === 'Accepted' && (
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
-                              <CheckCircle2Icon className="w-4 h-4 shrink-0" />
-                              Félicitations ! Votre candidature a été acceptée.
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2Icon className="w-4 h-4 shrink-0 text-emerald-600" />
+                                <span>Félicitations ! Votre candidature a été acceptée (Matricule : <strong>{app.matricule || 'IDLA-2026'}</strong>).</span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  downloadAdmissionLetterPdf({
+                                    name: profile.name || app.name || 'Étudiant IDLA',
+                                    email: profile.email || app.email || '',
+                                    program: app.program || 'Programme Académique',
+                                    matricule: app.matricule || generateMatricule(app.program || 'IDLA'),
+                                    entryLevel: app.entryLevel || 'Niveau 1',
+                                    dateApplied: app.dateApplied,
+                                  });
+                                }}
+                                className="bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                              >
+                                <Download className="w-4 h-4" /> Lettre d'Admission (PDF)
+                              </button>
                             </div>
                           )}
                           {app.status === 'Rejected' && (
