@@ -453,13 +453,16 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-text-secondary uppercase">Programme Auto-lié</label>
+                  <label className="text-[10px] font-bold text-text-secondary uppercase">Programme de l'enseignant</label>
                   <select value={newSlot.program} onChange={(e) => setNewSlot({...newSlot, program: e.target.value})} className="w-full mt-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary font-bold">
-                    <option value="">Sélectionner un programme</option>
-                    {programs.map((p: any) => {
-                      const title = typeof p === 'string' ? p : p.title;
-                      return <option key={title} value={title}>{title}</option>;
-                    })}
+                    <option value="">Sélectionner parmi ses programmes</option>
+                    {(() => {
+                      const assignedBase = Array.from(new Set(editingAssignedPrograms.map(p => p.split(' - ')[0]).filter(Boolean)));
+                      const listToUse = assignedBase.length > 0 ? assignedBase : programs.map((p: any) => typeof p === 'string' ? p : p.title);
+                      return listToUse.map((title: string) => (
+                        <option key={title} value={title}>{title}</option>
+                      ));
+                    })()}
                   </select>
                 </div>
                 <div>
@@ -491,7 +494,12 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   </select>
                   <div className="flex gap-2">
                     <select value={editingClassToAdd} onChange={e => setEditingClassToAdd(e.target.value)} className="flex-1 p-2 bg-bg-primary border border-border-primary rounded text-sm outline-none text-text-primary">
-                      {['Toutes les classes', 'L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3', 'Certifiant'].map(c => <option key={c} value={c}>{c}</option>)}
+                      {(() => {
+                        const selectedProgObj = programs.find((p: any) => (typeof p === 'string' ? p : p.title) === editingProgToAdd);
+                        const progType = selectedProgObj?.type || (editingProgToAdd.toLowerCase().includes('master') ? 'Master' : editingProgToAdd.toLowerCase().includes('doctorat') ? 'Doctorat' : editingProgToAdd.toLowerCase().includes('certif') ? 'Certification' : 'Bachelor');
+                        const validLevels = progType === 'Bachelor' ? ['Toutes les classes', 'L1', 'L2', 'L3'] : progType === 'Master' ? ['Toutes les classes', 'M1', 'M2'] : progType === 'Doctorat' ? ['Toutes les classes', 'D1', 'D2', 'D3'] : ['Toutes les classes', 'Certifiant'];
+                        return validLevels.map(c => <option key={c} value={c}>{c}</option>);
+                      })()}
                     </select>
                     <button type="button" onClick={() => {
                       if (editingProgToAdd) {
