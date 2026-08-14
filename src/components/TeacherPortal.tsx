@@ -527,7 +527,11 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       }
     });
     if (hasAll) {
-      return ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3', 'Certifiant'];
+      const pLower = baseProgram.toLowerCase();
+      if (pLower.includes('master')) return ['M1', 'M2'];
+      if (pLower.includes('doctorat')) return ['D1', 'D2', 'D3'];
+      if (pLower.includes('certif')) return ['Certifiant'];
+      return ['L1', 'L2', 'L3'];
     }
     return Array.from(levels);
   };
