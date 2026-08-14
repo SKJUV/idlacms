@@ -139,10 +139,17 @@ export default function App() {
         const user = await account.get();
         if (user && user.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim()) {
           const userEmail = user.email.toLowerCase().trim();
+          const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
           let userRole: Role = 'student';
 
+          if (userLabels.some((l: string) => l.includes('admin'))) {
+            userRole = 'admin';
+          } else if (userLabels.some((l: string) => l.includes('teacher'))) {
+            userRole = 'teacher';
+          }
+
           // 1. Check if user is in teachers collection
-          if (APPWRITE_CONFIG.collections.teachers) {
+          if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -158,7 +165,7 @@ export default function App() {
           }
 
           // 2. Check if user is in cmsUsers collection (Admin)
-          if (userRole !== 'teacher' && APPWRITE_CONFIG.collections.cmsUsers) {
+          if (userRole === 'student' && APPWRITE_CONFIG.collections.cmsUsers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -167,7 +174,8 @@ export default function App() {
               );
               if (res.documents.length > 0) {
                 const doc = res.documents[0];
-                if (doc.role === 'admin') {
+                const r = (doc.role || '').toLowerCase();
+                if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
                   userRole = 'admin';
                 }
               }
@@ -639,9 +647,16 @@ export default function App() {
     try {
       const user = await account.get();
       const userEmail = user.email.toLowerCase().trim();
+      const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
       let userRole: Role = 'student';
-      
-      if (isAppwriteDbConfigured()) {
+
+      if (userLabels.some((l: string) => l.includes('admin'))) {
+        userRole = 'admin';
+      } else if (userLabels.some((l: string) => l.includes('teacher'))) {
+        userRole = 'teacher';
+      }
+
+      if (userRole === 'student' && isAppwriteDbConfigured()) {
         let isTeacher = false;
         let isAdmin = false;
 
@@ -669,12 +684,13 @@ export default function App() {
             );
             if (res.documents.length > 0) {
               const doc = res.documents[0];
-              if (doc.role === 'admin') {
+              const r = (doc.role || '').toLowerCase();
+              if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
                 isAdmin = true;
               }
             }
           } catch (dbErr) {
-            console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
+            console.warn("Impossible de lire cmsUsers...", dbErr);
           }
         }
 
@@ -682,10 +698,13 @@ export default function App() {
           userRole = 'teacher';
         } else if (isAdmin) {
           userRole = 'admin';
-        } else {
-          if (activeTab === 'admin-login') {
-            alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur.");
-          }
+        } else if (activeTab === 'admin-login') {
+          alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur.");
+          clearAppwriteSession();
+          sessionStorage.removeItem('idla_portal_session_email');
+          setRole('guest');
+          setActiveTab('admin-login');
+          return;
         }
       }
 
