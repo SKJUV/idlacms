@@ -20,22 +20,22 @@ export const storage = new Storage(client);
 export { ID, Query, Permission, Role };
 
 export const APPWRITE_CONFIG = {
-  databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || '',
+  databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || 'idla_cms',
   collections: {
-    programs: import.meta.env.VITE_APPWRITE_COLLECTION_PROGRAMS || '',
-    applications: import.meta.env.VITE_APPWRITE_COLLECTION_APPLICATIONS || '',
-    logs: import.meta.env.VITE_APPWRITE_COLLECTION_LOGS || '',
-    news: import.meta.env.VITE_APPWRITE_COLLECTION_NEWS || '',
-    testimonials: import.meta.env.VITE_APPWRITE_COLLECTION_TESTIMONIALS || '',
-    cmsUsers: import.meta.env.VITE_APPWRITE_COLLECTION_CMS_USERS || '',
-    candidateDocuments: import.meta.env.VITE_APPWRITE_COLLECTION_CANDIDATE_DOCUMENTS || '',
-    messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || '',
-    customForms: import.meta.env.VITE_APPWRITE_COLLECTION_CUSTOM_FORMS || '',
-    formResponses: import.meta.env.VITE_APPWRITE_COLLECTION_FORM_RESPONSES || '',
+    programs: import.meta.env.VITE_APPWRITE_COLLECTION_PROGRAMS || 'programs',
+    applications: import.meta.env.VITE_APPWRITE_COLLECTION_APPLICATIONS || 'applications',
+    logs: import.meta.env.VITE_APPWRITE_COLLECTION_LOGS || 'activity_logs',
+    news: import.meta.env.VITE_APPWRITE_COLLECTION_NEWS || 'news',
+    testimonials: import.meta.env.VITE_APPWRITE_COLLECTION_TESTIMONIALS || 'testimonials',
+    cmsUsers: import.meta.env.VITE_APPWRITE_COLLECTION_CMS_USERS || 'cms_users',
+    candidateDocuments: import.meta.env.VITE_APPWRITE_COLLECTION_CANDIDATE_DOCUMENTS || 'candidate_documents',
+    messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || 'messages',
+    customForms: import.meta.env.VITE_APPWRITE_COLLECTION_CUSTOM_FORMS || 'custom_forms',
+    formResponses: import.meta.env.VITE_APPWRITE_COLLECTION_FORM_RESPONSES || 'form_responses',
     teachers: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHERS || 'teachers',
   },
   buckets: {
-    documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || '',
+    documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || 'documents',
   }
 };
 
