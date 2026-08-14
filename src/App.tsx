@@ -127,14 +127,29 @@ export default function App() {
         setIsSessionChecking(false);
         return;
       }
+
+      const sessionEmail = sessionStorage.getItem('idla_portal_session_email');
+      if (!sessionEmail) {
+        setRole('guest');
+        setIsSessionChecking(false);
+        return;
+      }
+
       try {
         const user = await account.get();
-        if (user) {
+        if (user && user.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim()) {
           const userEmail = user.email.toLowerCase().trim();
+          const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
           let userRole: Role = 'student';
 
+          if (userLabels.some((l: string) => l.includes('admin'))) {
+            userRole = 'admin';
+          } else if (userLabels.some((l: string) => l.includes('teacher'))) {
+            userRole = 'teacher';
+          }
+
           // 1. Check if user is in teachers collection
-          if (APPWRITE_CONFIG.collections.teachers) {
+          if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -150,7 +165,7 @@ export default function App() {
           }
 
           // 2. Check if user is in cmsUsers collection (Admin)
-          if (userRole !== 'teacher' && APPWRITE_CONFIG.collections.cmsUsers) {
+          if (userRole === 'student' && APPWRITE_CONFIG.collections.cmsUsers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -159,20 +174,14 @@ export default function App() {
               );
               if (res.documents.length > 0) {
                 const doc = res.documents[0];
-                if (doc.role === 'admin') {
+                const r = (doc.role || '').toLowerCase();
+                if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
                   userRole = 'admin';
                 }
               }
             } catch (err) {
               console.warn("Erreur lors de la vérification de l'accès CMS :", err);
             }
-          }
-
-          // 3. Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
-          if (userRole !== 'admin' && userRole !== 'teacher') {
-             if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
-                userRole = 'admin';
-             }
           }
 
           setRole(userRole);
@@ -189,24 +198,21 @@ export default function App() {
               setActiveTab('student-dashboard');
             }
           }
-        }
-      } catch (err) {
-        console.log("Aucune session active détectée côté Appwrite, vérification du mode local...");
-        const localRole = (localStorage.getItem('idla_portal_role') || sessionStorage.getItem('idla_portal_role')) as Role;
-        if (localRole && ['student', 'teacher', 'admin'].includes(localRole)) {
-          setRole(localRole);
         } else {
           sessionStorage.removeItem('idla_portal_session_email');
           setRole('guest');
-          
-          // Redirection conditionnelle si la session est expirée/inexistante
-          if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
-            setActiveTab('admin-login');
-          } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
-            setActiveTab('student-login');
-          } else if (TEACHER_TABS.includes(activeTab)) {
-            setActiveTab('student-login');
-          }
+        }
+      } catch (err) {
+        sessionStorage.removeItem('idla_portal_session_email');
+        setRole('guest');
+
+        // Redirection sécurisée si aucune session active n'existe sur le serveur
+        if (ADMIN_TABS.includes(activeTab) && activeTab !== 'admin-login') {
+          setActiveTab('admin-login');
+        } else if (STUDENT_TABS.includes(activeTab) && activeTab !== 'student-login') {
+          setActiveTab('student-login');
+        } else if (TEACHER_TABS.includes(activeTab)) {
+          setActiveTab('student-login');
         }
       } finally {
         setIsSessionChecking(false);
@@ -241,6 +247,42 @@ export default function App() {
       }
     }
   }, [activeTab, role, isSessionChecking]);
+
+  // Inactivity Auto-Logout Timer (15 minutes) & Multi-Tab Session Synchronization
+  useEffect(() => {
+    if (role === 'guest') return;
+
+    const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes d'inactivité
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        handleLogout();
+        alert("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    activityEvents.forEach((evt) => window.addEventListener(evt, resetTimer));
+
+    resetTimer();
+
+    // Synchronization multi-onglets de déconnexion
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'idla_session_logout') {
+        setRole('guest');
+        setActiveTab('home');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearTimeout(timer);
+      activityEvents.forEach((evt) => window.removeEventListener(evt, resetTimer));
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [role]);
 
   // Theme management (Dark / Light)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -516,7 +558,7 @@ export default function App() {
                   price: lp.price,
                   procedures: lp.procedures,
                 },
-                [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
+                [Permission.read(AppwriteRole.any())]
               ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
             }
           }
@@ -572,6 +614,7 @@ export default function App() {
   const handleLogout = () => {
     clearAppwriteSession();
     sessionStorage.removeItem('idla_portal_session_email');
+    localStorage.setItem('idla_session_logout', Date.now().toString());
     setRole('guest');
     setActiveTab('home');
   };
@@ -604,9 +647,16 @@ export default function App() {
     try {
       const user = await account.get();
       const userEmail = user.email.toLowerCase().trim();
+      const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
       let userRole: Role = 'student';
-      
-      if (isAppwriteDbConfigured()) {
+
+      if (userLabels.some((l: string) => l.includes('admin'))) {
+        userRole = 'admin';
+      } else if (userLabels.some((l: string) => l.includes('teacher'))) {
+        userRole = 'teacher';
+      }
+
+      if (userRole === 'student' && isAppwriteDbConfigured()) {
         let isTeacher = false;
         let isAdmin = false;
 
@@ -634,12 +684,13 @@ export default function App() {
             );
             if (res.documents.length > 0) {
               const doc = res.documents[0];
-              if (doc.role === 'admin') {
+              const r = (doc.role || '').toLowerCase();
+              if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
                 isAdmin = true;
               }
             }
           } catch (dbErr) {
-            console.warn("Impossible de lire cmsUsers, vérification du bypass root...", dbErr);
+            console.warn("Impossible de lire cmsUsers...", dbErr);
           }
         }
 
@@ -647,57 +698,30 @@ export default function App() {
           userRole = 'teacher';
         } else if (isAdmin) {
           userRole = 'admin';
-        } else {
-          // Fallback pour le compte Root Admin (au cas où les permissions du document bloquent la lecture)
-          if (userEmail === 'idlaadmin@gmail.com' || userEmail === 'js.dupont@idla.edu') {
-             userRole = 'admin';
-          } else {
-            // Bootstrap : si la collection cmsUsers est totalement vide, le premier qui se connecte devient admin
-            try {
-              const allDocs = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.cmsUsers,
-                [Query.limit(1)]
-              );
-              if (allDocs.documents.length === 0) {
-                await databases.createDocument(
-                  APPWRITE_CONFIG.databaseId,
-                  APPWRITE_CONFIG.collections.cmsUsers,
-                  'unique()',
-                  { 
-                    email: userEmail, 
-                    name: user.name || 'Super Admin', 
-                    role: 'admin',
-                    status: 'Actif',
-                    initials: (user.name || 'SA').substring(0,2).toUpperCase(),
-                    lastLogin: new Date().toISOString()
-                  }
-                );
-                userRole = 'admin';
-              } else if (activeTab === 'admin-login') {
-                alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur. Veuillez vous connecter avec un compte autorisé ou l'ajouter dans la collection cmsUsers sur Appwrite.");
-              }
-            } catch (e) {
-              console.warn("Erreur lors de la vérification de la collection cmsUsers", e);
-              if (activeTab === 'admin-login') {
-                alert("Accès refusé : Impossible de vérifier vos privilèges d'administrateur.");
-              }
-            }
-          }
+        } else if (activeTab === 'admin-login') {
+          alert("Accès refusé : Ce compte n'a pas les privilèges d'administrateur.");
+          clearAppwriteSession();
+          sessionStorage.removeItem('idla_portal_session_email');
+          setRole('guest');
+          setActiveTab('admin-login');
+          return;
         }
       }
-      
+
       setRole(userRole);
       if (userRole === 'teacher') setActiveTab('teacher-dashboard');
       else if (userRole === 'admin') setActiveTab('admin-dashboard');
       else setActiveTab('student-dashboard');
     } catch (err) {
-      console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
+      console.error("Erreur lors de l'authentification :", err);
+      sessionStorage.removeItem('idla_portal_session_email');
+      setRole('guest');
       if (activeTab === 'admin-login') {
-        alert("Une erreur est survenue lors de l'authentification.");
+        alert("Une erreur est survenue lors de l'authentification admin.");
+        setActiveTab('admin-login');
+      } else {
+        setActiveTab('student-login');
       }
-      setRole('student');
-      setActiveTab('student-dashboard');
     }
   };
 

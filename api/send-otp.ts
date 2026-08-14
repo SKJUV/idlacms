@@ -1,4 +1,26 @@
+function escapeHtml(unsafe: string): string {
+  return String(unsafe || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export default async function handler(req: any, res: any) {
+  // CORS Headers
+  const allowedOrigins = ['https://idlaacademy.online', 'http://localhost:3000'];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: 'Method not allowed' });
@@ -6,14 +28,18 @@ export default async function handler(req: any, res: any) {
 
   const { email, fullName, otpCode } = req.body || {};
 
-  if (!email || !fullName || !otpCode) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email) || !fullName || !otpCode) {
+    return res.status(400).json({ error: 'Invalid or missing required fields' });
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {
     return res.status(500).json({ error: 'Resend API key is not configured on Vercel' });
   }
+
+  const safeFullName = escapeHtml(fullName);
+  const safeOtpCode = escapeHtml(otpCode);
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -33,11 +59,11 @@ export default async function handler(req: any, res: any) {
               <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Service des Admissions</p>
             </div>
             <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
-              <p>Bonjour <strong>${fullName}</strong>,</p>
+              <p>Bonjour <strong>${safeFullName}</strong>,</p>
               <p>Nous avons bien enregistré votre demande d'inscription à l'International Distance Learning Academy (IDLA).</p>
               <p>Afin de confirmer votre identité et sécuriser votre compte, veuillez utiliser le code de vérification unique ci-dessous :</p>
               <div style="text-align: center; margin: 32px 0;">
-                <span style="display: inline-block; background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 12px 32px; color: #0f172a;">${otpCode}</span>
+                <span style="display: inline-block; background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 12px 32px; color: #0f172a;">${safeOtpCode}</span>
               </div>
               <p style="font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
                 ⚠️ Ne partagez jamais ce code avec quiconque. L'IDLA ne vous demandera jamais ce code par téléphone ou par un autre canal.<br/>
@@ -59,3 +85,4 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
+

@@ -240,7 +240,7 @@ export default function PreRegistrations({
                 motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
                 initials: selected.initials,
               },
-              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+              [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
             );
           } catch (e) {
             console.error('Erreur création inscription manuelle Appwrite DB:', e);

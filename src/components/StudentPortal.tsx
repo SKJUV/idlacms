@@ -72,8 +72,8 @@ const MOCK_CATALOG: CourseCatalogItem[] = [
 ];
 
 const MOCK_PROFILE: StudentProfile = {
-  id: 'stu-1', name: 'Amina Koné', email: 'amina.kone@exemple.com',
-  bio: "Étudiante en Master IA & Sciences des Données. Passionnée par l'application de l'intelligence artificielle aux enjeux de santé en Afrique.",
+  id: 'stu-1', name: 'Étudiant', email: '',
+  bio: "Étudiant de l'International Distance Learning Academy (IDLA).",
   language: 'fr', joinedAt: '2025-09-01',
 };
 
@@ -199,13 +199,14 @@ export default function StudentPortal({
   };
 
   // ── Profile ──
+  const initialStudentName = knownName || (knownEmail ? knownEmail.split('@')[0] : 'Étudiant');
   const [profile, setProfile] = useState<StudentProfile>(() => ({
     ...MOCK_PROFILE,
-    ...(knownName ? { name: knownName } : {}),
-    ...(knownEmail ? { email: knownEmail } : {}),
+    name: initialStudentName,
+    email: knownEmail || '',
   }));
   const [editProfile, setEditProfile] = useState(false);
-  const [draftName, setDraftName] = useState(knownName || MOCK_PROFILE.name);
+  const [draftName, setDraftName] = useState(initialStudentName);
   const [draftBio, setDraftBio] = useState(MOCK_PROFILE.bio);
   const [profileSaved, setProfileSaved] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);

@@ -34,7 +34,7 @@ L'application est conçue pour fonctionner en mode démonstration avec des donn�
 - Tailwind CSS 4
 - Appwrite
 - Lucide Icons
-- Motion
+- Zustand (Global State Management)
 
 ## Lancer le projet
 
