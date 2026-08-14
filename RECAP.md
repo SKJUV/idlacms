@@ -310,7 +310,7 @@ flowchart LR
 | Icônes | Lucide React |
 | Backend (BaaS) | **Appwrite** (base de données, authentification, stockage) |
 | Tests E2E | Playwright |
-| Hébergement | Netlify (`netlify.toml` inclus) |
+| Hébergement | Vercel (`vercel.json` inclus pour SPA rewrite & Serverless `/api/*`) |
 
 ### 5.2 Diagramme d'architecture
 
@@ -822,14 +822,14 @@ Sans cette configuration, l'application fonctionne intégralement sur ses donné
 
 ---
 
-## 10. Déploiement (Netlify)
+## 10. Déploiement (Vercel)
 
-Le fichier `netlify.toml` définit la commande de build, le dossier de publication et le **fallback SPA** (toutes les routes servies par `index.html`). À faire dans l'interface Netlify :
+Le fichier `vercel.json` définit le réacheminement des routes SPA vers `index.html` et la prise en charge des fonctions Serverless `/api/*`. À faire dans l'interface Vercel :
 
-1. Déclarer les variables d'environnement `VITE_APPWRITE_*` (Site configuration → Environment variables).
-   ⚠️ Ne **jamais** y placer `APPWRITE_API_KEY` : c'est un secret serveur, tout ce qui entre dans le build est lisible publiquement.
-2. Ajouter le domaine Netlify comme plateforme Web dans la console Appwrite.
-3. Redéployer avec *Clear cache and deploy site*.
+1. Déclarer les variables d'environnement `VITE_APPWRITE_*` (Project Settings → Environment Variables).
+   ⚠️ Ne **jamais** préfixer `APPWRITE_API_KEY` ou `RESEND_API_KEY` par `VITE_` afin qu'elles restent strictement sécurisées côté serveur.
+2. Ajouter le domaine Vercel (`https://idlaacademy.online`) comme plateforme Web autorisée dans la console Appwrite.
+3. Déployer via `vercel --prod` ou Git integration.
 
 ---
 
@@ -851,9 +851,9 @@ Le fichier `netlify.toml` définit la commande de build, le dossier de publicati
 | Vérification | Statut |
 |--------------|--------|
 | Typecheck (`tsc --noEmit`) | ✅ Sans erreur |
-| Build de production (Vite) | ✅ ~479 kB JS (128 kB gzip) |
+| Build de production (Vite) | ✅ ~378 kB JS (107 kB gzip) |
 | Parcours E2E (Playwright) | ✅ Navigation, authentifications (nominal + refus + repli), CRUD admin, formulaires publics, modération |
-| Déploiement | ✅ Netlify (SPA fallback configuré) |
+| Déploiement | ✅ Vercel (SPA rewrite & Serverless `/api/*` configurés) |
 
 ### Pistes d'évolution
 
