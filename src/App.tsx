@@ -229,6 +229,42 @@ export default function App() {
     }
   }, [activeTab, role, isSessionChecking]);
 
+  // Inactivity Auto-Logout Timer (15 minutes) & Multi-Tab Session Synchronization
+  useEffect(() => {
+    if (role === 'guest') return;
+
+    const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes d'inactivité
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        handleLogout();
+        alert("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    activityEvents.forEach((evt) => window.addEventListener(evt, resetTimer));
+
+    resetTimer();
+
+    // Synchronization multi-onglets de déconnexion
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'idla_session_logout') {
+        setRole('guest');
+        setActiveTab('home');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearTimeout(timer);
+      activityEvents.forEach((evt) => window.removeEventListener(evt, resetTimer));
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [role]);
+
   // Theme management (Dark / Light)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -559,6 +595,7 @@ export default function App() {
   const handleLogout = () => {
     clearAppwriteSession();
     sessionStorage.removeItem('idla_portal_session_email');
+    localStorage.setItem('idla_session_logout', Date.now().toString());
     setRole('guest');
     setActiveTab('home');
   };
