@@ -127,9 +127,17 @@ export default function App() {
         setIsSessionChecking(false);
         return;
       }
+
+      const sessionEmail = sessionStorage.getItem('idla_portal_session_email');
+      if (!sessionEmail) {
+        setRole('guest');
+        setIsSessionChecking(false);
+        return;
+      }
+
       try {
         const user = await account.get();
-        if (user) {
+        if (user && user.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim()) {
           const userEmail = user.email.toLowerCase().trim();
           let userRole: Role = 'student';
 
@@ -182,6 +190,9 @@ export default function App() {
               setActiveTab('student-dashboard');
             }
           }
+        } else {
+          sessionStorage.removeItem('idla_portal_session_email');
+          setRole('guest');
         }
       } catch (err) {
         sessionStorage.removeItem('idla_portal_session_email');
@@ -683,12 +694,15 @@ export default function App() {
       else if (userRole === 'admin') setActiveTab('admin-dashboard');
       else setActiveTab('student-dashboard');
     } catch (err) {
-      console.error("Erreur lors de la vérification du rôle de l'utilisateur :", err);
+      console.error("Erreur lors de l'authentification :", err);
+      sessionStorage.removeItem('idla_portal_session_email');
+      setRole('guest');
       if (activeTab === 'admin-login') {
-        alert("Une erreur est survenue lors de l'authentification.");
+        alert("Une erreur est survenue lors de l'authentification admin.");
+        setActiveTab('admin-login');
+      } else {
+        setActiveTab('student-login');
       }
-      setRole('student');
-      setActiveTab('student-dashboard');
     }
   };
 
