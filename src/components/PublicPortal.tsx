@@ -916,151 +916,146 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   }
 
   if (activeTab === 'actualites') {
-    const featuredNewsArticle = news.find(n => n.isFeatured);
-    const regularNewsArticles = filteredNews.filter(n => !n.isFeatured || selectedNewsCategory !== 'Tous');
-
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-12">
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="font-sans font-bold text-4xl text-text-primary">Actualités</h1>
-            <p className="text-[#45464e] text-lg max-w-2xl">
-              Restez informé des derniers événements, des réussites académiques et des nouveaux partenariats d'élite de l'IDLA.
-            </p>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar filter */}
-            <aside className="w-full lg:w-[260px] space-y-6 shrink-0">
-              <div>
-                <h3 className="text-xs uppercase font-bold text-[#00020e] tracking-widest mb-3">Catégories</h3>
-                <div className="flex flex-wrap lg:flex-col gap-2">
-                  {['Tous', 'Événements', 'Académique', 'Partenariats', 'Annonces', 'Alumni'].map((cat) => (
-                    <button 
-                      key={cat}
-                      onClick={() => setSelectedNewsCategory(cat)}
-                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-between ${
-                        selectedNewsCategory === cat 
-                          ? 'bg-[#e5eeff] text-[#00714d]' 
-                          : 'hover:bg-slate-100 text-[#45464e]'
-                      }`}
-                    >
-                      <span>{cat === 'Tous' ? 'Toutes les news' : cat}</span>
-                      <span className="text-[10px] px-2 py-0.5 bg-white/60 rounded">
-                        {cat === 'Tous' 
-                          ? news.length 
-                          : news.filter(n => n.category === cat).length
-                        }
-                      </span>
-                    </button>
-                  ))}
-                </div>
+      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Header Fil d'Actualités Facebook Style */}
+          <div className="bg-bg-secondary p-5 rounded-2xl border border-border-primary shadow-sm space-y-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-black text-sm border border-brand-primary/20">
+                IDLA
               </div>
-            </aside>
+              <div className="text-left">
+                <h1 className="font-sans font-bold text-xl text-text-primary leading-none">Fil d'Actualités Académiques</h1>
+                <p className="text-xs text-text-secondary mt-1">Publications officielles, annonces et événements en direct</p>
+              </div>
+            </div>
 
-            {/* News Feed */}
-            <div className="flex-grow space-y-8">
-              {/* Featured article shown on 'Tous' or when matches category */}
-              {featuredNewsArticle && selectedNewsCategory === 'Tous' && (
-                <article
-                  onClick={() => setSelectedArticle(featuredNewsArticle)}
-                  className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-all"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(featuredNewsArticle)}
-                  aria-label={`Lire l'article : ${featuredNewsArticle.title}`}
-                >
-                  <div className="md:w-3/5 overflow-hidden h-64 md:h-auto">
-                    <img 
-                      className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
-                      alt={featuredNewsArticle.title} 
-                      src={featuredNewsArticle.image}
-                    />
-                  </div>
-                  <div className="md:w-2/5 p-8 flex flex-col justify-center">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-brand-light text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                        {featuredNewsArticle.category}
-                      </span>
-                      <span className="text-xs text-text-secondary">{featuredNewsArticle.date}</span>
-                    </div>
-                    {featuredNewsArticle.category === 'Événements' && (featuredNewsArticle.startDate || featuredNewsArticle.endDate) && (
-                      <p className="text-xs font-bold text-brand-primary/80 mb-2">
-                        📅 Du {featuredNewsArticle.startDate || '?'} au {featuredNewsArticle.endDate || '?'}
-                      </p>
-                    )}
-                    <h2 className="font-bold text-2xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight">
-                      {featuredNewsArticle.title}
-                    </h2>
-                    <p className="text-sm text-text-secondary mt-3 leading-relaxed">
-                      {featuredNewsArticle.description}
-                    </p>
-                    <div className="pt-6">
-                      <span className="text-sm font-bold text-brand-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                        Lire l'article <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              )}
-              {regularNewsArticles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {regularNewsArticles.map((n) => (
-                    <article
-                      key={n.id}
-                      onClick={() => setSelectedArticle(n)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && setSelectedArticle(n)}
-                      aria-label={`Lire l'article : ${n.title}`}
-                      className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden group cursor-pointer hover:shadow-sm transition-all flex flex-col"
-                    >
-                      <div className="aspect-video overflow-hidden">
-                        <img 
-                          className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
-                          alt={n.title} 
-                          src={n.image}
-                        />
-                      </div>
-                      <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                              {n.category}
-                            </span>
-                            <span className="text-xs text-text-secondary">{n.date}</span>
-                          </div>
-                          {n.category === 'Événements' && (n.startDate || n.endDate) && (
-                            <p className="text-xs font-bold text-brand-primary/80">
-                              📅 Du {n.startDate || '?'} au {n.endDate || '?'}
-                            </p>
-                          )}
-                          <h3 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors leading-snug">
-                            {n.title}
-                          </h3>
-                          <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
-                            {n.description}
-                          </p>
-                        </div>
-                        <div className="pt-2">
-                          <span className="text-xs font-bold text-brand-primary flex items-center gap-1">
-                            Lire l'article <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                selectedNewsCategory !== 'Tous' && (
-                  <div className="bg-bg-secondary p-12 text-center rounded-xl border border-border-primary">
-                    <p className="text-text-secondary font-semibold text-sm">Aucun article disponible dans cette catégorie.</p>
-                  </div>
-                )
-              )}
+            {/* Filter pills horizontal scroll */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 no-scrollbar justify-center sm:justify-start">
+              {['Tous', 'Événements', 'Académique', 'Partenariats', 'Annonces', 'Alumni'].map((cat) => {
+                const isSelected = selectedNewsCategory === cat;
+                const count = cat === 'Tous' ? news.length : news.filter(n => n.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedNewsCategory(cat)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                      isSelected
+                        ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                        : 'bg-bg-primary text-text-secondary hover:text-text-primary border-border-primary'
+                    }`}
+                  >
+                    <span>{cat === 'Tous' ? 'Tout le fil' : cat}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-border-primary/50 text-text-secondary'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          {/* Posts Feed Single-Column (à la suite comme Facebook) */}
+          {filteredNews.length > 0 ? (
+            <div className="space-y-6">
+              {filteredNews.map((n) => (
+                <article
+                  key={n.id}
+                  className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all space-y-3 p-5"
+                >
+                  {/* Header Post Facebook-style */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0">
+                        IDLA
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-sm text-text-primary">IDLA Official</h3>
+                          <span className="text-[10px] font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-2 py-0.5 rounded-full">
+                            {n.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-text-secondary flex items-center gap-1 mt-0.5">
+                          <span>{n.date}</span>
+                          <span>•</span>
+                          <span>🌐 Public</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {n.isFeatured && (
+                      <span className="bg-amber-500/10 text-amber-700 text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/20 flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-amber-600" /> Épinglé
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Post Content Title & Text */}
+                  <div className="space-y-2 pt-1">
+                    <h2 className="font-bold text-base text-text-primary leading-snug">
+                      {n.title}
+                    </h2>
+
+                    {n.category === 'Événements' && (n.startDate || n.endDate) && (
+                      <div className="inline-flex items-center gap-1.5 bg-brand-primary/10 text-brand-primary font-bold text-xs px-3 py-1 rounded-lg border border-brand-primary/20">
+                        <span>📅 Du {n.startDate || '?'} au {n.endDate || '?'}</span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      {n.description}
+                    </p>
+                  </div>
+
+                  {/* Post Image Media */}
+                  {n.image && (
+                    <div 
+                      onClick={() => setSelectedArticle(n)}
+                      className="rounded-xl overflow-hidden cursor-pointer group relative border border-border-primary/60 max-h-96"
+                    >
+                      <img
+                        src={n.image}
+                        alt={n.title}
+                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 max-h-96"
+                      />
+                    </div>
+                  )}
+
+                  {/* Post Action Footer Facebook Style (J'aime / Partager / Voir l'article) */}
+                  <div className="pt-3 border-t border-border-primary/50 flex items-center justify-between gap-2 text-xs">
+                    <button
+                      onClick={() => handleShareArticle(n)}
+                      className="flex items-center gap-1.5 font-bold text-text-secondary hover:text-brand-primary hover:bg-bg-primary px-3 py-2 rounded-xl transition-all cursor-pointer"
+                      title="Partager cette publication"
+                    >
+                      <ShareIcon className="w-4 h-4" />
+                      <span>{copySuccess ? 'Lien copié !' : 'Partager'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedArticle(n)}
+                      className="flex items-center gap-1.5 font-bold text-brand-primary hover:bg-brand-primary/10 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      <span>Voir la publication complète</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-bg-secondary p-12 text-center rounded-2xl border border-border-primary space-y-2">
+              <p className="text-text-secondary font-semibold text-sm">Aucune publication dans cette catégorie pour le moment.</p>
+              <button
+                onClick={() => setSelectedNewsCategory('Tous')}
+                className="text-brand-primary text-xs font-bold hover:underline cursor-pointer"
+              >
+                Afficher tout le fil d'actualités
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Modal article plein écran avec fond flouté ── */}
