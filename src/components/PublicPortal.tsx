@@ -409,27 +409,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 <div className="text-3xl font-bold text-text-primary">120+</div>
               </div>
             </div>
-
-            {/* Universal Filter Bar on Home Page */}
-            <div className="pt-4 border-t border-border-primary/50">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-sans font-bold text-base text-text-primary flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-brand-primary" /> Rechercher & Filtrer un Programme
-                </h3>
-                <button
-                  onClick={() => setActiveTab('programmes')}
-                  className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  Voir tous les diplômes ({programs.length}) <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <ProgramFilterBar
-                filters={filters}
-                onFilterChange={setFilters}
-                onReset={() => setFilters(INITIAL_FILTER_STATE)}
-                totalResults={filteredPrograms.length}
-              />
-            </div>
           </div>
         </section>
 
