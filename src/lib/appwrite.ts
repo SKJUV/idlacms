@@ -33,6 +33,7 @@ export const APPWRITE_CONFIG = {
     customForms: import.meta.env.VITE_APPWRITE_COLLECTION_CUSTOM_FORMS || 'custom_forms',
     formResponses: import.meta.env.VITE_APPWRITE_COLLECTION_FORM_RESPONSES || 'form_responses',
     teachers: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHERS || 'teachers',
+    referrals: import.meta.env.VITE_APPWRITE_COLLECTION_REFERRALS || 'referrals',
   },
   buckets: {
     documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || 'documents',

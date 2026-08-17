@@ -7,8 +7,10 @@ import {
   FileTextIcon,
   AlertCircleIcon,
 } from './Icons';
-import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query } from '../lib/appwrite';
+import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
+import { ReferralCode } from '../types';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, email: string, tempPass?: string) => void;
@@ -30,6 +32,11 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [nationality, setNationality] = useState('');
+
+  // Parrainage / Recommandation State
+  const [sponsorCodeInput, setSponsorCodeInput] = useState('');
+  const [validatedReferral, setValidatedReferral] = useState<ReferralCode | null>(null);
+  const [referralCheckMsg, setReferralCheckMsg] = useState('');
 
   // Form State — Etape 2
   const [selectedProgram, setSelectedProgram] = useState(initialProgram || '');
@@ -131,6 +138,47 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       }
     };
     loadLoggedInUser();
+  }, []);
+
+  // Auto-détection & Validation du Code de Parrainage
+  const verifyReferralCode = async (codeStr: string) => {
+    if (!codeStr || !codeStr.trim()) {
+      setValidatedReferral(null);
+      setReferralCheckMsg('');
+      return;
+    }
+    const cleanCode = codeStr.trim().toUpperCase();
+    const all = await loadAllReferralCodes();
+    const matched = all.find(r => r.code.toUpperCase() === cleanCode);
+
+    if (!matched) {
+      setValidatedReferral(null);
+      setReferralCheckMsg('Code parrainage non reconnu ou non configuré.');
+      return;
+    }
+
+    if (matched.status !== 'Active') {
+      setValidatedReferral(null);
+      setReferralCheckMsg('Ce code de parrainage est temporairement en pause.');
+      return;
+    }
+
+    if (matched.maxUses && matched.currentUses >= matched.maxUses) {
+      setValidatedReferral(null);
+      setReferralCheckMsg('La limite d\'utilisations de ce code parrain a été atteinte.');
+      return;
+    }
+
+    setValidatedReferral(matched);
+    setReferralCheckMsg('');
+  };
+
+  useEffect(() => {
+    const codeUrl = parseReferralCodeFromUrl();
+    if (codeUrl) {
+      setSponsorCodeInput(codeUrl);
+      verifyReferralCode(codeUrl);
+    }
   }, []);
 
   // Handle Drag & Drop Events
@@ -429,8 +477,13 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               initials,
               academicSession: "Session d'Octobre 2026",
               entryLevel: entryLevel,
+              sponsorCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+              sponsorEmail: validatedReferral?.sponsorEmail || undefined,
             }
           );
+          if (sponsorCodeInput) {
+            registerReferralCodeUsage(sponsorCodeInput).catch(() => {});
+          }
           console.log("Dossier de candidature inséré dans Appwrite Cloud DB:", application);
         } catch (dbErr: any) {
           console.error("Échec création document candidatures Appwrite DB:", dbErr);
@@ -635,6 +688,47 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
                   />
                 </div>
+              </div>
+
+              {/* Code Parrainage / Recommandation */}
+              <div className="pt-2 border-t border-border-primary/30 space-y-2">
+                <label className="text-xs font-bold text-text-secondary uppercase flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Gift className="w-3.5 h-3.5 text-brand-primary" /> Code Parrainage / Recommandation (Optionnel)
+                  </span>
+                  <span className="text-[10px] text-text-secondary font-normal">Fourni par l'administration ou votre parrain</span>
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={sponsorCodeInput}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setSponsorCodeInput(val);
+                      verifyReferralCode(val);
+                    }}
+                    placeholder="ex: REF-PAUL2026"
+                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-mono font-bold text-text-primary uppercase" 
+                  />
+                </div>
+
+                {validatedReferral && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="font-bold">Code Parrainage Valide ({validatedReferral.code})</p>
+                      <p className="text-[11px] opacity-90">
+                        Recommandé par <strong>{validatedReferral.sponsorName}</strong> • Avantage : <strong className="underline">{validatedReferral.discountReward || 'Frais de dossier offerts'}</strong>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {referralCheckMsg && !validatedReferral && (
+                  <p className="text-xs text-amber-600 font-semibold flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {referralCheckMsg}
+                  </p>
+                )}
               </div>
             </div>
           )}

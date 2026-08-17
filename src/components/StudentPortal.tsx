@@ -12,9 +12,11 @@ import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
 } from '../types';
-import { Paperclip, Video, FileText, Download, ExternalLink } from 'lucide-react';
+import { Paperclip, Video, FileText, Download, ExternalLink, Gift, Copy, Check } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
+import { loadAllReferralCodes, buildReferralLink } from '../lib/referral';
+import { ReferralCode } from '../types';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -180,6 +182,23 @@ export default function StudentPortal({
   const [notifNews, setNotifNews] = useState(false);
   const [selectedLang, setSelectedLang] = useState<'fr' | 'en'>(profile.language);
   const [langSaved, setLangSaved] = useState(false);
+
+  // ── Parrainage Officiel Configuré par l'Admin ──
+  const [myReferralCode, setMyReferralCode] = useState<ReferralCode | null>(null);
+  const [copiedReferralLink, setCopiedReferralLink] = useState(false);
+
+  useEffect(() => {
+    if (!profile.email && !profile.name) return;
+    loadAllReferralCodes().then(list => {
+      const match = list.find(r => 
+        (r.sponsorEmail && profile.email && r.sponsorEmail.toLowerCase() === profile.email.toLowerCase()) ||
+        (r.sponsorName && profile.name && r.sponsorName.toLowerCase().includes(profile.name.toLowerCase()))
+      );
+      if (match) {
+        setMyReferralCode(match);
+      }
+    });
+  }, [profile.email, profile.name]);
 
   // ── Catalogue & Universal Filters ──
   const [catalogFilters, setCatalogFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
@@ -1842,6 +1861,65 @@ export default function StudentPortal({
               </div>
             </div>
           )}
+
+          {/* Parrainage Officiel Configuré par l'Admin */}
+          <div className="bg-gradient-to-r from-[#006c49]/10 via-brand-light to-emerald-500/10 border border-[#006c49]/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#006c49]/15 pb-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#006c49] bg-[#006c49]/10 px-2.5 py-0.5 rounded-full border border-[#006c49]/20">
+                  Programme Ambassadeur IDLA
+                </span>
+                <h3 className="font-sans font-bold text-lg text-text-primary mt-1 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-[#006c49]" /> Mon Code & Lien de Parrainage Officiel
+                </h3>
+              </div>
+              <span className="text-xs text-text-secondary italic">
+                Créé et configuré par l'Administration
+              </span>
+            </div>
+
+            {myReferralCode ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-text-secondary">Mon Code Parrain</p>
+                    <p className="text-lg font-mono font-extrabold text-[#006c49]">{myReferralCode.code}</p>
+                  </div>
+                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-text-secondary">Avantage pour mes Filleuls</p>
+                    <p className="text-xs font-bold text-text-primary">{myReferralCode.discountReward || 'Frais de dossier offerts'}</p>
+                  </div>
+                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-text-secondary">Filleuls Inscrits</p>
+                    <p className="text-lg font-extrabold text-emerald-600">{myReferralCode.currentUses} {myReferralCode.maxUses ? `/ ${myReferralCode.maxUses}` : ''}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  <div className="flex-1 w-full bg-bg-secondary border border-border-primary rounded-xl px-3.5 py-2.5 text-xs font-mono text-text-primary truncate">
+                    {buildReferralLink(myReferralCode.code)}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(buildReferralLink(myReferralCode.code));
+                      setCopiedReferralLink(true);
+                      setTimeout(() => setCopiedReferralLink(false), 2500);
+                    }}
+                    className="w-full sm:w-auto bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 shadow"
+                  >
+                    {copiedReferralLink ? <><Check className="w-4 h-4 text-emerald-400" /> Lien copié !</> : <><Copy className="w-4 h-4" /> Copier mon lien parrain</>}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-bg-secondary/80 border border-border-primary/60 rounded-xl p-5 text-center space-y-2">
+                <p className="text-xs font-bold text-text-primary">Vous n'avez pas encore de code de parrainage officiel attribué.</p>
+                <p className="text-xs text-text-secondary max-w-xl mx-auto">
+                  Les liens de parrainage sont créés et attribués individuellement par l'Administration. Contactez le service des admissions pour faire une demande d'activation de votre statut d'Ambassadeur IDLA.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Reprendre un cours */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
