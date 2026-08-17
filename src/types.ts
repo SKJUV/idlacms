@@ -205,6 +205,22 @@ export interface PreRegistration {
   levelValidationStatus?: 'Approved' | 'Pending' | 'Adjusted';
   matricule?: string;
   equivalenceChecklist?: EquivalenceChecklist;
+  sponsorCode?: string;
+  sponsorEmail?: string;
+}
+
+export interface ReferralCode {
+  id: string;
+  code: string;
+  sponsorEmail: string;
+  sponsorName: string;
+  targetProgram?: string;
+  discountReward?: string;
+  maxUses?: number;
+  currentUses: number;
+  expiresAt?: string;
+  status: 'Active' | 'Expired' | 'Paused';
+  createdAt: string;
 }
 
 export interface ActivityLog {
