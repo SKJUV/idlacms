@@ -25,6 +25,7 @@ import {
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
+import { ArrowUp } from 'lucide-react';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -107,6 +108,25 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     });
+  };
+
+  // Floating Scroll-To-Top state & listener
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Public Form Modal state
@@ -831,90 +851,118 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12 relative">
+        <div className="max-w-[1440px] mx-auto space-y-8">
+          {/* Header Title */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary">Catalogue des Diplômes & Formations</h1>
+              <p className="text-xs text-text-secondary mt-1">Explorez l'offre académique de l'IDLA par filières, niveaux et spécialités.</p>
+            </div>
+            <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3.5 py-1.5 rounded-full shrink-0">
+              {filteredPrograms.length} programme{filteredPrograms.length > 1 ? 's' : ''} disponible{filteredPrograms.length > 1 ? 's' : ''}
+            </span>
+          </div>
 
+          {/* Sidebar & Content Layout (Style Hugging Face, Sticky & Fixed au Scroll) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Sidebar Left (Col 3) - Sticky Position Fixe */}
+            <div className="lg:col-span-3 shrink-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto pr-1">
+              <ProgramFilterBar
+                filters={filters}
+                onFilterChange={setFilters}
+                onReset={() => setFilters(INITIAL_FILTER_STATE)}
+                totalResults={filteredPrograms.length}
+                layout="sidebar"
+              />
+            </div>
 
-          {/* Search & Filter Bar */}
-          <ProgramFilterBar
-            filters={filters}
-            onFilterChange={setFilters}
-            onReset={() => setFilters(INITIAL_FILTER_STATE)}
-            totalResults={filteredPrograms.length}
-          />
-
-          {/* Programs Grid */}
-          {filteredPrograms.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPrograms.map((p) => (
-                <div key={p.id} className="bg-bg-secondary rounded-xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
-                  <div className="h-48 w-full relative">
-                    <img 
-                      className="w-full h-full object-cover" 
-                      alt={p.title} 
-                      src={p.image}
-                    />
-                    {p.isNew && (
-                      <span className="absolute top-4 right-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                        Nouveau
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="p-6 flex flex-col flex-grow space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>{p.category}</span>
-                      </div>
-                      <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-primary/20">
-                        {p.type}
-                      </span>
-                    </div>
-
-                    <h3 className="font-bold text-lg text-text-primary">{p.title}</h3>
-                    
-                    <p className="text-xs text-text-secondary leading-relaxed flex-grow">
-                      {p.description}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
-                          <Clock className="w-3.5 h-3.5 text-brand-primary" />
-                          <span>{p.duration}</span>
-                        </div>
-                        {p.price && (
-                          <div className="mt-1 text-white text-sm font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-1 rounded-md shadow-md inline-block w-fit">
-                            {p.price}
-                          </div>
+            {/* Main Content Grid (Col 9) */}
+            <div className="lg:col-span-9 space-y-6">
+              {filteredPrograms.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredPrograms.map((p) => (
+                    <div key={p.id} className="bg-bg-secondary rounded-xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
+                      <div className="h-48 w-full relative">
+                        <img 
+                          className="w-full h-full object-cover" 
+                          alt={p.title} 
+                          src={p.image}
+                        />
+                        {p.isNew && (
+                          <span className="absolute top-4 right-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                            Nouveau
+                          </span>
                         )}
                       </div>
-                      <button 
-                        onClick={() => onApplyNow(p.title)}
-                        className="flex items-center gap-1 text-sm font-bold text-brand-primary group-hover:underline cursor-pointer"
-                      >
-                        S'inscrire
-                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                      </button>
+                      
+                      <div className="p-6 flex flex-col flex-grow space-y-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>{p.category}</span>
+                          </div>
+                          <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-primary/20">
+                            {p.type}
+                          </span>
+                        </div>
+
+                        <h3 className="font-bold text-base text-text-primary line-clamp-2">{p.title}</h3>
+                        
+                        <p className="text-xs text-text-secondary leading-relaxed flex-grow line-clamp-3">
+                          {p.description}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
+                              <Clock className="w-3.5 h-3.5 text-brand-primary" />
+                              <span>{p.duration}</span>
+                            </div>
+                            {p.price && (
+                              <div className="mt-1 text-white text-xs font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-2.5 py-1 rounded-md shadow-md inline-block w-fit">
+                                {p.price}
+                              </div>
+                            )}
+                          </div>
+                          <button 
+                            onClick={() => onApplyNow(p.title)}
+                            className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer"
+                          >
+                            S'inscrire
+                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="bg-bg-secondary p-12 text-center rounded-2xl border border-border-primary space-y-3">
+                  <Search className="w-12 h-12 text-text-secondary/40 mx-auto" />
+                  <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond aux filtres sélectionnés.</p>
+                  <button 
+                    onClick={() => setFilters(INITIAL_FILTER_STATE)}
+                    className="text-brand-primary text-xs font-bold hover:underline cursor-pointer"
+                  >
+                    Réinitialiser tous les filtres
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="bg-bg-secondary p-12 text-center rounded-xl border border-border-primary">
-              <Search className="w-12 h-12 text-text-secondary/40 mx-auto mb-2" />
-              <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond à votre recherche.</p>
-              <button 
-                onClick={() => setFilters(INITIAL_FILTER_STATE)}
-                className="mt-4 text-brand-primary text-sm font-bold hover:underline cursor-pointer"
-              >
-                Réinitialiser les filtres
-              </button>
-            </div>
-          )}
+          </div>
         </div>
+
+        {/* Bouton Flottant pour remonter vers le haut au scroll (Scroll-To-Top) */}
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            title="Remonter en haut de la page"
+            className="fixed bottom-6 right-6 z-50 bg-[#006c49] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center cursor-pointer border border-white/20"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </button>
+        )}
       </div>
     );
   }
