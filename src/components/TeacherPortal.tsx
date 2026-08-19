@@ -784,6 +784,23 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     }
     const availablePrograms = Array.from(programsForLevel);
 
+    const coursesForLevelAndProgram = new Set<string>();
+    if (selectedLevel && selectedProgram) {
+      teacherSchedule.forEach((s: any) => {
+        const parts = s.program?.split(' - ') || [];
+        const slotProg = parts[0]?.trim();
+        const slotLevel = parts.length > 1 ? parts[1].trim() : null;
+
+        if (slotProg === selectedProgram) {
+          if (slotLevel === selectedLevel || (!slotLevel && getAssignedLevelsForProgram(slotProg).includes(selectedLevel))) {
+            if (s.course) coursesForLevelAndProgram.add(s.course);
+          }
+        }
+      });
+    }
+
+    const availableCourses = assignedCoursesList.filter((c: any) => coursesForLevelAndProgram.has(c.title));
+
     const classStudents = selectedProgram 
       ? students.filter(s => s.program === selectedProgram.split(' - ')[0])
       : [];
@@ -812,6 +829,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   onClick={() => {
                     setSelectedLevel(level);
                     setSelectedProgram(null);
+                    setSelectedCourse(null);
                   }}
                   className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer ${
                     selectedLevel === level
@@ -828,7 +846,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               <div className="bg-bg-secondary border border-border-primary p-4 rounded-xl flex flex-col sm:flex-row gap-4 animate-fadeIn">
                 <select
                   value={selectedProgram || ''}
-                  onChange={(e) => setSelectedProgram(e.target.value || null)}
+                  onChange={(e) => {
+                    setSelectedProgram(e.target.value || null);
+                    setSelectedCourse(null);
+                  }}
                   className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
                 >
                   <option value="">-- Sélectionner le programme enseigné --</option>
@@ -841,9 +862,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   value={selectedCourse || ''}
                   onChange={(e) => setSelectedCourse(e.target.value || null)}
                   className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
+                  disabled={!selectedProgram}
                 >
                   <option value="">-- Sélectionner la matière --</option>
-                  {assignedCoursesList.map((c: any) => (
+                  {availableCourses.map((c: any) => (
                     <option key={c.id || c.code || c.title} value={c.title}>
                       {c.code ? `${c.code} - ` : ''}{c.title}
                     </option>
