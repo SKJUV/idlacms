@@ -752,6 +752,38 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   };
 
   const renderStudents = () => {
+    let teacherSchedule: any[] = [];
+    try {
+      if (profile?.scheduleData) {
+        teacherSchedule = typeof profile.scheduleData === 'string' ? JSON.parse(profile.scheduleData) : profile.scheduleData;
+      }
+    } catch (e) {}
+
+    const scheduleLevels = new Set<string>();
+    teacherSchedule.forEach((s: any) => {
+      const parts = s.program?.split(' - ') || [];
+      if (parts.length > 1 && parts[1] !== 'Toutes les classes') {
+        scheduleLevels.add(parts[1].trim());
+      } else if (parts[0]) {
+        getAssignedLevelsForProgram(parts[0]).forEach(l => scheduleLevels.add(l));
+      }
+    });
+    const sortedLevels = Array.from(scheduleLevels).sort();
+
+    const programsForLevel = new Set<string>();
+    if (selectedLevel) {
+      teacherSchedule.forEach((s: any) => {
+        const parts = s.program?.split(' - ') || [];
+        if (parts.length > 1) {
+          if (parts[1].trim() === selectedLevel) programsForLevel.add(parts[0].trim());
+        } else if (parts[0]) {
+          const allowed = getAssignedLevelsForProgram(parts[0]);
+          if (allowed.includes(selectedLevel)) programsForLevel.add(parts[0].trim());
+        }
+      });
+    }
+    const availablePrograms = Array.from(programsForLevel);
+
     const classStudents = selectedProgram 
       ? students.filter(s => s.program === selectedProgram.split(' - ')[0])
       : [];
@@ -761,63 +793,76 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="font-sans font-bold text-2xl text-text-primary">Classe &amp; Chat de classe</h2>
-            <p className="text-xs text-text-secondary mt-1">Échangez avec vos étudiants, partagez des cours et créez des réunions en direct.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:w-auto">
-            <select
-              value={selectedProgram || ''}
-              onChange={(e) => {
-                const val = e.target.value || null;
-                setSelectedProgram(val);
-                if (val) {
-                  const allowed = getAssignedLevelsForProgram(val);
-                  if (allowed.length > 0 && !allowed.includes(selectedLevel)) {
-                    setSelectedLevel(allowed[0]);
-                  }
-                }
-              }}
-              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
-            >
-              <option value="">-- Sélectionner un programme --</option>
-              {uniqueBasePrograms.map((p: string) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-
-            <select
-              value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
-              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"
-            >
-              {getAssignedLevelsForProgram(selectedProgram).map(l => (
-                <option key={l} value={l}>{l === 'L1' ? 'L1 (Niveau 1)' : l === 'L2' ? 'L2 (Niveau 2)' : l === 'L3' ? 'L3 (Niveau 3)' : l === 'M1' ? 'M1 (Master 1)' : l === 'M2' ? 'M2 (Master 2)' : l === 'D1' ? 'D1 (Doctorat 1)' : l}</option>
-              ))}
-            </select>
-
-            <select
-              value={selectedCourse || ''}
-              onChange={(e) => setSelectedCourse(e.target.value || null)}
-              className="bg-bg-secondary border border-border-primary text-text-primary font-bold text-xs p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary min-w-[180px]"
-            >
-              <option value="">-- Sélectionner une matière / cours --</option>
-              {assignedCoursesList
-                .map((c: any) => (
-                  <option key={c.id || c.code || c.title} value={c.title}>
-                    {c.code ? `${c.code} - ` : ''}{c.title}
-                  </option>
-                ))}
-            </select>
+            <p className="text-xs text-text-secondary mt-1">Sélectionnez votre niveau puis votre programme pour échanger avec vos étudiants.</p>
           </div>
         </div>
 
-        {!selectedProgram ? (
+        {sortedLevels.length === 0 ? (
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-3">
-            <UsersIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
-            <p className="text-sm font-semibold text-text-secondary">Veuillez sélectionner une classe dans le menu ci-dessus pour afficher la liste des étudiants et le chat.</p>
+            <CalendarIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
+            <p className="text-sm font-semibold text-text-secondary">Votre emploi du temps est vide.</p>
+            <p className="text-xs text-text-secondary">Les niveaux de classe apparaîtront ici une fois que vos cours auront été planifiés dans l'emploi du temps.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-3">
+              {sortedLevels.map(level => (
+                <button
+                  key={level}
+                  onClick={() => {
+                    setSelectedLevel(level);
+                    setSelectedProgram(null);
+                  }}
+                  className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer ${
+                    selectedLevel === level
+                      ? 'bg-brand-primary text-white border-2 border-brand-primary'
+                      : 'bg-bg-secondary text-text-secondary border border-border-primary hover:bg-bg-primary'
+                  }`}
+                >
+                  Niveau {level}
+                </button>
+              ))}
+            </div>
+
+            {selectedLevel && (
+              <div className="bg-bg-secondary border border-border-primary p-4 rounded-xl flex flex-col sm:flex-row gap-4 animate-fadeIn">
+                <select
+                  value={selectedProgram || ''}
+                  onChange={(e) => setSelectedProgram(e.target.value || null)}
+                  className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
+                >
+                  <option value="">-- Sélectionner le programme enseigné --</option>
+                  {availablePrograms.map((p: string) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedCourse || ''}
+                  onChange={(e) => setSelectedCourse(e.target.value || null)}
+                  className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
+                >
+                  <option value="">-- Sélectionner la matière --</option>
+                  {assignedCoursesList.map((c: any) => (
+                    <option key={c.id || c.code || c.title} value={c.title}>
+                      {c.code ? `${c.code} - ` : ''}{c.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(!selectedProgram || !selectedLevel) ? (
+          sortedLevels.length > 0 && (
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-3 mt-4">
+              <UsersIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
+              <p className="text-sm font-semibold text-text-secondary">Sélectionnez un niveau puis un programme ci-dessus pour afficher la liste des étudiants et le chat.</p>
+            </div>
+          )
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             {/* Liste des étudiants de la classe (1/3) */}
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-border-primary pb-3">
