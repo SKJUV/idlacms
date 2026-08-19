@@ -234,11 +234,13 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
     }
     if (!Array.isArray(assigned)) assigned = [];
     setEditingAssignedPrograms(assigned);
-    try {
-      setScheduleData(teacher.scheduleData ? JSON.parse(teacher.scheduleData) : []);
-    } catch {
-      setScheduleData([]);
+    
+    let sched = teacher.scheduleData;
+    if (typeof sched === 'string') {
+      try { sched = JSON.parse(sched); } catch { sched = []; }
     }
+    if (!Array.isArray(sched)) sched = [];
+    setScheduleData(sched);
   };
 
   const handleAddSlot = () => {
@@ -357,8 +359,24 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
         const normalizedDoc = { ...updatedDoc, id: updatedDoc.$id, assignedPrograms: assigned, scheduleData: sched };
 
-        setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? normalizedDoc : t));
+        const updatedTeachers = teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? normalizedDoc : t);
+        setTeachers(updatedTeachers);
+        try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedTeachers)); } catch {}
+
         logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
+        setEditingSchedule(null);
+        setEditingAssignedPrograms([]);
+      } else {
+        const idToUpdate = editingSchedule.$id || editingSchedule.id;
+        const updatedDoc = {
+          ...editingSchedule,
+          scheduleData: scheduleData,
+          assignedPrograms: editingAssignedPrograms
+        };
+        const updatedTeachers = teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? updatedDoc : t);
+        setTeachers(updatedTeachers);
+        try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedTeachers)); } catch {}
+        logActivity('article', 'Admin', `a mis à jour (localement) la programmation de l'enseignant ${editingSchedule.name}`);
         setEditingSchedule(null);
         setEditingAssignedPrograms([]);
       }
