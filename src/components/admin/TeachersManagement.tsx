@@ -333,35 +333,60 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
   const saveSchedule = async () => {
     if (!editingSchedule) return;
     try {
+      const derivedCourses = Array.from(new Set(scheduleData.map((s: any) => s.course).filter(Boolean)));
       const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+      let updatedDoc: any = null;
+
       if (isAppwriteDbConfigured() && cmsUsersColl) {
         const idToUpdate = editingSchedule.$id || editingSchedule.id;
-        const updatedDoc = await databases.updateDocument(
-          APPWRITE_CONFIG.databaseId,
-          cmsUsersColl,
-          idToUpdate,
-          {
-            scheduleData: JSON.stringify(scheduleData),
-            assignedPrograms: editingAssignedPrograms
-          }
-        );
-        let assigned = updatedDoc.assignedPrograms;
-        if (typeof assigned === 'string') {
-          try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+        try {
+          updatedDoc = await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            cmsUsersColl,
+            idToUpdate,
+            {
+              scheduleData: JSON.stringify(scheduleData),
+              assignedPrograms: editingAssignedPrograms,
+              assignedCourses: derivedCourses
+            }
+          );
+        } catch (e) {
+          // Fallback if assignedCourses attribute isn't created in Appwrite DB schema yet
+          updatedDoc = await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            cmsUsersColl,
+            idToUpdate,
+            {
+              scheduleData: JSON.stringify(scheduleData),
+              assignedPrograms: editingAssignedPrograms
+            }
+          );
         }
-        if (!Array.isArray(assigned)) assigned = [];
-        let sched = updatedDoc.scheduleData;
-        if (typeof sched === 'string') {
-          try { sched = JSON.parse(sched); } catch { sched = []; }
-        }
-
-        const normalizedDoc = { ...updatedDoc, id: updatedDoc.$id, assignedPrograms: assigned, scheduleData: sched };
-
-        setTeachers(teachers.map(t => (t.$id === idToUpdate || t.id === idToUpdate) ? normalizedDoc : t));
-        logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
-        setEditingSchedule(null);
-        setEditingAssignedPrograms([]);
       }
+
+      let assigned = updatedDoc?.assignedPrograms || editingAssignedPrograms;
+      if (typeof assigned === 'string') {
+        try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+      }
+      if (!Array.isArray(assigned)) assigned = [];
+
+      const normalizedDoc = {
+        ...editingSchedule,
+        ...(updatedDoc || {}),
+        id: editingSchedule.id || editingSchedule.$id,
+        $id: editingSchedule.$id || editingSchedule.id,
+        assignedPrograms: assigned,
+        assignedCourses: derivedCourses,
+        scheduleData: JSON.stringify(scheduleData)
+      };
+
+      const updatedList = teachers.map(t => (t.$id === normalizedDoc.id || t.id === normalizedDoc.id) ? normalizedDoc : t);
+      setTeachers(updatedList);
+      try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedList)); } catch {}
+
+      logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
+      setEditingSchedule(null);
+      setEditingAssignedPrograms([]);
     } catch (err: any) {
       alert("Erreur de sauvegarde: " + err.message);
     }

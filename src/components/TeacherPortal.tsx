@@ -78,7 +78,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     if (titles.length > 0) {
       return titles.map((title: any) => ({ title, code: 'UE', volumeCM: 20, volumeTD: 10, volumeTP: 10 }));
     }
-    return [{ title: 'Intelligence Artificielle & Data Science', code: 'INF301', volumeCM: 20, volumeTD: 10, volumeTP: 10 }];
+    return [];
   }, [profile]);
 
   useEffect(() => {
@@ -413,8 +413,20 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         let teacherDoc: any = null;
 
         if (isAppwriteDbConfigured()) {
-          // 1. Try teachers collection
-          if (APPWRITE_CONFIG.collections.teachers) {
+          // 1. Try cmsUsers collection first (where admin creates teachers)
+          const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+          if (cmsUsersColl) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                cmsUsersColl,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) teacherDoc = res.documents[0];
+            } catch (e) {}
+          }
+          // 2. Try teachers collection as fallback
+          if (!teacherDoc && APPWRITE_CONFIG.collections.teachers) {
             try {
               const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -424,17 +436,14 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               if (res.documents.length > 0) teacherDoc = res.documents[0];
             } catch (e) {}
           }
-          // 2. Try cmsUsers collection
-          if (!teacherDoc && APPWRITE_CONFIG.collections.cmsUsers) {
-            try {
-              const res = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.cmsUsers,
-                [Query.equal('email', userEmail)]
-              );
-              if (res.documents.length > 0) teacherDoc = res.documents[0];
-            } catch (e) {}
-          }
+        }
+
+        if (!teacherDoc) {
+          try {
+            const localTeachers: any[] = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]');
+            const matched = localTeachers.find((t: any) => t.email?.toLowerCase() === userEmail?.toLowerCase());
+            if (matched) teacherDoc = matched;
+          } catch (e) {}
         }
 
         if (teacherDoc) {
@@ -456,7 +465,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           }
 
           setProfile({
-            $id: teacherDoc.$id,
+            $id: teacherDoc.$id || teacherDoc.id,
             name: teacherDoc.name || `${teacherDoc.firstName || ''} ${teacherDoc.lastName || ''}`.trim() || currentAccount.name || 'Enseignant',
             email: userEmail,
             assignedPrograms: assigned,
@@ -468,27 +477,31 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           setProfile({
             name: currentAccount.name || 'Enseignant IDLA',
             email: userEmail,
-            assignedPrograms: ['Master Ingénierie Logicielle', 'Certification Cybersecurity'],
+            assignedPrograms: [],
             assignedLevels: ['L1', 'L2', 'L3', 'M1', 'M2'],
-            assignedCourses: ['Intelligence Artificielle', 'Cybersécurité Avancée'],
+            assignedCourses: [],
             scheduleData: []
           });
         }
 
+        let loadedStudents: any[] = [];
         if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
-          const appsRes = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.collections.applications,
-            [Query.equal('status', 'Accepted')]
-          );
-          setStudents(appsRes.documents);
-        } else {
-          setStudents([
-            { id: '1', name: 'Paul Kengne', email: 'paul.kengne@exemple.com', program: 'Master Ingénierie Logicielle' },
-            { id: '2', name: 'Marie Ngo', email: 'marie.ngo@exemple.com', program: 'Master Ingénierie Logicielle' },
-            { id: '3', name: 'Samuel Mbida', email: 'samuel.mbida@exemple.com', program: 'Certification Cybersecurity' }
-          ]);
+          try {
+            const appsRes = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.applications,
+              [Query.equal('status', 'Accepted')]
+            );
+            loadedStudents = appsRes.documents;
+          } catch (e) {}
         }
+        if (loadedStudents.length === 0) {
+          try {
+            const localApps: any[] = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+            loadedStudents = localApps.filter((a: any) => a.status === 'Accepted');
+          } catch (e) {}
+        }
+        setStudents(loadedStudents);
       } catch (err) {
         console.error("Erreur chargement profil enseignant:", err);
       } finally {
