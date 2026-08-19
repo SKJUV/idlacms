@@ -692,6 +692,9 @@ export default function AdminPortal({
           campaigns={campaigns}
           setCampaigns={setCampaigns}
           logActivity={logActivity}
+          programs={programs}
+          usersList={usersList}
+          preRegistrations={preRegistrations}
         />
       )}
 

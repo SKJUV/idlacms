@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Megaphone, Pencil, Trash2, Share2, Copy, Check, Users, Gift, Link, Sparkles, Filter } from 'lucide-react';
-import { Campaign, ReferralCode } from '../../types';
+import { Plus, Megaphone, Pencil, Trash2, Share2, Copy, Check, Users, Gift, Link, Sparkles, Filter, UserCheck } from 'lucide-react';
+import { Campaign, ReferralCode, User, PreRegistration } from '../../types';
 import { loadAllReferralCodes, persistReferralCode, buildReferralLink } from '../../lib/referral';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../../lib/appwrite';
 
 interface MarketingProps {
   campaigns: Campaign[];
   setCampaigns: React.Dispatch<React.SetStateAction<Campaign[]>>;
   logActivity: (type: 'registration' | 'article' | 'error' | 'alumni', user: string, text: string) => Promise<void>;
   programs?: Array<{ id: string; title: string }>;
+  usersList?: User[];
+  preRegistrations?: PreRegistration[];
 }
 
 export default function Marketing({
@@ -15,6 +18,8 @@ export default function Marketing({
   setCampaigns,
   logActivity,
   programs = [],
+  usersList = [],
+  preRegistrations = [],
 }: MarketingProps) {
   const [activeTab, setActiveTab] = useState<'campaigns' | 'referrals'>('referrals');
 
@@ -30,6 +35,10 @@ export default function Marketing({
   const [loadingReferrals, setLoadingReferrals] = useState(true);
   const [showAddReferralForm, setShowAddReferralForm] = useState(false);
   const [editingReferralId, setEditingReferralId] = useState<string | null>(null);
+
+  // Beneficiary Selector States
+  const [selectedBeneficiaryKey, setSelectedBeneficiaryKey] = useState<string>('');
+  const [dbStudents, setDbStudents] = useState<Array<{ name: string; email: string; detail?: string }>>([]);
 
   // Form states Parrainage
   const [refCodeStr, setRefCodeStr] = useState('');
@@ -47,6 +56,85 @@ export default function Marketing({
       setLoadingReferrals(false);
     });
   }, []);
+
+  // Charger la liste agrégée des étudiants & utilisateurs pour la sélection
+  useEffect(() => {
+    const map = new Map<string, { name: string; email: string; detail?: string }>();
+
+    (usersList || []).forEach(u => {
+      if (u.email && u.name) {
+        map.set(u.email.toLowerCase(), {
+          name: u.name,
+          email: u.email,
+          detail: u.role || 'Utilisateur',
+        });
+      }
+    });
+
+    (preRegistrations || []).forEach(p => {
+      if (p.email && p.name && !map.has(p.email.toLowerCase())) {
+        map.set(p.email.toLowerCase(), {
+          name: p.name,
+          email: p.email,
+          detail: p.program ? `${p.program}` : 'Candidat IDLA',
+        });
+      }
+    });
+
+    if (isAppwriteDbConfigured()) {
+      if (APPWRITE_CONFIG.collections.cmsUsers) {
+        databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.cmsUsers, [Query.limit(100)])
+          .then(res => {
+            res.documents.forEach((doc: any) => {
+              if (doc.email && doc.name && !map.has(doc.email.toLowerCase())) {
+                map.set(doc.email.toLowerCase(), {
+                  name: doc.name,
+                  email: doc.email,
+                  detail: doc.role || 'Étudiant',
+                });
+              }
+            });
+            setDbStudents(Array.from(map.values()));
+          }).catch(() => {});
+      }
+      if (APPWRITE_CONFIG.collections.applications) {
+        databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, [Query.limit(100)])
+          .then(res => {
+            res.documents.forEach((doc: any) => {
+              if (doc.email && doc.name && !map.has(doc.email.toLowerCase())) {
+                map.set(doc.email.toLowerCase(), {
+                  name: doc.name,
+                  email: doc.email,
+                  detail: doc.program || 'Candidat',
+                });
+              }
+            });
+            setDbStudents(Array.from(map.values()));
+          }).catch(() => {});
+      }
+    }
+
+    setDbStudents(Array.from(map.values()));
+  }, [usersList, preRegistrations]);
+
+  const handleBeneficiarySelect = (key: string) => {
+    setSelectedBeneficiaryKey(key);
+    if (!key || key === 'custom') {
+      if (key === 'custom') {
+        setSponsorName('');
+        setSponsorEmail('');
+      }
+      return;
+    }
+    const found = dbStudents.find(s => s.email.toLowerCase() === key.toLowerCase());
+    if (found) {
+      setSponsorName(found.name);
+      setSponsorEmail(found.email);
+      const cleanName = (found.name || 'IDLA').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 5) || 'IDLA';
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      setRefCodeStr(`REF-${cleanName}-${rand}`);
+    }
+  };
 
   const resetCampaignForm = () => {
     setCampaignName('');
@@ -276,7 +364,61 @@ export default function Marketing({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {/* Sélection interactive du bénéficiaire */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-[#006c49]">
+                      <UserCheck className="w-4 h-4" /> Sélectionner l'Étudiant / Ambassadeur Bénéficiaire *
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-normal">Base Appwrite & Inscriptions ({dbStudents.length} trouvés)</span>
+                  </label>
+                  <select
+                    value={selectedBeneficiaryKey}
+                    onChange={(e) => handleBeneficiarySelect(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-semibold bg-white text-[#00020e] cursor-pointer"
+                  >
+                    <option value="">-- Choisir un étudiant ou candidat dans la liste --</option>
+                    {dbStudents.map((st, idx) => (
+                      <option key={st.email || idx} value={st.email}>
+                        👤 {st.name} ({st.email}) {st.detail ? `— [${st.detail}]` : ''}
+                      </option>
+                    ))}
+                    <option value="custom">✍️ Autre / Saisie Manuelle (Ambassadeur externe, Partenaire Média...)</option>
+                  </select>
+                </div>
+
+                {/* Si saisie manuelle ou édition */}
+                {(selectedBeneficiaryKey === 'custom' || !selectedBeneficiaryKey || editingReferralId) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-600 uppercase">Nom du Parrain Bénéficiaire *</label>
+                      <input
+                        type="text"
+                        value={sponsorName}
+                        onChange={(e) => setSponsorName(e.target.value)}
+                        placeholder="ex: Paul Kengne (Étudiant M1)"
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium bg-white"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-600 uppercase">E-mail du Parrain *</label>
+                      <input
+                        type="email"
+                        value={sponsorEmail}
+                        onChange={(e) => setSponsorEmail(e.target.value)}
+                        placeholder="ex: paul.kengne@etudiant.idla.com"
+                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-600 uppercase">Code de Parrainage *</label>
                   <div className="flex gap-1.5">
@@ -291,36 +433,12 @@ export default function Marketing({
                     <button
                       type="button"
                       onClick={generateAutoCode}
-                      title="Générer automatiquement"
+                      title="Générer un code automatique"
                       className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg cursor-pointer shrink-0"
                     >
                       Auto
                     </button>
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">Nom du Parrain Beneficiaire *</label>
-                  <input
-                    type="text"
-                    value={sponsorName}
-                    onChange={(e) => setSponsorName(e.target.value)}
-                    placeholder="ex: Paul Kengne (Étudiant M1)"
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 uppercase">E-mail du Parrain *</label>
-                  <input
-                    type="email"
-                    value={sponsorEmail}
-                    onChange={(e) => setSponsorEmail(e.target.value)}
-                    placeholder="ex: paul.kengne@etudiant.idla.com"
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
-                    required
-                  />
                 </div>
 
                 <div className="space-y-1.5">
