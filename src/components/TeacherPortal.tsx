@@ -792,21 +792,21 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       }
     } catch (e) {}
 
-    const scheduleLevels = new Set<string>();
-    teacherSchedule.forEach((s: any) => {
-      const parts = s.program?.split(' - ') || [];
+    const assignedLevels = new Set<string>();
+    myPrograms.forEach((p: string) => {
+      const parts = p.split(' - ');
       if (parts.length > 1 && parts[1] !== 'Toutes les classes') {
-        scheduleLevels.add(parts[1].trim());
+        assignedLevels.add(parts[1].trim());
       } else if (parts[0]) {
-        getAssignedLevelsForProgram(parts[0]).forEach(l => scheduleLevels.add(l));
+        getAssignedLevelsForProgram(parts[0]).forEach(l => assignedLevels.add(l));
       }
     });
-    const sortedLevels = Array.from(scheduleLevels).sort();
+    const sortedLevels = Array.from(assignedLevels).sort();
 
     const programsForLevel = new Set<string>();
     if (selectedLevel) {
-      teacherSchedule.forEach((s: any) => {
-        const parts = s.program?.split(' - ') || [];
+      myPrograms.forEach((p: string) => {
+        const parts = p.split(' - ');
         if (parts.length > 1) {
           if (parts[1].trim() === selectedLevel) programsForLevel.add(parts[0].trim());
         } else if (parts[0]) {
@@ -850,8 +850,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         {sortedLevels.length === 0 ? (
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-3">
             <CalendarIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
-            <p className="text-sm font-semibold text-text-secondary">Votre emploi du temps est vide.</p>
-            <p className="text-xs text-text-secondary">Les niveaux de classe apparaîtront ici une fois que vos cours auront été planifiés dans l'emploi du temps.</p>
+            <p className="text-sm font-semibold text-text-secondary">Aucune classe ne vous a été assignée.</p>
+            <p className="text-xs text-text-secondary">Les niveaux de classe apparaîtront ici dès que l'administration vous aura assigné des programmes d'enseignement.</p>
           </div>
         ) : (
           <div className="space-y-6">
