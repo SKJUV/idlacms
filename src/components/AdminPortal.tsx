@@ -306,9 +306,15 @@ export default function AdminPortal({
           } catch (e) {}
           
           const uniqueMap = new Map<string, any>();
-          
           for (const rApp of remoteApps) {
-            if (rApp && rApp.id) uniqueMap.set(rApp.id, rApp);
+            if (rApp && rApp.id) {
+              const email = (rApp.email || '').toLowerCase();
+              const name = (rApp.name || '').toLowerCase();
+              const isFake = ['pre-1', 'pre-2', 'pre-3'].includes(rApp.id) || name.includes('jean dupont') || name.includes('jean-sebastien') || name.includes('jean sebastien');
+              if (!isFake && !adminEmails.has(email)) {
+                uniqueMap.set(rApp.id, rApp);
+              }
+            }
           }
           
           const combined = [...freshLocal, ...curr];
