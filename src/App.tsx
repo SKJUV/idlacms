@@ -147,23 +147,7 @@ export default function App() {
             userRole = 'teacher';
           }
 
-          // 1. Check if user is in teachers collection
-          if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
-            try {
-              const res = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.teachers,
-                [Query.equal('email', userEmail)]
-              );
-              if (res.documents.length > 0) {
-                userRole = 'teacher';
-              }
-            } catch (err) {
-              console.warn("Erreur lors de la vérification de l'accès enseignant :", err);
-            }
-          }
-
-          // 2. Check if user is in cmsUsers collection (Admin)
+          // 1. Check if user is in cmsUsers collection (Admin)
           if (userRole === 'student' && APPWRITE_CONFIG.collections.cmsUsers) {
             try {
               const res = await databases.listDocuments(
@@ -180,6 +164,22 @@ export default function App() {
               }
             } catch (err) {
               console.warn("Erreur lors de la vérification de l'accès CMS :", err);
+            }
+          }
+
+          // 2. Check if user is in teachers collection
+          if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
+            try {
+              const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.teachers,
+                [Query.equal('email', userEmail)]
+              );
+              if (res.documents.length > 0) {
+                userRole = 'teacher';
+              }
+            } catch (err) {
+              console.warn("Erreur lors de la vérification de l'accès enseignant :", err);
             }
           }
 
@@ -639,22 +639,8 @@ export default function App() {
         let isTeacher = false;
         let isAdmin = false;
 
-        // Check Teachers
-        if (APPWRITE_CONFIG.collections.teachers) {
-          try {
-            const res = await databases.listDocuments(
-              APPWRITE_CONFIG.databaseId,
-              APPWRITE_CONFIG.collections.teachers,
-              [Query.equal('email', userEmail)]
-            );
-            if (res.documents.length > 0) isTeacher = true;
-          } catch (dbErr) {
-            console.warn("Impossible de lire teachers...", dbErr);
-          }
-        }
-
-        // Check Admins
-        if (!isTeacher && APPWRITE_CONFIG.collections.cmsUsers) {
+        // Check Admins first
+        if (APPWRITE_CONFIG.collections.cmsUsers) {
           try {
             const res = await databases.listDocuments(
               APPWRITE_CONFIG.databaseId,
@@ -670,6 +656,20 @@ export default function App() {
             }
           } catch (dbErr) {
             console.warn("Impossible de lire cmsUsers...", dbErr);
+          }
+        }
+
+        // Check Teachers if not Admin
+        if (!isAdmin && APPWRITE_CONFIG.collections.teachers) {
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.teachers,
+              [Query.equal('email', userEmail)]
+            );
+            if (res.documents.length > 0) isTeacher = true;
+          } catch (dbErr) {
+            console.warn("Impossible de lire teachers...", dbErr);
           }
         }
 
