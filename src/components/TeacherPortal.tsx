@@ -61,6 +61,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const c = (courseName || 'general').trim().toLowerCase();
     const l = (levelName || 'L1').trim().toLowerCase();
     const key = `course___${c}___${l}`;
+    return key;
+  };
 
   // Chat states
   const [chatMessage, setChatMessage] = useState('');
@@ -1169,5 +1171,4 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       </div>
     </div>
   );
-}
 }
