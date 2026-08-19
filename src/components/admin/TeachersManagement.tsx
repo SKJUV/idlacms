@@ -533,7 +533,11 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   {editingAssignedPrograms.map((p, i) => (
                     <div key={i} className="flex justify-between items-center text-sm p-1.5 hover:bg-bg-secondary rounded">
                       <span className="text-text-primary truncate">{p}</span>
-                      <button type="button" onClick={() => setEditingAssignedPrograms(editingAssignedPrograms.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-700 font-bold px-2 cursor-pointer">X</button>
+                      <button type="button" onClick={() => {
+                        const pToRemove = editingAssignedPrograms[i];
+                        setEditingAssignedPrograms(editingAssignedPrograms.filter((_, idx) => idx !== i));
+                        setScheduleData(scheduleData.filter((slot: any) => slot.program !== pToRemove));
+                      }} className="text-red-500 hover:text-red-700 font-bold px-2 cursor-pointer">X</button>
                     </div>
                   ))}
                   {editingAssignedPrograms.length === 0 && <div className="text-xs text-text-secondary italic text-center py-2">Aucun programme assigné</div>}
