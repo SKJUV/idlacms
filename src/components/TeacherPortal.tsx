@@ -639,7 +639,40 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                     <span className="font-bold text-text-primary">{classStudents.length}</span> étudiants inscrits
                   </div>
                   <button 
-                    onClick={() => { setSelectedProgram(progTitle); setActiveTab('teacher-students'); }}
+                    onClick={() => {
+                      let teacherSchedule: any[] = [];
+                      try {
+                        if (profile?.scheduleData) {
+                          teacherSchedule = typeof profile.scheduleData === 'string' ? JSON.parse(profile.scheduleData) : profile.scheduleData;
+                        }
+                      } catch (e) {}
+
+                      let foundLevel = '';
+                      for (const s of teacherSchedule) {
+                        const parts = s.program?.split(' - ') || [];
+                        if (parts[0]?.trim() === progTitle) {
+                          if (parts.length > 1 && parts[1] !== 'Toutes les classes') {
+                            foundLevel = parts[1].trim();
+                            break;
+                          } else {
+                            const allowed = getAssignedLevelsForProgram(progTitle);
+                            if (allowed.length > 0) {
+                              foundLevel = allowed[0];
+                              break;
+                            }
+                          }
+                        }
+                      }
+
+                      if (!foundLevel) {
+                        const allowed = getAssignedLevelsForProgram(progTitle);
+                        if (allowed.length > 0) foundLevel = allowed[0];
+                      }
+
+                      if (foundLevel) setSelectedLevel(foundLevel);
+                      setSelectedProgram(progTitle);
+                      setActiveTab('teacher-students'); 
+                    }}
                     className="text-xs font-bold text-brand-primary hover:underline cursor-pointer flex items-center gap-1"
                   >
                     Ouvrir la classe &rarr;
