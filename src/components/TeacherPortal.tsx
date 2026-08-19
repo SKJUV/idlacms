@@ -792,30 +792,23 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
       }
     } catch (e) {}
 
-    const assignedLevels = new Set<string>();
-    myPrograms.forEach((p: string) => {
-      const parts = p.split(' - ');
-      if (parts.length > 1 && parts[1] !== 'Toutes les classes') {
-        assignedLevels.add(parts[1].trim());
-      } else if (parts[0]) {
-        getAssignedLevelsForProgram(parts[0]).forEach(l => assignedLevels.add(l));
-      }
-    });
-    const sortedLevels = Array.from(assignedLevels).sort();
+    const levelsForProgram = new Set<string>();
+    if (selectedProgram) {
+      teacherSchedule.forEach((s: any) => {
+        const parts = s.program?.split(' - ') || [];
+        const slotProg = parts[0]?.trim();
+        const slotLevel = parts.length > 1 ? parts[1].trim() : null;
 
-    const programsForLevel = new Set<string>();
-    if (selectedLevel) {
-      myPrograms.forEach((p: string) => {
-        const parts = p.split(' - ');
-        if (parts.length > 1) {
-          if (parts[1].trim() === selectedLevel) programsForLevel.add(parts[0].trim());
-        } else if (parts[0]) {
-          const allowed = getAssignedLevelsForProgram(parts[0]);
-          if (allowed.includes(selectedLevel)) programsForLevel.add(parts[0].trim());
+        if (slotProg === selectedProgram) {
+          if (slotLevel && slotLevel !== 'Toutes les classes') {
+            levelsForProgram.add(slotLevel);
+          } else if (slotProg) {
+            getAssignedLevelsForProgram(slotProg).forEach(l => levelsForProgram.add(l));
+          }
         }
       });
     }
-    const availablePrograms = Array.from(programsForLevel);
+    const availableLevelsForProgram = Array.from(levelsForProgram).sort();
 
     const coursesForLevelAndProgram = new Set<string>();
     if (selectedLevel && selectedProgram) {
@@ -843,51 +836,51 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="font-sans font-bold text-2xl text-text-primary">Classe &amp; Chat de classe</h2>
-            <p className="text-xs text-text-secondary mt-1">Sélectionnez votre niveau puis votre programme pour échanger avec vos étudiants.</p>
+            <p className="text-xs text-text-secondary mt-1">Sélectionnez votre programme puis votre niveau pour échanger avec vos étudiants.</p>
           </div>
         </div>
 
-        {sortedLevels.length === 0 ? (
+        {uniqueBasePrograms.length === 0 ? (
           <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-3">
             <CalendarIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
             <p className="text-sm font-semibold text-text-secondary">Aucune classe ne vous a été assignée.</p>
-            <p className="text-xs text-text-secondary">Les niveaux de classe apparaîtront ici dès que l'administration vous aura assigné des programmes d'enseignement.</p>
+            <p className="text-xs text-text-secondary">Les classes apparaîtront ici dès que l'administration vous aura assigné des programmes d'enseignement.</p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex flex-wrap gap-3">
-              {sortedLevels.map(level => (
+              {uniqueBasePrograms.map((prog: string) => (
                 <button
-                  key={level}
+                  key={prog}
                   onClick={() => {
-                    setSelectedLevel(level);
-                    setSelectedProgram(null);
+                    setSelectedProgram(prog);
+                    setSelectedLevel(null);
                     setSelectedCourse(null);
                   }}
                   className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm cursor-pointer ${
-                    selectedLevel === level
+                    selectedProgram === prog
                       ? 'bg-brand-primary text-white border-2 border-brand-primary'
                       : 'bg-bg-secondary text-text-secondary border border-border-primary hover:bg-bg-primary'
                   }`}
                 >
-                  Niveau {level}
+                  {prog}
                 </button>
               ))}
             </div>
 
-            {selectedLevel && (
+            {selectedProgram && (
               <div className="bg-bg-secondary border border-border-primary p-4 rounded-xl flex flex-col sm:flex-row gap-4 animate-fadeIn">
                 <select
-                  value={selectedProgram || ''}
+                  value={selectedLevel || ''}
                   onChange={(e) => {
-                    setSelectedProgram(e.target.value || null);
+                    setSelectedLevel(e.target.value || null);
                     setSelectedCourse(null);
                   }}
                   className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
                 >
-                  <option value="">-- Sélectionner le programme enseigné --</option>
-                  {availablePrograms.map((p: string) => (
-                    <option key={p} value={p}>{p}</option>
+                  <option value="">-- Sélectionner le niveau --</option>
+                  {availableLevelsForProgram.map((l: string) => (
+                    <option key={l} value={l}>Niveau {l}</option>
                   ))}
                 </select>
 
@@ -895,7 +888,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   value={selectedCourse || ''}
                   onChange={(e) => setSelectedCourse(e.target.value || null)}
                   className="bg-bg-primary border border-border-primary text-text-primary font-bold text-sm p-3 rounded-xl outline-none focus:ring-2 focus:ring-brand-primary flex-1"
-                  disabled={!selectedProgram}
+                  disabled={!selectedLevel}
                 >
                   <option value="">-- Sélectionner la matière --</option>
                   {availableCourses.map((c: any) => (
@@ -910,10 +903,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         )}
 
         {(!selectedProgram || !selectedLevel) ? (
-          sortedLevels.length > 0 && (
+          uniqueBasePrograms.length > 0 && (
             <div className="bg-bg-secondary border border-border-primary rounded-2xl p-12 text-center space-y-3 mt-4">
               <UsersIcon className="w-12 h-12 text-text-secondary/30 mx-auto" />
-              <p className="text-sm font-semibold text-text-secondary">Sélectionnez un niveau puis un programme ci-dessus pour afficher la liste des étudiants et le chat.</p>
+              <p className="text-sm font-semibold text-text-secondary">Sélectionnez un programme puis un niveau ci-dessus pour afficher la liste des étudiants et le chat.</p>
             </div>
           )
         ) : (
