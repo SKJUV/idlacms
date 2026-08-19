@@ -621,7 +621,6 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   <th className="py-2 px-3 text-center">Séances Prévues</th>
                   <th className="py-2 px-3 text-center">Heures Planifiées</th>
                   <th className="py-2 px-3 text-center">Volume Prévu (UE)</th>
-                  <th className="py-2 px-3 text-right">Progression</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-primary/40 text-text-primary">
@@ -648,7 +647,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   if (entries.length === 0) {
                     return (
                       <tr>
-                        <td colSpan={6} className="py-4 text-center text-text-secondary italic text-xs">
+                        <td colSpan={5} className="py-4 text-center text-text-secondary italic text-xs">
                           Aucun créneau planifié pour le moment.
                         </td>
                       </tr>
@@ -658,7 +657,6 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                   return entries.map(([cName, data]) => {
                     const matchedCourse = localCourses.find((lc: any) => lc.title === cName || cName.includes(lc.title));
                     const volumeTotal = matchedCourse ? (matchedCourse.volumeCM || 0) + (matchedCourse.volumeTD || 0) + (matchedCourse.volumeTP || 0) : 30;
-                    const percent = Math.min(100, Math.round((data.totalHours / (volumeTotal || 1)) * 100));
 
                     return (
                       <tr key={cName} className="hover:bg-bg-primary/40">
@@ -667,14 +665,6 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
                         <td className="py-2.5 px-3 text-center font-bold text-brand-primary">{data.count} créneau(x)</td>
                         <td className="py-2.5 px-3 text-center font-semibold">{data.totalHours.toFixed(1)}h</td>
                         <td className="py-2.5 px-3 text-center text-text-secondary">{volumeTotal > 0 ? `${volumeTotal}h` : 'Non défini'}</td>
-                        <td className="py-2.5 px-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <div className="w-24 bg-bg-primary border border-border-primary h-2 rounded-full overflow-hidden">
-                              <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: `${percent}%` }} />
-                            </div>
-                            <span className="font-bold text-[11px] text-brand-primary min-w-[32px]">{percent}%</span>
-                          </div>
-                        </td>
                       </tr>
                     );
                   });
