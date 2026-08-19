@@ -334,8 +334,37 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
 
   const saveSchedule = async () => {
     if (!editingSchedule) return;
+
+    // Auto-add pending program if user forgot to click "Ajouter"
+    let finalAssigned = [...editingAssignedPrograms];
+    if (editingProgToAdd) {
+      const entry = editingClassToAdd === 'Toutes les classes' ? editingProgToAdd : `${editingProgToAdd} - ${editingClassToAdd}`;
+      if (!finalAssigned.includes(entry)) finalAssigned.push(entry);
+    }
+
+    // Auto-add pending schedule slot if user forgot to click "Ajouter le créneau"
+    let finalSchedule = [...scheduleData];
+    if (newSlot.course && newSlot.program) {
+      let targetDay = newSlot.day;
+      let targetStart = newSlot.startTime;
+      let targetEnd = newSlot.endTime;
+
+      const hasOverlap = finalSchedule.some((slot: any) => {
+        if (slot.day !== targetDay) return false;
+        return (targetStart < slot.endTime && slot.startTime < targetEnd);
+      });
+
+      if (hasOverlap) {
+        const optimal = findOptimalSlot(newSlot.program, finalSchedule);
+        targetDay = optimal.day;
+        targetStart = optimal.startTime;
+        targetEnd = optimal.endTime;
+      }
+      finalSchedule.push({ ...newSlot, id: Date.now(), day: targetDay, startTime: targetStart, endTime: targetEnd });
+    }
+
     try {
-      const derivedCourses = Array.from(new Set(scheduleData.map((s: any) => s.course).filter(Boolean)));
+      const derivedCourses = Array.from(new Set(finalSchedule.map((s: any) => s.course).filter(Boolean)));
       const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
       let updatedDoc: any = null;
 
@@ -347,8 +376,8 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             cmsUsersColl,
             idToUpdate,
             {
-              scheduleData: JSON.stringify(scheduleData),
-              assignedPrograms: editingAssignedPrograms,
+              scheduleData: JSON.stringify(finalSchedule),
+              assignedPrograms: finalAssigned,
               assignedCourses: derivedCourses
             }
           );
@@ -359,14 +388,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             cmsUsersColl,
             idToUpdate,
             {
-              scheduleData: JSON.stringify(scheduleData),
-              assignedPrograms: editingAssignedPrograms
+              scheduleData: JSON.stringify(finalSchedule),
+              assignedPrograms: finalAssigned
             }
           );
         }
       }
 
-      let assigned = updatedDoc?.assignedPrograms || editingAssignedPrograms;
+      let assigned = updatedDoc?.assignedPrograms || finalAssigned;
       if (typeof assigned === 'string') {
         try { assigned = JSON.parse(assigned); } catch { assigned = []; }
       }
@@ -379,7 +408,7 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
         $id: editingSchedule.$id || editingSchedule.id,
         assignedPrograms: assigned,
         assignedCourses: derivedCourses,
-        scheduleData: JSON.stringify(scheduleData)
+        scheduleData: JSON.stringify(finalSchedule)
       };
 
       const updatedList = teachers.map(t => (t.$id === normalizedDoc.id || t.id === normalizedDoc.id) ? normalizedDoc : t);
@@ -389,6 +418,8 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
       logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
       setEditingSchedule(null);
       setEditingAssignedPrograms([]);
+      setEditingProgToAdd('');
+      setNewSlot({ course: '', program: '', day: 'Lundi', startTime: '08:00', endTime: '10:00', type: 'CM' });
     } catch (err: any) {
       alert("Erreur de sauvegarde: " + err.message);
     }
