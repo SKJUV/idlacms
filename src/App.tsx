@@ -127,75 +127,82 @@ export default function App() {
         return;
       }
 
-      const sessionEmail = sessionStorage.getItem('idla_portal_session_email');
-      if (!sessionEmail) {
-        setRole('guest');
-        setIsSessionChecking(false);
-        return;
-      }
+      let sessionEmail = sessionStorage.getItem('idla_portal_session_email');
 
       try {
         const user = await account.get();
-        if (user && user.email.toLowerCase().trim() === sessionEmail.toLowerCase().trim()) {
+        if (user) {
           const userEmail = user.email.toLowerCase().trim();
-          const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
-          let userRole: Role = 'student';
-
-          if (userLabels.some((l: string) => l.includes('admin'))) {
-            userRole = 'admin';
-          } else if (userLabels.some((l: string) => l.includes('teacher'))) {
-            userRole = 'teacher';
+          if (!sessionEmail) {
+            sessionEmail = userEmail;
+            sessionStorage.setItem('idla_portal_session_email', userEmail);
           }
 
-          // 1. Check if user is in cmsUsers collection (Admin)
-          if (userRole === 'student' && APPWRITE_CONFIG.collections.cmsUsers) {
-            try {
-              const res = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.cmsUsers,
-                [Query.equal('email', userEmail)]
-              );
-              if (res.documents.length > 0) {
-                const doc = res.documents[0];
-                const r = (doc.role || '').toLowerCase();
-                if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
-                  userRole = 'admin';
+          if (userEmail === sessionEmail.toLowerCase().trim()) {
+            const userLabels = (user.labels || []).map((l: string) => l.toLowerCase());
+            let userRole: Role = 'student';
+
+            if (userLabels.some((l: string) => l.includes('admin'))) {
+              userRole = 'admin';
+            } else if (userLabels.some((l: string) => l.includes('teacher'))) {
+              userRole = 'teacher';
+            }
+
+            // 1. Check if user is in cmsUsers collection (Admin / Teacher)
+            if (userRole === 'student' && APPWRITE_CONFIG.collections.cmsUsers) {
+              try {
+                const res = await databases.listDocuments(
+                  APPWRITE_CONFIG.databaseId,
+                  APPWRITE_CONFIG.collections.cmsUsers,
+                  [Query.equal('email', userEmail)]
+                );
+                if (res.documents.length > 0) {
+                  const doc = res.documents[0];
+                  const r = (doc.role || '').toLowerCase();
+                  if (r.includes('admin') || r.includes('super admin') || r.includes('writer') || r.includes('marketer') || r.includes('oc')) {
+                    userRole = 'admin';
+                  } else if (r.includes('teacher') || r.includes('enseignant')) {
+                    userRole = 'teacher';
+                  }
                 }
+              } catch (err) {
+                console.warn("Erreur lors de la vérification de l'accès CMS :", err);
               }
-            } catch (err) {
-              console.warn("Erreur lors de la vérification de l'accès CMS :", err);
             }
-          }
 
-          // 2. Check if user is in teachers collection
-          if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
-            try {
-              const res = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.teachers,
-                [Query.equal('email', userEmail)]
-              );
-              if (res.documents.length > 0) {
-                userRole = 'teacher';
+            // 2. Check if user is in teachers collection
+            if (userRole === 'student' && APPWRITE_CONFIG.collections.teachers) {
+              try {
+                const res = await databases.listDocuments(
+                  APPWRITE_CONFIG.databaseId,
+                  APPWRITE_CONFIG.collections.teachers,
+                  [Query.equal('email', userEmail)]
+                );
+                if (res.documents.length > 0) {
+                  userRole = 'teacher';
+                }
+              } catch (err) {
+                console.warn("Erreur lors de la vérification de l'accès enseignant :", err);
               }
-            } catch (err) {
-              console.warn("Erreur lors de la vérification de l'accès enseignant :", err);
             }
-          }
 
-          setRole(userRole);
-          if (userRole === 'admin') {
-            if (activeTab === 'admin-login' || STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
-              setActiveTab('admin-dashboard');
-            }
-          } else if (userRole === 'teacher') {
-            if (activeTab === 'admin-login' || activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || STUDENT_TABS.includes(activeTab)) {
-              setActiveTab('teacher-dashboard');
+            setRole(userRole);
+            if (userRole === 'admin') {
+              if (activeTab === 'admin-login' || STUDENT_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
+                setActiveTab('admin-dashboard');
+              }
+            } else if (userRole === 'teacher') {
+              if (activeTab === 'admin-login' || activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || STUDENT_TABS.includes(activeTab)) {
+                setActiveTab('teacher-dashboard');
+              }
+            } else {
+              if (activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
+                setActiveTab('student-dashboard');
+              }
             }
           } else {
-            if (activeTab === 'student-login' || ADMIN_TABS.includes(activeTab) || TEACHER_TABS.includes(activeTab)) {
-              setActiveTab('student-dashboard');
-            }
+            sessionStorage.removeItem('idla_portal_session_email');
+            setRole('guest');
           }
         } else {
           sessionStorage.removeItem('idla_portal_session_email');
