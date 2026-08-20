@@ -33,6 +33,7 @@ export default function EmailAutomationModal({
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [logs, setLogs] = useState<EmailLogEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'candidates' | 'logs'>('candidates');
+  const [categoryFilter, setCategoryFilter] = useState<'registered_no_course' | 'candidates_with_course' | 'accepted' | 'all'>('registered_no_course');
 
   useEffect(() => {
     setAutoPilot(isAutoPilotActive());
@@ -42,6 +43,17 @@ export default function EmailAutomationModal({
   if (!isOpen) return null;
 
   const analyzedList: StudentAccountAnalysis[] = candidates.map(c => analyzeStudentAccount(c));
+
+  const noCourseCount = analyzedList.filter(a => a.status === 'RegisteredOnly').length;
+  const withCourseCount = analyzedList.filter(a => a.status !== 'RegisteredOnly' && a.status !== 'Accepted').length;
+  const acceptedCount = analyzedList.filter(a => a.status === 'Accepted').length;
+
+  const filteredList = analyzedList.filter(a => {
+    if (categoryFilter === 'registered_no_course') return a.status === 'RegisteredOnly';
+    if (categoryFilter === 'candidates_with_course') return a.status !== 'RegisteredOnly' && a.status !== 'Accepted';
+    if (categoryFilter === 'accepted') return a.status === 'Accepted';
+    return true;
+  });
 
   const handleToggleAutoPilot = async () => {
     const nextState = !autoPilot;
@@ -53,7 +65,6 @@ export default function EmailAutomationModal({
         type: 'success',
         text: 'Mode Automatique (Auto-Pilot) Activé ! Les relances suggérées seront envoyées automatiquement en arrière-plan.'
       });
-      // Lancer un premier contrôle immédiatement
       const res = await runAutoPilotCheck(candidates);
       setLogs(getEmailRemindersLog());
       if (res.sentCount > 0) {
@@ -182,9 +193,59 @@ export default function EmailAutomationModal({
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
           
           {activeTab === 'candidates' && (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs text-slate-500 font-semibold mb-2">
-                <span>Comptes candidats analysés dynamiquement par le moteur IDLA :</span>
+            <div className="space-y-4">
+              {/* Category Filter Bar */}
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl gap-1 flex-wrap text-xs font-bold">
+                <button
+                  onClick={() => setCategoryFilter('registered_no_course')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    categoryFilter === 'registered_no_course'
+                      ? 'bg-amber-500 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Inscrits sans cours uniquement ({noCourseCount})
+                </button>
+
+                <button
+                  onClick={() => setCategoryFilter('candidates_with_course')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    categoryFilter === 'candidates_with_course'
+                      ? 'bg-sky-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Candidats avec candidatures ({withCourseCount})
+                </button>
+
+                <button
+                  onClick={() => setCategoryFilter('accepted')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    categoryFilter === 'accepted'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Étudiants admis ({acceptedCount})
+                </button>
+
+                <button
+                  onClick={() => setCategoryFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    categoryFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Tous les comptes ({analyzedList.length})
+                </button>
+              </div>
+
+              <div className="flex justify-between items-center text-xs text-slate-500 font-semibold">
+                <span>Comptes filtrés : {filteredList.length} utilisateur(s)</span>
                 {autoPilot && (
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
                     <ShieldCheck className="w-4 h-4" /> Protection Anti-Spam (Min 24h d'intervalle)
@@ -192,13 +253,13 @@ export default function EmailAutomationModal({
                 )}
               </div>
 
-              {analyzedList.length === 0 ? (
+              {filteredList.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-xs">
-                  Aucun compte candidat à analyser pour le moment.
+                  Aucun compte ne correspond à ce filtre pour le moment.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {analyzedList.map((analysis) => {
+                  {filteredList.map((analysis) => {
                     const currentSpec = EMAIL_TEMPLATES[analysis.suggestedTemplateKey];
                     const isRowSending = sendingId === analysis.id;
 

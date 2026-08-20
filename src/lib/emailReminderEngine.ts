@@ -50,13 +50,33 @@ export function analyzeStudentAccount(candidate: any): StudentAccountAnalysis {
   const id = candidate.id || candidate.$id || `cand-${Date.now()}`;
   const name = candidate.name || `${candidate.firstName || ''} ${candidate.lastName || ''}`.trim() || 'Candidat';
   const email = candidate.email || '';
-  const program = candidate.program;
-  const entryLevel = candidate.entryLevel;
-  const matricule = candidate.matricule;
-  const statusRaw = candidate.status || 'New';
 
-  const hasApplied = !!program && program.length > 0;
-  const hasUploadedDocs = Array.isArray(candidate.documents) && candidate.documents.length > 0;
+  // Détection si l'objet passé est un candidat groupé (depuis candidatesList dans PreRegistrations)
+  const isGrouped = Array.isArray(candidate.courseApplications) || typeof candidate.isRegisteredOnly === 'boolean';
+  
+  const courseApps: any[] = isGrouped 
+    ? (candidate.courseApplications || [])
+    : (candidate.program && candidate.program !== 'Inscription seule' ? [candidate] : []);
+
+  const isRegisteredOnly = isGrouped 
+    ? candidate.isRegisteredOnly
+    : courseApps.length === 0;
+
+  const hasApplied = !isRegisteredOnly && courseApps.length > 0;
+
+  // Récupération de l'application principale
+  const mainApp = courseApps[0] || candidate;
+  const program = mainApp?.program;
+  const entryLevel = mainApp?.entryLevel;
+  const matricule = mainApp?.matricule;
+  const statusRaw = mainApp?.status || candidate.status || 'New';
+
+  // Statuts globaux du candidat
+  const isAccepted = courseApps.some((a: any) => a.status === 'Accepted') || statusRaw === 'Accepted';
+  const isInReview = courseApps.some((a: any) => a.status === 'In Review') || statusRaw === 'In Review';
+
+  const documentsList = candidate.documents || mainApp?.documents || [];
+  const hasUploadedDocs = Array.isArray(documentsList) && documentsList.length > 0;
 
   // Calcul des pièces manquantes
   const missingDocs: string[] = [];
@@ -73,28 +93,28 @@ export function analyzeStudentAccount(candidate: any): StudentAccountAnalysis {
   const lastReminderSentAt = lastLog ? lastLog.sentAt : undefined;
 
   let suggestedTemplateKey: EmailTemplateKey = 'no_application_reminder';
-  let suggestedReason = 'Compte créé mais aucune candidature déposée.';
+  let suggestedReason = 'Compte inscrit sur le portail IDLA sans cours sélectionné.';
   let status: StudentAccountAnalysis['status'] = 'RegisteredOnly';
 
-  if (!hasApplied) {
+  if (!hasApplied || isRegisteredOnly) {
     status = 'RegisteredOnly';
     suggestedTemplateKey = 'no_application_reminder';
-    suggestedReason = 'Compte créé sans formation sélectionnée. Incitation à choisir un cursus.';
-  } else if (statusRaw === 'Accepted') {
+    suggestedReason = 'Compte créé sans formation sélectionnée. Relance recommandée pour le choix d\'un cursus.';
+  } else if (isAccepted) {
     status = 'Accepted';
     if (!matricule) {
       suggestedTemplateKey = 'admission_confirmation';
-      suggestedReason = 'Étudiant admis. Transmission de l\'attestation et du matricule.';
+      suggestedReason = 'Étudiant admis. Transmission de l\'attestation et du numéro de matricule.';
     } else {
       suggestedTemplateKey = 'catalog_discovery';
-      suggestedReason = 'Étudiant actif. Incitation à consulter les nouveaux cours et certifications.';
+      suggestedReason = 'Étudiant actif. Incitation à reconsulter les nouveaux cours et certifications.';
     }
   } else if (!hasUploadedDocs) {
-    status = statusRaw === 'In Review' ? 'InReview' : 'New';
+    status = isInReview ? 'InReview' : 'New';
     suggestedTemplateKey = 'missing_docs_reminder';
-    suggestedReason = 'Candidature déposée mais pièces justificatives manquantes.';
+    suggestedReason = 'Candidature déposée mais pièces justificatives (CNI / Diplôme) manquantes.';
   } else {
-    status = statusRaw === 'In Review' ? 'InReview' : 'New';
+    status = isInReview ? 'InReview' : 'New';
     suggestedTemplateKey = 'level_validation';
     suggestedReason = 'Dossier complet en cours d\'examen par le conseil académique.';
   }
