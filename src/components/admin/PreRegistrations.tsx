@@ -82,7 +82,7 @@ export default function PreRegistrations({
   // Handlers statut
   const handleApprovePreRegistration = async (id: string) => {
     const target = preRegistrations.find((p) => p.id === id);
-    const assignedMatricule = target?.matricule || generateMatricule(target?.program || id);
+    const assignedMatricule = target?.matricule || generateMatricule(target?.email || target?.id || id);
 
     setPreRegistrations((curr) =>
       curr.map((p) => (p.id === id ? { ...p, status: 'Accepted', matricule: assignedMatricule } : p))
