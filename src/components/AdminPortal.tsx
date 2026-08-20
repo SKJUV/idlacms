@@ -221,7 +221,11 @@ export default function AdminPortal({
             APPWRITE_CONFIG.collections.cmsUsers,
             [Query.limit(5000), Query.orderDesc('$createdAt')]
           );
-          adminEmails = new Set(usersRes.documents.map((d: any) => (d.email || '').toLowerCase()));
+          adminEmails = new Set(
+            usersRes.documents
+              .filter((d: any) => (d.role || '').toLowerCase() === 'admin')
+              .map((d: any) => (d.email || '').toLowerCase().trim())
+          );
           if (usersRes.documents.length > 0) {
             setUsersList(
               usersRes.documents.map((doc: any) => ({
