@@ -166,7 +166,7 @@ export async function sendTemplateEmail(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'IDLA Academy <onboarding@resend.dev>',
+          from: 'IDLA Academy <admissions@idlaacademy.online>',
           to: [recipientEmail],
           subject,
           text: body,
@@ -176,38 +176,36 @@ export async function sendTemplateEmail(
       if (resendRes.ok) {
         const resendData = await resendRes.json();
         console.log("E-mail envoyé avec succès via l'API Resend ! ID:", resendData.id);
-        resendSuccess = true;
+        return {
+          success: true,
+          message: `E-mail "${spec.label}" livré avec succès à ${recipientEmail} (Resend ID: ${resendData.id}).`
+        };
       } else {
         const errJson = await resendRes.json().catch(() => ({}));
         console.warn("Réponse d'erreur API Resend:", errJson);
-
-        if (resendRes.status === 403 && errJson?.message?.includes('testing emails')) {
-          // Resend test domain (onboarding@resend.dev) restricts delivery to account owner email (sinengjuvenal@gmail.com)
-          // Attempt automatic delivery to account owner email for live test validation
-          try {
-            const ownerRes = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: 'IDLA Academy <onboarding@resend.dev>',
-                to: ['sinengjuvenal@gmail.com'],
-                subject: `[TEST IDLA pour ${recipientEmail}] ${subject}`,
-                text: `[Copie de test pour le candidat: ${recipientEmail}]\n\n` + body,
-              }),
-            });
-            if (ownerRes.ok) {
-              const ownerData = await ownerRes.json();
-              console.log("E-mail de test Resend livré à l'adresse propriétaire sinengjuvenal@gmail.com ! ID:", ownerData.id);
-              return {
-                success: true,
-                message: `E-mail transmis à sinengjuvenal@gmail.com (Resend Mode Test). Pour envoyer directement à ${recipientEmail}, validez le domaine idlaacademy.online sur resend.com/domains.`
-              };
-            }
-          } catch (e) {}
-        }
+        // Fallback avec expéditeur secondaire si le sous-domaine spécifique diffère
+        try {
+          const fbRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'IDLA Academy <onboarding@resend.dev>',
+              to: [recipientEmail],
+              subject,
+              text: body,
+            }),
+          });
+          if (fbRes.ok) {
+            const fbData = await fbRes.json();
+            return {
+              success: true,
+              message: `E-mail livré avec succès à ${recipientEmail} (ID: ${fbData.id}).`
+            };
+          }
+        } catch (e) {}
       }
     } catch (resendErr) {
       console.warn("Échec appel réseau API Resend:", resendErr);
