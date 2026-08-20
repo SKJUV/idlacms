@@ -452,6 +452,10 @@ export default function App() {
                 category: doc.category,
                 image: doc.image,
                 isFeatured: doc.isFeatured,
+                formId: doc.formId,
+                formUrl: doc.formUrl,
+                startDate: doc.startDate,
+                endDate: doc.endDate,
               }))
             );
           }

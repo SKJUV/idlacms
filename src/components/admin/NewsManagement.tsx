@@ -252,7 +252,11 @@ export default function NewsManagement({
               title: newNewsTitle, 
               description: newNewsDescription, 
               category: newNewsCategory, 
-              image: finalImage 
+              image: finalImage,
+              formId: attachedFormId || '',
+              formUrl: attachedFormUrl || '',
+              startDate: eventStartDate || '',
+              endDate: eventEndDate || '',
             }
           );
         } catch (err) {
@@ -297,6 +301,10 @@ export default function NewsManagement({
             date: new Date().toISOString(),
             category: newArticle.category,
             image: newArticle.image,
+            formId: attachedFormId || '',
+            formUrl: attachedFormUrl || '',
+            startDate: eventStartDate || '',
+            endDate: eventEndDate || '',
           }
         );
       } catch (err) {
