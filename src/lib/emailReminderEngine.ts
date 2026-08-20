@@ -153,16 +153,20 @@ export async function sendTemplateEmail(
 
   const subject = spec.subject(data);
   const body = spec.body(data);
+  const html = spec.html ? spec.html(data) : undefined;
 
   // 1. Envoi via proxy local /api/resend ou direct https://api.resend.com/emails
   const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY || (typeof process !== 'undefined' ? process.env?.RESEND_API_KEY : '');
 
-  const payload = {
+  const payload: any = {
     from: 'IDLA Academy <admissions@idlaacademy.online>',
     to: [recipientEmail],
     subject,
     text: body,
   };
+  if (html) {
+    payload.html = html;
+  }
 
   let resendRes: Response | null = null;
 
