@@ -179,7 +179,35 @@ export async function sendTemplateEmail(
         resendSuccess = true;
       } else {
         const errJson = await resendRes.json().catch(() => ({}));
-        console.warn("Échec réponse API Resend:", errJson);
+        console.warn("Réponse d'erreur API Resend:", errJson);
+
+        if (resendRes.status === 403 && errJson?.message?.includes('testing emails')) {
+          // Resend test domain (onboarding@resend.dev) restricts delivery to account owner email (sinengjuvenal@gmail.com)
+          // Attempt automatic delivery to account owner email for live test validation
+          try {
+            const ownerRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'IDLA Academy <onboarding@resend.dev>',
+                to: ['sinengjuvenal@gmail.com'],
+                subject: `[TEST IDLA pour ${recipientEmail}] ${subject}`,
+                text: `[Copie de test pour le candidat: ${recipientEmail}]\n\n` + body,
+              }),
+            });
+            if (ownerRes.ok) {
+              const ownerData = await ownerRes.json();
+              console.log("E-mail de test Resend livré à l'adresse propriétaire sinengjuvenal@gmail.com ! ID:", ownerData.id);
+              return {
+                success: true,
+                message: `E-mail transmis à sinengjuvenal@gmail.com (Resend Mode Test). Pour envoyer directement à ${recipientEmail}, validez le domaine idlaacademy.online sur resend.com/domains.`
+              };
+            }
+          } catch (e) {}
+        }
       }
     } catch (resendErr) {
       console.warn("Échec appel réseau API Resend:", resendErr);
