@@ -23,7 +23,7 @@ import {
   CopyIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 interface PublicPortalProps {
@@ -124,31 +124,31 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
       try {
-        const doc = await databases.getDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, formId);
-        setActiveFormModal({
-          id: doc.$id,
-          title: doc.title,
-          description: doc.description || '',
-          createdAt: doc.createdAt,
-          fields: JSON.parse(doc.fields || '[]')
-        });
-        setActiveFormValues({});
-        setFormSubmittedSuccess(false);
-        return;
+        let doc: any = null;
+        try {
+          doc = await databases.getDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, formId);
+        } catch {
+          // Si le doc ID direct échoue, chercher par liste d'Appwrite Cloud DB
+          const listRes = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, [Query.limit(100)]);
+          doc = listRes.documents.find((d: any) => d.$id === formId || d.title === formId) || listRes.documents[0];
+        }
+
+        if (doc) {
+          setActiveFormModal({
+            id: doc.$id,
+            title: doc.title,
+            description: doc.description || '',
+            createdAt: doc.createdAt,
+            fields: JSON.parse(doc.fields || '[]')
+          });
+          setActiveFormValues({});
+          setFormSubmittedSuccess(false);
+          return;
+        }
       } catch (err) {
-        console.error("Échec du chargement du formulaire depuis Appwrite:", err);
+        console.error("Échec du chargement du formulaire depuis Appwrite Cloud DB:", err);
       }
     }
-
-    try {
-      const savedForms: CustomForm[] = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
-      const targetForm = savedForms.find((f) => f.id === formId);
-      if (targetForm) {
-        setActiveFormModal(targetForm);
-        setActiveFormValues({});
-        setFormSubmittedSuccess(false);
-      }
-    } catch (e) {}
   };
 
   useEffect(() => {
