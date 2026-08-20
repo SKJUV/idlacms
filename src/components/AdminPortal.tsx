@@ -259,19 +259,7 @@ export default function AdminPortal({
           documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
         }));
 
-        setPreRegistrations((curr) => {
-          let freshLocal: any[] = [];
-          try { 
-            freshLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-            // Nettoyage des candidats fictifs et des admins du cache local
-            freshLocal = freshLocal.filter((a: any) => {
-              const email = (a.email || '').toLowerCase();
-              const name = (a.name || '').toLowerCase();
-              const isFake = ['pre-1', 'pre-2', 'pre-3'].includes(a.id) || name.includes('jean dupont') || name.includes('jean-sebastien') || name.includes('jean sebastien');
-              return !isFake && !adminEmails.has(email);
-            });
-          } catch (e) {}
-          
+        setPreRegistrations(() => {
           const uniqueMap = new Map<string, any>();
           for (const rApp of remoteApps) {
             if (rApp && rApp.id) {
@@ -280,18 +268,6 @@ export default function AdminPortal({
               const isFake = ['pre-1', 'pre-2', 'pre-3'].includes(rApp.id) || name.includes('jean dupont') || name.includes('jean-sebastien') || name.includes('jean sebastien');
               if (!isFake && !adminEmails.has(email)) {
                 uniqueMap.set(rApp.id, rApp);
-              }
-            }
-          }
-          
-          const combined = [...freshLocal, ...curr];
-          for (const item of combined) {
-            if (item && item.id && !uniqueMap.has(item.id)) {
-              const exists = Array.from(uniqueMap.values()).some(
-                (r) => r.email?.toLowerCase() === item.email?.toLowerCase() && (r.program || '') === (item.program || '')
-              );
-              if (!exists) {
-                uniqueMap.set(item.id, item);
               }
             }
           }

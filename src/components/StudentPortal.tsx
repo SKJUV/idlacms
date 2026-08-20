@@ -355,25 +355,27 @@ export default function StudentPortal({
           }
         }
 
-        // Fusionner candidatures locales (localStorage / inscriptions manuelles)
-        try {
-          const localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-          const userLocal = localApps.filter((a: any) => (a.email || '').toLowerCase().trim() === userEmail);
-          userLocal.forEach((localApp: any) => {
-            const normalizedLocal = {
-              ...localApp,
-              id: localApp.id || localApp.$id || `local-${Math.random()}`,
-              $id: localApp.$id || localApp.id,
-            };
-            const alreadyExists = loadedApps.some((a) => 
-              (a.id && a.id === normalizedLocal.id) ||
-              (a.program && normalizedLocal.program && a.program.toLowerCase().trim() === normalizedLocal.program.toLowerCase().trim())
-            );
-            if (!alreadyExists) {
-              loadedApps.push(normalizedLocal);
-            }
-          });
-        } catch (e) {}
+        // Si aucune candidature n'est retournée par le cloud, vérifier le stockage local
+        if (loadedApps.length === 0) {
+          try {
+            const localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
+            const userLocal = localApps.filter((a: any) => (a.email || '').toLowerCase().trim() === userEmail);
+            userLocal.forEach((localApp: any) => {
+              const normalizedLocal = {
+                ...localApp,
+                id: localApp.id || localApp.$id || `local-${Math.random()}`,
+                $id: localApp.$id || localApp.id,
+              };
+              const alreadyExists = loadedApps.some((a) => 
+                (a.id && a.id === normalizedLocal.id) ||
+                (a.program && normalizedLocal.program && a.program.toLowerCase().trim() === normalizedLocal.program.toLowerCase().trim())
+              );
+              if (!alreadyExists) {
+                loadedApps.push(normalizedLocal);
+              }
+            });
+          } catch (e) {}
+        }
 
         setApplications(loadedApps);
 
