@@ -146,13 +146,7 @@ export default function StudentPortal({
     const c = (courseName || 'general').trim().toLowerCase();
     const l = (levelName || 'L1').trim().toLowerCase();
     const key = `course___${c}___${l}`;
-
-    let hash = 0;
-    for (let i = 0; i < key.length; i++) {
-      hash = ((hash << 5) - hash) + key.charCodeAt(i);
-      hash |= 0;
-    }
-    return `cls_${Math.abs(hash)}`;
+    return key;
   };
 
   // ── Profile ──
