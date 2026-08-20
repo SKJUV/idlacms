@@ -357,16 +357,32 @@ export function applyProgramFilters<T extends { title: string; description?: str
       const d = (p.duration || '').toLowerCase().trim();
       const target = filters.duration.toLowerCase().trim();
 
-      if (target === '6 mois') {
-        if (!d.includes('6 mois') && !d.includes('6m') && !d.includes('semaine') && !d.includes('certif') && !d.includes('court')) return false;
-      } else if (target === '12 mois') {
-        if (!d.includes('12 mois') && !d.includes('1 an') && !d.includes('1ans')) return false;
-      } else if (target === '2 ans') {
-        if (!d.includes('2 ans') && !d.includes('24 mois') && !d.includes('2ans')) return false;
-      } else if (target === '3 ans+') {
-        if (!d.includes('3 ans') && !d.includes('4 ans') && !d.includes('5 ans') && !d.includes('36 mois') && !d.includes('doctorat')) return false;
-      } else if (!d.includes(target)) {
-        return false;
+      // Determine duration range in months for the program
+      let months = 12; // Default for 1 year programs
+      if (d.includes('6 mois') || d.includes('6m') || d.includes('court') || d.includes('semaine') || d.includes('certif')) {
+        months = 6;
+      } else if (d.includes('1 an') || d.includes('12 mois') || d.includes('1ans') || d.includes('12m')) {
+        months = 12;
+      } else if (d.includes('2 ans') || d.includes('24 mois') || d.includes('2ans') || d.includes('24m')) {
+        months = 24;
+      } else if (d.includes('3 ans') || d.includes('36 mois') || d.includes('3ans') || d.includes('4 ans') || d.includes('5 ans') || d.includes('doctorat')) {
+        months = 36;
+      }
+
+      if (target === 'courte' || target === '6 mois') {
+        if (months > 6 && !d.includes('6 mois') && !d.includes('semaine') && !d.includes('certif') && !d.includes('court')) {
+          return false;
+        }
+      } else if (target === 'moyenne' || target === '12 mois' || target === '1-2 ans' || target === '2 ans') {
+        if (months < 12 || months > 24) {
+          if (!d.includes('1 an') && !d.includes('2 ans') && !d.includes('12 mois') && !d.includes('24 mois')) {
+            return false;
+          }
+        }
+      } else if (target === 'longue' || target === '3 ans+' || target === '3 ans et +') {
+        if (months < 36 && !d.includes('3 ans') && !d.includes('4 ans') && !d.includes('5 ans') && !d.includes('doctorat')) {
+          return false;
+        }
       }
     }
 
