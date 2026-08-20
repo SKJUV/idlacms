@@ -9,25 +9,39 @@ const client = new Client().setEndpoint(ENDPOINT as string).setProject(PROJECT_I
 const databases = new Databases(client);
 
 const DATABASE_ID = 'idla_cms';
-const COLLECTION_ID = 'programs';
 
 async function main() {
-  const missingStringAttrs = [
-    { key: 'price', size: 100 },
-    { key: 'procedures', size: 1000 },
+  const schemaUpdates = [
+    { coll: 'programs', key: 'price', size: 100 },
+    { coll: 'programs', key: 'procedures', size: 1000 },
+    { coll: 'applications', key: 'matricule', size: 100 },
+    { coll: 'applications', key: 'referralCode', size: 100 },
   ];
 
-  for (const attr of missingStringAttrs) {
+  for (const attr of schemaUpdates) {
     try {
-      await databases.createStringAttribute(DATABASE_ID, COLLECTION_ID, attr.key, attr.size, false);
-      console.log(`Added attribute ${attr.key}`);
+      await databases.createStringAttribute(DATABASE_ID, attr.coll, attr.key, attr.size, false);
+      console.log(`Added attribute ${attr.key} to ${attr.coll}`);
     } catch (e: any) {
       if (e.code === 409) {
-        console.log(`Attribute ${attr.key} already exists.`);
+        console.log(`Attribute ${attr.key} already exists on ${attr.coll}.`);
       } else {
-        console.error(`Error adding attribute ${attr.key}:`, e.message);
+        console.error(`Error adding attribute ${attr.key} on ${attr.coll}:`, e.message);
       }
+    }
+  }
+
+  // assignedCourses string array attribute on cms_users
+  try {
+    await databases.createStringAttribute(DATABASE_ID, 'cms_users', 'assignedCourses', 255, false, undefined, true);
+    console.log(`Added array attribute assignedCourses to cms_users`);
+  } catch (e: any) {
+    if (e.code === 409) {
+      console.log(`Attribute assignedCourses already exists on cms_users.`);
+    } else {
+      console.error(`Error adding array attribute assignedCourses on cms_users:`, e.message);
     }
   }
 }
 main();
+
