@@ -24,6 +24,7 @@ import {
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
+import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 interface PublicPortalProps {
@@ -123,40 +124,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
 
   const handleOpenFormModal = async (formId: string) => {
-    if (formId === 'system_event_registration') {
-      setActiveFormModal(EVENT_REGISTRATION_FORM);
-      setActiveFormValues({});
-      setFormSubmittedSuccess(false);
-      return;
-    }
-    
-    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
-      try {
-        let doc: any = null;
-        try {
-          doc = await databases.getDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, formId);
-        } catch {
-          // Si le doc ID direct échoue, chercher par liste d'Appwrite Cloud DB
-          const listRes = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, [Query.limit(100)]);
-          doc = listRes.documents.find((d: any) => d.$id === formId || d.title === formId) || listRes.documents[0];
-        }
-
-        if (doc) {
-          setActiveFormModal({
-            id: doc.$id,
-            title: doc.title,
-            description: doc.description || '',
-            createdAt: doc.createdAt,
-            fields: JSON.parse(doc.fields || '[]')
-          });
-          setActiveFormValues({});
-          setFormSubmittedSuccess(false);
-          return;
-        }
-      } catch (err) {
-        console.error("Échec du chargement du formulaire depuis Appwrite Cloud DB:", err);
-      }
-    }
+    window.history.pushState({}, '', `/formulaire?id=${formId}`);
+    setActiveTab('formulaire' as any);
   };
 
   useEffect(() => {
@@ -167,12 +136,30 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
+  const [formEmailError, setFormEmailError] = useState('');
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
   const handlePublicFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!activeFormModal) return;
+    setFormEmailError('');
 
-    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || 'Visiteur';
-    const respondentEmail = activeFormValues['Adresse e-mail'] || activeFormValues['Email'] || activeFormValues['E-mail'] || '';
+    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || activeFormValues['Nom de famille'] || 'Candidat IDLA';
+    
+    // Détection stricte de l'adresse email
+    const emailKey = Object.keys(activeFormValues).find(
+      k => k.toLowerCase().includes('email') || k.toLowerCase().includes('e-mail') || k.toLowerCase().includes('courriel')
+    );
+    const respondentEmail = emailKey ? String(activeFormValues[emailKey]).trim() : '';
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!respondentEmail || !emailRegex.test(respondentEmail)) {
+      setFormEmailError("⚠️ L'adresse e-mail saisie est invalide. Veuillez vérifier et saisir une adresse e-mail exacte (ex: nom@domaine.com) pour recevoir la copie PDF officielle de votre candidature.");
+      return;
+    }
+
+    setIsSubmittingForm(true);
+    const refNum = `REF-IDLA-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newResponseId = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses ? ID.unique() : `resp-${Date.now()}`;
     const newResponse: CustomFormResponse = {
@@ -216,6 +203,55 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       } catch (err) {}
     }
 
+    // Génération du PDF et envoi par email
+    try {
+      const pdfBase64 = generateFormPdfBase64(activeFormModal, activeFormValues, refNum);
+      const emailBodyHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+          <div style="background-color: #166534; color: white; padding: 24px; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px;">IDLA ACADEMY</h2>
+            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Récépissé Officiel</p>
+          </div>
+          <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+            <p>Bonjour <strong>${respondentName}</strong>,</p>
+            <p>Votre candidature pour le formulaire <strong>${activeFormModal.title}</strong> a bien été transmise et enregistrée.</p>
+            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #166534; display: inline-block; margin: 10px 0;">
+              Référence du dossier : ${refNum}
+            </div>
+            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle et votre récépissé en format PDF</strong>.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <h4 style="color: #166534; margin-bottom: 8px;">Détails des informations soumises :</h4>
+            <ul style="padding-left: 20px; font-size: 13px; color: #334155;">
+              ${Object.entries(activeFormValues).map(([k, v]) => `<li><strong>${k} :</strong> ${Array.isArray(v) ? v.join(', ') : v}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background-color: #f8fafc; text-align: center; padding: 16px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #166534; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
+            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #166534;">admissions@idlaacademy.online</a>
+          </div>
+        </div>
+      `;
+
+      await fetch('/api/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: [respondentEmail, 'admissions@idlaacademy.online', 'idlaacademy@gmail.com'],
+          subject: `[Récépissé IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
+          html: emailBodyHtml,
+          attachments: [
+            {
+              filename: `Recepisse_Inscription_IDLA_${refNum}.pdf`,
+              content: pdfBase64,
+            }
+          ]
+        })
+      });
+    } catch (e) {
+      console.error("Échec envoi mail PDF:", e);
+    }
+
+    setIsSubmittingForm(false);
     setFormSubmittedSuccess(true);
   };
 
@@ -1209,38 +1245,56 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
 
-        {/* ── MODALE PUBLIQUE : Formulaire sur mesure interactif ── */}
+        {/* ── MODALE & PAGE DÉDIÉE PUBLIQUE : Formulaire sur mesure officiel ── */}
         {activeFormModal && (
-          <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md" onClick={() => setActiveFormModal(null)}>
-            <div className="bg-bg-secondary text-text-primary w-full max-w-xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-border-primary" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-primary">
+          <div className="fixed inset-0 z-[220] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto" onClick={() => setActiveFormModal(null)}>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-3xl my-auto rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-brand-primary/30 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              {/* Standalone Header Bar */}
+              <div className="px-6 py-5 border-b border-border-primary bg-bg-primary flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
-                    <FileTextIcon className="w-5 h-5 text-brand-primary" /> {activeFormModal.title}
+                  <div className="flex items-center gap-2 text-[11px] font-extrabold text-brand-primary uppercase tracking-wider mb-1">
+                    <span>IDLA Academy</span>
+                    <span>•</span>
+                    <span>Formulaire Officiel d'Inscription</span>
+                  </div>
+                  <h3 className="font-extrabold text-lg sm:text-xl text-text-primary flex items-center gap-2">
+                    <FileTextIcon className="w-6 h-6 text-brand-primary" /> {activeFormModal.title}
                   </h3>
-                  <p className="text-xs text-text-secondary mt-0.5">{activeFormModal.description}</p>
+                  <p className="text-xs text-text-secondary mt-1 max-w-xl">{activeFormModal.description}</p>
                 </div>
-                <button onClick={() => setActiveFormModal(null)} className="text-text-secondary hover:text-text-primary cursor-pointer p-1">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setActiveFormModal(null)} className="text-text-secondary hover:text-text-primary bg-bg-secondary hover:bg-border-primary/50 p-2 rounded-full transition-all cursor-pointer">
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
               {formSubmittedSuccess ? (
-                <div className="p-8 text-center space-y-4 my-auto">
-                  <CheckCircle2 className="w-14 h-14 text-brand-primary mx-auto" />
-                  <h4 className="font-bold text-xl text-text-primary">Formulaire transmis avec succès !</h4>
-                  <p className="text-sm text-text-secondary max-w-md mx-auto">
-                    Merci pour votre réponse. Vos informations ont bien été enregistrées et transmises à l'administration académique IDLA.
+                <div className="p-10 text-center space-y-5 my-auto bg-bg-primary/50">
+                  <div className="w-20 h-20 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto shadow-inner">
+                    <CheckCircle2 className="w-12 h-12 text-brand-primary" />
+                  </div>
+                  <h4 className="font-extrabold text-2xl text-text-primary">Formulaire & Candidature Transmis avec Succès !</h4>
+                  <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
+                    Vos informations ont bien été enregistrées. <strong>Un récépissé PDF ainsi qu'une confirmation de candidature</strong> ont été envoyés automatiquement par e-mail à votre adresse et aux services d'admissions IDLA.
                   </p>
+                  <div className="bg-brand-primary/10 border border-brand-primary/30 p-4 rounded-2xl max-w-md mx-auto text-xs text-brand-primary font-bold">
+                    ✉️ Vérifiez votre boîte de réception (et vos courriers indésirables / Spams).
+                  </div>
                   <button
                     onClick={() => setActiveFormModal(null)}
-                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer shadow"
+                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-8 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg"
                   >
                     Fermer la fenêtre
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handlePublicFormSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
+                <form onSubmit={handlePublicFormSubmit} className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 max-h-[80vh]">
+                  {formEmailError && (
+                    <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-2xl text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                      <span>{formEmailError}</span>
+                    </div>
+                  )}
+
                   {(() => {
                     // Calcul du tarif dynamique
                     const desc = activeFormModal.description || '';
@@ -1250,11 +1304,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     return (
                       <>
                         {feeAmount && (
-                          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-brand-primary text-xs font-bold">
-                              <span>💳 Frais de traitement de dossier :</span>
+                          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-brand-primary text-xs font-extrabold">
+                              <ShieldAlert className="w-5 h-5" />
+                              <span>Frais de traitement & Dossier de candidature :</span>
                             </div>
-                            <span className="text-sm font-extrabold text-brand-primary bg-white dark:bg-bg-secondary px-3 py-1 rounded-lg border border-brand-primary/20 shadow-sm">
+                            <span className="text-base font-extrabold text-brand-primary bg-white dark:bg-bg-secondary px-4 py-1.5 rounded-xl border border-brand-primary/20 shadow-sm">
                               {feeAmount} FCFA
                             </span>
                           </div>
@@ -1435,10 +1490,20 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           </button>
                           <button
                             type="submit"
-                            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+                            disabled={isSubmittingForm}
+                            className="bg-brand-primary disabled:opacity-50 hover:bg-brand-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
                           >
-                            <Send className="w-4 h-4" />
-                            {feeAmount ? `Soumettre et Valider (${feeAmount} FCFA)` : 'Transmettre mon formulaire'}
+                            {isSubmittingForm ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Génération du PDF & Envoi en cours...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4" />
+                                {feeAmount ? `Soumettre et Valider (${feeAmount} FCFA)` : 'Transmettre mon formulaire'}
+                              </>
+                            )}
                           </button>
                         </div>
                       </>
