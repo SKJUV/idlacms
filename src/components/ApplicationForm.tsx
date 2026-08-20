@@ -431,18 +431,24 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               console.warn("Connexion de session temporaire après création:", sessErr);
             }
 
-            // 3. Send welcome credentials email (non-blocking)
+            // 3. Send welcome credentials email via Resend API (non-blocking)
             try {
-              fetch('/api/send-credentials', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  email: cleanEmail,
-                  fullName: candidateName,
-                  tempPassword: password,
-                  userDefinedPassword: true,
-                }),
-              }).catch(() => {});
+              const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY;
+              if (resendApiKey) {
+                fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${resendApiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    from: 'IDLA Academy <admissions@idlaacademy.online>',
+                    to: [cleanEmail],
+                    subject: 'Bienvenue à l\'IDLA Academy — Inscription confirmée',
+                    text: `Bonjour ${candidateName},\n\nVotre compte d'accès à la plateforme International Distance Learning Academy (IDLA) a été créé avec succès.\n\nAdresse e-mail : ${cleanEmail}\nAccès au portail étudiant : https://idlaacademy.online/etudiant\n\nVeuillez agréer l'expression de nos salutations distinguées.\n\nLe Comité d'Admissions IDLA\nInternational Distance Learning Academy`,
+                  }),
+                }).catch(() => {});
+              }
             } catch (mailErr) {
               console.warn("Échec non-bloquant de l'envoi d'email d'accueil:", mailErr);
             }

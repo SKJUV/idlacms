@@ -155,7 +155,6 @@ export async function sendTemplateEmail(
 
   // 1. Envoi réel et direct via l'API Resend (https://api.resend.com/emails)
   const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY || (typeof process !== 'undefined' ? process.env?.RESEND_API_KEY : '');
-  let resendSuccess = false;
 
   if (resendApiKey) {
     try {
@@ -175,57 +174,52 @@ export async function sendTemplateEmail(
 
       if (resendRes.ok) {
         const resendData = await resendRes.json();
-        console.log("E-mail envoyé avec succès via l'API Resend ! ID:", resendData.id);
+        console.log("E-mail transmis avec succès via Resend API ! ID:", resendData.id);
+        
+        // Enregistrer la traçabilité en BD
+        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.logs) {
+          try {
+            await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.logs,
+              ID.unique(),
+              {
+                type: 'email_reminder',
+                user: recipientEmail,
+                action: `Envoi e-mail: ${spec.label} (${subject})`,
+                timestamp: new Date().toISOString()
+              }
+            );
+          } catch (e) {}
+        }
+
+        logEmailSent({
+          email: recipientEmail,
+          templateKey,
+          templateLabel: spec.label,
+          subject,
+          sentAt: new Date().toISOString()
+        });
+
         return {
           success: true,
-          message: `E-mail "${spec.label}" livré avec succès à ${recipientEmail} (Resend ID: ${resendData.id}).`
+          message: `E-mail "${spec.label}" transmis avec succès à ${recipientEmail} (Resend ID: ${resendData.id}).`
         };
       } else {
         const errJson = await resendRes.json().catch(() => ({}));
-        console.warn("Réponse d'erreur API Resend:", errJson);
-        // Fallback avec expéditeur secondaire si le sous-domaine spécifique diffère
-        try {
-          const fbRes = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'IDLA Academy <onboarding@resend.dev>',
-              to: [recipientEmail],
-              subject,
-              text: body,
-            }),
-          });
-          if (fbRes.ok) {
-            const fbData = await fbRes.json();
-            return {
-              success: true,
-              message: `E-mail livré avec succès à ${recipientEmail} (ID: ${fbData.id}).`
-            };
-          }
-        } catch (e) {}
+        console.warn("Échec réponse API Resend:", errJson);
+        return {
+          success: false,
+          message: `Échec d'envoi Resend (${resendRes.status}): ${errJson?.message || 'Erreur d\'expédition.'}`
+        };
       }
-    } catch (resendErr) {
+    } catch (resendErr: any) {
       console.warn("Échec appel réseau API Resend:", resendErr);
+      return {
+        success: false,
+        message: `Erreur réseau lors de l'envoi de l'e-mail: ${resendErr?.message || 'Injoignable'}`
+      };
     }
-  }
-
-  // Fallback API backend / Route locale
-  if (!resendSuccess) {
-    try {
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: recipientEmail,
-          subject,
-          body,
-          domain: BASE_URL
-        })
-      });
-    } catch (err) {}
   }
 
   // 2. Traçabilité dans la base Appwrite activity_logs (si configurée)
