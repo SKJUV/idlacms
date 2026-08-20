@@ -13,10 +13,26 @@ export default defineConfig(() => {
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Do not modifyâ€”file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      proxy: {
+        '/api/resend': {
+          target: 'https://api.resend.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/resend/, '/emails'),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              const resendKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY || '';
+              if (resendKey) {
+                proxyReq.setHeader('Authorization', `Bearer ${resendKey}`);
+              }
+              proxyReq.setHeader('Content-Type', 'application/json');
+            });
+          },
+        },
+      },
     },
   };
 });

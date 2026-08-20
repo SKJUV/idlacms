@@ -22,6 +22,7 @@ interface PreRegistrationsProps {
   setSelectedPreRegId: (id: string | null) => void;
   logActivity: (type: 'registration' | 'article' | 'error' | 'alumni', user: string, text: string) => Promise<void>;
   programs?: any[];
+  onNavigateTab?: (tab: string) => void;
 }
 
 // Helpers
@@ -34,7 +35,7 @@ const statusConfig = (s: string) => {
 };
 
 export default function PreRegistrations({
-  preRegistrations, setPreRegistrations, selectedPreRegId, setSelectedPreRegId, logActivity, programs,
+  preRegistrations, setPreRegistrations, selectedPreRegId, setSelectedPreRegId, logActivity, programs, onNavigateTab,
 }: PreRegistrationsProps) {
 
   const availablePrograms = (programs && programs.length > 0)
@@ -816,9 +817,9 @@ export default function PreRegistrations({
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
             <FileText className="w-3.5 h-3.5" /> Inscriptions aux cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
           </button>
-          <button onClick={() => setIsEmailModalOpen(true)}
+          <button onClick={() => onNavigateTab ? onNavigateTab('admin-email-automation') : setIsEmailModalOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer">
-            <Zap className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> Relances & Auto-Pilot E-mails
+            <Zap className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> Section Relances & E-mails
           </button>
         </div>
       </div>

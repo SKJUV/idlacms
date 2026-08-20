@@ -22,11 +22,12 @@ import Donations from './admin/Donations';
 import Marketing from './admin/Marketing';
 import CmsSettings from './admin/CmsSettings';
 import TeachersManagement from './admin/TeachersManagement';
+import EmailAutomationSection from './admin/EmailAutomationSection';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
-  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-donations' | 'admin-marketing'
-  | 'admin-settings' | 'admin-teachers' | 'admin-profile';
+  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-[#006c49]' | 'admin-donations' | 'admin-marketing'
+  | 'admin-settings' | 'admin-teachers' | 'admin-profile' | 'admin-email-automation';
 
 interface AdminPortalProps {
   activeTab: AdminTab;
@@ -694,6 +695,7 @@ export default function AdminPortal({
           selectedPreRegId={selectedPreRegId}
           setSelectedPreRegId={setSelectedPreRegId}
           logActivity={logActivity}
+          onNavigateTab={(tab) => setActiveTab(tab as any)}
         />
       )}
 
@@ -704,6 +706,40 @@ export default function AdminPortal({
           logActivity={logActivity}
         />
       )}
+
+      {view === 'admin-email-automation' && (() => {
+        const candidatesMap = preRegistrations.reduce((acc, curr) => {
+          const key = (curr.email || '').trim().toLowerCase();
+          if (!key) return acc;
+          if (!acc[key]) {
+            acc[key] = {
+              email: curr.email,
+              name: curr.name,
+              initials: curr.initials,
+              phone: curr.phone,
+              nationality: curr.nationality,
+              highestDegree: curr.highestDegree,
+              graduationYear: curr.graduationYear,
+              motivation: curr.motivation,
+              documents: curr.documents || [],
+              applications: [],
+              courseApplications: [],
+            };
+          }
+          acc[key].applications.push(curr);
+          if (curr.program && curr.program !== 'Inscription seule') {
+            acc[key].courseApplications.push(curr);
+          }
+          return acc;
+        }, {} as Record<string, any>);
+
+        const candidatesList = Object.values(candidatesMap).map((c: any) => ({
+          ...c,
+          isRegisteredOnly: c.courseApplications.length === 0,
+        }));
+
+        return <EmailAutomationSection candidates={candidatesList} />;
+      })()}
 
       {view === 'admin-marketing' && (
         <Marketing

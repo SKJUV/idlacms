@@ -40,6 +40,7 @@ export type ActiveTab =
   | 'admin-preregistrations'
   | 'admin-donations'
   | 'admin-marketing'
+  | 'admin-email-automation'
   | 'admin-settings'
   | 'admin-profile'
   | 'teacher-dashboard'
@@ -89,6 +90,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-preregistrations': '/admin/pre-inscriptions',
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
+  'admin-email-automation': '/admin/relances',
   'admin-settings': '/admin/parametres',
   'admin-profile': '/admin/profil',
   'teacher-dashboard': '/enseignant/tableau-de-bord',
