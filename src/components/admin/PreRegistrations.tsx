@@ -9,10 +9,11 @@ import {
   DownloadIcon as Download,
   AlertCircleIcon as AlertCircleIcon,
 } from '../Icons';
-import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen } from 'lucide-react';
+import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen, Zap } from 'lucide-react';
 import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../../lib/admissionLetter';
+import EmailAutomationModal from './EmailAutomationModal';
 
 interface PreRegistrationsProps {
   preRegistrations: PreRegistration[];
@@ -58,6 +59,7 @@ export default function PreRegistrations({
   const [confirmAction, setConfirmAction] = useState<null | 'accept' | 'reject'>(null);
   const [statusFilter, setStatusFilter] = useState<string>('Tous');
   const [searchQ, setSearchQ] = useState('');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat
@@ -814,6 +816,10 @@ export default function PreRegistrations({
             className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
             <FileText className="w-3.5 h-3.5" /> Inscriptions aux cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
           </button>
+          <button onClick={() => setIsEmailModalOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer">
+            <Zap className="w-3.5 h-3.5 text-emerald-300 animate-pulse" /> Relances & Auto-Pilot E-mails
+          </button>
         </div>
       </div>
 
@@ -941,6 +947,13 @@ export default function PreRegistrations({
           </table>
         </div>
       )}
+
+      {/* Modal Relances & Auto-Pilot E-mails */}
+      <EmailAutomationModal
+        candidates={candidatesList}
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+      />
     </div>
   );
 }
