@@ -807,7 +807,7 @@ export default function App() {
               // pour que StudentPortal puisse charger les candidatures
               if (candidateEmail && candidateTempPassword) {
                 try {
-                  await account.deleteSession({ sessionId: 'current' }).catch(() => undefined);
+                  await account.deleteSession('current').catch(() => undefined);
                   await account.createEmailPasswordSession({
                     email: candidateEmail.trim().toLowerCase(),
                     password: candidateTempPassword,
