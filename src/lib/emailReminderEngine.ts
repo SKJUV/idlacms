@@ -140,7 +140,8 @@ export function analyzeStudentAccount(candidate: any): StudentAccountAnalysis {
 }
 
 /**
- * Envoie un e-mail au candidat/étudiant
+ * Envoie un e-mail au candidat/étudiant via le proxy serveur /api/resend
+ * (la clé API est injectée côté serveur — jamais exposée au navigateur)
  */
 export async function sendTemplateEmail(
   recipientEmail: string,
@@ -156,9 +157,6 @@ export async function sendTemplateEmail(
   const body = spec.body(data);
   const html = spec.html ? spec.html(data) : undefined;
 
-  // 1. Envoi via proxy local /api/resend ou direct https://api.resend.com/emails
-  const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY || (typeof process !== 'undefined' ? process.env?.RESEND_API_KEY : '');
-
   const payload: any = {
     from: 'IDLA Academy <admissions@idlaacademy.online>',
     to: [recipientEmail],
@@ -171,46 +169,19 @@ export async function sendTemplateEmail(
 
   let resendRes: Response | null = null;
 
-  // Tentative 1 : Via le Proxy Server Local /api/resend ( contourne totalement CORS sur le navigateur )
+  // Envoi via le proxy serveur /api/resend (clé API injectée côté serveur dans vite.config.ts)
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (resendApiKey) {
-      headers['Authorization'] = `Bearer ${resendApiKey}`;
-    }
-
     resendRes = await fetch('/api/resend', {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
   } catch (proxyErr) {
-    console.warn("Proxy /api/resend non disponible ou erreur réseau. Tentative directe...");
-  }
-
-  // Tentative 2 : Directement vers https://api.resend.com/emails si le proxy n'a pas répondu ou a échoué
-  if ((!resendRes || !resendRes.ok) && resendApiKey) {
-    try {
-      const directRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      if (directRes.ok || !resendRes) {
-        resendRes = directRes;
-      }
-    } catch (directErr: any) {
-      console.warn("Échec de connexion directe API Resend:", directErr);
-    }
+    console.warn("Proxy /api/resend non disponible ou erreur réseau.");
   }
 
   if (resendRes && resendRes.ok) {
     const resendData = await resendRes.json();
-    console.log("E-mail transmis avec succès via Resend API ! ID:", resendData.id);
     
     // Traçabilité en BD Appwrite
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.logs) {
@@ -243,15 +214,13 @@ export async function sendTemplateEmail(
     };
   } else if (resendRes) {
     const errJson = await resendRes.json().catch(() => ({}));
-    console.warn("Échec réponse API Resend:", errJson);
-    const detailMsg = errJson?.message || errJson?.name || (typeof errJson === 'string' ? errJson : '');
+    const detailMsg = errJson?.error || errJson?.message || errJson?.details?.message || errJson?.name || (typeof errJson === 'string' ? errJson : '');
     return {
       success: false,
       message: `Échec d'envoi Resend (${resendRes.status})${detailMsg ? `: ${detailMsg}` : ' - Erreur du serveur d\'envoi.'}`
     };
   } else {
-    // Si la requête navigateur a échoué (ex: CORS / réseau inaccessible)
-    // Nous enregistrons quand même la relance dans les logs locaux pour ne pas bloquer l'administrateur
+    // Proxy inaccessible (CORS / réseau) — enregistrer la relance dans les logs locaux
     logEmailSent({
       email: recipientEmail,
       templateKey,
@@ -265,37 +234,6 @@ export async function sendTemplateEmail(
       message: `Relance enregistrée pour ${recipientEmail}. (Conseil: Déployez la fonction backend pour l'envoi en direct sans restriction CORS navigateur).`
     };
   }
-
-  // 2. Traçabilité dans la base Appwrite activity_logs (si configurée)
-  if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.logs) {
-    try {
-      await databases.createDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.collections.logs,
-        ID.unique(),
-        {
-          type: 'email_reminder',
-          user: recipientEmail,
-          action: `Envoi e-mail: ${spec.label} (${subject})`,
-          timestamp: new Date().toISOString()
-        }
-      );
-    } catch (e) {}
-  }
-
-  // 3. Enregistrement dans l'historique local
-  logEmailSent({
-    email: recipientEmail,
-    templateKey,
-    templateLabel: spec.label,
-    subject,
-    sentAt: new Date().toISOString()
-  });
-
-  return {
-    success: true,
-    message: `E-mail "${spec.label}" envoyé avec succès à ${recipientEmail}.`
-  };
 }
 
 /**

@@ -325,7 +325,7 @@ export default function NewsManagement({
           },
           EMAILJS_PUBLIC_KEY
         ).then(() => {
-          console.log('E-mails de notification envoyés avec succès.');
+          // Notifications envoyées avec succès
         }).catch((err) => {
           console.error('Erreur lors de l\'envoi des e-mails :', err);
         });

@@ -98,12 +98,6 @@ const collectionDefs: CollectionDef[] = [
     name: 'Programmes',
     permissions: [
       Permission.read(Role.any()),
-      Permission.create(Role.any()),
-      Permission.update(Role.any()),
-      Permission.delete(Role.any()),
-      Permission.create(Role.users()),
-      Permission.update(Role.users()),
-      Permission.delete(Role.users()),
       Permission.create(Role.team(ADMIN_TEAM_ID)),
       Permission.update(Role.team(ADMIN_TEAM_ID)),
       Permission.delete(Role.team(ADMIN_TEAM_ID)),

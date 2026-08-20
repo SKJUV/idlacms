@@ -85,7 +85,7 @@ export default function AdminPortal({
 
   // CMS Settings States
   const [settingsName, setSettingsName] = useState('Administrateur');
-  const [settingsEmail, setSettingsEmail] = useState('admin@idla.edu');
+  const [settingsEmail, setSettingsEmail] = useState('');
   const [settingsSiteName, setSettingsSiteName] = useState('IDLA CMS');
   const [settingsAdmissionsOpen, setSettingsAdmissionsOpen] = useState(true);
   const [settingsEmailNotif, setSettingsEmailNotif] = useState(true);

@@ -206,7 +206,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
           file
         );
         appwriteFileId = response.$id;
-        console.log("Fichier téléversé dans le bucket Appwrite:", response);
+        // Fichier téléversé avec succès
       } catch (err) {
         console.error("Échec du téléversement sur Appwrite.", err);
       }
@@ -278,7 +278,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       });
 
       if (response.ok) {
-        console.log("Email OTP envoyé avec succès.");
+        // OTP envoyé avec succès
       } else {
         const errData = await response.json();
         console.warn("Erreur envoi OTP:", errData);
@@ -421,7 +421,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               password,
               candidateName
             );
-            console.log("Compte utilisateur créé avec succès dans l'authentification Appwrite !");
+            // Compte utilisateur créé avec succès
 
             // 2. Direct session login for immediate user access and authenticated DB creation
             try {
@@ -431,26 +431,20 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               console.warn("Connexion de session temporaire après création:", sessErr);
             }
 
-            // 3. Send welcome credentials email via Resend API (non-blocking)
+            // 3. Send welcome credentials email via serverless function (non-blocking)
             try {
-              const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY;
-              if (resendApiKey) {
-                fetch('https://api.resend.com/emails', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${resendApiKey}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    from: 'IDLA Academy <admissions@idlaacademy.online>',
-                    to: [cleanEmail],
-                    subject: 'Bienvenue à l\'IDLA Academy — Inscription confirmée',
-                    text: `Bonjour ${candidateName},\n\nVotre compte d'accès à la plateforme International Distance Learning Academy (IDLA) a été créé avec succès.\n\nAdresse e-mail : ${cleanEmail}\nAccès au portail étudiant : https://idlaacademy.online/etudiant\n\nVeuillez agréer l'expression de nos salutations distinguées.\n\nLe Comité d'Admissions IDLA\nInternational Distance Learning Academy`,
-                  }),
-                }).catch(() => {});
-              }
+              fetch('/api/send-credentials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: cleanEmail,
+                  fullName: candidateName,
+                  tempPassword: password,
+                  userDefinedPassword: true,
+                }),
+              }).catch(() => {});
             } catch (mailErr) {
-              console.warn("Échec non-bloquant de l'envoi d'email d'accueil:", mailErr);
+              // Non-blocking — ne pas interrompre le flux d'inscription
             }
           } catch (authErr: any) {
             console.warn("Compte Auth déjà existant ou échec de création, tentative de connexion:", authErr);
@@ -491,7 +485,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
           if (sponsorCodeInput) {
             registerReferralCodeUsage(sponsorCodeInput).catch(() => {});
           }
-          console.log("Dossier de candidature inséré dans Appwrite Cloud DB:", application);
+          // Dossier de candidature inséré avec succès
         } catch (dbErr: any) {
           console.error("Échec création document candidatures Appwrite DB:", dbErr);
           application = { id: `app-${Date.now()}`, $id: `app-${Date.now()}` };
