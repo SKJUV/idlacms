@@ -478,6 +478,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               academicSession: "Session d'Octobre 2026",
               entryLevel: entryLevel,
               sponsorCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+              referralCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
               sponsorEmail: validatedReferral?.sponsorEmail || undefined,
             }
           );

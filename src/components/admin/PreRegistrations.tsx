@@ -389,6 +389,7 @@ export default function PreRegistrations({
                   ['Nationalité', selected.nationality],
                   ['Dernier diplôme', selected.highestDegree],
                   ["Année d'obtention", selected.graduationYear ? String(selected.graduationYear) : null],
+                  ['Code Parrainage', selected.referralCode || selected.sponsorCode],
                 ].filter(([, v]) => v).map(([label, value]) => (
                   <div key={label}>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>

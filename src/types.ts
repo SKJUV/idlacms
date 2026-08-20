@@ -206,6 +206,7 @@ export interface PreRegistration {
   matricule?: string;
   equivalenceChecklist?: EquivalenceChecklist;
   sponsorCode?: string;
+  referralCode?: string;
   sponsorEmail?: string;
 }
 
