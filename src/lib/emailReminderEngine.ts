@@ -153,23 +153,53 @@ export async function sendTemplateEmail(
   const subject = spec.subject(data);
   const body = spec.body(data);
 
-  // 1. Envoi via API backend / API Route
-  try {
-    const res = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: recipientEmail,
-        subject,
-        body,
-        domain: BASE_URL
-      })
-    });
-    if (!res.ok) {
-      console.warn("L'API d'envoi mail HTTP a retourné un statut non-200. Mode d'enregistrement actif.");
+  // 1. Envoi réel et direct via l'API Resend (https://api.resend.com/emails)
+  const resendApiKey = (import.meta as any).env?.VITE_RESEND_API_KEY || (typeof process !== 'undefined' ? process.env?.RESEND_API_KEY : '');
+  let resendSuccess = false;
+
+  if (resendApiKey) {
+    try {
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'IDLA Academy <onboarding@resend.dev>',
+          to: [recipientEmail],
+          subject,
+          text: body,
+        }),
+      });
+
+      if (resendRes.ok) {
+        const resendData = await resendRes.json();
+        console.log("E-mail envoyé avec succès via l'API Resend ! ID:", resendData.id);
+        resendSuccess = true;
+      } else {
+        const errJson = await resendRes.json().catch(() => ({}));
+        console.warn("Échec réponse API Resend:", errJson);
+      }
+    } catch (resendErr) {
+      console.warn("Échec appel réseau API Resend:", resendErr);
     }
-  } catch (err) {
-    console.warn("Échec non-bloquant de l'envoi HTTP mail direct:", err);
+  }
+
+  // Fallback API backend / Route locale
+  if (!resendSuccess) {
+    try {
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipientEmail,
+          subject,
+          body,
+          domain: BASE_URL
+        })
+      });
+    } catch (err) {}
   }
 
   // 2. Traçabilité dans la base Appwrite activity_logs (si configurée)
