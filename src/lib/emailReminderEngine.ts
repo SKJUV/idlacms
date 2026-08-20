@@ -168,22 +168,26 @@ export async function sendTemplateEmail(
 
   // Tentative 1 : Via le Proxy Server Local /api/resend ( contourne totalement CORS sur le navigateur )
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (resendApiKey) {
+      headers['Authorization'] = `Bearer ${resendApiKey}`;
+    }
+
     resendRes = await fetch('/api/resend', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`
-      },
+      headers,
       body: JSON.stringify(payload),
     });
   } catch (proxyErr) {
     console.warn("Proxy /api/resend non disponible ou erreur réseau. Tentative directe...");
   }
 
-  // Tentative 2 : Directement vers https://api.resend.com/emails si le proxy n'a pas répondu
-  if (!resendRes && resendApiKey) {
+  // Tentative 2 : Directement vers https://api.resend.com/emails si le proxy n'a pas répondu ou a échoué
+  if ((!resendRes || !resendRes.ok) && resendApiKey) {
     try {
-      resendRes = await fetch('https://api.resend.com/emails', {
+      const directRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${resendApiKey}`,
@@ -191,6 +195,9 @@ export async function sendTemplateEmail(
         },
         body: JSON.stringify(payload),
       });
+      if (directRes.ok || !resendRes) {
+        resendRes = directRes;
+      }
     } catch (directErr: any) {
       console.warn("Échec de connexion directe API Resend:", directErr);
     }
@@ -232,9 +239,10 @@ export async function sendTemplateEmail(
   } else if (resendRes) {
     const errJson = await resendRes.json().catch(() => ({}));
     console.warn("Échec réponse API Resend:", errJson);
+    const detailMsg = errJson?.message || errJson?.name || (typeof errJson === 'string' ? errJson : '');
     return {
       success: false,
-      message: `Échec d'envoi Resend (${resendRes.status}): ${errJson?.message || 'Erreur d\'expédition.'}`
+      message: `Échec d'envoi Resend (${resendRes.status})${detailMsg ? `: ${detailMsg}` : ' - Erreur du serveur d\'envoi.'}`
     };
   } else {
     // Si la requête navigateur a échoué (ex: CORS / réseau inaccessible)
