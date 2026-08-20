@@ -1017,6 +1017,26 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         <p className="text-xs text-text-secondary leading-relaxed">
                           {n.description}
                         </p>
+
+                        {/* Lien rapide vers le formulaire */}
+                        {(n.formId || n.formUrl || n.category === 'Événements') && (
+                          <div className="pt-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (n.formUrl) {
+                                  window.open(n.formUrl, '_blank', 'noopener,noreferrer');
+                                } else if (n.formId || n.category === 'Événements') {
+                                  handleOpenFormModal(n.category === 'Événements' ? 'system_event_registration' : n.formId!);
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer border border-brand-primary/20"
+                            >
+                              <FileTextIcon className="w-4 h-4" />
+                              {n.category === 'Événements' ? "S'inscrire à l'événement" : "Accéder au formulaire"}
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Image média pleine largeur */}
