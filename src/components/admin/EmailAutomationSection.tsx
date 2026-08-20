@@ -38,13 +38,13 @@ export default function EmailAutomationSection({
 
   const analyzedList: StudentAccountAnalysis[] = candidates.map(c => analyzeStudentAccount(c));
 
-  const noCourseCount = analyzedList.filter(a => a.status === 'RegisteredOnly').length;
-  const withCourseCount = analyzedList.filter(a => a.status !== 'RegisteredOnly' && a.status !== 'Accepted').length;
+  const noCourseCount = analyzedList.filter(a => a.status === 'RegisteredOnly' || !a.hasApplied).length;
+  const withCourseCount = analyzedList.filter(a => a.hasApplied && a.status !== 'Accepted').length;
   const acceptedCount = analyzedList.filter(a => a.status === 'Accepted').length;
 
   const filteredList = analyzedList.filter(a => {
-    if (categoryFilter === 'registered_no_course') return a.status === 'RegisteredOnly';
-    if (categoryFilter === 'candidates_with_course') return a.status !== 'RegisteredOnly' && a.status !== 'Accepted';
+    if (categoryFilter === 'registered_no_course') return a.status === 'RegisteredOnly' || !a.hasApplied;
+    if (categoryFilter === 'candidates_with_course') return a.hasApplied && a.status !== 'Accepted';
     if (categoryFilter === 'accepted') return a.status === 'Accepted';
     return true;
   });
@@ -253,13 +253,14 @@ export default function EmailAutomationSection({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredList.map((analysis) => {
+                  {filteredList.map((analysis, index) => {
                     const currentSpec = EMAIL_TEMPLATES[analysis.suggestedTemplateKey];
                     const isRowSending = sendingId === analysis.id;
+                    const rowKey = analysis.id ? `cand-row-${analysis.id}` : `analysis-${analysis.email || index}`;
 
                     return (
                       <div
-                        key={analysis.id}
+                        key={rowKey}
                         className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm"
                       >
                         <div className="flex-1 min-w-0">

@@ -47,7 +47,8 @@ export function setAutoPilotActive(enabled: boolean): void {
  * Analyse l'état d'un compte candidat / étudiant et détermine le mail de relance idéal
  */
 export function analyzeStudentAccount(candidate: any): StudentAccountAnalysis {
-  const id = candidate.id || candidate.$id || `cand-${Date.now()}`;
+  const cleanEmail = (candidate.email || '').trim().toLowerCase();
+  const id = candidate.id || candidate.$id || (cleanEmail ? `cand-${cleanEmail}` : `cand-${Math.random().toString(36).substring(2, 9)}`);
   const name = candidate.name || `${candidate.firstName || ''} ${candidate.lastName || ''}`.trim() || 'Candidat';
   const email = candidate.email || '';
 
