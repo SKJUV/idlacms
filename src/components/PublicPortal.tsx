@@ -70,38 +70,46 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const modalRef = useRef<HTMLDivElement>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Sync article selection from URL
+  // Preserve initial URL article parameter across async news loading
+  const initialArticleIdRef = useRef<string | null>(
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('article') : null
+  );
+  const hasInitializedArticleRef = useRef(false);
+
+  // Sync article selection from URL when news is loaded
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const articleId = searchParams.get('article');
-    if (articleId && news.length > 0) {
-      const found = news.find((n) => n.id === articleId);
+    const articleId = searchParams.get('article') || initialArticleIdRef.current;
+    
+    if (articleId && news.length > 0 && !hasInitializedArticleRef.current) {
+      const found = news.find((n) => n.id === articleId || n.id.endsWith(articleId));
       if (found) {
+        hasInitializedArticleRef.current = true;
         if (activeTab !== 'actualites') {
           setActiveTab('actualites');
         }
-        if (!selectedArticle || selectedArticle.id !== articleId) {
-          setSelectedArticle(found);
-        }
+        setSelectedArticle(found);
       }
     }
   }, [news, activeTab]);
 
-  // Sync URL when article is selected
+  // Sync URL when article is selected / closed
   useEffect(() => {
     if (activeTab === 'actualites') {
       const url = new URL(window.location.href);
       if (selectedArticle) {
         url.searchParams.set('article', selectedArticle.id);
-      } else {
+        window.history.replaceState({}, '', url.toString());
+      } else if (hasInitializedArticleRef.current) {
         url.searchParams.delete('article');
+        window.history.replaceState({}, '', url.toString());
       }
-      window.history.replaceState({}, '', url.toString());
     }
   }, [selectedArticle, activeTab]);
 
   const handleShareArticle = (article: NewsArticle) => {
     const url = new URL(window.location.href);
+    url.pathname = '/actualites';
     url.searchParams.set('article', article.id);
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopySuccess(true);
