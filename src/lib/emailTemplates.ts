@@ -4,6 +4,8 @@
  * Style : Code de vérification institutionnel, sobre, académique, professionnel, 0 émoji.
  */
 
+import { generateMatricule } from './admissionLetter';
+
 export const BASE_URL = 'https://idlaacademy.online';
 
 export interface EmailTemplateData {
@@ -298,12 +300,12 @@ Plateforme : ${BASE_URL}`,
   admission_confirmation: {
     key: 'admission_confirmation',
     label: 'Confirmation d\'Admission & Matricule',
-    subject: (d) => `Confirmation d'admission — Numéro de Matricule : ${d.matricule || 'IDLA-2026-N/A'}`,
+    subject: (d) => `Confirmation d'admission — Numéro de Matricule : ${d.matricule || generateMatricule(d.studentEmail || d.studentName || 'IDLA')}`,
     body: (d) => `Bonjour ${d.studentName || 'Chers étudiant(e)'},
 
 Nous avons le plaisir de vous informer que le conseil académique de l'IDLA a émis un avis favorable concernant votre admission au sein du programme ${d.programTitle || 'académique'} (${d.entryLevel || 'L1'}).
 
-Votre numéro de matricule étudiant permanent est le suivant : ${d.matricule || 'IDLA-2026-N/A'}
+Votre numéro de matricule étudiant permanent est le suivant : ${d.matricule || generateMatricule(d.studentEmail || d.studentName || 'IDLA')}
 
 Accès à vos services académiques :
 Vous pouvez dès à présent vous connecter à votre portail étudiant (${BASE_URL}/etudiant) afin de :
@@ -327,7 +329,7 @@ Plateforme : ${BASE_URL}`,
       ],
       highlightBox: {
         label: 'VOTRE MATRICULE ÉTUDIANT PERMANENT',
-        code: d.matricule || 'IDLA-2026-N/A',
+        code: d.matricule || generateMatricule(d.studentEmail || d.studentName || 'IDLA'),
         subtext: 'Conservez ce numéro précieusement pour vos démarches administratives.'
       },
       ctaButton: {

@@ -5,6 +5,7 @@
 
 import { EMAIL_TEMPLATES, EmailTemplateKey, EmailTemplateData, BASE_URL } from './emailTemplates';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from './appwrite';
+import { generateMatricule } from './admissionLetter';
 
 export interface StudentAccountAnalysis {
   id: string;
@@ -69,7 +70,7 @@ export function analyzeStudentAccount(candidate: any): StudentAccountAnalysis {
   const mainApp = courseApps[0] || candidate;
   const program = mainApp?.program;
   const entryLevel = mainApp?.entryLevel;
-  const matricule = mainApp?.matricule;
+  const matricule = mainApp?.matricule || candidate.matricule || generateMatricule(email || name);
   const statusRaw = mainApp?.status || candidate.status || 'New';
 
   // Statuts globaux du candidat
