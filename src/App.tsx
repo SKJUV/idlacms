@@ -2,7 +2,7 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, Role as AppwriteRole } from './lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -513,41 +513,57 @@ export default function App() {
     } catch (e) {}
   }, [activeTab, role]);
 
-  // Background auto-sync of local programs to cloud when an admin session is active
+  // Background auto-sync of local programs to cloud when an admin session is active (runs once per admin login)
   useEffect(() => {
-    if (role === 'admin' && programs.length > 0 && isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.programs) {
+    if (role === 'admin' && isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.programs) {
       const syncPrograms = async () => {
         try {
-          const res = await databases.listDocuments(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.programs);
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.programs,
+            [Query.limit(5000)]
+          );
           const remoteProgs = res.documents;
+          const remoteIds = new Set(remoteProgs.map((cd: any) => cd.$id));
+          const remoteTitles = new Set(remoteProgs.map((cd: any) => (cd.title || '').toLowerCase().trim()));
+
           let currentLocal: any[] = [];
           try {
             currentLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]');
           } catch (e) {}
 
           for (const lp of currentLocal) {
-            const existsInCloud = remoteProgs.some((cd: any) => cd.$id === lp.id || cd.title?.toLowerCase() === lp.title?.toLowerCase());
-            if (!existsInCloud && lp.id && lp.title) {
+            const cleanTitle = (lp.title || '').toLowerCase().trim();
+            const existsById = lp.id && remoteIds.has(lp.id);
+            const existsByTitle = cleanTitle && remoteTitles.has(cleanTitle);
+
+            if (!existsById && !existsByTitle && lp.id && lp.title) {
               const safeCategory = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(lp.category)
                 ? lp.category
                 : 'Tech';
-              await databases.createDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.programs,
-                lp.id,
-                {
-                  title: lp.title,
-                  description: lp.description || lp.title,
-                  type: lp.type || 'Master',
-                  category: safeCategory,
-                  duration: lp.duration || '1 an',
-                  image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-                  isNew: !!lp.isNew,
-                  price: lp.price,
-                  procedures: lp.procedures,
-                },
-                [Permission.read(AppwriteRole.any())]
-              ).catch((e) => console.warn("Auto-sync local program vers cloud:", e));
+              try {
+                await databases.createDocument(
+                  APPWRITE_CONFIG.databaseId,
+                  APPWRITE_CONFIG.collections.programs,
+                  ID.unique(),
+                  {
+                    title: lp.title,
+                    description: lp.description || lp.title,
+                    type: lp.type || 'Master',
+                    category: safeCategory,
+                    duration: lp.duration || '1 an',
+                    image: lp.image || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+                    isNew: !!lp.isNew,
+                    price: lp.price,
+                    procedures: lp.procedures,
+                  },
+                  [Permission.read(AppwriteRole.any())]
+                );
+              } catch (e: any) {
+                if (e?.code !== 409) {
+                  console.warn("Auto-sync local program vers cloud:", e);
+                }
+              }
             }
           }
         } catch (err) {
@@ -556,7 +572,7 @@ export default function App() {
       };
       syncPrograms();
     }
-  }, [role, programs]);
+  }, [role]);
 
   const clearAppwriteSession = () => {
     account.deleteSession({ sessionId: 'current' }).catch(() => {});
