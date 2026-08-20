@@ -327,9 +327,29 @@ export default function StudentPortal({
             const res = await databases.listDocuments(
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
-              [Query.equal('email', userEmail)]
+              [Query.limit(5000), Query.orderDesc('$createdAt')]
             );
-            loadedApps = [...res.documents];
+            const userApps = res.documents
+              .filter((doc: any) => (doc.email || '').toLowerCase().trim() === userEmail)
+              .map((doc: any) => ({
+                id: doc.$id,
+                $id: doc.$id,
+                name: doc.name,
+                email: doc.email,
+                program: doc.program,
+                entryLevel: doc.entryLevel,
+                matricule: doc.matricule,
+                dateApplied: doc.dateApplied || (doc.$createdAt ? new Date(doc.$createdAt).toLocaleDateString('fr-FR') : 'Récemment'),
+                status: doc.status || 'New',
+                initials: doc.initials || (doc.name ? doc.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'ET'),
+                phone: doc.phone,
+                nationality: doc.nationality,
+                highestDegree: doc.highestDegree,
+                graduationYear: doc.graduationYear,
+                motivation: doc.motivation,
+                documents: doc.files ? (typeof doc.files === 'string' ? JSON.parse(doc.files).map((f: any) => f.name || f) : doc.files) : [],
+              }));
+            loadedApps = userApps;
           } catch (err) {
             console.warn("Erreur chargement candidatures Appwrite:", err);
           }
@@ -340,8 +360,17 @@ export default function StudentPortal({
           const localApps = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
           const userLocal = localApps.filter((a: any) => (a.email || '').toLowerCase().trim() === userEmail);
           userLocal.forEach((localApp: any) => {
-            if (!loadedApps.some((a) => a.$id === localApp.id || a.id === localApp.id || (a.program === localApp.program && a.program))) {
-              loadedApps.push(localApp);
+            const normalizedLocal = {
+              ...localApp,
+              id: localApp.id || localApp.$id || `local-${Math.random()}`,
+              $id: localApp.$id || localApp.id,
+            };
+            const alreadyExists = loadedApps.some((a) => 
+              (a.id && a.id === normalizedLocal.id) ||
+              (a.program && normalizedLocal.program && a.program.toLowerCase().trim() === normalizedLocal.program.toLowerCase().trim())
+            );
+            if (!alreadyExists) {
+              loadedApps.push(normalizedLocal);
             }
           });
         } catch (e) {}
