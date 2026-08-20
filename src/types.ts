@@ -77,6 +77,12 @@ export interface NewsArticle {
   endDate?: string;
 }
 
+export interface FieldRule {
+  fieldId: string;
+  operator: 'equals' | 'not_equals' | 'contains';
+  value: string;
+}
+
 export interface CustomFormField {
   id: string;
   label: string;
@@ -84,6 +90,11 @@ export interface CustomFormField {
   required: boolean;
   options?: string[];
   placeholder?: string;
+  helpText?: string;
+  displayRules?: FieldRule[];
+  cascadeParentId?: string;
+  cascadeMapping?: Record<string, string[]>;
+  feeContribution?: number;
 }
 
 export interface CustomForm {

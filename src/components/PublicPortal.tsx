@@ -1241,155 +1241,209 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </div>
               ) : (
                 <form onSubmit={handlePublicFormSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
-                  {activeFormModal.fields.map((f) => {
-                    const val = activeFormValues[f.label] || '';
+                  {(() => {
+                    // Calcul du tarif dynamique
+                    const desc = activeFormModal.description || '';
+                    const feeMatch = desc.match(/(\d[\d\s]*\d)\s*FCFA/i);
+                    const feeAmount = feeMatch ? feeMatch[1] : null;
+
                     return (
-                      <div key={f.id} className="space-y-1.5">
-                        <label className="text-xs font-bold text-text-primary flex items-center justify-between">
-                          <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
-                          {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
-                        </label>
-
-                        {/* Input text */}
-                        {f.type === 'text' && (
-                          <input
-                            type="text"
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Textarea */}
-                        {f.type === 'textarea' && (
-                          <textarea
-                            rows={3}
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Number */}
-                        {f.type === 'number' && (
-                          <input
-                            type="number"
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Date */}
-                        {f.type === 'date' && (
-                          <input
-                            type="date"
-                            required={f.required}
-                            value={val}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Select */}
-                        {f.type === 'select' && (
-                          <select
-                            required={f.required}
-                            value={val}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
-                          >
-                            <option value="">-- Sélectionnez une option --</option>
-                            {(f.options || []).map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        )}
-
-                        {/* Radio */}
-                        {f.type === 'radio' && (
-                          <div className="space-y-1.5 pt-1">
-                            {(f.options || []).map((opt) => (
-                              <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={f.id}
-                                  required={f.required && !val}
-                                  checked={val === opt}
-                                  onChange={() => setActiveFormValues({ ...activeFormValues, [f.label]: opt })}
-                                  className="w-4 h-4 text-brand-primary accent-brand-primary"
-                                />
-                                {opt}
-                              </label>
-                            ))}
+                      <>
+                        {feeAmount && (
+                          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-brand-primary text-xs font-bold">
+                              <span>💳 Frais de traitement de dossier :</span>
+                            </div>
+                            <span className="text-sm font-extrabold text-brand-primary bg-white dark:bg-bg-secondary px-3 py-1 rounded-lg border border-brand-primary/20 shadow-sm">
+                              {feeAmount} FCFA
+                            </span>
                           </div>
                         )}
 
-                        {/* Checkbox */}
-                        {f.type === 'checkbox' && (
-                          <div className="space-y-1.5 pt-1">
-                            {(f.options || ['Oui']).map((opt) => {
-                              const currArr: string[] = Array.isArray(val) ? val : [];
-                              const checked = currArr.includes(opt);
-                              return (
-                                <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      const next = e.target.checked
-                                        ? [...currArr, opt]
-                                        : currArr.filter((item) => item !== opt);
-                                      setActiveFormValues({ ...activeFormValues, [f.label]: next });
-                                    }}
-                                    className="w-4 h-4 text-brand-primary rounded accent-brand-primary"
-                                  />
-                                  {opt}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
+                        {activeFormModal.fields.map((f) => {
+                          const val = activeFormValues[f.label] || '';
 
-                        {/* File Upload */}
-                        {f.type === 'file' && (
-                          <input
-                            type="file"
-                            required={f.required}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setActiveFormValues({ ...activeFormValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                          // Logique d'options en cascade
+                          let availableOptions = f.options || [];
+                          if (f.cascadeParentId) {
+                            const parentField = activeFormModal.fields.find((p) => p.id === f.cascadeParentId);
+                            const parentVal = parentField ? activeFormValues[parentField.label] : '';
+                            if (parentVal) {
+                              const parentLower = String(parentVal).toLowerCase();
+                              if (parentLower.includes('1ère') || parentLower.includes('licence 1') || parentLower.includes('bachelor 1')) {
+                                availableOptions = availableOptions.filter(o => !o.toLowerCase().includes('master') && !o.toLowerCase().includes('msc'));
+                              } else if (parentLower.includes('4ème') || parentLower.includes('master') || parentLower.includes('diploma')) {
+                                availableOptions = availableOptions.filter(o => o.toLowerCase().includes('msc') || o.toLowerCase().includes('master') || o.toLowerCase().includes('diploma') || o.toLowerCase().includes('llm'));
                               }
-                            }}
-                            className="w-full text-xs text-text-secondary border border-border-primary rounded-lg p-2 bg-bg-primary cursor-pointer"
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+                            }
+                          }
 
-                  <div className="pt-4 border-t border-border-primary flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFormModal(null)}
-                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary cursor-pointer"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
-                    >
-                      <Send className="w-4 h-4" /> Soumettre le formulaire
-                    </button>
-                  </div>
+                          return (
+                            <div key={f.id} className="space-y-1.5 bg-bg-secondary/30 p-3 rounded-xl border border-border-primary/50">
+                              <label className="text-xs font-bold text-text-primary flex items-center justify-between">
+                                <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
+                                {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
+                              </label>
+
+                              {f.helpText && (
+                                <p className="text-[11px] text-text-secondary italic">{f.helpText}</p>
+                              )}
+
+                              {/* Input text */}
+                              {f.type === 'text' && (
+                                <input
+                                  type="text"
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Textarea */}
+                              {f.type === 'textarea' && (
+                                <textarea
+                                  rows={3}
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Number */}
+                              {f.type === 'number' && (
+                                <input
+                                  type="number"
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Date */}
+                              {f.type === 'date' && (
+                                <input
+                                  type="date"
+                                  required={f.required}
+                                  value={val}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Select */}
+                              {f.type === 'select' && (
+                                <select
+                                  required={f.required}
+                                  value={val}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
+                                >
+                                  <option value="">-- Sélectionnez une option --</option>
+                                  {availableOptions.map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              )}
+
+                              {/* Radio */}
+                              {f.type === 'radio' && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {availableOptions.map((opt) => {
+                                    const selected = val === opt;
+                                    return (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => setActiveFormValues({ ...activeFormValues, [f.label]: opt })}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                                          selected
+                                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                            : 'bg-bg-primary text-text-primary border-border-primary hover:border-brand-primary/50'
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-white bg-white' : 'border-text-secondary'}`}>
+                                          {selected && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
+                                        </div>
+                                        <span>{opt}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Checkbox */}
+                              {f.type === 'checkbox' && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {availableOptions.map((opt) => {
+                                    const currArr: string[] = Array.isArray(val) ? val : [];
+                                    const checked = currArr.includes(opt);
+                                    return (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => {
+                                          const next = checked ? currArr.filter((item) => item !== opt) : [...currArr, opt];
+                                          setActiveFormValues({ ...activeFormValues, [f.label]: next });
+                                        }}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                                          checked
+                                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                            : 'bg-bg-primary text-text-primary border-border-primary hover:border-brand-primary/50'
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${checked ? 'border-white bg-white' : 'border-text-secondary'}`}>
+                                          {checked && <CheckCircle2 className="w-3 h-3 text-brand-primary" />}
+                                        </div>
+                                        <span>{opt}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* File Upload */}
+                              {f.type === 'file' && (
+                                <input
+                                  type="file"
+                                  required={f.required}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      setActiveFormValues({ ...activeFormValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                                    }
+                                  }}
+                                  className="w-full text-xs text-text-secondary border border-border-primary rounded-lg p-2 bg-bg-primary cursor-pointer"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-4 border-t border-border-primary flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setActiveFormModal(null)}
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-secondary border border-border-primary cursor-pointer"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            type="submit"
+                            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+                          >
+                            <Send className="w-4 h-4" />
+                            {feeAmount ? `Soumettre et Valider (${feeAmount} FCFA)` : 'Transmettre mon formulaire'}
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </form>
               )}
             </div>
