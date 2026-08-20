@@ -354,14 +354,18 @@ export function applyProgramFilters<T extends { title: string; description?: str
 
     // Duration matching
     if (filters.duration !== 'Toutes') {
-      const d = (p.duration || '').toLowerCase();
-      if (filters.duration === 'courte' && !d.includes('mois') && !d.includes('semaine') && !d.includes('certif')) {
-        return false;
-      }
-      if (filters.duration === 'moyenne' && !d.includes('1 ans') && !d.includes('1.5 ans') && !d.includes('2 ans') && !d.includes('12 mois')) {
-        return false;
-      }
-      if (filters.duration === 'longue' && !d.includes('3 ans') && !d.includes('4 ans') && !d.includes('5 ans') && !d.includes('36 mois')) {
+      const d = (p.duration || '').toLowerCase().trim();
+      const target = filters.duration.toLowerCase().trim();
+
+      if (target === '6 mois') {
+        if (!d.includes('6 mois') && !d.includes('6m') && !d.includes('semaine') && !d.includes('certif') && !d.includes('court')) return false;
+      } else if (target === '12 mois') {
+        if (!d.includes('12 mois') && !d.includes('1 an') && !d.includes('1ans')) return false;
+      } else if (target === '2 ans') {
+        if (!d.includes('2 ans') && !d.includes('24 mois') && !d.includes('2ans')) return false;
+      } else if (target === '3 ans+') {
+        if (!d.includes('3 ans') && !d.includes('4 ans') && !d.includes('5 ans') && !d.includes('36 mois') && !d.includes('doctorat')) return false;
+      } else if (!d.includes(target)) {
         return false;
       }
     }
