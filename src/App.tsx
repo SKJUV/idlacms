@@ -58,7 +58,7 @@ const STUDENT_TABS: ActiveTab[] = [
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
   'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
-  'admin-settings', 'admin-profile',
+  'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
   'teacher-dashboard', 'teacher-schedule', 'teacher-students', 'teacher-profile',
@@ -713,9 +713,13 @@ export default function App() {
       }
 
       setRole(userRole);
-      if (userRole === 'teacher') setActiveTab('teacher-dashboard');
-      else if (userRole === 'admin') setActiveTab('admin-dashboard');
-      else setActiveTab('student-dashboard');
+      if (userRole === 'teacher') {
+        if (!TEACHER_TABS.includes(activeTab)) setActiveTab('teacher-dashboard');
+      } else if (userRole === 'admin') {
+        if (!ADMIN_TABS.includes(activeTab)) setActiveTab('admin-dashboard');
+      } else {
+        if (!STUDENT_TABS.includes(activeTab)) setActiveTab('student-dashboard');
+      }
     } catch (err) {
       console.error("Erreur lors de l'authentification :", err);
       sessionStorage.removeItem('idla_portal_session_email');
