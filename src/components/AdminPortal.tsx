@@ -182,21 +182,8 @@ export default function AdminPortal({
             image: doc.image,
             isNew: doc.isNew,
           }));
-          let currentLocal: any[] = [];
-          try { currentLocal = JSON.parse(localStorage.getItem('idla_local_programs') || '[]'); } catch (e) {}
-          const uniqueMap = new Map<string, any>();
-          // On garde les programmes locaux qui ont un ID commençant par 'prog-' et qui ne sont pas dans le cloud
-          // (au cas où ils n'ont pas pu être synchronisés)
-          for (const lp of currentLocal) {
-            if (lp && lp.id) uniqueMap.set(lp.id, lp);
-          }
-          // On écrase avec les données plus récentes du Cloud
-          for (const rp of remoteProgs) {
-            if (rp && rp.id) uniqueMap.set(rp.id, rp);
-          }
-          const finalPrograms = Array.from(uniqueMap.values()).sort((a, b) => a.title.localeCompare(b.title));
+          const finalPrograms = remoteProgs.sort((a, b) => a.title.localeCompare(b.title));
           try { localStorage.setItem('idla_local_programs', JSON.stringify(finalPrograms)); } catch (e) {}
-          // Sync complete
           setPrograms(finalPrograms);
         } else {
           setPrograms((curr) => {

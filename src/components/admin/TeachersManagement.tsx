@@ -131,19 +131,14 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
       console.warn("Erreur chargement enseignants Appwrite (cms_users):", err);
     }
 
-    let localTeachers: any[] = [];
-    try { localTeachers = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]'); } catch {}
-
-    const combined = [...cloudDocs];
-    
-    localTeachers.forEach(lt => {
-      if (!combined.some(c => c.id === lt.id || c.email === lt.email || c.$id === lt.id)) {
-        combined.push(lt);
-      }
-    });
-
-    setTeachers(combined);
-    try { localStorage.setItem('idla_local_teachers', JSON.stringify(combined)); } catch {}
+    if (isAppwriteDbConfigured() && cloudDocs.length > 0) {
+      setTeachers(cloudDocs);
+      try { localStorage.setItem('idla_local_teachers', JSON.stringify(cloudDocs)); } catch {}
+    } else {
+      let localTeachers: any[] = [];
+      try { localTeachers = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]'); } catch {}
+      setTeachers(localTeachers);
+    }
     setLoading(false);
   };
 
