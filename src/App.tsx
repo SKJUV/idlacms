@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
+import EntranceModal from './components/EntranceModal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 
@@ -12,12 +13,14 @@ const StudentPortal = lazy(() => import('./components/StudentPortal'));
 const AdminPortal = lazy(() => import('./components/AdminPortal'));
 const TeacherPortal = lazy(() => import('./components/TeacherPortal'));
 const PasswordReset = lazy(() => import('./components/PasswordReset'));
+const FormPage = lazy(() => import('./components/FormPage'));
 
 export type ActiveTab =
   | 'home'
   | 'programmes'
   | 'actualites'
   | 'temoignages'
+  | 'formulaire'
   | 'candidature'
   | 'success'
   | 'student-login'
@@ -68,6 +71,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   programmes: '/programmes',
   actualites: '/actualites',
   temoignages: '/temoignages',
+  formulaire: '/formulaire',
   candidature: '/candidature',
   success: '/candidature/confirmation',
   'student-login': '/etudiant',
@@ -452,6 +456,10 @@ export default function App() {
                 category: doc.category,
                 image: doc.image,
                 isFeatured: doc.isFeatured,
+                formId: doc.formId,
+                formUrl: doc.formUrl,
+                startDate: doc.startDate,
+                endDate: doc.endDate,
               }))
             );
           }
@@ -802,6 +810,17 @@ export default function App() {
           />
         )}
 
+        {/* DEDICATED STANDALONE FORM PAGE */}
+        {activeTab === 'formulaire' && (
+          <FormPage
+            onBack={() => setActiveTab('actualites')}
+            newsList={news}
+            programs={programs}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        )}
+
         {/* APPLICATION STEPPER FORM */}
         {activeTab === 'candidature' && (
           <ApplicationForm
@@ -900,6 +919,18 @@ export default function App() {
         )}
         </Suspense>
       </main>
+
+      {/* Floating Concours Badge (Bottom Left Corner) - VISIBLE ONLY ON PUBLIC PAGES (Home, Programmes, Actualités, Témoignages, Formulaires). HIDDEN IN ACCOUNT DASHBOARDS. */}
+      {!isDashboardLayout && (PUBLIC_TABS.includes(activeTab) || activeTab === 'formulaire' || activeTab === 'candidature') && (
+        <EntranceModal
+          onOpenConcoursForm={() => {
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('id', 'form_concours_1_3_4_b52s6y');
+            window.history.pushState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
+            setActiveTab('formulaire');
+          }}
+        />
+      )}
     </div>
   );
 }

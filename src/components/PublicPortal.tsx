@@ -23,7 +23,8 @@ import {
   CopyIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
+import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 
 interface PublicPortalProps {
@@ -70,38 +71,46 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const modalRef = useRef<HTMLDivElement>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Sync article selection from URL
+  // Preserve initial URL article parameter across async news loading
+  const initialArticleIdRef = useRef<string | null>(
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('article') : null
+  );
+  const hasInitializedArticleRef = useRef(false);
+
+  // Sync article selection from URL when news is loaded
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const articleId = searchParams.get('article');
-    if (articleId && news.length > 0) {
-      const found = news.find((n) => n.id === articleId);
+    const articleId = searchParams.get('article') || initialArticleIdRef.current;
+    
+    if (articleId && news.length > 0 && !hasInitializedArticleRef.current) {
+      const found = news.find((n) => n.id === articleId || n.id.endsWith(articleId));
       if (found) {
+        hasInitializedArticleRef.current = true;
         if (activeTab !== 'actualites') {
           setActiveTab('actualites');
         }
-        if (!selectedArticle || selectedArticle.id !== articleId) {
-          setSelectedArticle(found);
-        }
+        setSelectedArticle(found);
       }
     }
   }, [news, activeTab]);
 
-  // Sync URL when article is selected
+  // Sync URL when article is selected / closed
   useEffect(() => {
     if (activeTab === 'actualites') {
       const url = new URL(window.location.href);
       if (selectedArticle) {
         url.searchParams.set('article', selectedArticle.id);
-      } else {
+        window.history.replaceState({}, '', url.toString());
+      } else if (hasInitializedArticleRef.current) {
         url.searchParams.delete('article');
+        window.history.replaceState({}, '', url.toString());
       }
-      window.history.replaceState({}, '', url.toString());
     }
   }, [selectedArticle, activeTab]);
 
   const handleShareArticle = (article: NewsArticle) => {
     const url = new URL(window.location.href);
+    url.pathname = '/actualites';
     url.searchParams.set('article', article.id);
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopySuccess(true);
@@ -115,40 +124,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
 
   const handleOpenFormModal = async (formId: string) => {
-    if (formId === 'system_event_registration') {
-      setActiveFormModal(EVENT_REGISTRATION_FORM);
-      setActiveFormValues({});
-      setFormSubmittedSuccess(false);
-      return;
-    }
-    
-    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
-      try {
-        const doc = await databases.getDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.customForms, formId);
-        setActiveFormModal({
-          id: doc.$id,
-          title: doc.title,
-          description: doc.description || '',
-          createdAt: doc.createdAt,
-          fields: JSON.parse(doc.fields || '[]')
-        });
-        setActiveFormValues({});
-        setFormSubmittedSuccess(false);
-        return;
-      } catch (err) {
-        console.error("Échec du chargement du formulaire depuis Appwrite:", err);
-      }
-    }
-
-    try {
-      const savedForms: CustomForm[] = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
-      const targetForm = savedForms.find((f) => f.id === formId);
-      if (targetForm) {
-        setActiveFormModal(targetForm);
-        setActiveFormValues({});
-        setFormSubmittedSuccess(false);
-      }
-    } catch (e) {}
+    window.history.pushState({}, '', `/formulaire?id=${formId}`);
+    setActiveTab('formulaire' as any);
   };
 
   useEffect(() => {
@@ -159,12 +136,30 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
+  const [formEmailError, setFormEmailError] = useState('');
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
   const handlePublicFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!activeFormModal) return;
+    setFormEmailError('');
 
-    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || 'Visiteur';
-    const respondentEmail = activeFormValues['Adresse e-mail'] || activeFormValues['Email'] || activeFormValues['E-mail'] || '';
+    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || activeFormValues['Nom de famille'] || 'Candidat IDLA';
+    
+    // Détection stricte de l'adresse email
+    const emailKey = Object.keys(activeFormValues).find(
+      k => k.toLowerCase().includes('email') || k.toLowerCase().includes('e-mail') || k.toLowerCase().includes('courriel')
+    );
+    const respondentEmail = emailKey ? String(activeFormValues[emailKey]).trim() : '';
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!respondentEmail || !emailRegex.test(respondentEmail)) {
+      setFormEmailError("⚠️ L'adresse e-mail saisie est invalide. Veuillez vérifier et saisir une adresse e-mail exacte (ex: nom@domaine.com) pour recevoir la copie PDF officielle de votre candidature.");
+      return;
+    }
+
+    setIsSubmittingForm(true);
+    const refNum = `REF-IDLA-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newResponseId = isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses ? ID.unique() : `resp-${Date.now()}`;
     const newResponse: CustomFormResponse = {
@@ -208,6 +203,55 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       } catch (err) {}
     }
 
+    // Génération du PDF et envoi par email
+    try {
+      const pdfBase64 = generateFormPdfBase64(activeFormModal, activeFormValues, refNum);
+      const emailBodyHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+          <div style="background-color: #166534; color: white; padding: 24px; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px;">IDLA ACADEMY</h2>
+            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Récépissé Officiel</p>
+          </div>
+          <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+            <p>Bonjour <strong>${respondentName}</strong>,</p>
+            <p>Votre candidature pour le formulaire <strong>${activeFormModal.title}</strong> a bien été transmise et enregistrée.</p>
+            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #166534; display: inline-block; margin: 10px 0;">
+              Référence du dossier : ${refNum}
+            </div>
+            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle et votre récépissé en format PDF</strong>.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <h4 style="color: #166534; margin-bottom: 8px;">Détails des informations soumises :</h4>
+            <ul style="padding-left: 20px; font-size: 13px; color: #334155;">
+              ${Object.entries(activeFormValues).map(([k, v]) => `<li><strong>${k} :</strong> ${Array.isArray(v) ? v.join(', ') : v}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background-color: #f8fafc; text-align: center; padding: 16px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #166534; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
+            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #166534;">admissions@idlaacademy.online</a>
+          </div>
+        </div>
+      `;
+
+      await fetch('/api/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: [respondentEmail, 'admissions@idlaacademy.online', 'idlaacademy@gmail.com'],
+          subject: `[Récépissé IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
+          html: emailBodyHtml,
+          attachments: [
+            {
+              filename: `Recepisse_Inscription_IDLA_${refNum}.pdf`,
+              content: pdfBase64,
+            }
+          ]
+        })
+      });
+    } catch (e) {
+      console.error("Échec envoi mail PDF:", e);
+    }
+
+    setIsSubmittingForm(false);
     setFormSubmittedSuccess(true);
   };
 
@@ -1221,187 +1265,270 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
 
-        {/* ── MODALE PUBLIQUE : Formulaire sur mesure interactif ── */}
+        {/* ── MODALE & PAGE DÉDIÉE PUBLIQUE : Formulaire sur mesure officiel ── */}
         {activeFormModal && (
-          <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md" onClick={() => setActiveFormModal(null)}>
-            <div className="bg-bg-secondary text-text-primary w-full max-w-xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-border-primary" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-primary">
+          <div className="fixed inset-0 z-[220] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto" onClick={() => setActiveFormModal(null)}>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-3xl my-auto rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-brand-primary/30 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              {/* Standalone Header Bar */}
+              <div className="px-6 py-5 border-b border-border-primary bg-bg-primary flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-base text-text-primary flex items-center gap-2">
-                    <FileTextIcon className="w-5 h-5 text-brand-primary" /> {activeFormModal.title}
+                  <div className="flex items-center gap-2 text-[11px] font-extrabold text-brand-primary uppercase tracking-wider mb-1">
+                    <span>IDLA Academy</span>
+                    <span>•</span>
+                    <span>Formulaire Officiel d'Inscription</span>
+                  </div>
+                  <h3 className="font-extrabold text-lg sm:text-xl text-text-primary flex items-center gap-2">
+                    <FileTextIcon className="w-6 h-6 text-brand-primary" /> {activeFormModal.title}
                   </h3>
-                  <p className="text-xs text-text-secondary mt-0.5">{activeFormModal.description}</p>
+                  <p className="text-xs text-text-secondary mt-1 max-w-xl">{activeFormModal.description}</p>
                 </div>
-                <button onClick={() => setActiveFormModal(null)} className="text-text-secondary hover:text-text-primary cursor-pointer p-1">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setActiveFormModal(null)} className="text-text-secondary hover:text-text-primary bg-bg-secondary hover:bg-border-primary/50 p-2 rounded-full transition-all cursor-pointer">
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
               {formSubmittedSuccess ? (
-                <div className="p-8 text-center space-y-4 my-auto">
-                  <CheckCircle2 className="w-14 h-14 text-brand-primary mx-auto" />
-                  <h4 className="font-bold text-xl text-text-primary">Formulaire transmis avec succès !</h4>
-                  <p className="text-sm text-text-secondary max-w-md mx-auto">
-                    Merci pour votre réponse. Vos informations ont bien été enregistrées et transmises à l'administration académique IDLA.
+                <div className="p-10 text-center space-y-5 my-auto bg-bg-primary/50">
+                  <div className="w-20 h-20 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto shadow-inner">
+                    <CheckCircle2 className="w-12 h-12 text-brand-primary" />
+                  </div>
+                  <h4 className="font-extrabold text-2xl text-text-primary">Formulaire & Candidature Transmis avec Succès !</h4>
+                  <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
+                    Vos informations ont bien été enregistrées. <strong>Un récépissé PDF ainsi qu'une confirmation de candidature</strong> ont été envoyés automatiquement par e-mail à votre adresse et aux services d'admissions IDLA.
                   </p>
+                  <div className="bg-brand-primary/10 border border-brand-primary/30 p-4 rounded-2xl max-w-md mx-auto text-xs text-brand-primary font-bold">
+                    ✉️ Vérifiez votre boîte de réception (et vos courriers indésirables / Spams).
+                  </div>
                   <button
                     onClick={() => setActiveFormModal(null)}
-                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer shadow"
+                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-8 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg"
                   >
                     Fermer la fenêtre
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handlePublicFormSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
-                  {activeFormModal.fields.map((f) => {
-                    const val = activeFormValues[f.label] || '';
+                <form onSubmit={handlePublicFormSubmit} className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 max-h-[80vh]">
+                  {formEmailError && (
+                    <div className="bg-rose-500/10 border border-rose-500/30 p-4 rounded-2xl text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                      <span>{formEmailError}</span>
+                    </div>
+                  )}
+
+                  {(() => {
+                    // Calcul du tarif dynamique
+                    const desc = activeFormModal.description || '';
+                    const feeMatch = desc.match(/(\d[\d\s]*\d)\s*FCFA/i);
+                    const feeAmount = feeMatch ? feeMatch[1] : null;
+
                     return (
-                      <div key={f.id} className="space-y-1.5">
-                        <label className="text-xs font-bold text-text-primary flex items-center justify-between">
-                          <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
-                          {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
-                        </label>
-
-                        {/* Input text */}
-                        {f.type === 'text' && (
-                          <input
-                            type="text"
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Textarea */}
-                        {f.type === 'textarea' && (
-                          <textarea
-                            rows={3}
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Number */}
-                        {f.type === 'number' && (
-                          <input
-                            type="number"
-                            required={f.required}
-                            value={val}
-                            placeholder={f.placeholder || ''}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Date */}
-                        {f.type === 'date' && (
-                          <input
-                            type="date"
-                            required={f.required}
-                            value={val}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                          />
-                        )}
-
-                        {/* Select */}
-                        {f.type === 'select' && (
-                          <select
-                            required={f.required}
-                            value={val}
-                            onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                            className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
-                          >
-                            <option value="">-- Sélectionnez une option --</option>
-                            {(f.options || []).map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        )}
-
-                        {/* Radio */}
-                        {f.type === 'radio' && (
-                          <div className="space-y-1.5 pt-1">
-                            {(f.options || []).map((opt) => (
-                              <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name={f.id}
-                                  required={f.required && !val}
-                                  checked={val === opt}
-                                  onChange={() => setActiveFormValues({ ...activeFormValues, [f.label]: opt })}
-                                  className="w-4 h-4 text-brand-primary accent-brand-primary"
-                                />
-                                {opt}
-                              </label>
-                            ))}
+                      <>
+                        {feeAmount && (
+                          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-brand-primary text-xs font-extrabold">
+                              <ShieldAlert className="w-5 h-5" />
+                              <span>Frais de traitement & Dossier de candidature :</span>
+                            </div>
+                            <span className="text-base font-extrabold text-brand-primary bg-white dark:bg-bg-secondary px-4 py-1.5 rounded-xl border border-brand-primary/20 shadow-sm">
+                              {feeAmount} FCFA
+                            </span>
                           </div>
                         )}
 
-                        {/* Checkbox */}
-                        {f.type === 'checkbox' && (
-                          <div className="space-y-1.5 pt-1">
-                            {(f.options || ['Oui']).map((opt) => {
-                              const currArr: string[] = Array.isArray(val) ? val : [];
-                              const checked = currArr.includes(opt);
-                              return (
-                                <label key={opt} className="flex items-center gap-2 text-xs font-semibold text-text-primary cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      const next = e.target.checked
-                                        ? [...currArr, opt]
-                                        : currArr.filter((item) => item !== opt);
-                                      setActiveFormValues({ ...activeFormValues, [f.label]: next });
-                                    }}
-                                    className="w-4 h-4 text-brand-primary rounded accent-brand-primary"
-                                  />
-                                  {opt}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
+                        {activeFormModal.fields.map((f) => {
+                          const val = activeFormValues[f.label] || '';
 
-                        {/* File Upload */}
-                        {f.type === 'file' && (
-                          <input
-                            type="file"
-                            required={f.required}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setActiveFormValues({ ...activeFormValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                          // Logique d'options en cascade
+                          let availableOptions = f.options || [];
+                          if (f.cascadeParentId) {
+                            const parentField = activeFormModal.fields.find((p) => p.id === f.cascadeParentId);
+                            const parentVal = parentField ? activeFormValues[parentField.label] : '';
+                            if (parentVal) {
+                              const parentLower = String(parentVal).toLowerCase();
+                              if (parentLower.includes('1ère') || parentLower.includes('licence 1') || parentLower.includes('bachelor 1')) {
+                                availableOptions = availableOptions.filter(o => !o.toLowerCase().includes('master') && !o.toLowerCase().includes('msc'));
+                              } else if (parentLower.includes('4ème') || parentLower.includes('master') || parentLower.includes('diploma')) {
+                                availableOptions = availableOptions.filter(o => o.toLowerCase().includes('msc') || o.toLowerCase().includes('master') || o.toLowerCase().includes('diploma') || o.toLowerCase().includes('llm'));
                               }
-                            }}
-                            className="w-full text-xs text-text-secondary border border-border-primary rounded-lg p-2 bg-bg-primary cursor-pointer"
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
+                            }
+                          }
 
-                  <div className="pt-4 border-t border-border-primary flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFormModal(null)}
-                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary cursor-pointer"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
-                    >
-                      <Send className="w-4 h-4" /> Soumettre le formulaire
-                    </button>
-                  </div>
+                          return (
+                            <div key={f.id} className="space-y-1.5 bg-bg-secondary/30 p-3 rounded-xl border border-border-primary/50">
+                              <label className="text-xs font-bold text-text-primary flex items-center justify-between">
+                                <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
+                                {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
+                              </label>
+
+                              {f.helpText && (
+                                <p className="text-[11px] text-text-secondary italic">{f.helpText}</p>
+                              )}
+
+                              {/* Input text */}
+                              {f.type === 'text' && (
+                                <input
+                                  type="text"
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Textarea */}
+                              {f.type === 'textarea' && (
+                                <textarea
+                                  rows={3}
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Number */}
+                              {f.type === 'number' && (
+                                <input
+                                  type="number"
+                                  required={f.required}
+                                  value={val}
+                                  placeholder={f.placeholder || ''}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Date */}
+                              {f.type === 'date' && (
+                                <input
+                                  type="date"
+                                  required={f.required}
+                                  value={val}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                />
+                              )}
+
+                              {/* Select */}
+                              {f.type === 'select' && (
+                                <select
+                                  required={f.required}
+                                  value={val}
+                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
+                                >
+                                  <option value="">-- Sélectionnez une option --</option>
+                                  {availableOptions.map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              )}
+
+                              {/* Radio */}
+                              {f.type === 'radio' && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {availableOptions.map((opt) => {
+                                    const selected = val === opt;
+                                    return (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => setActiveFormValues({ ...activeFormValues, [f.label]: opt })}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                                          selected
+                                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                            : 'bg-bg-primary text-text-primary border-border-primary hover:border-brand-primary/50'
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-white bg-white' : 'border-text-secondary'}`}>
+                                          {selected && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
+                                        </div>
+                                        <span>{opt}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Checkbox */}
+                              {f.type === 'checkbox' && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {availableOptions.map((opt) => {
+                                    const currArr: string[] = Array.isArray(val) ? val : [];
+                                    const checked = currArr.includes(opt);
+                                    return (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => {
+                                          const next = checked ? currArr.filter((item) => item !== opt) : [...currArr, opt];
+                                          setActiveFormValues({ ...activeFormValues, [f.label]: next });
+                                        }}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                                          checked
+                                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                            : 'bg-bg-primary text-text-primary border-border-primary hover:border-brand-primary/50'
+                                        }`}
+                                      >
+                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${checked ? 'border-white bg-white' : 'border-text-secondary'}`}>
+                                          {checked && <CheckCircle2 className="w-3 h-3 text-brand-primary" />}
+                                        </div>
+                                        <span>{opt}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* File Upload */}
+                              {f.type === 'file' && (
+                                <input
+                                  type="file"
+                                  required={f.required}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      setActiveFormValues({ ...activeFormValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                                    }
+                                  }}
+                                  className="w-full text-xs text-text-secondary border border-border-primary rounded-lg p-2 bg-bg-primary cursor-pointer"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-4 border-t border-border-primary flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setActiveFormModal(null)}
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-bg-secondary border border-border-primary cursor-pointer"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingForm}
+                            className="bg-brand-primary disabled:opacity-50 hover:bg-brand-hover text-white text-xs font-bold px-6 py-3 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+                          >
+                            {isSubmittingForm ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Génération du PDF & Envoi en cours...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4" />
+                                {feeAmount ? `Soumettre et Valider (${feeAmount} FCFA)` : 'Transmettre mon formulaire'}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </form>
               )}
             </div>

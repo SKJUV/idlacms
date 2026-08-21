@@ -104,7 +104,7 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  const { from, to, subject, text, html } = req.body || {};
+  const { from, to, subject, text, html, attachments } = req.body || {};
 
   if (!to || !subject) {
     return res.status(400).json({ error: 'Champs "to" et "subject" obligatoires' });
@@ -118,6 +118,7 @@ export default async function handler(req: any, res: any) {
     subject,
     ...(text ? { text } : {}),
     ...(html ? { html } : {}),
+    ...(attachments ? { attachments } : {}),
   });
 
   if (!ok) {

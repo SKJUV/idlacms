@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Plus, Newspaper, Pencil, Trash2, UploadCloud, X, ImageIcon, 
   FileText, Link as LinkIcon, Copy, Check, Eye, Download, Sparkles, 
-  FileSpreadsheet, HelpCircle, Layers, CheckSquare, Calendar, ChevronDown, AlignLeft
+  FileSpreadsheet, HelpCircle, Layers, CheckSquare, Calendar, ChevronDown, ChevronUp, AlignLeft
 } from 'lucide-react';
 import { NewsArticle, CustomForm, CustomFormField, CustomFormResponse, User } from '../../types';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../../lib/appwrite';
 import emailjs from '@emailjs/browser';
+import FormBuilderOptionTags from './FormBuilderOptionTags';
 
 interface NewsManagementProps {
   news: NewsArticle[];
@@ -252,7 +253,11 @@ export default function NewsManagement({
               title: newNewsTitle, 
               description: newNewsDescription, 
               category: newNewsCategory, 
-              image: finalImage 
+              image: finalImage,
+              formId: attachedFormId || '',
+              formUrl: attachedFormUrl || '',
+              startDate: eventStartDate || '',
+              endDate: eventEndDate || '',
             }
           );
         } catch (err) {
@@ -297,6 +302,10 @@ export default function NewsManagement({
             date: new Date().toISOString(),
             category: newArticle.category,
             image: newArticle.image,
+            formId: attachedFormId || '',
+            formUrl: attachedFormUrl || '',
+            startDate: eventStartDate || '',
+            endDate: eventEndDate || '',
           }
         );
       } catch (err) {
@@ -396,6 +405,74 @@ export default function NewsManagement({
       placeholder: ''
     };
     setBuilderFields((prev) => [...prev, newF]);
+  };
+
+  const handleDuplicateField = (fieldId: string) => {
+    const target = builderFields.find((f) => f.id === fieldId);
+    if (!target) return;
+    const cloned: CustomFormField = {
+      ...target,
+      id: `f_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      label: `${target.label} (Copie)`,
+    };
+    setBuilderFields((prev) => [...prev, cloned]);
+  };
+
+  const handleMoveField = (index: number, direction: 'up' | 'down') => {
+    const newFields = [...builderFields];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newFields.length) return;
+    const temp = newFields[index];
+    newFields[index] = newFields[targetIndex];
+    newFields[targetIndex] = temp;
+    setBuilderFields(newFields);
+  };
+
+  const handleAddPresetField = (presetKey: string) => {
+    const ts = Date.now();
+    let newF: CustomFormField | null = null;
+
+    if (presetKey === 'fullName') {
+      newF = { id: `f_${ts}`, label: 'Nom & Prénom', type: 'text', required: true, placeholder: 'Ex: SINENG JUVENAL' };
+    } else if (presetKey === 'email') {
+      newF = { id: `f_${ts}`, label: 'Adresse e-mail', type: 'text', required: true, placeholder: 'Ex: nom@domaine.com' };
+    } else if (presetKey === 'phone') {
+      newF = { id: `f_${ts}`, label: 'Numéro de téléphone', type: 'text', required: true, placeholder: 'Ex: +237 6XX XX XX XX' };
+    } else if (presetKey === 'birthDate') {
+      newF = { id: `f_${ts}`, label: 'Date de naissance', type: 'date', required: true };
+    } else if (presetKey === 'cni') {
+      newF = { id: `f_${ts}`, label: 'Numéro de CNI / Passeport', type: 'text', required: true, placeholder: 'Ex: 102938495' };
+    } else if (presetKey === 'level') {
+      newF = {
+        id: `f_${ts}_level`,
+        label: "Niveau d'études sollicité",
+        type: 'select',
+        required: true,
+        options: ['1ère année (Licence 1 / Bachelor 1)', '3ème année (Licence 3 / Bachelor 3)', '4ème année (Master 1 / Graduate Diploma)'],
+      };
+    } else if (presetKey === 'program') {
+      const levelField = builderFields.find(f => f.label.toLowerCase().includes('niveau'));
+      newF = {
+        id: `f_${ts}_program`,
+        label: 'Programme / Filière sollicité(e)',
+        type: 'select',
+        required: true,
+        options: [
+          'Bachelor of Science in Computer Applications (BCA / BSc Computing)',
+          'Bachelor of Business Administration (BBA)',
+          'MSc in Computer Science & Artificial Intelligence',
+          'Cisco CCNA-CCNP & Network Engineering',
+          'Master of Laws (LLM)',
+          'HRM | Human Resource Management',
+          'Graduate Diplomas in Business (Nivellement)',
+        ],
+        cascadeParentId: levelField ? levelField.id : undefined,
+      };
+    }
+
+    if (newF) {
+      setBuilderFields((prev) => [...prev, newF!]);
+    }
   };
 
   const handleRemoveField = (fieldId: string) => {
@@ -951,34 +1028,101 @@ export default function NewsManagement({
 
               {/* Fields Builder */}
               <div className="space-y-4 pt-2">
-                <div className="flex justify-between items-center border-b border-border-primary pb-2">
+                {/* One-Click Presets Bar */}
+                <div className="bg-brand-primary/5 p-3 rounded-xl border border-brand-primary/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold text-brand-primary uppercase flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-brand-primary" /> Modèles de champs prêts à l'emploi (Insertion en 1 clic)
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" onClick={() => handleAddPresetField('fullName')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 👤 Nom & Prénom
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('email')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 📧 Adresse E-mail
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('phone')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 📱 Téléphone
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('birthDate')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 📅 Date de Naissance
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('cni')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 🆔 CNI / Passeport
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('level')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 📊 Niveau d'études
+                    </button>
+                    <button type="button" onClick={() => handleAddPresetField('program')} className="px-2.5 py-1 bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary rounded-lg text-[11px] font-bold text-text-primary transition-all flex items-center gap-1 cursor-pointer">
+                      + 🎓 Filière IDLA
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center border-b border-border-primary pb-2 pt-2">
                   <h5 className="font-bold text-xs text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-brand-primary" /> Champs du formulaire ({builderFields.length})
+                    <Layers className="w-4 h-4 text-brand-primary" /> Structure & Champs ({builderFields.length})
                   </h5>
                   <button
                     type="button"
                     onClick={handleAddField}
-                    className="text-xs font-bold text-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                    className="text-xs font-bold text-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Ajouter un champ
+                    <Plus className="w-3.5 h-3.5" /> Ajouter un champ personnalisé
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   {builderFields.map((field, idx) => (
-                    <div key={field.id} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3 relative group">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">
-                          Champ #{idx + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveField(field.id)}
-                          className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-500/10 rounded cursor-pointer"
-                          title="Supprimer ce champ"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div key={field.id} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3 relative group transition-all hover:border-brand-primary/40 shadow-sm">
+                      <div className="flex items-center justify-between gap-3 border-b border-border-primary/50 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded">
+                            Champ #{idx + 1}
+                          </span>
+                          <span className="text-[11px] font-bold text-text-secondary">
+                            (ID: {field.id})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveField(idx, 'up')}
+                              className="p-1 text-text-secondary hover:text-brand-primary hover:bg-bg-secondary rounded cursor-pointer"
+                              title="Déplacer vers le haut"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                          )}
+                          {idx < builderFields.length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveField(idx, 'down')}
+                              className="p-1 text-text-secondary hover:text-brand-primary hover:bg-bg-secondary rounded cursor-pointer"
+                              title="Déplacer vers le bas"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateField(field.id)}
+                            className="p-1 text-text-secondary hover:text-brand-primary hover:bg-bg-secondary rounded cursor-pointer"
+                            title="Dupliquer ce champ"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveField(field.id)}
+                            className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-500/10 rounded cursor-pointer ml-1"
+                            title="Supprimer ce champ"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1015,13 +1159,25 @@ export default function NewsManagement({
                         </div>
 
                         {/* Placeholder */}
-                        <div className="space-y-1 md:col-span-2">
+                        <div className="space-y-1">
                           <label className="text-[10px] font-bold text-text-secondary uppercase">Texte indicatif (Placeholder)</label>
                           <input
                             type="text"
                             value={field.placeholder || ''}
                             onChange={(e) => handleUpdateField(field.id, 'placeholder', e.target.value)}
                             placeholder="ex: Saisissez votre réponse ici..."
+                            className="w-full p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs"
+                          />
+                        </div>
+
+                        {/* Help text */}
+                        <div className="space-y-1 md:col-span-2">
+                          <label className="text-[10px] font-bold text-text-secondary uppercase">Message d'aide / Infobulle (Facultatif)</label>
+                          <input
+                            type="text"
+                            value={field.helpText || ''}
+                            onChange={(e) => handleUpdateField(field.id, 'helpText', e.target.value)}
+                            placeholder="ex: Indiquez votre numéro actif sur WhatsApp..."
                             className="w-full p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs"
                           />
                         </div>
@@ -1040,24 +1196,36 @@ export default function NewsManagement({
                           </label>
                         </div>
 
-                        {/* Options if select / radio / checkbox */}
+                        {/* Option parent cascade */}
                         {['select', 'radio', 'checkbox'].includes(field.type) && (
-                          <div className="space-y-1 md:col-span-3 pt-1">
+                          <div className="space-y-1 md:col-span-2">
                             <label className="text-[10px] font-bold text-brand-primary uppercase">
-                              Options possibles (séparées par des virgules)
+                              Dépendance (Lier ce champ au résultat d'un autre)
                             </label>
-                            <input
-                              type="text"
-                              value={(field.options || []).join(', ')}
-                              onChange={(e) =>
-                                handleUpdateField(
-                                  field.id,
-                                  'options',
-                                  e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
-                                )
-                              }
-                              placeholder="ex: Option A, Option B, Option C"
-                              className="w-full p-2 rounded-lg border border-brand-primary/40 bg-bg-secondary text-text-primary text-xs font-medium"
+                            <select
+                              value={field.cascadeParentId || ''}
+                              onChange={(e) => handleUpdateField(field.id, 'cascadeParentId', e.target.value || undefined)}
+                              className="w-full p-2 rounded-lg border border-brand-primary/40 bg-bg-secondary text-text-primary text-xs font-bold"
+                            >
+                              <option value="">-- Indépendant (Affiche toutes les options) --</option>
+                              {builderFields.filter(f => f.id !== field.id).map(f => (
+                                <option key={f.id} value={f.id}>
+                                  🔗 Lié au champ : {f.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* WhatsApp-Style Option Tags Input */}
+                        {['select', 'radio', 'checkbox'].includes(field.type) && (
+                          <div className="space-y-1 md:col-span-3 pt-2">
+                            <label className="text-[10px] font-bold text-brand-primary uppercase flex items-center gap-1">
+                              <span>Options de réponse (Style WhatsApp / Tags)</span>
+                            </label>
+                            <FormBuilderOptionTags
+                              options={field.options || []}
+                              onChange={(newOpts) => handleUpdateField(field.id, 'options', newOpts)}
                             />
                           </div>
                         )}
