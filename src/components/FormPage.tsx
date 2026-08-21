@@ -31,6 +31,9 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   const [receiptRef, setReceiptRef] = useState('');
   const [pdfBase64Data, setPdfBase64Data] = useState('');
 
+  // Constant default form ID for Concours
+  const DEFAULT_CONCOURS_FORM_ID = '6a86f5cc003484813061';
+
   // Extract formId from URL query string if not passed directly
   const effectiveFormId = React.useMemo(() => {
     if (initialFormId) return initialFormId;
@@ -42,62 +45,37 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     return '';
   }, [initialFormId]);
 
-  // Load form from Appwrite Cloud DB
+  // Load form from Appwrite Cloud DB (Defaults to Concours 6a86f5cc003484813061)
   useEffect(() => {
     const loadForm = async () => {
       setLoading(true);
       setError('');
 
-      if (!effectiveFormId) {
-        // Fallback: load first active custom form
-        if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
-          try {
-            const listRes = await databases.listDocuments(
-              APPWRITE_CONFIG.databaseId, 
-              APPWRITE_CONFIG.collections.customForms
-            );
-            if (listRes.documents.length > 0) {
-              const doc = listRes.documents[0];
-              setForm({
-                id: doc.$id,
-                title: doc.title,
-                description: doc.description || '',
-                createdAt: doc.createdAt,
-                fields: JSON.parse(doc.fields || '[]')
-              });
-              setLoading(false);
-              return;
-            }
-          } catch (e) {}
-        }
-        setError('Aucun formulaire spécifié.');
-        setLoading(false);
-        return;
-      }
+      const targetFormId = effectiveFormId || DEFAULT_CONCOURS_FORM_ID;
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
         try {
           let doc: any = null;
+
+          // 1. Premier essai : Récupération directe du formulaire demandé ou du Concours par défaut
           try {
             doc = await databases.getDocument(
               APPWRITE_CONFIG.databaseId, 
               APPWRITE_CONFIG.collections.customForms, 
-              effectiveFormId
+              targetFormId
             );
           } catch (docErr) {
+            // 2. Deuxième essai : Liste globale et ciblage prioritaire du Concours
             const listRes = await databases.listDocuments(
               APPWRITE_CONFIG.databaseId, 
               APPWRITE_CONFIG.collections.customForms
             );
             doc = listRes.documents.find((d: any) => 
-              d.$id === effectiveFormId || 
-              d.title === effectiveFormId ||
-              (d.title && effectiveFormId && d.title.toLowerCase().includes(effectiveFormId.toLowerCase()))
-            );
-            // Si l'utilisateur a spécifié un ID précis dans l'URL mais qu'il est introuvable, on ne remplace pas par un autre formulaire au hasard
-            if (!doc && !effectiveFormId && listRes.documents.length > 0) {
-              doc = listRes.documents[0];
-            }
+              d.$id === targetFormId || 
+              d.$id === DEFAULT_CONCOURS_FORM_ID ||
+              d.$id === 'form_concours_1_3_4_b52s6y' ||
+              (d.title && d.title.toLowerCase().includes('concours'))
+            ) || listRes.documents[0];
           }
 
           if (doc) {
@@ -109,6 +87,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               fields: JSON.parse(doc.fields || '[]')
             });
             setLoading(false);
+
+            // Mettre à jour l'URL de manière transparente avec le bon lien exact
+            if (typeof window !== 'undefined' && !window.location.search.includes('id=')) {
+              window.history.replaceState({}, '', `${window.location.pathname}?id=${doc.$id}`);
+            }
             return;
           }
         } catch (err) {
