@@ -26,7 +26,6 @@ import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } fro
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
-import EntranceModal from './EntranceModal';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -1515,10 +1514,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         )}
-        {/* Floating Concours Badge (Bottom Left Corner with Glowing Wave Ripples) */}
-        <EntranceModal
-          onOpenConcoursForm={() => handleOpenFormModal('form_concours_1_3_4_b52s6y')}
-        />
       </>
     );
   }

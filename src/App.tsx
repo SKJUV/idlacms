@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
+import EntranceModal from './components/EntranceModal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 
@@ -918,6 +919,18 @@ export default function App() {
         )}
         </Suspense>
       </main>
+
+      {/* Floating Concours Badge (Bottom Left Corner) - VISIBLE ONLY ON PUBLIC PAGES (Home, Programmes, Actualités, Témoignages, Formulaires). HIDDEN IN ACCOUNT DASHBOARDS. */}
+      {!isDashboardLayout && (PUBLIC_TABS.includes(activeTab) || activeTab === 'formulaire' || activeTab === 'candidature') && (
+        <EntranceModal
+          onOpenConcoursForm={() => {
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('id', 'form_concours_1_3_4_b52s6y');
+            window.history.pushState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
+            setActiveTab('formulaire');
+          }}
+        />
+      )}
     </div>
   );
 }
