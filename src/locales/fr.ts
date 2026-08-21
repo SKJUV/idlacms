@@ -26,6 +26,33 @@ export const fr = {
   common_all: "Tous",
   common_details: "En savoir plus",
 
+  // Stats
+  stat_alumni: "Alumni Actifs",
+  stat_programs: "Programmes & Certifications",
+  stat_countries: "Pays Représentés",
+  stat_partners: "Partenaires Corporate",
+
+  // Why IDLA
+  why_tag: "L'Expérience Académique IDLA",
+  why_title: "Pourquoi l'IDLA est le Choix n°1 en Afrique ?",
+  why_subtitle: "Une pédagogie flexible et innovante qui propulse votre carrière vers les sphères décisionnelles internationales.",
+  why_card1_title: "Pédagogie d'Élite & Flexible",
+  why_card1_desc: "Accédez à des cours interactifs en direct ou à la demande, conçus par des professeurs et professionnels internationaux prestigieux.",
+  why_card1_btn: "En savoir plus",
+  why_card2_title: "Réseau Alumni & Mentorat",
+  why_card2_desc: "Bénéficiez d'un accompagnement personnalisé par des mentors de haut niveau et intégrez un réseau influent de plus de 5 000 anciens élèves.",
+  why_card2_btn: "Voir le réseau",
+  why_card3_title: "Reconnaissance Internationale",
+  why_card3_desc: "Nos cursus sont accrédités et conçus pour répondre aux standards internationaux, vous ouvrant les portes des grandes organisations.",
+  why_card3_btn: "Découvrir l'accréditation",
+
+  // Featured Programs
+  featured_title: "Nos Filières d'Excellence",
+  featured_subtitle: "Nos certifications et diplômes internationaux.",
+  featured_view_all: "Voir plus — Toutes nos formations",
+  featured_intake: "Rentrée",
+  featured_view_details: "Voir plus",
+
   // Program Filters & Catalog
   filter_all_categories: "Toutes les catégories",
   filter_bachelor: "Licence / Bachelor",
@@ -90,7 +117,9 @@ export const fr = {
 
   news_section_title: "Actualités Académiques & Communiqués",
   news_section_subtitle: "Suivez les événements, concours d'entrée, jurys de soutenance et conférences de l'académie.",
-  
+  news_read_more: "Lire l'article",
+  news_register_event: "S'inscrire à l'événement",
+
   testimonials_section_title: "Témoignages & Parcours d'Alumni",
   testimonials_section_subtitle: "Découvrez comment nos diplômés transforment leurs ambitions en réussites professionnelles à l'international.",
   testimonials_btn_share: "Partager mon Témoignage",

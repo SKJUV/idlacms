@@ -439,19 +439,19 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           <div className="max-w-[1440px] mx-auto px-6 md:px-12 space-y-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Alumni Actifs</div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_alumni')}</div>
                 <div className="text-3xl font-bold text-text-primary">5,000+</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Programmes & Certifications</div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_programs')}</div>
                 <div className="text-3xl font-bold text-text-primary">{programs.length || 64}</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">Pays Représentés</div>
+                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_countries')}</div>
                 <div className="text-3xl font-bold text-text-primary">8</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">Partenaires</div>
+                <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">{t('stat_partners')}</div>
                 <div className="text-3xl font-bold text-text-primary">120+</div>
               </div>
             </div>
@@ -463,13 +463,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           <div className="max-w-[1440px] mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <span className="text-xs font-bold uppercase tracking-widest text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full inline-block mb-3">
-                L'Expérience Académique IDLA
+                {t('why_tag')}
               </span>
               <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary leading-tight">
-                Pourquoi l'IDLA est le Choix n°1 en Afrique ?
+                {t('why_title')}
               </h2>
               <p className="text-text-secondary mt-3 text-base">
-                Une pédagogie flexible et innovante qui propulse votre carrière vers les sphères décisionnelles internationales.
+                {t('why_subtitle')}
               </p>
             </div>
 
@@ -481,17 +481,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <BookOpen className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    Pédagogie d'Élite & Flexible
+                    {t('why_card1_title')}
                   </h3>
                   <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    Accédez à des cours interactifs en direct ou à la demande, conçus par des professeurs et professionnels internationaux prestigieux.
+                    {t('why_card1_desc')}
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
                   className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
-                  <span>En savoir plus</span>
+                  <span>{t('why_card1_btn')}</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
@@ -505,17 +505,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <HeartHandshake className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    Réseau Alumni & Mentorat
+                    {t('why_card2_title')}
                   </h3>
                   <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    Bénéficiez d'un accompagnement personnalisé par des mentors de haut niveau et intégrez un réseau influent de plus de 5 000 anciens élèves.
+                    {t('why_card2_desc')}
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
                   className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
-                  <span>Voir le réseau</span>
+                  <span>{t('why_card2_btn')}</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
@@ -529,17 +529,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    Reconnaissance Internationale
+                    {t('why_card3_title')}
                   </h3>
                   <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    Nos cursus sont accrédités et conçus pour répondre aux standards internationaux, vous ouvrant les portes des grandes organisations.
+                    {t('why_card3_desc')}
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveTab('programmes')}
                   className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
                 >
-                  <span>Découvrir l'accréditation</span>
+                  <span>{t('why_card3_btn')}</span>
                   <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
@@ -589,14 +589,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           <div className="max-w-[1440px] mx-auto">
             <div className="flex justify-between items-end mb-12">
               <div>
-                <h2 className="text-3xl font-bold text-text-primary">Nos Filières d'Excellence</h2>
-                <p className="text-sm text-text-secondary mt-1">Nos certifications internationales.</p>
+                <h2 className="text-3xl font-bold text-text-primary">{t('featured_title')}</h2>
+                <p className="text-sm text-text-secondary mt-1">{t('featured_subtitle')}</p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
                 className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-sky-600/10 to-blue-600/10 hover:from-sky-600 hover:to-blue-600 text-brand-primary hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-brand-primary/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-sky-500/25 hover:-translate-y-0.5 cursor-pointer"
               >
-                <span>Voir plus — Toutes nos formations</span>
+                <span>{t('featured_view_all')}</span>
                 <span className="w-7 h-7 rounded-full bg-brand-primary/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
@@ -631,7 +631,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <div className="flex items-center justify-between pt-5 border-t border-border-primary/50 mt-auto">
                       <div className="flex flex-col gap-1.5">
                         <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-brand-primary" /> Rentrée {new Date().getFullYear()}
+                          <Clock className="w-4 h-4 text-brand-primary" /> {t('featured_intake')} {new Date().getFullYear()}
                         </span>
                         {p.price && (
                           <div className="mt-1 text-white text-sm font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-1 rounded-md shadow-md inline-block w-fit">
@@ -640,7 +640,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         )}
                       </div>
                       <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
-                        <span>Voir plus</span>
+                        <span>{t('featured_view_details')}</span>
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </div>
@@ -969,10 +969,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           {/* Header */}
           <div className="border-b border-border-primary/50 pb-6 space-y-2">
             <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
-              Actualités & Fil de Publications
+              {t('news_section_title')}
             </h1>
             <p className="text-text-secondary text-xs md:text-sm max-w-3xl">
-              Restez informé des derniers événements, des réussites académiques et des annonces officielles de l'IDLA.
+              {t('news_section_subtitle')}
             </p>
           </div>
 
@@ -1528,18 +1528,18 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
               <span className="inline-block px-3 py-1 bg-brand-light text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">
-                Nos Réussites
+                {t('nav_testimonials')}
               </span>
-              <h1 className="font-sans font-bold text-4xl text-text-primary">Des parcours d'alumni inspirants.</h1>
-              <p className="text-[#45464e] text-lg max-w-2xl">
-                Découvrez comment nos diplômés transforment leurs ambitions en projets d'envergure. Leurs histoires sont le reflet de notre exigence.
+              <h1 className="font-sans font-bold text-4xl text-text-primary">{t('testimonials_section_title')}</h1>
+              <p className="text-text-secondary text-sm max-w-2xl">
+                {t('testimonials_section_subtitle')}
               </p>
             </div>
             <button
               onClick={() => { setTestimonialSent(false); setShowTestimonialModal(true); }}
-              className="shrink-0 bg-brand-primary text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
+              className="shrink-0 bg-brand-primary text-white px-5 py-3 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Quote className="w-4 h-4" /> Partager mon témoignage
+              <Quote className="w-4 h-4" /> {t('testimonials_btn_share')}
             </button>
           </div>
 

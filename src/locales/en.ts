@@ -28,6 +28,33 @@ export const en: Record<TranslationKeys, string> = {
   common_all: "All",
   common_details: "Learn More",
 
+  // Stats
+  stat_alumni: "Active Alumni",
+  stat_programs: "Degree Programs & Credentials",
+  stat_countries: "Countries Represented",
+  stat_partners: "Corporate Partners",
+
+  // Why IDLA
+  why_tag: "The IDLA Academic Experience",
+  why_title: "Why is IDLA the #1 Choice in Africa?",
+  why_subtitle: "Flexible and innovative education that propels your career to international decision-making spheres.",
+  why_card1_title: "Elite & Flexible Pedagogy",
+  why_card1_desc: "Access live interactive or on-demand courses, designed by prestigious international professors and industry experts.",
+  why_card1_btn: "Learn More",
+  why_card2_title: "Alumni Network & Mentorship",
+  why_card2_desc: "Benefit from personalized guidance by high-level mentors and join an influential network of over 5,000 alumni.",
+  why_card2_btn: "View Network",
+  why_card3_title: "International Accreditation",
+  why_card3_desc: "Our degree programs are accredited and designed to meet international standards, opening doors to top global organizations.",
+  why_card3_btn: "Explore Accreditation",
+
+  // Featured Programs
+  featured_title: "Our Programs of Excellence",
+  featured_subtitle: "Our international degrees & credentials.",
+  featured_view_all: "Explore All Degree Programs",
+  featured_intake: "Intake",
+  featured_view_details: "View Details",
+
   // Program Filters & Catalog
   filter_all_categories: "All Categories",
   filter_bachelor: "Bachelor Degree",
@@ -92,7 +119,9 @@ export const en: Record<TranslationKeys, string> = {
 
   news_section_title: "Academic News & Announcements",
   news_section_subtitle: "Stay updated with academy events, entrance concours, thesis defenses, and international conferences.",
-  
+  news_read_more: "Read Article",
+  news_register_event: "Register for Event",
+
   testimonials_section_title: "Alumni Testimonials & Success Stories",
   testimonials_section_subtitle: "Discover how our graduates transform their ambitions into global professional achievements.",
   testimonials_btn_share: "Share My Testimonial",
