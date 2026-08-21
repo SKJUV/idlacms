@@ -39,7 +39,7 @@ interface PublicPortalProps {
   onSubmitDonation: (d: { donor: string; email: string; amount: number; message?: string }) => void;
 }
 
-const EVENT_REGISTRATION_FORM: CustomForm = {
+export const EVENT_REGISTRATION_FORM: CustomForm = {
   id: 'system_event_registration',
   title: "Inscription à l'événement",
   description: "Veuillez remplir ce formulaire pour valider votre participation à cet événement.",
@@ -1097,8 +1097,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                 e.stopPropagation();
                                 if (n.formUrl) {
                                   window.open(n.formUrl, '_blank', 'noopener,noreferrer');
-                                } else if (n.formId || n.category === 'Événements') {
-                                  handleOpenFormModal(n.category === 'Événements' ? 'system_event_registration' : n.formId!);
+                                } else if (n.formId || n.formUrl || n.category === 'Événements') {
+                                  handleOpenFormModal(n.formId || (n.category === 'Événements' ? 'system_event_registration' : '6a86f5cc003484813061'));
                                 }
                               }}
                               className="inline-flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer border border-brand-primary/20"
@@ -1247,7 +1247,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           </p>
                           {!isExpired && (
                             <button
-                              onClick={() => handleOpenFormModal(isEvent ? 'system_event_registration' : selectedArticle.formId!)}
+                              onClick={() => handleOpenFormModal(selectedArticle.formId || (isEvent ? 'system_event_registration' : '6a86f5cc003484813061'))}
                               className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
                             >
                               <FileTextIcon className="w-4 h-4" />

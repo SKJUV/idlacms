@@ -9,6 +9,7 @@ import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/a
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import { EVENT_REGISTRATION_FORM } from './PublicPortal';
 
 interface FormPageProps {
   formId?: string;
@@ -45,7 +46,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     return '';
   }, [initialFormId]);
 
-  // Load form from Appwrite Cloud DB (Defaults to Concours 6a86f5cc003484813061)
+  // Load form from Appwrite Cloud DB or LocalStorage
   useEffect(() => {
     const loadForm = async () => {
       setLoading(true);
@@ -53,11 +54,34 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
       const targetFormId = effectiveFormId || DEFAULT_CONCOURS_FORM_ID;
 
+      // 0. Formulaire d'événement système
+      if (targetFormId === 'system_event_registration') {
+        setForm(EVENT_REGISTRATION_FORM);
+        setLoading(false);
+        return;
+      }
+
+      // 1. Recherche prioritaire dans les formulaires personnalisés locaux (localStorage)
+      try {
+        const localForms = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
+        if (Array.isArray(localForms) && localForms.length > 0) {
+          const foundLocal = localForms.find((f: any) => f.id === targetFormId);
+          if (foundLocal) {
+            setForm(foundLocal);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Erreur lecture localForms:", e);
+      }
+
+      // 2. Recherche sur la base de données Appwrite Cloud
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.customForms) {
         try {
           let doc: any = null;
 
-          // 1. Premier essai : Récupération directe du formulaire demandé ou du Concours par défaut
+          // Essai A: Récupération directe par ID exact
           try {
             doc = await databases.getDocument(
               APPWRITE_CONFIG.databaseId, 
@@ -65,17 +89,20 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               targetFormId
             );
           } catch (docErr) {
-            // 2. Deuxième essai : Liste globale et ciblage prioritaire du Concours
+            // Essai B: Recherche dans la liste globale si l'ID n'a pas répondu directement
             const listRes = await databases.listDocuments(
               APPWRITE_CONFIG.databaseId, 
               APPWRITE_CONFIG.collections.customForms
             );
-            doc = listRes.documents.find((d: any) => 
-              d.$id === targetFormId || 
-              d.$id === DEFAULT_CONCOURS_FORM_ID ||
-              d.$id === 'form_concours_1_3_4_b52s6y' ||
-              (d.title && d.title.toLowerCase().includes('concours'))
-            ) || listRes.documents[0];
+            // On cherche l'ID exact en priorité. Fallback Concours uniquement si aucun ID n'était spécifié
+            doc = listRes.documents.find((d: any) => d.$id === targetFormId) ||
+                  (!effectiveFormId
+                    ? listRes.documents.find((d: any) => 
+                        d.$id === DEFAULT_CONCOURS_FORM_ID || 
+                        d.$id === 'form_concours_1_3_4_b52s6y' ||
+                        (d.title && d.title.toLowerCase().includes('concours'))
+                      ) || listRes.documents[0]
+                    : null);
           }
 
           if (doc) {
@@ -88,16 +115,28 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             });
             setLoading(false);
 
-            // Mettre à jour l'URL de manière transparente avec le bon lien exact
             if (typeof window !== 'undefined' && !window.location.search.includes('id=')) {
               window.history.replaceState({}, '', `${window.location.pathname}?id=${doc.$id}`);
             }
             return;
           }
         } catch (err) {
-          console.error("Erreur chargement formulaire:", err);
+          console.error("Erreur chargement formulaire Appwrite:", err);
         }
       }
+
+      // 3. Fallback local alternatif si l'ID n'a pas été trouvé sur le cloud
+      try {
+        const localForms = JSON.parse(localStorage.getItem('idla_custom_forms') || '[]');
+        if (Array.isArray(localForms) && localForms.length > 0) {
+          // Si aucun ID spécifié, prendre le 1er local
+          if (!effectiveFormId) {
+            setForm(localForms[0]);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {}
 
       setError('Formulaire introuvable ou indisponible.');
       setLoading(false);
