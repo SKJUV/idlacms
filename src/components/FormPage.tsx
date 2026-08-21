@@ -84,12 +84,20 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               APPWRITE_CONFIG.collections.customForms, 
               effectiveFormId
             );
-          } catch {
+          } catch (docErr) {
             const listRes = await databases.listDocuments(
               APPWRITE_CONFIG.databaseId, 
               APPWRITE_CONFIG.collections.customForms
             );
-            doc = listRes.documents.find((d: any) => d.$id === effectiveFormId || d.title === effectiveFormId) || listRes.documents[0];
+            doc = listRes.documents.find((d: any) => 
+              d.$id === effectiveFormId || 
+              d.title === effectiveFormId ||
+              (d.title && effectiveFormId && d.title.toLowerCase().includes(effectiveFormId.toLowerCase()))
+            );
+            // Si l'utilisateur a spécifié un ID précis dans l'URL mais qu'il est introuvable, on ne remplace pas par un autre formulaire au hasard
+            if (!doc && !effectiveFormId && listRes.documents.length > 0) {
+              doc = listRes.documents[0];
+            }
           }
 
           if (doc) {
