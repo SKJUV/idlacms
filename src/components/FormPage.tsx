@@ -749,15 +749,17 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                   <span>{t('form_notice_title')}</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-text-primary">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs leading-relaxed text-text-primary">
                   {/* Consignes de Paiement et Banques Partenaires */}
-                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
-                    <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
-                      💳 {t('form_fee_title')}
-                    </h4>
-                    <p className="text-text-secondary text-[11px]">
-                      {t('form_fee_desc')}
-                    </p>
+                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                        💳 {t('form_fee_title')}
+                      </h4>
+                      <p className="text-text-secondary text-[11px]">
+                        {t('form_fee_desc')}
+                      </p>
+                    </div>
                     <div className="space-y-2 pt-1 font-mono text-[11px]">
                       <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
                         <span className="font-bold text-text-primary block">{t('form_bank_uba')}</span>
@@ -784,6 +786,28 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                       <li>{t('doc_6')}</li>
                       <li>{t('doc_7')}</li>
                     </ul>
+                  </div>
+
+                  {/* Modalités de Dépôt du Dossier */}
+                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                        📦 {t('form_submission_title')}
+                      </h4>
+                      <p className="text-text-secondary text-[11px]">
+                        Le dossier de candidature peut être transmis via l'une des deux modalités officielles suivantes :
+                      </p>
+                    </div>
+                    <div className="space-y-2.5 pt-1 text-[11px]">
+                      <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80 space-y-1">
+                        <span className="font-bold text-text-primary block">{t('form_submission_online')}</span>
+                        <span className="text-brand-primary font-extrabold select-all text-[11px] block break-all">{t('form_submission_online_email')}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80 space-y-1">
+                        <span className="font-bold text-text-primary block">{t('form_submission_physical')}</span>
+                        <span className="text-brand-primary font-extrabold text-[11px] block">{t('form_submission_physical_address')}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
