@@ -2,11 +2,31 @@ name: CI Pipeline & Quality Gate
 
 on:
   push:
-    branches: [ main, feature/*, fix/*, security/*, refactor/* ]
+    branches: [ main, develop, feature/*, fix/*, security/*, refactor/* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
+  homepage-integrity-tests:
+    name: Homepage & Core Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run Homepage Integrity Tests (Vitest)
+        run: npm run test:ci
+
   build-and-typecheck:
     name: Typecheck & Build Verification
     runs-on: ubuntu-latest
