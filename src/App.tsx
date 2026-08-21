@@ -593,10 +593,22 @@ export default function App() {
     setActiveTab('success');
   };
 
-  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>();
+  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('program') || params.get('filiere') || undefined;
+    }
+    return undefined;
+  });
 
   const handleApplyToProgram = (programTitle?: string) => {
     setSelectedApplicationProgram(programTitle);
+    if (typeof window !== 'undefined') {
+      const newUrl = programTitle
+        ? `${window.location.origin}/candidature?program=${encodeURIComponent(programTitle)}`
+        : `${window.location.origin}/candidature`;
+      window.history.pushState({ tab: 'candidature' }, '', newUrl);
+    }
     setActiveTab('candidature');
   };
 

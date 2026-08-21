@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react';
+import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight, ArrowLeft, Link as LinkIcon, Check } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS, DEFAULT_PROGRAM_DURATIONS } from '../../types';
 import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from '../ProgramFilterBar';
@@ -18,6 +18,7 @@ export default function ProgramsManagement({
   const [activeSubTab, setActiveSubTab] = useState<'programs' | 'sessions'>('programs');
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [cloudSuccess, setCloudSuccess] = useState<string | null>(null);
+  const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
 
   // ─── Programs State, Filters & Form ───
   const [showAddProgramForm, setShowAddProgramForm] = useState(false);
@@ -743,6 +744,18 @@ export default function ProgramsManagement({
                         <td className="p-4 text-slate-400">{p.duration}</td>
                         <td className="p-4">
                           <div className="flex justify-center items-center gap-1">
+                            <button
+                              onClick={() => {
+                                const directUrl = `${window.location.origin}/candidature?program=${encodeURIComponent(p.title)}`;
+                                navigator.clipboard.writeText(directUrl);
+                                setCopySuccessId(p.id);
+                                setTimeout(() => setCopySuccessId(null), 3000);
+                              }}
+                              className="text-sky-500 hover:text-sky-700 p-1.5 hover:bg-sky-50 rounded transition-all cursor-pointer"
+                              title={copySuccessId === p.id ? "Lien d'inscription copié !" : "Copier le lien d'inscription direct du programme"}
+                            >
+                              {copySuccessId === p.id ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
+                            </button>
                             <button
                               onClick={() => handleEditProgram(p)}
                               className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
