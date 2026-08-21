@@ -738,51 +738,56 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               })}
             </div>
 
-            {/* Notice Officielle & Procédure de Paiement Bancaire */}
-            <div className="bg-bg-primary/80 border border-brand-primary/30 rounded-3xl p-6 space-y-5">
-              <div className="flex items-center gap-2.5 text-brand-primary font-extrabold text-sm border-b border-border-primary pb-3">
-                <FileTextIcon className="w-5 h-5 text-brand-primary" />
-                <span>{t('form_notice_title')}</span>
-              </div>
+            {/* Notice Officielle & Procédure de Paiement Bancaire (Uniquement pour le Concours) */}
+            {(form.id === DEFAULT_CONCOURS_FORM_ID || 
+              form.id === '6a86f5cc003484813061' || 
+              form.id === 'form_concours_1_3_4_b52s6y' ||
+              (form.title && form.title.toLowerCase().includes('concours'))) && (
+              <div className="bg-bg-primary/80 border border-brand-primary/30 rounded-3xl p-6 space-y-5">
+                <div className="flex items-center gap-2.5 text-brand-primary font-extrabold text-sm border-b border-border-primary pb-3">
+                  <FileTextIcon className="w-5 h-5 text-brand-primary" />
+                  <span>{t('form_notice_title')}</span>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-text-primary">
-                {/* Consignes de Paiement et Banques Partenaires */}
-                <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
-                  <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
-                    💳 {t('form_fee_title')}
-                  </h4>
-                  <p className="text-text-secondary text-[11px]">
-                    {t('form_fee_desc')}
-                  </p>
-                  <div className="space-y-2 pt-1 font-mono text-[11px]">
-                    <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
-                      <span className="font-bold text-text-primary block">{t('form_bank_uba')}</span>
-                      <span className="text-brand-primary font-extrabold select-all">4187 6212 2553 2696</span>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
-                      <span className="font-bold text-text-primary block">{t('form_bank_afriland')}</span>
-                      <span className="text-brand-primary font-extrabold select-all">4413 4502 5790 2247</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-text-primary">
+                  {/* Consignes de Paiement et Banques Partenaires */}
+                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
+                    <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                      💳 {t('form_fee_title')}
+                    </h4>
+                    <p className="text-text-secondary text-[11px]">
+                      {t('form_fee_desc')}
+                    </p>
+                    <div className="space-y-2 pt-1 font-mono text-[11px]">
+                      <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
+                        <span className="font-bold text-text-primary block">{t('form_bank_uba')}</span>
+                        <span className="text-brand-primary font-extrabold select-all">4187 6212 2553 2696</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
+                        <span className="font-bold text-text-primary block">{t('form_bank_afriland')}</span>
+                        <span className="text-brand-primary font-extrabold select-all">4413 4502 5790 2247</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Pièces à fournir au dossier (FR / EN) */}
-                <div className="space-y-2.5 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
-                  <h4 className="font-extrabold text-brand-primary text-xs">
-                    📑 {t('form_dossier_title')}
-                  </h4>
-                  <ul className="space-y-1.5 text-[11px] text-text-secondary list-disc pl-4">
-                    <li>{t('doc_1')}</li>
-                    <li>{t('doc_2')}</li>
-                    <li>{t('doc_3')}</li>
-                    <li>{t('doc_4')}</li>
-                    <li>{t('doc_5')}</li>
-                    <li>{t('doc_6')}</li>
-                    <li>{t('doc_7')}</li>
-                  </ul>
+                  {/* Pièces à fournir au dossier (FR / EN) */}
+                  <div className="space-y-2.5 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
+                    <h4 className="font-extrabold text-brand-primary text-xs">
+                      📑 {t('form_dossier_title')}
+                    </h4>
+                    <ul className="space-y-1.5 text-[11px] text-text-secondary list-disc pl-4">
+                      <li>{t('doc_1')}</li>
+                      <li>{t('doc_2')}</li>
+                      <li>{t('doc_3')}</li>
+                      <li>{t('doc_4')}</li>
+                      <li>{t('doc_5')}</li>
+                      <li>{t('doc_6')}</li>
+                      <li>{t('doc_7')}</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Action Bar & Submit */}
             <div className="pt-6 border-t border-border-primary flex flex-wrap items-center justify-between gap-4">
