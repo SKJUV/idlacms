@@ -596,24 +596,8 @@ export default function App() {
   const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>();
 
   const handleApplyToProgram = (programTitle?: string) => {
-    if (programTitle) {
-      const matched = programs.find((p) => p.title === programTitle);
-      const levelStr = matched?.type === 'Master'
-        ? '4ème année (Master 1 / Graduate Diploma)'
-        : matched?.title.toLowerCase().includes('3ème') || matched?.title.toLowerCase().includes('bachelor 3') || matched?.title.toLowerCase().includes('level 5') || matched?.title.toLowerCase().includes('level 6')
-        ? '3ème année (Licence 3 / Bachelor 3)'
-        : '1ère année (Licence 1 / Bachelor 1)';
-
-      if (typeof window !== 'undefined') {
-        const newUrl = `${window.location.pathname}?id=6a86f5cc003484813061&program=${encodeURIComponent(programTitle)}&level=${encodeURIComponent(levelStr)}&lock=true`;
-        window.history.pushState({}, '', newUrl);
-      }
-      setSelectedApplicationProgram(programTitle);
-      setActiveTab('formulaire');
-    } else {
-      setSelectedApplicationProgram(undefined);
-      setActiveTab('candidature');
-    }
+    setSelectedApplicationProgram(programTitle);
+    setActiveTab('candidature');
   };
 
   const handleSubmitTestimonial = (t: Omit<Testimonial, 'id' | 'image'>) => {

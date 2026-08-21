@@ -106,36 +106,6 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     loadForm();
   }, [effectiveFormId]);
 
-  // Check URL parameters for program pre-selection and locking
-  const [lockedProgram, setLockedProgram] = useState<string | null>(null);
-  const [lockedLevel, setLockedLevel] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !form) return;
-    const params = new URLSearchParams(window.location.search);
-    const progParam = params.get('program') || params.get('filiere');
-    const levelParam = params.get('level') || params.get('niveau');
-
-    if (progParam) setLockedProgram(progParam);
-    if (levelParam) setLockedLevel(levelParam);
-
-    if (progParam || levelParam) {
-      setFormValues((prev) => {
-        const next = { ...prev };
-        form.fields.forEach((f) => {
-          const labelLower = f.label.toLowerCase();
-          if (progParam && (labelLower.includes('programme') || labelLower.includes('filière') || labelLower.includes('filiere'))) {
-            next[f.label] = progParam;
-          }
-          if (levelParam && labelLower.includes('niveau')) {
-            next[f.label] = levelParam;
-          }
-        });
-        return next;
-      });
-    }
-  }, [form]);
-
   // Submit Handler
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -633,37 +603,25 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                       })()}
 
                       {/* Select Dropdown */}
-                      {f.type === 'select' && (() => {
-                        const isFieldLocked = !!(
-                          (lockedProgram && (f.label.toLowerCase().includes('programme') || f.label.toLowerCase().includes('filière') || f.label.toLowerCase().includes('filiere'))) ||
-                          (lockedLevel && f.label.toLowerCase().includes('niveau'))
-                        );
-
-                        return (
-                          <select
-                            required={f.required}
-                            value={val}
-                            disabled={isFieldLocked}
-                            onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
-                            className={`w-full p-3 rounded-xl border text-xs font-extrabold outline-none transition-all shadow-sm ${
-                              isFieldLocked
-                                ? 'bg-bg-secondary/80 border-border-primary/70 text-text-secondary cursor-not-allowed opacity-90'
-                                : 'bg-white dark:bg-bg-secondary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
-                            }`}
-                          >
-                            <option value="">
-                              {isProgramField && !selectedLevelVal
-                                ? "-- Veuillez d'abord sélectionner votre Niveau d'études ci-dessus --"
-                                : isProgramField && selectedLevelVal
-                                ? `-- Sélectionnez votre filière (${availableOptions.length} éligibles) --`
-                                : "-- Sélectionnez une option --"}
-                            </option>
-                            {availableOptions.map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        );
-                      })()}
+                      {f.type === 'select' && (
+                        <select
+                          required={f.required}
+                          value={val}
+                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-extrabold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                        >
+                          <option value="">
+                            {isProgramField && !selectedLevelVal
+                              ? "-- Veuillez d'abord sélectionner votre Niveau d'études ci-dessus --"
+                              : isProgramField && selectedLevelVal
+                              ? `-- Sélectionnez votre filière (${availableOptions.length} éligibles) --`
+                              : "-- Sélectionnez une option --"}
+                          </option>
+                          {availableOptions.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      )}
 
                       {/* Radio Chips */}
                       {f.type === 'radio' && (
