@@ -6,9 +6,10 @@ export const fr = {
   nav_testimonials: "Réussites & Alumni",
   nav_forms: "Formulaires Officiels",
   nav_student_space: "Espace Étudiant",
+  nav_teacher_space: "Espace Enseignant",
   nav_admin_space: "Administration",
   nav_apply: "Postuler au Concours",
-  nav_login: "Se connecter",
+  nav_login: "Connexion",
   nav_logout: "Déconnexion",
 
   // Common UI
@@ -18,10 +19,25 @@ export const fr = {
   common_cancel: "Annuler",
   common_submit: "Soumettre",
   common_download: "Télécharger",
-  common_search: "Rechercher...",
+  common_search: "Rechercher une formation, une spécialité...",
   common_loading: "Chargement en cours...",
   common_close: "Fermer",
   common_minutes: "min",
+  common_all: "Tous",
+  common_details: "En savoir plus",
+
+  // Program Filters & Catalog
+  filter_all_categories: "Toutes les catégories",
+  filter_bachelor: "Licence / Bachelor",
+  filter_master: "Master / M.Sc",
+  filter_executive: "Executive & UK Pathway",
+  filter_search_placeholder: "Rechercher par filière, spécialité ou diplôme...",
+  filter_no_results: "Aucun programme ne correspond à votre recherche.",
+  program_duration: "Durée",
+  program_per_semester: "par semestre",
+  program_per_year: "par an",
+  program_total_cost: "Coût Total",
+  program_apply_btn: "S'inscrire à ce Programme",
 
   // Entrance Modal & Concours Announcement
   concours_tag: "Concours Officiel 2026-2027",
@@ -44,11 +60,20 @@ export const fr = {
   form_submit_btn: "Transmettre ma Candidature Officielle",
   form_submitting: "Génération Récépissé PDF & Envoi en cours...",
   form_success_title: "Candidature Transmise avec Succès !",
-  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre récépissé officiel d'inscription (PDF) a été transmis par e-mail à l'adresse indiquée et à l'administration académique IDLA.",
+  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre récépissé officiel d'inscription (PDF) a été transmis par e-mail à votre adresse et à l'administration académique IDLA.",
   form_ref_number: "Référence dossier :",
   form_status: "Statut du dossier :",
   form_status_analyzing: "En cours d'analyse",
   form_download_pdf: "Télécharger mon Récépissé PDF",
+
+  // Dossier Documents List (FR/EN)
+  doc_1: "Formulaire d'inscription dûment complété.",
+  doc_2: "Copie certifiée conforme de l'acte de naissance.",
+  doc_3: "Bulletins de notes des 3 dernières années (2nde, 1ère, Terminale / Form 5, Lower 6th, Upper 6th).",
+  doc_4: "Attestation du Probatoire / GCE O-Level.",
+  doc_5: "Résultats du Baccalauréat / GCE A-Level (admis ou en attente).",
+  doc_6: "Relevés de notes & Attestation de réussite de la Licence (pour Master).",
+  doc_7: "CV à jour + Photo d'identité récente.",
 
   // Level & Cascading
   level_select_prompt: "-- Veuillez d'abord sélectionner votre Niveau d'études ci-dessus --",
@@ -56,12 +81,34 @@ export const fr = {
   level_1st_3rd: "1ère ou 3ème Année (Licence / BSc)",
   level_4th: "4ème Année (Master / MSc)",
 
-  // Public Portal Hero
+  // Public Portal Sections
   hero_tag: "Académie Internationale de Droit & de Technologie",
   hero_title: "Formez-vous aux Métiers d'Avenir avec l'Excellence IDLA",
   hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance.",
   hero_btn_explore: "Découvrir nos Filières",
   hero_btn_apply: "Postuler au Concours 2026-2027",
+
+  news_section_title: "Actualités Académiques & Communiqués",
+  news_section_subtitle: "Suivez les événements, concours d'entrée, jurys de soutenance et conférences de l'académie.",
+  
+  testimonials_section_title: "Témoignages & Parcours d'Alumni",
+  testimonials_section_subtitle: "Découvrez comment nos diplômés transforment leurs ambitions en réussites professionnelles à l'international.",
+  testimonials_btn_share: "Partager mon Témoignage",
+
+  // Student & Dashboard Portals
+  dashboard_welcome: "Bienvenue sur votre espace IDLA",
+  dashboard_courses: "Mes Cours & Cursus",
+  dashboard_grades: "Relevé de Notes & Validations",
+  dashboard_schedule: "Emploi du Temps & Conférences",
+  dashboard_certificates: "Attestations & Diplômes",
+  dashboard_profile: "Mon Profil Étudiant",
+
+  // Admin Portal
+  admin_title: "Console de Gestion IDLA CMS",
+  admin_programs_tab: "Gestion des Programmes",
+  admin_news_tab: "Gestion des Actualités",
+  admin_forms_tab: "Gestionnaire de Formulaires",
+  admin_preregistrations_tab: "Pré-inscriptions & Candidatures",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.",

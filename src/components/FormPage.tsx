@@ -337,9 +337,9 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Fil d'Ariane */}
         <div className="flex items-center gap-2 text-xs font-bold text-text-secondary">
-          <button onClick={onBack} className="hover:text-brand-primary cursor-pointer">Accueil</button>
+          <button onClick={onBack} className="hover:text-brand-primary cursor-pointer">{t('nav_home')}</button>
           <span>/</span>
-          <span>Formulaires Officiels</span>
+          <span>{t('nav_forms')}</span>
           <span>/</span>
           <span className="text-brand-primary truncate">{form.title}</span>
         </div>
@@ -348,12 +348,12 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
         <div className="bg-gradient-to-br from-brand-primary/15 via-brand-primary/5 to-transparent border border-brand-primary/30 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-primary bg-brand-primary/15 px-3 py-1 rounded-full border border-brand-primary/30 flex items-center gap-1.5">
-              <FileTextIcon className="w-3.5 h-3.5" /> Formulaire de Candidature Officiel
+              <FileTextIcon className="w-3.5 h-3.5" /> {t('form_hero_badge')}
             </span>
             <div className="flex items-center gap-3 text-xs font-bold text-text-secondary">
-              <span className="flex items-center gap-1"><ClockIcon className="w-4 h-4 text-brand-primary" /> ~3 min</span>
+              <span className="flex items-center gap-1"><ClockIcon className="w-4 h-4 text-brand-primary" /> ~3 {t('common_minutes')}</span>
               <span>•</span>
-              <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-brand-primary" /> Récépissé PDF Immédiat</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-brand-primary" /> {t('form_pdf_receipt_info')}</span>
             </div>
           </div>
 
@@ -636,46 +636,43 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             <div className="bg-bg-primary/80 border border-brand-primary/30 rounded-3xl p-6 space-y-5">
               <div className="flex items-center gap-2.5 text-brand-primary font-extrabold text-sm border-b border-border-primary pb-3">
                 <FileTextIcon className="w-5 h-5 text-brand-primary" />
-                <span>Notice Officielle & Procédure de Candidature</span>
+                <span>{t('form_notice_title')}</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-text-primary">
                 {/* Consignes de Paiement et Banques Partenaires */}
                 <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
                   <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
-                    💳 Règlement des Frais de Concours (10 000 FCFA)
+                    💳 {t('form_fee_title')}
                   </h4>
                   <p className="text-text-secondary text-[11px]">
-                    Le règlement des <strong>10 000 FCFA</strong> de frais d'étude de dossier s'effectue auprès de l'un de nos établissements bancaires partenaires :
+                    {t('form_fee_desc')}
                   </p>
                   <div className="space-y-2 pt-1 font-mono text-[11px]">
                     <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
-                      <span className="font-bold text-text-primary block">🏦 UBA (United Bank for Africa)</span>
+                      <span className="font-bold text-text-primary block">{t('form_bank_uba')}</span>
                       <span className="text-brand-primary font-extrabold select-all">4187 6212 2553 2696</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
-                      <span className="font-bold text-text-primary block">🏦 Afriland First Bank</span>
+                      <span className="font-bold text-text-primary block">{t('form_bank_afriland')}</span>
                       <span className="text-brand-primary font-extrabold select-all">4413 4502 5790 2247</span>
                     </div>
                   </div>
-                  <p className="text-[10px] text-text-secondary italic pt-1">
-                    * Note : Le bordereau de paiement est facultatif lors de l'inscription en ligne. Vous pourrez le renseigner ou le téléverser ultérieurement.
-                  </p>
                 </div>
 
                 {/* Pièces à fournir au dossier (FR / EN) */}
                 <div className="space-y-2.5 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
                   <h4 className="font-extrabold text-brand-primary text-xs">
-                    📑 Composition Officielle du Dossier (FR / EN)
+                    📑 {t('form_dossier_title')}
                   </h4>
                   <ul className="space-y-1.5 text-[11px] text-text-secondary list-disc pl-4">
-                    <li>Formulaire d'inscription dûment complété.</li>
-                    <li>Copie certifiée conforme de l'acte de naissance.</li>
-                    <li>Bulletins de notes des 3 dernières années (2nde, 1ère, Terminale / Form 5, Lower 6th, Upper 6th).</li>
-                    <li>Attestation du Probatoire / GCE O-Level.</li>
-                    <li>Résultats du Baccalauréat / GCE A-Level (admis ou en attente).</li>
-                    <li>Relevés de notes & Attestation de réussite de la Licence (pour Master).</li>
-                    <li>CV à jour + Photo d'identité récente.</li>
+                    <li>{t('doc_1')}</li>
+                    <li>{t('doc_2')}</li>
+                    <li>{t('doc_3')}</li>
+                    <li>{t('doc_4')}</li>
+                    <li>{t('doc_5')}</li>
+                    <li>{t('doc_6')}</li>
+                    <li>{t('doc_7')}</li>
                   </ul>
                 </div>
               </div>
@@ -688,7 +685,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 onClick={onBack}
                 className="px-6 py-3 rounded-2xl text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary cursor-pointer"
               >
-                Annuler et Retourner
+                {t('common_cancel')}
               </button>
               <button
                 type="submit"
@@ -698,12 +695,12 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 {isSubmitting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Génération Récépissé PDF & Envoi en cours...
+                    {t('form_submitting')}
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Transmettre ma Candidature Officielle
+                    {t('form_submit_btn')}
                   </>
                 )}
               </button>
@@ -714,7 +711,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
       {/* Footer */}
       <footer className="border-t border-border-primary py-6 bg-white dark:bg-bg-secondary mt-12 text-center text-xs text-text-secondary">
-        <p>© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.</p>
+        <p>{t('footer_rights')}</p>
       </footer>
     </div>
   );

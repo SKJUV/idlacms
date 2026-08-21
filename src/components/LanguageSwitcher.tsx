@@ -1,43 +1,22 @@
 import React from 'react';
-import { useLanguage, SupportedLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/LanguageContext';
 
-interface LanguageSwitcherProps {
-  className?: string;
-  compact?: boolean;
-}
-
-export default function LanguageSwitcher({ className = '', compact = false }: LanguageSwitcherProps) {
+export default function LanguageSwitcher({ className = '' }: { className?: string }) {
   const { language, setLanguage } = useLanguage();
 
-  return (
-    <div className={`inline-flex items-center bg-bg-primary/80 dark:bg-bg-secondary p-1 rounded-2xl border border-border-primary shadow-xs transition-all ${className}`}>
-      <button
-        type="button"
-        onClick={() => setLanguage('fr')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-          language === 'fr'
-            ? 'bg-brand-primary text-white shadow-md scale-105'
-            : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary dark:hover:bg-bg-primary/60'
-        }`}
-        title="Passer en Français (FR)"
-      >
-        <span className="text-sm leading-none">🇫🇷</span>
-        <span>FR</span>
-      </button>
+  const toggleLanguage = () => {
+    setLanguage(language === 'fr' ? 'en' : 'fr');
+  };
 
-      <button
-        type="button"
-        onClick={() => setLanguage('en')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-          language === 'en'
-            ? 'bg-brand-primary text-white shadow-md scale-105'
-            : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary dark:hover:bg-bg-primary/60'
-        }`}
-        title="Switch to English (EN)"
-      >
-        <span className="text-sm leading-none">🇬🇧</span>
-        <span>EN</span>
-      </button>
-    </div>
+  return (
+    <button
+      type="button"
+      onClick={toggleLanguage}
+      className={`p-2 rounded-xl bg-bg-primary hover:bg-border-primary/60 text-text-primary transition-all flex items-center gap-1.5 text-xs font-black cursor-pointer border border-border-primary/60 shadow-xs ${className}`}
+      title={language === 'fr' ? 'Switch to English (EN)' : 'Passer en Français (FR)'}
+    >
+      <span className="text-base leading-none">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
+      <span className="font-extrabold uppercase text-[11px]">{language === 'fr' ? 'FR' : 'EN'}</span>
+    </button>
   );
 }

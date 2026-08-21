@@ -8,6 +8,7 @@ export const en: Record<TranslationKeys, string> = {
   nav_testimonials: "Alumni & Success Stories",
   nav_forms: "Official Forms",
   nav_student_space: "Student Portal",
+  nav_teacher_space: "Faculty Portal",
   nav_admin_space: "Administration",
   nav_apply: "Apply for Admission",
   nav_login: "Sign In",
@@ -20,10 +21,25 @@ export const en: Record<TranslationKeys, string> = {
   common_cancel: "Cancel",
   common_submit: "Submit",
   common_download: "Download",
-  common_search: "Search...",
+  common_search: "Search program, degree or specialty...",
   common_loading: "Loading in progress...",
   common_close: "Close",
   common_minutes: "mins",
+  common_all: "All",
+  common_details: "Learn More",
+
+  // Program Filters & Catalog
+  filter_all_categories: "All Categories",
+  filter_bachelor: "Bachelor Degree",
+  filter_master: "Master / M.Sc Degree",
+  filter_executive: "Executive & UK Pathway",
+  filter_search_placeholder: "Search by program title, specialty or degree...",
+  filter_no_results: "No degree programs match your search query.",
+  program_duration: "Duration",
+  program_per_semester: "per semester",
+  program_per_year: "per year",
+  program_total_cost: "Total Program Fee",
+  program_apply_btn: "Enroll in this Program",
 
   // Entrance Modal & Concours Announcement
   concours_tag: "Official Concours 2026-2027",
@@ -52,18 +68,49 @@ export const en: Record<TranslationKeys, string> = {
   form_status_analyzing: "Under Review",
   form_download_pdf: "Download PDF Receipt",
 
+  // Dossier Documents List (FR/EN)
+  doc_1: "Duly completed registration form.",
+  doc_2: "Certified true copy of birth certificate.",
+  doc_3: "Report cards / transcripts for the last 3 secondary years (Form 5, Lower 6th, Upper 6th / 2nde, 1ère, Terminale).",
+  doc_4: "Probatoire certificate / GCE O-Level results.",
+  doc_5: "Baccalauréat / GCE A-Level results (passed or awaiting results).",
+  doc_6: "Transcripts & Certificate of Achievement for Bachelor's degree (for Master's applicants).",
+  doc_7: "Up-to-date Curriculum Vitae (CV) + Recent passport photo.",
+
   // Level & Cascading
   level_select_prompt: "-- Please select your Degree Level above first --",
   level_program_prompt: "-- Select your program / specialty --",
   level_1st_3rd: "1st or 3rd Year (Bachelor / BSc)",
   level_4th: "4th Year (Master / MSc)",
 
-  // Public Portal Hero
+  // Public Portal Sections
   hero_tag: "International Academy of Law & Technology",
   hero_title: "Empower Your Future with Academic Excellence at IDLA",
   hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance.",
-  hero_btn_explore: "Explore Programs",
+  hero_btn_explore: "Explore Degree Programs",
   hero_btn_apply: "Apply for Concours 2026-2027",
+
+  news_section_title: "Academic News & Announcements",
+  news_section_subtitle: "Stay updated with academy events, entrance concours, thesis defenses, and international conferences.",
+  
+  testimonials_section_title: "Alumni Testimonials & Success Stories",
+  testimonials_section_subtitle: "Discover how our graduates transform their ambitions into global professional achievements.",
+  testimonials_btn_share: "Share My Testimonial",
+
+  // Student & Dashboard Portals
+  dashboard_welcome: "Welcome to your IDLA Portal",
+  dashboard_courses: "My Courses & Degree Tracks",
+  dashboard_grades: "Grades & Academic Validation",
+  dashboard_schedule: "Schedule & Live Lectures",
+  dashboard_certificates: "Transcripts & Diplomas",
+  dashboard_profile: "My Student Profile",
+
+  // Admin Portal
+  admin_title: "IDLA CMS Administration Console",
+  admin_programs_tab: "Degree Programs Management",
+  admin_news_tab: "News & Events Management",
+  admin_forms_tab: "Custom Forms Builder",
+  admin_preregistrations_tab: "Pre-Registrations & Applications",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. All rights reserved. Official admissions and enrollment platform.",

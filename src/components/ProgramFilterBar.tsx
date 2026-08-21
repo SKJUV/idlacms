@@ -1,6 +1,7 @@
 import React from 'react';
 import { SearchIcon, FilterIcon, RotateCcwIcon, BookOpenIcon, GraduationCapIcon, LayersIcon, ClockIcon, SparklesIcon } from './Icons';
 import { SlidersHorizontal, Check, X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export interface FilterState {
   search: string;
@@ -58,6 +59,7 @@ export default function ProgramFilterBar({
   className = '',
   layout = 'sidebar',
 }: ProgramFilterBarProps) {
+  const { t } = useLanguage();
   const hasActiveFilters =
     filters.search.trim() !== '' ||
     filters.type !== 'Tous' ||

@@ -26,6 +26,7 @@ import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } fro
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
+import { useLanguage } from '../context/LanguageContext';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -61,6 +62,7 @@ const EVENT_REGISTRATION_FORM: CustomForm = {
 };
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
+  const { t, language } = useLanguage();
 
   // Newsletter Subscription States
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -398,15 +400,15 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="max-w-2xl space-y-6 bg-slate-950/35 backdrop-blur-[2px] p-8 md:p-10 rounded-3xl border border-sky-400/20 shadow-2xl">
               <div className="inline-flex items-center gap-2 bg-sky-500/15 border border-sky-400/30 px-4 py-1.5 rounded-full">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
-                <span className="text-sky-300 font-semibold text-xs uppercase tracking-wider">Session {new Date().getFullYear()} Ouverte</span>
+                <span className="text-sky-300 font-semibold text-xs uppercase tracking-wider">{t('hero_tag')}</span>
               </div>
               
               <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight drop-shadow-sm">
-                L'Éducation d'Élite <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">Accessible</span> en Afrique
+                {t('hero_title')}
               </h1>
               
               <p className="font-sans text-lg text-slate-200 max-w-lg leading-relaxed font-medium">
-                IDLA forme les leaders de demain à travers des programmes d'excellence, une infrastructure de pointe et un réseau alumni d'influence.
+                {t('hero_subtitle')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -415,7 +417,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-[0_0_35px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer border border-sky-400/30"
                 >
                   <span className="relative z-10 flex items-center gap-2">
-                    Explorer les programmes 
+                    {t('hero_btn_explore')}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-300" />
                   </span>
                   <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
@@ -424,7 +426,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   onClick={() => onApplyNow()}
                   className="group relative px-8 py-4 rounded-xl font-bold transition-all duration-300 text-center cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 hover:border-white shadow-md hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
-                  <span>Je pose ma candidature</span>
+                  <span>{t('hero_btn_apply')}</span>
                   <span className="w-2 h-2 rounded-full bg-sky-400 group-hover:animate-ping"></span>
                 </button>
               </div>

@@ -41,19 +41,19 @@ export default function Header({
   ] as const;
 
   return (
-    <header className="bg-bg-secondary text-text-primary sticky top-0 left-0 w-full z-50 border-b border-border-primary shadow-sm backdrop-blur-md bg-opacity-80">
-      <nav className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 md:px-12 w-full max-w-[1440px] mx-auto transition-all duration-200">
+    <header className="bg-bg-secondary text-text-primary sticky top-0 left-0 w-full z-50 border-b border-border-primary shadow-sm backdrop-blur-md bg-opacity-90">
+      <nav className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 w-full max-w-[1440px] mx-auto transition-all duration-200 flex-nowrap">
         <button
           onClick={() => {
             setActiveTab('home');
             setMobileMenuOpen(false);
           }}
-          className="hover:opacity-80 transition-opacity flex items-center gap-3 text-left"
+          className="hover:opacity-80 transition-opacity flex items-center gap-2.5 text-left shrink-0"
         >
-          <img src="/logo.png" alt="IDLA Logo" className="w-16 h-16 sm:w-24 sm:h-24 object-contain drop-shadow-md" />
+          <img src="/logo.png" alt="IDLA Logo" className="w-10 h-10 sm:w-14 sm:h-14 object-contain drop-shadow-md" />
           <div className="flex flex-col justify-center">
-            <span className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-text-primary leading-none">IDLA</span>
-            <span className="text-[10px] sm:text-xs font-bold text-brand-primary tracking-wider uppercase mt-1">
+            <span className="font-sans font-black text-xl sm:text-2xl tracking-tight text-text-primary leading-none">IDLA</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-brand-primary tracking-wider uppercase mt-0.5 hidden xl:block">
               International Distance Learning Academy
             </span>
           </div>
