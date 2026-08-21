@@ -588,7 +588,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <div className="flex justify-between items-end mb-12">
               <div>
                 <h2 className="text-3xl font-bold text-text-primary">Nos Filières d'Excellence</h2>
-                <p className="text-sm text-text-secondary mt-1">Nos certifications internationales.</p>
+                <p className="text-sm text-text-secondary mt-1">Nos parcours académiques et diplômants.</p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
@@ -602,7 +602,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {activePrograms.slice(0, 3).map((p, idx) => (
+              {activePrograms.filter(p => p.type !== 'Certification').slice(0, 3).map((p, idx) => (
                 <div 
                   key={p.id} 
                   className={`bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-xl hover:border-brand-primary/30 cursor-pointer ${
@@ -668,22 +668,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
               {/* Grid of Certification shortcuts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { title: "Cisco CCNA-CCNP", desc: "Administration des réseaux et télécommunications d'entreprise.", Icon: GlobeIcon },
-                  { title: "AWS Solutions Architect", desc: "Conception et déploiement d'architectures cloud résilientes.", Icon: UploadCloudIcon },
-                  { title: "CompTIA Security+", desc: "Fondamentaux de la cybersécurité et protection des données.", Icon: LockIcon },
-                  { title: "Project Management (PMP)", desc: "Gestion de projets complexes avec les standards du PMI.", Icon: FileTextIcon }
-                ].map(({ title, desc, Icon }) => (
+                {activePrograms.filter(p => p.type === 'Certification').slice(0, 4).map((p) => (
                   <div 
-                    key={title}
-                    onClick={() => { setFilters((p) => ({ ...p, type: 'Certification' })); setActiveTab('programmes'); }}
+                    key={p.id}
+                    onClick={() => { setFilters((f) => ({ ...f, type: 'Certification' })); setActiveTab('programmes'); }}
                     className="p-7 bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-2xl transition-all cursor-pointer group shadow-sm hover:shadow-md"
                   >
                     <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
-                      <Icon className="w-6 h-6" />
+                      <GraduationCapIcon className="w-6 h-6" />
                     </div>
-                    <h4 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors">{title}</h4>
-                    <p className="text-sm text-text-secondary mt-2 leading-relaxed">{desc}</p>
+                    <h4 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors line-clamp-1">{p.title}</h4>
+                    <p className="text-sm text-text-secondary mt-2 leading-relaxed line-clamp-2">{p.description}</p>
                   </div>
                 ))}
               </div>
