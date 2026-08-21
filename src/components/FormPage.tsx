@@ -112,6 +112,28 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     if (!form) return;
     setEmailError('');
 
+    // Validate age constraints on all date fields
+    for (const f of form.fields) {
+      if (f.type === 'date' && (f.minAge != null || f.maxAge != null)) {
+        const dateVal = formValues[f.label];
+        if (dateVal) {
+          const today = new Date();
+          const birth = new Date(dateVal);
+          let age = today.getFullYear() - birth.getFullYear();
+          const monthDiff = today.getMonth() - birth.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+          if (f.minAge != null && age < f.minAge) {
+            setEmailError(`⚠️ Le champ « ${f.label} » exige un âge minimum de ${f.minAge} ans. L'âge calculé (${age} ans) est insuffisant.`);
+            return;
+          }
+          if (f.maxAge != null && age > f.maxAge) {
+            setEmailError(`⚠️ Le champ « ${f.label} » exige un âge maximum de ${f.maxAge} ans. L'âge calculé (${age} ans) dépasse la limite.`);
+            return;
+          }
+        }
+      }
+    }
+
     const respondentName = formValues['Nom complet'] || formValues['Nom & Prénom'] || formValues['Nom'] || formValues['Nom de famille'] || 'Candidat IDLA';
 
     // Strict Email Detection
@@ -532,15 +554,53 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                       )}
 
                       {/* Date Input */}
-                      {f.type === 'date' && (
-                        <input
-                          type="date"
-                          required={f.required}
-                          value={val}
-                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
-                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-semibold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
-                        />
-                      )}
+                      {f.type === 'date' && (() => {
+                        const today = new Date();
+                        const maxDate = f.minAge != null
+                          ? new Date(today.getFullYear() - f.minAge, today.getMonth(), today.getDate()).toISOString().split('T')[0]
+                          : undefined;
+                        const minDate = f.maxAge != null
+                          ? new Date(today.getFullYear() - f.maxAge, today.getMonth(), today.getDate()).toISOString().split('T')[0]
+                          : undefined;
+
+                        let ageError = '';
+                        if (val) {
+                          const birth = new Date(val);
+                          let age = today.getFullYear() - birth.getFullYear();
+                          const monthDiff = today.getMonth() - birth.getMonth();
+                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+                          if (f.minAge != null && age < f.minAge) ageError = `Le candidat doit avoir au moins ${f.minAge} ans.`;
+                          if (f.maxAge != null && age > f.maxAge) ageError = `Le candidat ne doit pas dépasser ${f.maxAge} ans.`;
+                        }
+
+                        return (
+                          <div className="space-y-1">
+                            <input
+                              type="date"
+                              required={f.required}
+                              value={val}
+                              max={maxDate}
+                              min={minDate}
+                              onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                              className={`w-full p-3 rounded-xl border bg-white dark:bg-bg-secondary text-text-primary text-xs font-semibold outline-none focus:ring-2 transition-all shadow-sm ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
+                            />
+                            {ageError && (
+                              <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+                                ⚠️ {ageError}
+                              </p>
+                            )}
+                            {(f.minAge != null || f.maxAge != null) && !ageError && (
+                              <p className="text-[10px] text-text-secondary italic">
+                                {f.minAge != null && f.maxAge != null
+                                  ? `Âge requis : entre ${f.minAge} et ${f.maxAge} ans.`
+                                  : f.minAge != null
+                                  ? `Âge minimum requis : ${f.minAge} ans.`
+                                  : `Âge maximum autorisé : ${f.maxAge} ans.`}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Select Dropdown */}
                       {f.type === 'select' && (

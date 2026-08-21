@@ -439,7 +439,7 @@ export default function NewsManagement({
     } else if (presetKey === 'phone') {
       newF = { id: `f_${ts}`, label: 'Numéro de téléphone', type: 'text', required: true, placeholder: 'Ex: +237 6XX XX XX XX' };
     } else if (presetKey === 'birthDate') {
-      newF = { id: `f_${ts}`, label: 'Date de naissance', type: 'date', required: true };
+      newF = { id: `f_${ts}`, label: 'Date de naissance', type: 'date', required: true, minAge: 10 };
     } else if (presetKey === 'cni') {
       newF = { id: `f_${ts}`, label: 'Numéro de CNI / Passeport', type: 'text', required: true, placeholder: 'Ex: 102938495' };
     } else if (presetKey === 'level') {
@@ -1195,6 +1195,44 @@ export default function NewsManagement({
                             Champ obligatoire
                           </label>
                         </div>
+
+                        {/* Age Constraint (Date fields only) */}
+                        {field.type === 'date' && (
+                          <div className="md:col-span-3 bg-amber-500/5 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                            <label className="text-[10px] font-extrabold text-amber-700 dark:text-amber-400 uppercase flex items-center gap-1.5">
+                              🔒 Contrainte d'âge (Validation automatique)
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Âge minimum (ans)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={120}
+                                  value={field.minAge ?? ''}
+                                  onChange={(e) => handleUpdateField(field.id, 'minAge', e.target.value ? Number(e.target.value) : undefined)}
+                                  placeholder="ex: 10"
+                                  className="w-full p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs font-bold"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-text-secondary uppercase">Âge maximum (ans)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={120}
+                                  value={field.maxAge ?? ''}
+                                  onChange={(e) => handleUpdateField(field.id, 'maxAge', e.target.value ? Number(e.target.value) : undefined)}
+                                  placeholder="ex: 60"
+                                  className="w-full p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs font-bold"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-text-secondary italic">
+                              Laissez vide pour ne pas appliquer de contrainte. Le candidat sera bloqué si son âge ne correspond pas à la plage définie.
+                            </p>
+                          </div>
+                        )}
 
                         {/* Option parent cascade */}
                         {['select', 'radio', 'checkbox'].includes(field.type) && (

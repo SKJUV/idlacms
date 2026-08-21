@@ -95,6 +95,8 @@ export interface CustomFormField {
   cascadeParentId?: string;
   cascadeMapping?: Record<string, string[]>;
   feeContribution?: number;
+  minAge?: number;
+  maxAge?: number;
 }
 
 export interface CustomForm {

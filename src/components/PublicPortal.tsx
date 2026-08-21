@@ -50,7 +50,7 @@ const EVENT_REGISTRATION_FORM: CustomForm = {
     { id: 'email', label: 'Adresse e-mail', type: 'text', required: true },
     { id: 'telephone', label: 'Numéro de téléphone', type: 'text', required: true },
     { id: 'sexe', label: 'Sexe', type: 'radio', required: true, options: ['Homme', 'Femme', 'Préfère ne pas répondre'] },
-    { id: 'date_naissance', label: 'Date de naissance', type: 'date', required: false },
+    { id: 'date_naissance', label: 'Date de naissance', type: 'date', required: false, minAge: 10 },
     { id: 'statut', label: 'Statut', type: 'select', required: true, options: ['Étudiant', 'Jeune diplômé', 'Salarié', 'Entrepreneur', 'Demandeur d\'emploi', 'Autre'] },
     { id: 'etablissement', label: 'Établissement / Entreprise', type: 'text', required: false },
     { id: 'filiere', label: 'Filière ou domaine d\'activité', type: 'text', required: false },
@@ -145,6 +145,28 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     e.preventDefault();
     if (!activeFormModal) return;
     setFormEmailError('');
+
+    // Validate age constraints on all date fields
+    for (const f of activeFormModal.fields) {
+      if (f.type === 'date' && (f.minAge != null || f.maxAge != null)) {
+        const dateVal = activeFormValues[f.label];
+        if (dateVal) {
+          const today = new Date();
+          const birth = new Date(dateVal);
+          let age = today.getFullYear() - birth.getFullYear();
+          const monthDiff = today.getMonth() - birth.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+          if (f.minAge != null && age < f.minAge) {
+            setFormEmailError(`⚠️ Le champ « ${f.label} » exige un âge minimum de ${f.minAge} ans. L'âge calculé (${age} ans) est insuffisant.`);
+            return;
+          }
+          if (f.maxAge != null && age > f.maxAge) {
+            setFormEmailError(`⚠️ Le champ « ${f.label} » exige un âge maximum de ${f.maxAge} ans. L'âge calculé (${age} ans) dépasse la limite.`);
+            return;
+          }
+        }
+      }
+    }
 
     const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || activeFormValues['Nom de famille'] || 'Candidat IDLA';
     
@@ -1416,15 +1438,55 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                               )}
 
                               {/* Date */}
-                              {f.type === 'date' && (
-                                <input
-                                  type="date"
-                                  required={f.required}
-                                  value={val}
-                                  onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
-                                />
-                              )}
+                              {f.type === 'date' && (() => {
+                                // Compute age constraint boundaries
+                                const today = new Date();
+                                const maxDate = f.minAge != null
+                                  ? new Date(today.getFullYear() - f.minAge, today.getMonth(), today.getDate()).toISOString().split('T')[0]
+                                  : undefined;
+                                const minDate = f.maxAge != null
+                                  ? new Date(today.getFullYear() - f.maxAge, today.getMonth(), today.getDate()).toISOString().split('T')[0]
+                                  : undefined;
+
+                                // Validate current value
+                                let ageError = '';
+                                if (val) {
+                                  const birth = new Date(val);
+                                  let age = today.getFullYear() - birth.getFullYear();
+                                  const monthDiff = today.getMonth() - birth.getMonth();
+                                  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+                                  if (f.minAge != null && age < f.minAge) ageError = `Le candidat doit avoir au moins ${f.minAge} ans.`;
+                                  if (f.maxAge != null && age > f.maxAge) ageError = `Le candidat ne doit pas dépasser ${f.maxAge} ans.`;
+                                }
+
+                                return (
+                                  <div className="space-y-1">
+                                    <input
+                                      type="date"
+                                      required={f.required}
+                                      value={val}
+                                      max={maxDate}
+                                      min={minDate}
+                                      onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
+                                      className={`w-full p-2.5 rounded-lg border bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 transition-all ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
+                                    />
+                                    {ageError && (
+                                      <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+                                        ⚠️ {ageError}
+                                      </p>
+                                    )}
+                                    {(f.minAge != null || f.maxAge != null) && !ageError && (
+                                      <p className="text-[10px] text-text-secondary italic">
+                                        {f.minAge != null && f.maxAge != null
+                                          ? `Âge requis : entre ${f.minAge} et ${f.maxAge} ans.`
+                                          : f.minAge != null
+                                          ? `Âge minimum requis : ${f.minAge} ans.`
+                                          : `Âge maximum autorisé : ${f.maxAge} ans.`}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
 
                               {/* Select */}
                               {f.type === 'select' && (
