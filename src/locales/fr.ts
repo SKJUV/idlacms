@@ -8,7 +8,7 @@ export const fr = {
   nav_student_space: "Espace Étudiant",
   nav_teacher_space: "Espace Enseignant",
   nav_admin_space: "Administration",
-  nav_apply: "Postuler au Concours",
+  nav_apply: "S'inscrire",
   nav_login: "Connexion",
   nav_logout: "Déconnexion",
 
