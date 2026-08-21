@@ -8,17 +8,23 @@ interface EntranceModalProps {
 
 export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps) {
   const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleAction = () => {
     onOpenConcoursForm();
   };
 
+  const shouldShowDetails = isOpen || isHovered;
+
   return (
-    <div className="fixed bottom-6 left-6 z-[200] font-sans">
-      {/* ── 1. POP-UP / CARTE D'ANNONCE EXPANSIONNELLE ── */}
-      {(isOpen || isHovered) && (
+    <div 
+      className="fixed bottom-6 left-6 z-[200] font-sans"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* ── 1. POP-UP / CARTE D'ANNONCE EXPANSIONNELLE AU SURVOL ── */}
+      {shouldShowDetails && (
         <div 
           className="absolute bottom-16 left-0 w-[310px] sm:w-[360px] bg-white dark:bg-bg-secondary text-text-primary p-5 rounded-3xl shadow-2xl border-2 border-rose-500/50 dark:border-rose-500/40 animate-in fade-in slide-in-from-bottom-4 duration-300"
           onMouseEnter={() => setIsHovered(true)}
@@ -82,8 +88,8 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
       <div 
         className="relative group cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onClick={() => {
-          setIsOpen(!isOpen);
           handleAction();
         }}
       >
