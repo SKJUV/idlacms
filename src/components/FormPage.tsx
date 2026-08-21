@@ -7,6 +7,8 @@ import {
 import { CustomForm, CustomFormResponse, NewsArticle, Program } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface FormPageProps {
   formId?: string;
@@ -18,6 +20,7 @@ interface FormPageProps {
 }
 
 export default function FormPage({ formId: initialFormId, onBack, newsList = [], programs = [], theme = 'light', setTheme }: FormPageProps) {
+  const { t, language } = useLanguage();
   const [form, setForm] = useState<CustomForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -302,10 +305,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Bouton de bascule de Thème (Clair / Sombre) */}
+          <div className="flex items-center gap-2.5">
+            {/* Native Language Switcher FR / EN */}
+            <LanguageSwitcher />
 
-            {/* Bouton de bascule de Thème (Clair / Sombre) */}
+            {/* Changeur de Thème intégrateur */}
             {setTheme && (
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

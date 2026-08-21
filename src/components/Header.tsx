@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ActiveTab } from '../App';
 import { MenuIcon, XIcon, SunIcon, MoonIcon, GraduationCapIcon } from './Icons';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -25,16 +27,17 @@ export default function Header({
   theme,
   setTheme,
 }: HeaderProps) {
+  const { t } = useLanguage();
   const isPublicTab = ['home', 'programmes', 'actualites', 'temoignages', 'candidature', 'success'].includes(activeTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!isPublicTab) return null;
 
   const navItems = [
-    { key: 'home', label: 'Accueil' },
-    { key: 'programmes', label: 'Programmes' },
-    { key: 'actualites', label: 'Actualités' },
-    { key: 'temoignages', label: 'Témoignages' },
+    { key: 'home', label: t('nav_home') },
+    { key: 'programmes', label: t('nav_programs') },
+    { key: 'actualites', label: t('nav_news') },
+    { key: 'temoignages', label: t('nav_testimonials') },
   ] as const;
 
   return (
@@ -73,10 +76,13 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Native Language Switcher FR / EN */}
+          <LanguageSwitcher />
+
           {/* Theme Toggle Button */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg bg-bg-primary hover:bg-border-primary text-text-secondary transition-colors"
+            className="p-2 rounded-xl bg-bg-primary hover:bg-border-primary text-text-secondary transition-colors"
             title={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
           >
             {theme === 'dark' ? (
@@ -85,7 +91,6 @@ export default function Header({
               <MoonIcon className="text-indigo-600" size={18} />
             )}
           </button>
-
 
           {isLoggedIn ? (
             <>
@@ -97,16 +102,16 @@ export default function Header({
                 className="flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-2 sm:px-3 py-1.5 transition-colors cursor-pointer"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                <span className="hidden sm:inline">Mon Espace</span>
+                <span className="hidden sm:inline">{t('nav_student_space')}</span>
               </button>
               <button
                 onClick={() => {
                   onLogoutClick();
                   setMobileMenuOpen(false);
                 }}
-                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
               >
-                Déconnexion
+                {t('nav_logout')}
               </button>
             </>
           ) : (
@@ -119,16 +124,16 @@ export default function Header({
                 className="flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-brand-primary px-2 sm:px-3 py-1.5 transition-colors cursor-pointer"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                <span className="hidden sm:inline">Connexion</span>
+                <span className="hidden sm:inline">{t('nav_login')}</span>
               </button>
               <button
                 onClick={() => {
                   onSignUpClick();
                   setMobileMenuOpen(false);
                 }}
-                className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
+                className="bg-brand-primary hover:bg-brand-hover text-white px-4 sm:px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
               >
-                Je m'inscris
+                {t('nav_apply')}
               </button>
             </>
           )}

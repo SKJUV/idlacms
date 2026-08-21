@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { GraduationCapIcon, SparklesIcon as Sparkles, XIcon as X, SendIcon as Send, CheckCircle2Icon as CheckCircle2 } from './Icons';
+import { useLanguage } from '../context/LanguageContext';
 
 interface EntranceModalProps {
   onOpenConcoursForm: () => void;
 }
 
 export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -30,14 +32,14 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
               </span>
               <span className="text-[11px] font-black tracking-wider uppercase text-rose-700 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
-                Concours Officiel 2026-2027
+                {t('concours_tag')}
               </span>
             </div>
 
             <button 
               onClick={(e) => { e.stopPropagation(); setIsOpen(false); setIsHovered(false); }}
               className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-bg-primary transition-all cursor-pointer"
-              title="Fermer l'annonce"
+              title={t('common_close')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -46,19 +48,19 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
           {/* Corps de l'annonce */}
           <div className="py-3 space-y-2">
             <h4 className="font-extrabold text-sm sm:text-base text-text-primary leading-snug">
-              2026-2027 ONSITE AND ONLINE ADMISSION CONCOURS IDLA FOR AFRICA
+              {t('concours_title')}
             </h4>
             <p className="text-xs text-text-secondary leading-relaxed">
-              Les candidatures au Concours Direct International IDLA sont ouvertes pour l'ensemble des pays d'Afrique (Présentiel & Formation en Ligne).
+              {t('concours_desc')}
             </p>
 
             <div className="bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-300">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-rose-600" />
-                <span>Sessions Présentiel & En Ligne</span>
+                <span>{t('concours_badge_sessions')}</span>
               </span>
               <span className="bg-white dark:bg-bg-primary px-2.5 py-0.5 rounded-lg text-[11px] border border-rose-500/20 font-black text-rose-600 dark:text-rose-400">
-                Candidatures Ouvertes
+                {t('concours_badge_open')}
               </span>
             </div>
           </div>
@@ -70,7 +72,7 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
               className="w-full bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-700 hover:to-red-800 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 flex items-center justify-center gap-2 cursor-pointer group"
             >
               <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              <span>S'inscrire au Concours Direct</span>
+              <span>{t('concours_cta')}</span>
             </button>
           </div>
         </div>
@@ -103,7 +105,7 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
 
         {/* Tooltip au survol */}
         <div className="absolute left-16 top-3 bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1 rounded-xl whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
-          Concours IDLA 2026-2027 • Inscrivez-vous !
+          {t('concours_tooltip')}
         </div>
       </div>
     </div>
