@@ -82,12 +82,15 @@ Ouvrez ensuite la Pull Request vers la branche `main`.
 
 ## 🤖 3. Automatisation CI/CD & Fusion Automatique (Auto-Merge)
 
-Le projet dispose désormais d'un **système de validation 100% automatisé** via GitHub Actions :
+Le projet dispose d'un **système de validation automatisé sécurisé** via GitHub Actions :
 
 1. **`ci.yml` (Contrôle Qualité)** :
-   - À l'ouverture de la PR, GitHub Actions vérifie le typechecking, exécute la suite de tests unitaires d'intégrité (Vitest + `happy-dom`) et valide la compilation Vite.
-2. **`auto-merge.yml` (Fusion Automatique)** :
-   - Dès que tous les voyants de la CI passent au vert (✓ SUCCESS), **GitHub Actions fusionne la PR automatiquement sur `main`** sans intervention humaine nécessaire.
+   - Exécuté pour **toutes** les Pull Requests (collaborateurs et contributeurs externes).
+   - Vérifie la compilation TypeScript (`tsc --noEmit`), exécute la suite de tests automatisés (Vitest + `happy-dom`) et valide le Build Vite.
+2. **`auto-merge.yml` (Fusion Automatique Sécurisée)** :
+   - **Réservé uniquement aux Collaborateurs Officiels du Dépôt** (`OWNER`, `MEMBER`, `COLLABORATOR`).
+   - Vérifie le statut de collaborateur officiel avant d'autoriser la fusion automatique (`gh pr merge --auto --squash`).
+   - Les contributeurs externes ne bénéficient pas de l'auto-merge et nécessitent une relecture manuelle préalable.
 
 ---
 
