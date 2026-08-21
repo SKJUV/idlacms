@@ -18,7 +18,7 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
       {/* ── 1. POP-UP / CARTE D'ANNONCE EXPANSIONNELLE ── */}
       {(isOpen || isHovered) && (
         <div 
-          className="absolute bottom-16 left-0 w-[310px] sm:w-[360px] bg-white dark:bg-bg-secondary text-text-primary p-5 rounded-3xl shadow-2xl border-2 border-emerald-500/50 dark:border-emerald-500/40 animate-in fade-in slide-in-from-bottom-4 duration-300"
+          className="absolute bottom-16 left-0 w-[310px] sm:w-[360px] bg-white dark:bg-bg-secondary text-text-primary p-5 rounded-3xl shadow-2xl border-2 border-rose-500/50 dark:border-rose-500/40 animate-in fade-in slide-in-from-bottom-4 duration-300"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -26,10 +26,10 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
           <div className="flex items-start justify-between gap-2 border-b border-border-primary/60 pb-3">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
               </span>
-              <span className="text-[11px] font-black tracking-wider uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+              <span className="text-[11px] font-black tracking-wider uppercase text-rose-700 dark:text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
                 Concours Officiel 2026-2027
               </span>
             </div>
@@ -52,22 +52,22 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
               Les candidatures au Concours Direct International IDLA sont ouvertes pour l'ensemble des pays d'Afrique (Présentiel & Formation en Ligne).
             </p>
 
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+            <div className="bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-300">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Niveaux L1, L3 & Master</span>
+                <CheckCircle2 className="w-4 h-4 text-rose-600" />
+                <span>Sessions Présentiel & En Ligne</span>
               </span>
-              <span className="bg-white dark:bg-bg-primary px-2 py-0.5 rounded-lg text-[11px] border border-emerald-500/20 font-black">
-                10 000 FCFA
+              <span className="bg-white dark:bg-bg-primary px-2.5 py-0.5 rounded-lg text-[11px] border border-rose-500/20 font-black text-rose-600 dark:text-rose-400">
+                Candidatures Ouvertes
               </span>
             </div>
           </div>
 
-          {/* Bouton d'action direct vers le formulaire */}
+          {/* Bouton d'action direct vers le formulaire (ROUGE) */}
           <div className="pt-1">
             <button
               onClick={handleAction}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer group"
+              className="w-full bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-700 hover:to-red-800 text-white font-extrabold text-xs px-4 py-3 rounded-2xl transition-all shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 flex items-center justify-center gap-2 cursor-pointer group"
             >
               <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               <span>S'inscrire au Concours Direct</span>
@@ -76,7 +76,7 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
         </div>
       )}
 
-      {/* ── 2. CERCLE FLOTTANT ANIME DANS LE COIN BAS GAUCHE (VAGUES ONDULATOIRES) ── */}
+      {/* ── 2. CERCLE FLOTTANT ANIME DANS LE COIN BAS GAUCHE (BOUTON ROUGE A VAGUES ONDULATOIRES) ── */}
       <div 
         className="relative group cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
@@ -85,13 +85,13 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
           handleAction();
         }}
       >
-        {/* Vagues Ondulatoires Répétées (Radar Waves Ripple Effect) */}
-        <span className="absolute -inset-2 rounded-full bg-emerald-500/40 animate-ping opacity-75"></span>
-        <span className="absolute -inset-4 rounded-full bg-emerald-400/20 animate-pulse"></span>
-        <span className="absolute -inset-6 rounded-full border border-emerald-500/30 animate-ping duration-1000"></span>
+        {/* Vagues Ondulatoires Répétées ROUGES (Radar Waves Ripple Effect) */}
+        <span className="absolute -inset-2 rounded-full bg-rose-500/40 animate-ping opacity-75"></span>
+        <span className="absolute -inset-4 rounded-full bg-rose-400/20 animate-pulse"></span>
+        <span className="absolute -inset-6 rounded-full border border-rose-500/30 animate-ping duration-1000"></span>
 
-        {/* Bouton Cercle Principal Clignotant */}
-        <div className="relative w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-amber-400 text-white flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.6)] border-2 border-white dark:border-bg-secondary transform transition-all duration-300 group-hover:scale-110">
+        {/* Bouton Cercle Principal Clignotant ROUGE */}
+        <div className="relative w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 via-red-600 to-amber-500 text-white flex items-center justify-center shadow-[0_0_25px_rgba(244,63,94,0.7)] border-2 border-white dark:border-bg-secondary transform transition-all duration-300 group-hover:scale-110">
           <GraduationCapIcon className="w-7 h-7 text-white animate-pulse" />
           
           {/* Badge Clignotant d'Alerte Nouveauté */}
