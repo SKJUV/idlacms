@@ -17,9 +17,10 @@ interface ApplicationFormProps {
   onBackToHome: () => void;
   programs: any[];
   initialProgram?: string;
+  isLocked?: boolean;
 }
 
-export default function ApplicationForm({ onSuccess, onBackToHome, programs, initialProgram }: ApplicationFormProps) {
+export default function ApplicationForm({ onSuccess, onBackToHome, programs, initialProgram, isLocked = !!initialProgram }: ApplicationFormProps) {
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -754,8 +755,13 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Type de Programme *</label>
                 <select 
                   value={selectedProgramType}
+                  disabled={isLocked}
                   onChange={(e) => setSelectedProgramType(e.target.value)}
-                  className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
+                  className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
+                    isLocked 
+                      ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
+                      : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
+                  }`}
                 >
                   <option value="Master">Master (Bac +5)</option>
                   <option value="Bachelor">Bachelor (Bac +3)</option>
@@ -768,15 +774,20 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Programme académique ciblé *</label>
                 <select 
                   value={selectedProgram}
+                  disabled={isLocked}
                   onChange={(e) => setSelectedProgram(e.target.value)}
-                  className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-semibold text-text-primary"
+                  className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
+                    isLocked 
+                      ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
+                      : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
+                  }`}
                 >
                   {filteredPrograms.length > 0 ? (
                     filteredPrograms.map((p) => (
                       <option key={p.id} value={p.title}>{p.title}</option>
                     ))
                   ) : (
-                    <option value="">Aucun programme disponible pour ce type</option>
+                    <option value={selectedProgram || ''}>{selectedProgram || "Aucun programme disponible pour ce type"}</option>
                   )}
                 </select>
                 <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
