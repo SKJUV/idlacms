@@ -925,7 +925,7 @@ export default function App() {
         <EntranceModal
           onOpenConcoursForm={() => {
             const searchParams = new URLSearchParams(window.location.search);
-            searchParams.set('id', 'form_concours_1_3_4_b52s6y');
+            searchParams.set('id', '6a86f5cc003484813061');
             window.history.pushState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
             setActiveTab('formulaire');
           }}
