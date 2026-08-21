@@ -361,18 +361,6 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               {form.description}
             </p>
           </div>
-
-          {feeAmount && (
-            <div className="bg-white dark:bg-bg-secondary p-4 rounded-2xl border border-brand-primary/30 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-2 text-brand-primary font-extrabold text-xs">
-                <ShieldAlert className="w-5 h-5 flex-shrink-0" />
-                <span>Frais de traitement & Dossier d'inscription :</span>
-              </div>
-              <span className="text-lg font-black text-brand-primary bg-brand-primary/10 px-4 py-1.5 rounded-xl border border-brand-primary/30">
-                {feeAmount} FCFA
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Conteneur Formulaire ou Écran de Succès */}
@@ -640,6 +628,55 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               })}
             </div>
 
+            {/* Notice Officielle & Procédure de Paiement Bancaire */}
+            <div className="bg-bg-primary/80 border border-brand-primary/30 rounded-3xl p-6 space-y-5">
+              <div className="flex items-center gap-2.5 text-brand-primary font-extrabold text-sm border-b border-border-primary pb-3">
+                <FileTextIcon className="w-5 h-5 text-brand-primary" />
+                <span>Notice Officielle & Procédure de Candidature</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-text-primary">
+                {/* Consignes de Paiement et Banques Partenaires */}
+                <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
+                  <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                    💳 Règlement des Frais de Concours (10 000 FCFA)
+                  </h4>
+                  <p className="text-text-secondary text-[11px]">
+                    Le règlement des <strong>10 000 FCFA</strong> de frais d'étude de dossier s'effectue auprès de l'un de nos établissements bancaires partenaires :
+                  </p>
+                  <div className="space-y-2 pt-1 font-mono text-[11px]">
+                    <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
+                      <span className="font-bold text-text-primary block">🏦 UBA (United Bank for Africa)</span>
+                      <span className="text-brand-primary font-extrabold select-all">4187 6212 2553 2696</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-bg-primary border border-border-primary/80">
+                      <span className="font-bold text-text-primary block">🏦 Afriland First Bank</span>
+                      <span className="text-brand-primary font-extrabold select-all">4413 4502 5790 2247</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-text-secondary italic pt-1">
+                    * Note : Le bordereau de paiement est facultatif lors de l'inscription en ligne. Vous pourrez le renseigner ou le téléverser ultérieurement.
+                  </p>
+                </div>
+
+                {/* Pièces à fournir au dossier (FR / EN) */}
+                <div className="space-y-2.5 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary">
+                  <h4 className="font-extrabold text-brand-primary text-xs">
+                    📑 Composition Officielle du Dossier (FR / EN)
+                  </h4>
+                  <ul className="space-y-1.5 text-[11px] text-text-secondary list-disc pl-4">
+                    <li>Formulaire d'inscription dûment complété.</li>
+                    <li>Copie certifiée conforme de l'acte de naissance.</li>
+                    <li>Bulletins de notes des 3 dernières années (2nde, 1ère, Terminale / Form 5, Lower 6th, Upper 6th).</li>
+                    <li>Attestation du Probatoire / GCE O-Level.</li>
+                    <li>Résultats du Baccalauréat / GCE A-Level (admis ou en attente).</li>
+                    <li>Relevés de notes & Attestation de réussite de la Licence (pour Master).</li>
+                    <li>CV à jour + Photo d'identité récente.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {/* Action Bar & Submit */}
             <div className="pt-6 border-t border-border-primary flex flex-wrap items-center justify-between gap-4">
               <button
@@ -662,7 +699,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    {feeAmount ? `Soumettre ma Candidature (${feeAmount} FCFA)` : 'Transmettre mon Formulaire Officiel'}
+                    Transmettre ma Candidature Officielle
                   </>
                 )}
               </button>
