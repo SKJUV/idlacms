@@ -113,7 +113,21 @@ export default function ApplicationSuccess({
 
         {/* Informational Tracking Card */}
         <div className="bg-bg-primary p-6 rounded-xl border border-border-primary/40 text-left space-y-4">
-          <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <FileTextIcon className="w-4 h-4 text-emerald-600 shrink-0" /> Document Officiel du Concours & Grille Tarifaire (Appwrite)
+            </span>
+            <a
+              href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              Consulter le PDF ↗
+            </a>
+          </div>
+
+          <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2 pt-2">
             <FileTextIcon className="w-4 h-4 text-brand-primary" />
             Prochaines Étapes :
           </h4>

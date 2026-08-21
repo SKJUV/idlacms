@@ -255,6 +255,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
     setIsSubmittingForm(false);
     setFormSubmittedSuccess(true);
+
+    // Auto-open official Concours PDF document hosted on Appwrite Storage
+    try {
+      const appwritePdfUrl = 'https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a';
+      if (typeof window !== 'undefined') {
+        window.open(appwritePdfUrl, '_blank');
+      }
+    } catch (e) {}
   };
 
   // Fermer la modal avec Echap
@@ -1291,17 +1299,27 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                   <h4 className="font-extrabold text-2xl text-text-primary">Formulaire & Candidature Transmis avec Succès !</h4>
                   <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
-                    Vos informations ont bien été enregistrées. <strong>Un récépissé PDF ainsi qu'une confirmation de candidature</strong> ont été envoyés automatiquement par e-mail à votre adresse et aux services d'admissions IDLA.
+                    Vos informations ont bien été enregistrées. Le **document PDF officiel du dossier de candidature (hébergé sur Appwrite Storage)** a été ouvert automatiquement et une confirmation a été envoyée par e-mail.
                   </p>
                   <div className="bg-brand-primary/10 border border-brand-primary/30 p-4 rounded-2xl max-w-md mx-auto text-xs text-brand-primary font-bold">
                     ✉️ Vérifiez votre boîte de réception (et vos courriers indésirables / Spams).
                   </div>
-                  <button
-                    onClick={() => setActiveFormModal(null)}
-                    className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-8 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg"
-                  >
-                    Fermer la fenêtre
-                  </button>
+                  <div className="pt-2 flex flex-wrap justify-center gap-3">
+                    <a
+                      href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
+                    >
+                      <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel (Appwrite) ↗
+                    </a>
+                    <button
+                      onClick={() => setActiveFormModal(null)}
+                      className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-bold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer"
+                    >
+                      Fermer la fenêtre
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handlePublicFormSubmit} className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 max-h-[80vh]">

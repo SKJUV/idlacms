@@ -222,6 +222,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
     setIsSubmitting(false);
     setIsSuccess(true);
+
+    // Auto-open official Concours PDF document hosted on Appwrite Storage
+    try {
+      const appwritePdfUrl = 'https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a';
+      if (typeof window !== 'undefined') {
+        window.open(appwritePdfUrl, '_blank');
+      }
+    } catch (e) {}
   };
 
   // Download PDF locally
@@ -373,7 +381,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 Candidature Transmise avec Succès !
               </h2>
               <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed pt-1">
-                Vos informations ont été enregistrées avec succès. Votre **récépissé officiel d'inscription (PDF)** a été transmis par e-mail à l'adresse indiquée et à l'administration académique IDLA.
+                Vos informations ont été enregistrées avec succès. Le document PDF officiel du dossier d'admission (hébergé sur Appwrite Storage) a été ouvert automatiquement et votre récépissé d'inscription a été transmis par e-mail.
               </p>
             </div>
 
@@ -391,6 +399,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             </div>
 
             <div className="pt-2 flex flex-wrap justify-center gap-4">
+              <a
+                href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+              >
+                <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel (Appwrite) ↗
+              </a>
               <button
                 onClick={handleDownloadPdf}
                 className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"

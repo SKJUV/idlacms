@@ -552,6 +552,15 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     }
 
     setIsSubmitting(false);
+
+    // Auto-open official Concours PDF document hosted on Appwrite Storage
+    try {
+      const appwritePdfUrl = 'https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a';
+      if (typeof window !== 'undefined') {
+        window.open(appwritePdfUrl, '_blank');
+      }
+    } catch (e) {}
+
     onSuccess(candidateName, cleanEmail, isExistingUser ? undefined : password);
   };
 
