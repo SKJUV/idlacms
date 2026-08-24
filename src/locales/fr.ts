@@ -143,6 +143,21 @@ export const fr = {
   admin_news_tab: "Gestion des Actualités",
   admin_forms_tab: "Gestionnaire de Formulaires",
   admin_preregistrations_tab: "Pré-inscriptions & Candidatures",
+  admin_email_automation_tab: "Relances & E-mails Automatiques",
+  admin_donations_tab: "Soutien & Dons",
+  admin_users_tab: "Utilisateurs & Accès",
+
+  // Referral & Sponsorship
+  referral_title: "Programme Ambassadeur & Parrainage IDLA",
+  referral_code_label: "Mon Code Parrain :",
+  referral_copy_btn: "Copier mon lien parrain",
+  referral_copied: "Lien copié !",
+  referral_advantage: "Frais de dossier offerts pour vos filleuls",
+
+  // Notifications & Feedback
+  toast_success_saved: "Modifications enregistrées avec succès.",
+  toast_error_generic: "Une erreur est survenue. Veuillez réessayer.",
+  toast_timeout_warning: "Votre session a expiré en raison d'une inactivité prolongée.",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.",
