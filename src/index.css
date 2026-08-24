@@ -112,3 +112,30 @@ img {
   pointer-events: none;
   background: linear-gradient(to top, var(--bg-secondary) 0%, transparent 15%, transparent 85%, var(--bg-secondary) 100%);
 }
+
+/* Floating Animation */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Horizontal Scroll Animation */
+@keyframes scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  .animate-scroll-x {
+    animation: scroll-x 35s linear infinite;
+    display: flex;
+    width: max-content;
+  }
+  .animate-scroll-x:hover {
+    animation-play-state: paused;
+  }
+}

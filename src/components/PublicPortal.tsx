@@ -427,7 +427,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
 
           <div className="relative z-10 max-w-[1440px] mx-auto w-full">
-            <div className="max-w-2xl space-y-6 bg-slate-950/35 backdrop-blur-[2px] p-8 md:p-10 rounded-3xl border border-sky-400/20 shadow-2xl">
+            <div className="max-w-2xl space-y-6 bg-slate-950/35 backdrop-blur-[2px] p-8 md:p-10 rounded-3xl border border-sky-400/20 shadow-2xl animate-float">
               <div className="inline-flex items-center gap-2 bg-sky-500/15 border border-sky-400/30 px-4 py-1.5 rounded-full">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
                 <span className="text-sky-300 font-semibold text-xs uppercase tracking-wider">{t('hero_tag')}</span>
@@ -465,150 +465,24 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Stats Counter Bar */}
-        <section className="py-12 bg-bg-secondary border-y border-border-primary">
+        <section className="py-12 bg-[#0284c7]">
           <div className="max-w-[1440px] mx-auto px-6 md:px-12 space-y-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_alumni')}</div>
-                <div className="text-3xl font-bold text-text-primary">5,000+</div>
+                <div className="text-xs text-sky-200 uppercase font-bold tracking-widest mb-1">{t('stat_alumni')}</div>
+                <div className="text-3xl font-bold text-white">5,000+</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_programs')}</div>
-                <div className="text-3xl font-bold text-text-primary">{programs.length || 64}</div>
+                <div className="text-xs text-sky-200 uppercase font-bold tracking-widest mb-1">{t('stat_programs')}</div>
+                <div className="text-3xl font-bold text-white">{programs.length || 64}</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase font-bold tracking-widest mb-1">{t('stat_countries')}</div>
-                <div className="text-3xl font-bold text-text-primary">8</div>
+                <div className="text-xs text-sky-200 uppercase font-bold tracking-widest mb-1">{t('stat_countries')}</div>
+                <div className="text-3xl font-bold text-white">8</div>
               </div>
               <div>
-                <div className="text-xs text-text-secondary uppercase tracking-wider mb-1">{t('stat_partners')}</div>
-                <div className="text-3xl font-bold text-text-primary">120+</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section interactive : Pourquoi choisir l'IDLA ? (3 Piliers d'Excellence) */}
-        <section className="py-20 px-6 md:px-12 bg-gradient-to-b from-bg-primary via-brand-primary/5 to-bg-primary">
-          <div className="max-w-[1440px] mx-auto">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold uppercase tracking-widest text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full inline-block mb-3">
-                {t('why_tag')}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary leading-tight">
-                {t('why_title')}
-              </h2>
-              <p className="text-text-secondary mt-3 text-base">
-                {t('why_subtitle')}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Carte 1 */}
-              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
-                <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <BookOpen className="w-7 h-7" />
-                  </div>
-                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    {t('why_card1_title')}
-                  </h3>
-                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    {t('why_card1_desc')}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
-                >
-                  <span>{t('why_card1_btn')}</span>
-                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-              </div>
-
-              {/* Carte 2 */}
-              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
-                <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <HeartHandshake className="w-7 h-7" />
-                  </div>
-                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    {t('why_card2_title')}
-                  </h3>
-                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    {t('why_card2_desc')}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('temoignages')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
-                >
-                  <span>{t('why_card2_btn')}</span>
-                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-              </div>
-
-              {/* Carte 3 */}
-              <div className="group relative bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all duration-500 transform hover:-translate-y-2 flex flex-col justify-between">
-                <div>
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 to-sky-700 text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <CheckCircle2 className="w-7 h-7" />
-                  </div>
-                  <h3 className="text-xl font-bold text-text-primary mb-3 group-hover:text-brand-primary transition-colors">
-                    {t('why_card3_title')}
-                  </h3>
-                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    {t('why_card3_desc')}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setActiveTab('programmes')}
-                  className="inline-flex items-center gap-2 text-brand-primary font-bold text-sm group/btn hover:translate-x-1 transition-all pt-4 border-t border-border-primary/50 cursor-pointer"
-                >
-                  <span>{t('why_card3_btn')}</span>
-                  <span className="w-6 h-6 rounded-full bg-brand-primary/10 group-hover/btn:bg-brand-primary group-hover/btn:text-white flex items-center justify-center transition-all duration-300">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Dynamic soil structure alert card representation / Bento information */}
-        <section className="py-16 px-6 md:px-12 max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-bg-secondary border border-border-primary rounded-2xl p-8 shadow-sm">
-            <div className="lg:col-span-4 flex flex-col justify-center">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl font-bold text-text-primary leading-snug">Infrastructure et géologie locale</h3>
-              <p className="text-sm text-text-secondary mt-2 leading-relaxed">
-                IDLA étudie attentivement la structure des sols argilo-sableux d'Afrique pour adapter ses fondations architecturales éco-responsables de demain.
-              </p>
-              <div className="mt-4 flex items-center gap-2 text-xs font-bold text-brand-primary">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Normes anti-sismiques européennes appliquées</span>
-              </div>
-            </div>
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-6 bg-brand-primary/5 rounded-xl border border-brand-primary/10">
-                <Flame className="text-brand-primary w-6 h-6 mb-2" />
-                <h4 className="font-bold text-sm text-text-primary">Résilience structures</h4>
-                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
-                  Technique de fondation pieu-béton avec drainage intégré pour contrer l'humidité saisonnière équatoriale.
-                </p>
-              </div>
-              <div className="p-6 bg-brand-primary/5 rounded-xl border border-brand-primary/10">
-                <Compass className="text-brand-primary w-6 h-6 mb-2" />
-                <h4 className="font-bold text-sm text-text-primary">Éco-Design</h4>
-                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
-                  Lumière naturelle optimisée à 80% pour réduire drastiquement l'empreinte carbone et l'alimentation secteur.
-                </p>
+                <div className="text-xs text-sky-200 uppercase font-bold tracking-widest mb-1">{t('stat_partners')}</div>
+                <div className="text-3xl font-bold text-white">120+</div>
               </div>
             </div>
           </div>
@@ -634,15 +508,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {activePrograms.filter(p => p.type !== 'Certification').slice(0, 3).map((p, idx) => (
+              {activePrograms.filter(p => p.type !== 'Certification').slice(0, 3).map((p) => (
                 <div 
                   key={p.id} 
-                  className={`bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1.5 transition-all duration-300 group shadow-sm hover:shadow-xl hover:border-brand-primary/30 cursor-pointer ${
-                    idx === 0 ? 'md:col-span-8' : 'md:col-span-4'
-                  }`}
+                  className="md:col-span-4 relative bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-md hover:shadow-2xl hover:border-brand-primary/50 cursor-pointer transform hover:-translate-y-3 hover:scale-[1.02] hover:rotate-1 hover:z-10"
                   onClick={() => setActiveTab('programmes')}
                 >
-                  <div className={`relative w-full overflow-hidden ${idx === 0 ? 'h-64 md:h-80' : 'h-64'}`}>
+                  <div className="relative w-full overflow-hidden h-56 md:h-64">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                       alt={p.title} 
@@ -658,25 +530,56 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <h3 className="font-bold text-2xl text-text-primary mb-3 group-hover:text-brand-primary transition-colors leading-tight">{p.title}</h3>
                     <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-6 flex-grow">{p.description}</p>
                     
-                    <div className="flex items-center justify-between pt-5 border-t border-border-primary/50 mt-auto">
-                      <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-3 pt-5 border-t border-border-primary/50 mt-auto">
+                      <div className="flex flex-col gap-2">
                         <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
                           <Clock className="w-4 h-4 text-brand-primary" /> {t('featured_intake')} {new Date().getFullYear()}
                         </span>
                         {p.price && (
-                          <div className="mt-1 text-white text-sm font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-1 rounded-md shadow-md inline-block w-fit">
+                          <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
                             {p.price}
                           </div>
                         )}
                       </div>
-                      <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
-                        <span>{t('featured_view_details')}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
+                      <div className="flex justify-end mt-1">
+                        <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
+                          <span>{t('featured_view_details')}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Galerie Campus (Défilement horizontal) */}
+            <div className="mt-16 -mx-6 md:-mx-12 overflow-hidden relative group">
+              <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-bg-secondary to-transparent z-10 pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-bg-secondary to-transparent z-10 pointer-events-none"></div>
+              <div className="animate-scroll-x gap-4 py-4">
+                {[
+                  "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=400&h=300&auto=format&fit=crop",
+                  "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=400&h=300&auto=format&fit=crop"
+                ].map((src, idx) => (
+                  <img 
+                    key={idx} 
+                    src={src} 
+                    alt={`Campus ${idx}`} 
+                    className="h-48 md:h-64 w-auto rounded-2xl object-cover shadow-sm hover:shadow-lg transition-shadow duration-300" 
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Nos Certifications Internationales Section */}
@@ -794,37 +697,37 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Footer */}
-        <footer className="bg-bg-secondary text-text-primary border-t border-border-primary py-12 px-6 md:px-12">
+        <footer className="bg-[#0284c7] text-white py-12 px-6 md:px-12">
           <div className="max-w-[1440px] mx-auto grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
-              <div className="text-xl font-bold text-brand-primary">IDLA</div>
-              <p className="text-xs text-text-secondary leading-relaxed">
+              <div className="text-xl font-bold text-white">IDLA</div>
+              <p className="text-xs text-sky-100 leading-relaxed">
                 L'International Distance Learning Academy est dédiée à l'enseignement d'excellence et à distance pour les futurs leaders.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Filières</h4>
-              <ul className="space-y-2 text-sm text-text-secondary">
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Ingénierie & Tech</a></li>
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Business & Management</a></li>
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Santé & Administration</a></li>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Filières</h4>
+              <ul className="space-y-2 text-sm text-sky-100">
+                <li><a href="#" className="hover:text-white transition-colors">Ingénierie & Tech</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Business & Management</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Santé & Administration</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Admissions</h4>
-              <ul className="space-y-2 text-sm text-text-secondary">
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Dossier de candidature</a></li>
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Dates clés</a></li>
-                <li><a href="#" className="hover:text-brand-primary transition-colors">Financement & Bourses</a></li>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Admissions</h4>
+              <ul className="space-y-2 text-sm text-sky-100">
+                <li><a href="#" className="hover:text-white transition-colors">Dossier de candidature</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Dates clés</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Financement & Bourses</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider mb-4">Contact</h4>
-              <p className="text-sm text-text-secondary">Yaoundé, Cameroun</p>
-              <p className="text-sm text-text-secondary mt-1">contact@idla.edu</p>
+              <h4 className="font-bold text-sm text-white uppercase tracking-wider mb-4">Contact</h4>
+              <p className="text-sm text-sky-100">Yaoundé, Cameroun</p>
+              <p className="text-sm text-sky-100 mt-1">contact@idla.edu</p>
             </div>
           </div>
-          <div className="max-w-[1440px] mx-auto border-t border-border-primary/60 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-text-secondary/60 gap-2">
+          <div className="max-w-[1440px] mx-auto border-t border-sky-400/30 mt-8 pt-4 flex flex-col sm:flex-row justify-between text-xs text-sky-200 gap-2">
             <p>© {new Date().getFullYear()} IDLA — International Distance Learning Academy. Tous droits réservés.</p>
             <p>Conçu avec Excellence en Afrique  </p>
           </div>
@@ -943,25 +846,27 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           {p.description}
                         </p>
 
-                        <div className="flex items-center justify-between pt-4 border-t border-border-primary/50">
-                          <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-3 pt-4 border-t border-border-primary/50 mt-auto">
+                          <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
                               <Clock className="w-3.5 h-3.5 text-brand-primary" />
                               <span>{p.duration}</span>
                             </div>
                             {p.price && (
-                              <div className="mt-1 text-white text-xs font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-2.5 py-1 rounded-md shadow-md inline-block w-fit">
+                              <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
                                 {p.price}
                               </div>
                             )}
                           </div>
-                          <button 
-                            onClick={() => onApplyNow(p.title)}
-                            className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer"
-                          >
-                            S'inscrire
-                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                          </button>
+                          <div className="flex justify-end mt-1">
+                            <button 
+                              onClick={() => onApplyNow(p.title)}
+                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer"
+                            >
+                              S'inscrire
+                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
