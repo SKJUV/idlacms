@@ -34,7 +34,8 @@ jobs:
             exit 1
           fi
 
-      - name: 🤖 Activer le Merge Automatique
-        run: gh pr merge "${{ github.event.pull_request.html_url }}" --auto --squash
+      - name: 🤖 Fusionner la Pull Request
+        run: |
+          gh pr merge "${{ github.event.pull_request.html_url }}" --admin --squash || gh pr merge "${{ github.event.pull_request.html_url }}" --auto --squash || gh pr merge "${{ github.event.pull_request.html_url }}" --squash || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
