@@ -12,8 +12,8 @@ jobs:
       contents: write
       pull-requests: write
 
-    # Temporairement désactivé pour la phase de refactoring & modernisation
-    if: false
+    # Workflow d'auto-merge réactivé pour les collaborateurs officiels
+    # if: false
 
     steps:
       - name: 🔍 Vérifier le statut de collaborateur officiel
