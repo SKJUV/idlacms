@@ -171,8 +171,8 @@ export default function EmailAutomationModal({
         <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-6 pt-3 gap-4">
           <button
             onClick={() => setActiveTab('candidates')}
-            className={`pb-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-colors ${
-              activeTab === 'candidates' ? 'border-[#006c49] text-[#006c49] dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700'
+            className={`pb-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-colors cursor-pointer ${
+              activeTab === 'candidates' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -180,8 +180,8 @@ export default function EmailAutomationModal({
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`pb-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-colors ${
-              activeTab === 'logs' ? 'border-[#006c49] text-[#006c49] dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700'
+            className={`pb-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-colors cursor-pointer ${
+              activeTab === 'logs' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
             <Clock className="w-4 h-4" />
@@ -306,10 +306,10 @@ export default function EmailAutomationModal({
                           <button
                             onClick={() => handleSendSingleEmail(analysis)}
                             disabled={isRowSending}
-                            className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 transition-all"
+                            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 transition-all"
                           >
                             <Send className="w-3.5 h-3.5" />
-                            {isRowSending ? 'Envoi...' : 'Envoyer en 1-Clic'}
+                            {isRowSending ? 'Envoi...' : 'Envoyer'}
                           </button>
                         </div>
                       </div>
@@ -371,7 +371,7 @@ export default function EmailAutomationModal({
                   <select
                     value={selectedTemplateKey}
                     onChange={(e) => setSelectedTemplateKey(e.target.value as EmailTemplateKey)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#006c49]"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-primary"
                   >
                     {Object.values(EMAIL_TEMPLATES).map((spec) => (
                       <option key={spec.key} value={spec.key}>
@@ -419,10 +419,10 @@ export default function EmailAutomationModal({
                 <button
                   onClick={() => handleSendSingleEmail(selectedCandidate)}
                   disabled={isSending}
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 transition-all"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  {isSending ? 'Envoi...' : 'Confirmer et Envoyer le mail'}
+                  <Send className="w-4 h-4" />
+                  {isSending ? 'Envoi...' : 'Confirmer et Envoyer'}
                 </button>
               </div>
             </div>

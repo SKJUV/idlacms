@@ -421,7 +421,7 @@ export default function PreRegistrations({
                   </div>
                   <button
                     onClick={() => setShowManualEnrollForm(!showManualEnrollForm)}
-                    className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                    className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer transition-all"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     {showManualEnrollForm ? 'Fermer' : 'Inscrire à un cours'}
@@ -429,15 +429,15 @@ export default function PreRegistrations({
                 </div>
 
                 {showManualEnrollForm && (
-                  <div className="bg-white border border-amber-200/80 rounded-xl p-4 space-y-3 pt-3">
-                    <p className="text-xs font-bold text-[#00020e] flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-[#006c49]" /> Sélectionner le programme académique :
+                  <div className="bg-bg-secondary border border-border-primary rounded-xl p-4 space-y-3 pt-3">
+                    <p className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-brand-primary" /> Sélectionner le programme académique :
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <select
                         value={manualEnrollProgram}
                         onChange={(e) => setManualEnrollProgram(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-[#c6c6cf] text-xs font-semibold text-[#00020e] focus:ring-2 focus:ring-[#006c49] outline-none"
+                        className="w-full p-2 rounded-lg border border-border-primary bg-bg-primary text-xs font-semibold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none"
                       >
                         {availablePrograms.map((p: any) => {
                           const title = typeof p === 'string' ? p : p.title;
@@ -448,7 +448,7 @@ export default function PreRegistrations({
                       <select
                         value={manualEnrollSession}
                         onChange={(e) => setManualEnrollSession(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-[#c6c6cf] text-xs font-semibold text-[#00020e] focus:ring-2 focus:ring-[#006c49] outline-none"
+                        className="w-full p-2 rounded-lg border border-border-primary bg-bg-primary text-xs font-semibold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none"
                       >
                         {DEFAULT_ACADEMIC_SESSIONS.map((s) => (
                           <option key={s.id} value={s.name}>{s.name}</option>
@@ -458,14 +458,14 @@ export default function PreRegistrations({
                     <div className="flex justify-end gap-2 pt-1">
                       <button
                         onClick={() => setShowManualEnrollForm(false)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary cursor-pointer border border-border-primary"
                       >
                         Annuler
                       </button>
                       <button
                         onClick={handleManualEnrollCandidate}
                         disabled={isEnrollingManual}
-                        className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
                       >
                         {isEnrollingManual ? 'Inscription en cours...' : 'Valider l\'inscription immédiate'}
                       </button>
@@ -476,8 +476,8 @@ export default function PreRegistrations({
             )}
 
             {/* Candidatures de ce candidat */}
-            <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm space-y-4">
-              <h4 className="font-bold text-sm text-[#00020e] uppercase tracking-wider flex items-center gap-2">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider flex items-center gap-2">
                 <FileText className="w-4 h-4 text-brand-primary" /> Programmes postulés ({candidateApps.length})
               </h4>
               <div className="space-y-3">
@@ -486,18 +486,18 @@ export default function PreRegistrations({
                   const isSelected = selectedAppIdForChat === app.id;
                   return (
                     <div key={app.id} onClick={() => setSelectedAppIdForChat(app.id)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? 'border-brand-primary bg-brand-light/30' : 'border-border-primary/50 hover:bg-slate-50'}`}>
+                      className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? 'border-brand-primary bg-brand-light/30' : 'border-border-primary hover:bg-bg-primary/50'}`}>
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold text-[#00020e] line-clamp-2">{app.program || 'Inscription seule (pas encore postulé)'}</p>
+                            <p className="text-sm font-bold text-text-primary line-clamp-2">{app.program || 'Inscription seule (pas encore postulé)'}</p>
                             {(app.entryLevel || (app.motivation && app.motivation.includes('Niveau convoité'))) && (
-                              <span className="bg-amber-500/10 text-amber-700 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                              <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                                 {app.entryLevel || app.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] || 'Admission Parallèle'}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
+                          <p className="text-[11px] text-text-secondary mt-0.5">
                             Déposé le {new Date(app.dateApplied || '').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                             {app.entryLevel && <span className="ml-2 text-brand-primary font-semibold">• {app.entryLevel}</span>}
                           </p>
@@ -508,23 +508,23 @@ export default function PreRegistrations({
                             <div className="flex gap-1.5">
                               {app.status !== 'In Review' && (
                                 <button onClick={() => handleSetInReview(app.id)}
-                                  className="bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100 text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                                  className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer transition-all">
                                   En examen
                                 </button>
                               )}
                               <button onClick={() => { setSelectedAppIdForChat(app.id); setConfirmAction('reject'); }}
-                                className="bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                                className="bg-bg-primary border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer transition-all">
                                 Refuser
                               </button>
                               <button onClick={() => { setSelectedAppIdForChat(app.id); setConfirmAction('accept'); }}
-                                className="bg-[#006c49] hover:bg-slate-800 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                                className="bg-brand-primary hover:bg-brand-hover text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg cursor-pointer transition-all shadow-sm">
                                 Accepter
                               </button>
                             </div>
                           )}
                           {(app.status === 'Accepted' || app.status === 'Rejected') && (
                             <button onClick={() => handleSetInReview(app.id)}
-                              className="text-[10px] text-slate-500 hover:underline cursor-pointer">Remettre en examen</button>
+                              className="text-[10px] text-text-secondary hover:text-text-primary hover:underline cursor-pointer">Remettre en examen</button>
                           )}
                         </div>
                       </div>
@@ -535,18 +535,18 @@ export default function PreRegistrations({
 
               {/* Modale confirmation */}
               {confirmAction && currentApp && (
-                <div className="bg-slate-50 border-2 border-amber-400 rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-bold text-[#00020e]">
+                <div className="bg-bg-primary border-2 border-amber-400/80 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-bold text-text-primary">
                     {confirmAction === 'accept' ? 'Confirmer l\'admission' : 'Confirmer le refus'} pour :<br />
                     <span className="text-brand-primary">{currentApp.program}</span>
                   </p>
-                  <p className="text-xs text-slate-500">Cette action sera enregistrée dans la base de données et notifiée au candidat.</p>
+                  <p className="text-xs text-text-secondary">Cette action sera enregistrée dans la base de données et notifiée au candidat.</p>
                   <div className="flex gap-2">
                     <button onClick={() => confirmAction === 'accept' ? handleApprovePreRegistration(currentApp.id) : handleDenyPreRegistration(currentApp.id)}
-                      className={`text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer ${confirmAction === 'accept' ? 'bg-[#006c49] hover:bg-slate-800' : 'bg-rose-500 hover:bg-rose-700'}`}>
+                      className={`text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer shadow-sm transition-all ${confirmAction === 'accept' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
                       Confirmer
                     </button>
-                    <button onClick={() => setConfirmAction(null)} className="bg-white border border-[#c6c6cf] text-slate-600 text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">Annuler</button>
+                    <button onClick={() => setConfirmAction(null)} className="bg-bg-secondary border border-border-primary text-text-secondary text-xs font-bold px-4 py-2 rounded-xl cursor-pointer hover:bg-bg-primary">Annuler</button>
                   </div>
                 </div>
               )}
@@ -691,7 +691,7 @@ export default function PreRegistrations({
                     matricule: selected.matricule || generateMatricule(selected.id),
                     dateApplied: selected.dateApplied
                   })}
-                  className="bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm cursor-pointer flex items-center gap-2 transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm cursor-pointer flex items-center gap-2 transition-all"
                 >
                   <Download className="w-4 h-4" /> Générer / Imprimer PDF
                 </button>
@@ -699,19 +699,19 @@ export default function PreRegistrations({
             )}
 
             {/* Notes internes admin */}
-            <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm space-y-3">
-              <h4 className="font-bold text-sm text-[#00020e] uppercase tracking-wider flex items-center gap-2">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-3">
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider flex items-center gap-2">
                 <StickyNote className="w-4 h-4 text-amber-500" /> Notes internes (visibles uniquement par l'admin)
               </h4>
               <textarea value={adminNote} onChange={(e) => setAdminNote(e.target.value)} rows={4}
                 placeholder="Observations, décisions intermédiaires, contacts effectués…"
-                className="w-full bg-slate-50 border border-[#c6c6cf] rounded-xl px-3 py-2.5 text-xs text-[#00020e] outline-none focus:ring-2 focus:ring-brand-primary resize-none" />
+                className="w-full bg-bg-primary border border-border-primary rounded-xl px-3 py-2.5 text-xs text-text-primary outline-none focus:ring-2 focus:ring-brand-primary resize-none" />
               <div className="flex items-center gap-3">
                 <button onClick={handleSaveNote}
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                  className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-all shadow-sm">
                   {savingNote ? 'Enregistré ✓' : 'Enregistrer la note'}
                 </button>
-                {savedNote && <span className="text-[11px] text-slate-400 italic line-clamp-1">Dernière note : "{savedNote.slice(0, 40)}{savedNote.length > 40 ? '…' : ''}"</span>}
+                {savedNote && <span className="text-[11px] text-text-secondary italic line-clamp-1">Dernière note : "{savedNote.slice(0, 40)}{savedNote.length > 40 ? '…' : ''}"</span>}
               </div>
             </div>
           </div>
@@ -720,12 +720,12 @@ export default function PreRegistrations({
           <div className="xl:col-span-5 space-y-5">
 
             {/* Timeline statut */}
-            <div className="bg-white border border-[#c6c6cf] rounded-2xl p-6 shadow-sm space-y-4">
-              <h4 className="font-bold text-sm text-[#00020e] uppercase tracking-wider flex items-center gap-2">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-4">
+              <h4 className="font-bold text-sm text-text-primary uppercase tracking-wider flex items-center gap-2">
                 <Clock className="w-4 h-4 text-brand-primary" /> Suivi du dossier
               </h4>
               <div className="relative pl-5">
-                <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-[#c6c6cf]/50" />
+                <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-border-primary" />
                 {[
                   { step: 1, label: 'Dossier déposé', desc: `Par ${selected.name}`, done: true },
                   { step: 2, label: 'En cours d\'analyse', desc: 'Examen académique des pièces', done: currentApp?.status === 'In Review' || currentApp?.status === 'Accepted' },
@@ -733,33 +733,33 @@ export default function PreRegistrations({
                   { step: 4, label: 'Décision finale', desc: currentApp?.status === 'Accepted' ? 'Admis — félicitations !' : currentApp?.status === 'Rejected' ? 'Candidature non retenue' : 'En attente', done: currentApp?.status === 'Accepted' || currentApp?.status === 'Rejected' },
                 ].map(({ step, label, desc, done }) => (
                   <div key={step} className="relative mb-5 last:mb-0 pl-5">
-                    <div className={`absolute -left-3 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold ${done ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-[#c6c6cf] text-slate-400'}`}>
+                    <div className={`absolute -left-3 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold ${done ? 'bg-brand-primary border-brand-primary text-white' : 'bg-bg-secondary border-border-primary text-text-secondary'}`}>
                       {done ? '✓' : step}
                     </div>
-                    <p className={`text-xs font-bold ${done ? 'text-[#00020e]' : 'text-slate-400'}`}>{label}</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{desc}</p>
+                    <p className={`text-xs font-bold ${done ? 'text-text-primary' : 'text-text-secondary'}`}>{label}</p>
+                    <p className="text-[11px] text-text-secondary mt-0.5">{desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Chat conseillère / candidat */}
-            <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[400px]">
-              <div className="bg-slate-50 p-4 border-b border-[#c6c6cf]/40 flex items-center justify-between shrink-0">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[400px]">
+              <div className="bg-bg-primary p-4 border-b border-border-primary/50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center border border-brand-primary text-brand-primary">
                     <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-[#00020e]">Messagerie candidat</h4>
-                    <p className="text-[10px] text-slate-400 line-clamp-1">
+                    <h4 className="font-bold text-xs text-text-primary">Messagerie candidat</h4>
+                    <p className="text-[10px] text-text-secondary line-clamp-1">
                       {candidateApps.find((a) => a.id === selectedAppIdForChat)?.program || 'Sélectionnez un programme'}
                     </p>
                   </div>
                 </div>
                 {candidateApps.length > 1 && (
                   <select value={selectedAppIdForChat || ''} onChange={(e) => setSelectedAppIdForChat(e.target.value)}
-                    className="text-[10px] bg-white border border-[#c6c6cf] rounded-lg px-2 py-1 text-[#00020e] cursor-pointer">
+                    className="text-[10px] bg-bg-secondary border border-border-primary rounded-lg px-2 py-1 text-text-primary cursor-pointer">
                     {candidateApps.map((a) => <option key={a.id} value={a.id}>{a.program.slice(0, 30)}…</option>)}
                   </select>
                 )}
@@ -768,21 +768,21 @@ export default function PreRegistrations({
               <div className="flex-grow p-4 overflow-y-auto space-y-3 max-h-[300px]">
                 {chatMessages.map((m, idx) => (
                   <div key={idx} className={`flex flex-col max-w-[85%] ${m.sender === 'advisor' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
-                    <div className={`p-3 rounded-2xl text-xs leading-relaxed ${m.sender === 'advisor' ? 'bg-brand-primary text-white rounded-tr-none' : 'bg-slate-100 text-[#00020e] rounded-tl-none border border-border-primary/30'}`}>
+                    <div className={`p-3 rounded-2xl text-xs leading-relaxed ${m.sender === 'advisor' ? 'bg-brand-primary text-white rounded-tr-none' : 'bg-bg-primary text-text-primary rounded-tl-none border border-border-primary/50'}`}>
                       {m.text}
                     </div>
-                    <span className="text-[9px] text-slate-400 mt-1 px-1">{m.time}</span>
+                    <span className="text-[9px] text-text-secondary mt-1 px-1">{m.time}</span>
                   </div>
                 ))}
-                {chatMessages.length === 0 && <p className="text-xs text-slate-400 italic text-center pt-8">Aucun message échangé.</p>}
+                {chatMessages.length === 0 && <p className="text-xs text-text-secondary italic text-center pt-8">Aucun message échangé.</p>}
                 <div ref={chatEndRef} />
               </div>
 
-              <form onSubmit={handleSendAdminReply} className="p-3 border-t border-[#c6c6cf]/40 bg-slate-50 flex gap-2 shrink-0">
+              <form onSubmit={handleSendAdminReply} className="p-3 border-t border-border-primary/50 bg-bg-primary flex gap-2 shrink-0">
                 <input type="text" value={adminReply} onChange={(e) => setAdminReply(e.target.value)}
                   placeholder={selectedAppIdForChat ? 'Répondre au candidat...' : 'Sélectionnez un programme...'}
                   disabled={!selectedAppIdForChat}
-                  className="flex-grow bg-white border border-[#c6c6cf] rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-brand-primary text-[#00020e] disabled:opacity-50" />
+                  className="flex-grow bg-bg-secondary border border-border-primary rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-brand-primary text-text-primary disabled:opacity-50" />
                 <button type="submit" disabled={!selectedAppIdForChat}
                   className="bg-brand-primary text-white p-2 rounded-lg hover:bg-brand-hover cursor-pointer disabled:opacity-50 flex items-center">
                   <Send className="w-3.5 h-3.5" />
@@ -801,20 +801,20 @@ export default function PreRegistrations({
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="font-bold text-lg text-[#00020e]">Mes Étudiants (Inscrits sur la plateforme)</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Liste complète de tous les étudiants inscrits sur le portail IDLA avec leurs cours et candidatures</p>
+          <h3 className="font-bold text-lg text-text-primary">Mes Étudiants (Inscrits sur la plateforme)</h3>
+          <p className="text-xs text-text-secondary mt-0.5">Liste complète de tous les étudiants inscrits sur le portail IDLA avec leurs cours et candidatures</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-[#c6c6cf]/40 shrink-0 flex-wrap gap-1">
+        <div className="flex bg-bg-secondary p-1 rounded-xl border border-border-primary shrink-0 flex-wrap gap-1">
           <button onClick={() => setViewMode('candidates')}
-            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'candidates' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'candidates' ? 'bg-bg-primary text-brand-primary shadow-sm border border-border-primary' : 'text-text-secondary hover:text-text-primary'}`}>
             <Users className="w-3.5 h-3.5" /> Tous les étudiants inscrits ({candidatesList.length})
           </button>
           <button onClick={() => setViewMode('registered_no_course')}
-            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'registered_no_course' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-700 hover:bg-amber-50 border border-amber-200/60'}`}>
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'registered_no_course' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/30'}`}>
             <AlertCircleIcon className="w-3.5 h-3.5" /> Inscrits sans cours ({candidatesList.filter((c: any) => c.isRegisteredOnly).length})
           </button>
           <button onClick={() => setViewMode('applications')}
-            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-white text-brand-primary shadow-sm' : 'text-slate-500 hover:text-text-primary'}`}>
+            className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'applications' ? 'bg-bg-primary text-brand-primary shadow-sm border border-border-primary' : 'text-text-secondary hover:text-text-primary'}`}>
             <FileText className="w-3.5 h-3.5" /> Inscriptions aux cours ({preRegistrations.filter(p => p.program && p.program !== 'Inscription seule').length})
           </button>
           <button onClick={() => onNavigateTab ? onNavigateTab('admin-email-automation') : setIsEmailModalOpen(true)}
@@ -828,9 +828,9 @@ export default function PreRegistrations({
       <div className="flex flex-col sm:flex-row gap-3">
         <input type="text" value={searchQ} onChange={(e) => setSearchQ(e.target.value)}
           placeholder="Rechercher un candidat, email, programme…"
-          className="flex-1 bg-white border border-[#c6c6cf] rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-brand-primary text-[#00020e]" />
+          className="flex-1 bg-bg-secondary border border-border-primary text-text-primary rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-brand-primary" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white border border-[#c6c6cf] rounded-xl px-3 py-2.5 text-xs text-[#00020e] cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary">
+          className="bg-bg-secondary border border-border-primary rounded-xl px-3 py-2.5 text-xs text-text-primary cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary">
           <option value="Tous">Tous les statuts</option>
           <option value="New">Nouveau</option>
           <option value="In Review">En examen</option>
@@ -840,41 +840,41 @@ export default function PreRegistrations({
       </div>
 
       {viewMode === 'candidates' || viewMode === 'registered_no_course' ? (
-        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-x-auto shadow-sm">
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-x-auto shadow-sm">
           <table className="w-full min-w-[800px] text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
+              <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/50 font-bold uppercase text-[10px]">
                 <th className="p-4">Candidat / Étudiant</th>
                 <th className="p-4 hidden md:table-cell">Contact</th>
                 <th className="p-4">Programmes postulés & Statut</th>
                 <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#c6c6cf]/20">
+            <tbody className="divide-y divide-border-primary/40">
               {filteredCandidates.map((c: any) => (
-                <tr key={c.email} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={c.email} className="hover:bg-bg-primary/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[11px] shrink-0">{c.initials}</div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="font-bold text-[#00020e]">{c.name}</p>
+                          <p className="font-bold text-text-primary">{c.name}</p>
                           {c.isRegisteredOnly && (
-                            <span className="bg-amber-500/15 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                            <span className="bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-500/30">
                               Sans cours
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-400">{c.email}</p>
+                        <p className="text-[10px] text-text-secondary">{c.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 hidden md:table-cell text-slate-500">{c.phone || '—'}</td>
+                  <td className="p-4 hidden md:table-cell text-text-secondary">{c.phone || '—'}</td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1.5 items-center">
                       {c.isRegisteredOnly ? (
-                        <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300/60 px-2.5 py-1 rounded-md text-[10px] font-bold">
-                          <AlertCircleIcon className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Inscrit au portail IDLA (En attente d'inscription à un cours)
+                        <span className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-md text-[10px] font-bold">
+                          <AlertCircleIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /> Inscrit au portail IDLA (En attente d'inscription à un cours)
                         </span>
                       ) : (
                         c.courseApplications.map((app: any) => {
@@ -890,23 +890,23 @@ export default function PreRegistrations({
                   </td>
                   <td className="p-4">
                     <button onClick={() => setSelectedPreRegId(c.applications[0].id)}
-                      className="mx-auto flex items-center gap-1.5 bg-[#006c49] hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs">
+                      className="mx-auto flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-sm transition-all">
                       <Eye className="w-3.5 h-3.5" /> Dossier
                     </button>
                   </td>
                 </tr>
               ))}
               {filteredCandidates.length === 0 && (
-                <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Aucun candidat trouvé.</td></tr>
+                <tr><td colSpan={4} className="p-8 text-center text-text-secondary italic">Aucun candidat trouvé.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-x-auto shadow-sm">
+        <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-x-auto shadow-sm">
           <table className="w-full min-w-[800px] text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
+              <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/50 font-bold uppercase text-[10px]">
                 <th className="p-4">Candidat</th>
                 <th className="p-4">Programme</th>
                 <th className="p-4 hidden md:table-cell">Date</th>
@@ -914,19 +914,19 @@ export default function PreRegistrations({
                 <th className="p-4 text-center">Dossier</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#c6c6cf]/20">
+            <tbody className="divide-y divide-border-primary/40">
               {filteredApps.map((p) => {
                 const badge = statusConfig(p.status || 'New');
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={p.id} className="hover:bg-bg-primary/50 transition-colors">
                     <td className="p-4">
-                      <p className="font-bold text-[#00020e]">{p.name}</p>
-                      <p className="text-[10px] text-slate-400">{p.email}</p>
+                      <p className="font-bold text-text-primary">{p.name}</p>
+                      <p className="text-[10px] text-text-secondary">{p.email}</p>
                     </td>
-                    <td className="p-4 text-slate-600 max-w-[200px]">
+                    <td className="p-4 text-text-secondary max-w-[200px]">
                       <p className="line-clamp-2">{p.program || 'Inscription seule'}</p>
                     </td>
-                    <td className="p-4 text-slate-400 hidden md:table-cell whitespace-nowrap">
+                    <td className="p-4 text-text-secondary hidden md:table-cell whitespace-nowrap">
                       {p.dateApplied ? new Date(p.dateApplied).toLocaleDateString('fr-FR') : '—'}
                     </td>
                     <td className="p-4">
@@ -934,7 +934,7 @@ export default function PreRegistrations({
                     </td>
                     <td className="p-4">
                       <button onClick={() => setSelectedPreRegId(p.id)}
-                        className="mx-auto flex items-center gap-1.5 bg-[#006c49] hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                        className="mx-auto flex items-center gap-1.5 bg-brand-primary hover:bg-brand-hover text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-sm transition-all">
                         <Eye className="w-3.5 h-3.5" /> Examiner
                       </button>
                     </td>
@@ -942,7 +942,7 @@ export default function PreRegistrations({
                 );
               })}
               {filteredApps.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-400 italic">Aucune candidature trouvée.</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-text-secondary italic">Aucune candidature trouvée.</td></tr>
               )}
             </tbody>
           </table>

@@ -26,7 +26,7 @@ import EmailAutomationSection from './admin/EmailAutomationSection';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
-  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-[#006c49]' | 'admin-donations' | 'admin-marketing'
+  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-forms' | 'admin-donations' | 'admin-marketing'
   | 'admin-settings' | 'admin-teachers' | 'admin-profile' | 'admin-email-automation';
 
 interface AdminPortalProps {
@@ -562,7 +562,6 @@ export default function AdminPortal({
         <UsersManagement
           usersList={usersList}
           setUsersList={setUsersList}
-          handleDeleteUser={handleDeleteUser}
           setActiveTab={setActiveTab}
           logActivity={logActivity}
         />

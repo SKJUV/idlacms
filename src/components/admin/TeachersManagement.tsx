@@ -439,10 +439,10 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleAutoPlanAll} className="flex items-center gap-2 bg-[#006c49] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 cursor-pointer shadow-sm transition-all">
+            <button onClick={handleAutoPlanAll} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 cursor-pointer shadow-sm transition-all">
               ⚡ Générer l'emploi du temps 100% sans conflit
             </button>
-            <button onClick={saveSchedule} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-hover cursor-pointer">
+            <button onClick={saveSchedule} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-brand-hover cursor-pointer shadow-sm transition-all">
               <SaveIcon className="w-4 h-4" /> Enregistrer
             </button>
           </div>
