@@ -1,4 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
+import { useToast } from './context/ToastContext';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import EntranceModal from './components/EntranceModal';
@@ -119,6 +120,7 @@ const tabFromPath = (pathname: string): ActiveTab => {
 };
 
 export default function App() {
+  const { warning: showWarningToast } = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>(() =>
     typeof window !== 'undefined' ? tabFromPath(window.location.pathname) : 'home'
   );
@@ -271,7 +273,7 @@ export default function App() {
       clearTimeout(timer);
       timer = setTimeout(() => {
         handleLogout();
-        alert("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
+        showWarningToast("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
       }, INACTIVITY_TIMEOUT_MS);
     };
 

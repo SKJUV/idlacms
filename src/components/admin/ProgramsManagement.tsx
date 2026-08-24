@@ -62,7 +62,7 @@ export default function ProgramsManagement({
   const [showAddSessionForm, setShowAddSessionForm] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState('');
-  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('Rentrée Principale');
+  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('principale');
   const [newSessionStatus, setNewSessionStatus] = useState<AcademicSession['status']>('ouverte');
   const [newSessionDeadline, setNewSessionDeadline] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -92,7 +92,7 @@ export default function ProgramsManagement({
 
   const resetSessionForm = () => {
     setNewSessionName('');
-    setNewSessionType('Rentrée Principale');
+    setNewSessionType('principale');
     setNewSessionStatus('ouverte');
     setNewSessionDeadline('');
     setNewSessionDescription('');
