@@ -305,7 +305,7 @@ export default function AdminPortal({
 
 
     if (!isAppwriteDbConfigured()) {
-      setLoginError("La base de données Appwrite n'est pas configurée.");
+      setLoginError("La base de données n'est pas configurée.");
       return;
     }
 
@@ -316,9 +316,9 @@ export default function AdminPortal({
       sessionStorage.setItem('idla_portal_session_email', email.trim().toLowerCase());
       onLoginSuccess();
     } catch (err: any) {
-      console.warn('Connexion Appwrite refusée.', err);
+      console.warn('Connexion refusée.', err);
       if (err.type === 'project_paused' || err.code === 403) {
-        setLoginError('Le serveur de base de données est actuellement suspendu pour inactivité. Veuillez le restaurer depuis la console Appwrite.');
+        setLoginError('Le serveur de base de données est temporairement indisponible. Veuillez contacter l\'administrateur système.');
       } else {
         setLoginError('Identifiants incorrects ou serveur de base de données inaccessible.');
       }

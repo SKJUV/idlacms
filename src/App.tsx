@@ -414,7 +414,7 @@ export default function App() {
       } catch (e) {}
 
       if (!isAppwriteDbConfigured()) {
-        setDbError("Configuration Appwrite manquante. Affichage des programmes en stockage local.");
+        setDbError("Configuration de la base de données distante manquante. Affichage des programmes en stockage local.");
         setPrograms(localPrograms);
         return;
       }
@@ -498,10 +498,10 @@ export default function App() {
         if (localPrograms.length > 0) setPrograms(localPrograms);
         if (err.type === 'project_paused' || err.code === 403) {
           setDbError(
-            "Le projet Appwrite est suspendu pour inactivité. Veuillez restaurer le projet depuis la console Appwrite Cloud (https://cloud.appwrite.io) pour réactiver la base de données."
+            "La base de données distante est temporairement indisponible. Veuillez contacter l'administrateur système."
           );
         } else {
-          setDbError("Erreur de connexion à la base de données Appwrite. Vérifiez votre configuration réseau.");
+          setDbError("Erreur de connexion à la base de données distante. Vérifiez votre configuration réseau.");
         }
       }
     };

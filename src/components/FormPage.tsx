@@ -442,7 +442,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 Candidature Transmise avec Succès !
               </h2>
               <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed pt-1">
-                Vos informations ont été enregistrées avec succès. Le document PDF officiel du dossier d'admission (hébergé sur Appwrite Storage) a été ouvert automatiquement et votre récépissé d'inscription a été transmis par e-mail.
+                Vos informations ont été enregistrées avec succès. Le document PDF officiel du dossier d'admission a été ouvert automatiquement et votre récépissé d'inscription a été transmis par e-mail.
               </p>
             </div>
 
@@ -466,7 +466,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 rel="noopener noreferrer"
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel (Appwrite) ↗
+                <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
               </a>
               <button
                 onClick={handleDownloadPdf}

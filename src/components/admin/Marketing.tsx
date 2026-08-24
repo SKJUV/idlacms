@@ -371,7 +371,7 @@ export default function Marketing({
                     <span className="flex items-center gap-1.5 text-[#006c49]">
                       <UserCheck className="w-4 h-4" /> Sélectionner l'Étudiant / Ambassadeur Bénéficiaire *
                     </span>
-                    <span className="text-[10px] text-slate-500 font-normal">Base Appwrite & Inscriptions ({dbStudents.length} trouvés)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Base de Données & Inscriptions ({dbStudents.length} trouvés)</span>
                   </label>
                   <select
                     value={selectedBeneficiaryKey}

@@ -152,7 +152,7 @@ export default function NewsManagement({
         finalImage = await uploadImageToAppwrite(currentFile);
       } catch (err) {
         console.error('Échec upload image:', err);
-        setUploadError('Appwrite indisponible, utilisation de l\'image en mode local.');
+        setUploadError('Serveur de stockage distant indisponible, utilisation de l\'image en mode local.');
         finalImage = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
