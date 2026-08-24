@@ -617,7 +617,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         {/* Featured programs snippet preview */}
         <section className="py-16 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
           <div className="max-w-[1440px] mx-auto">
-            <div className="flex justify-between items-end mb-12">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12">
               <div>
                 <h2 className="text-3xl font-bold text-text-primary">{t('featured_title')}</h2>
                 <p className="text-sm text-text-secondary mt-1">{t('featured_subtitle')}</p>

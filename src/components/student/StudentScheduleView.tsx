@@ -95,51 +95,53 @@ export default function StudentScheduleView({
               <p className="text-text-secondary text-sm max-w-md mx-auto">Vous n'avez pas encore été admis dans un programme. Votre emploi du temps s'affichera ici une fois votre candidature acceptée.</p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-6 border-b border-border-primary bg-bg-primary/50 text-xs font-bold text-text-secondary uppercase tracking-wider">
-                {days.map((day) => (
-                  <div key={day} className="p-4 text-center border-r border-border-primary last:border-0 hidden md:block">{day}</div>
-                ))}
-                {days.map((day) => (
-                  <div key={day + '-mobile'} className="p-3 text-center border-r border-border-primary last:border-0 md:hidden">{day.slice(0, 3)}</div>
-                ))}
-              </div>
-              <div className="grid grid-cols-6 min-h-[400px]">
-                {days.map((day) => {
-                  const daySlots = mySchedules.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
-                  return (
-                    <div key={day} className="border-r border-border-primary last:border-0 p-2 space-y-2">
-                      {daySlots.map((slot: any, idx: number) => {
-                        const isConflicting = daySlots.some(
-                          (other: any) => other !== slot && (slot.startTime < other.endTime && other.startTime < slot.endTime)
-                        );
-                        return (
-                          <div key={idx} className={`p-3 rounded-xl text-sm transition-all border ${
-                            isConflicting 
-                              ? 'bg-rose-500/10 border-rose-500 text-rose-900 dark:text-rose-200 shadow-sm animate-pulse' 
-                              : 'bg-brand-light border-brand-primary/20 hover:shadow-md'
-                          }`}>
-                            <div className="flex items-center justify-between font-bold text-xs mb-1">
-                              <span className={isConflicting ? 'text-rose-600' : 'text-brand-primary'}>{slot.startTime} - {slot.endTime}</span>
-                              {isConflicting && <span className="bg-rose-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase">CONFLIT</span>}
+            <div className="overflow-x-auto">
+              <div className="min-w-[560px]">
+                <div className="grid grid-cols-6 border-b border-border-primary bg-bg-primary/50 text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  {days.map((day) => (
+                    <div key={day} className="p-4 text-center border-r border-border-primary last:border-0 hidden md:block">{day}</div>
+                  ))}
+                  {days.map((day) => (
+                    <div key={day + '-mobile'} className="p-3 text-center border-r border-border-primary last:border-0 md:hidden">{day.slice(0, 3)}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-6 min-h-[400px]">
+                  {days.map((day) => {
+                    const daySlots = mySchedules.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
+                    return (
+                      <div key={day} className="border-r border-border-primary last:border-0 p-2 space-y-2">
+                        {daySlots.map((slot: any, idx: number) => {
+                          const isConflicting = daySlots.some(
+                            (other: any) => other !== slot && (slot.startTime < other.endTime && other.startTime < slot.endTime)
+                          );
+                          return (
+                            <div key={idx} className={`p-3 rounded-xl text-sm transition-all border ${
+                              isConflicting 
+                                ? 'bg-rose-500/10 border-rose-500 text-rose-900 dark:text-rose-200 shadow-sm animate-pulse' 
+                                : 'bg-brand-light border-brand-primary/20 hover:shadow-md'
+                            }`}>
+                              <div className="flex items-center justify-between font-bold text-xs mb-1">
+                                <span className={isConflicting ? 'text-rose-600' : 'text-brand-primary'}>{slot.startTime} - {slot.endTime}</span>
+                                {isConflicting && <span className="bg-rose-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase">CONFLIT</span>}
+                              </div>
+                              <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
+                              <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
+                                <UsersIcon className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">{slot.teacherName}</span>
+                              </div>
+                              <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
                             </div>
-                            <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
-                            <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
-                              <UsersIcon className="w-3.5 h-3.5 shrink-0" />
-                              <span className="truncate">{slot.teacherName}</span>
-                            </div>
-                            <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
-                          </div>
-                        );
-                      })}
-                      {daySlots.length === 0 && (
-                        <div className="text-center py-6 text-xs text-text-secondary/40">--</div>
-                      )}
-                    </div>
-                  );
-                })}
+                          );
+                        })}
+                        {daySlots.length === 0 && (
+                          <div className="text-center py-6 text-xs text-text-secondary/40">--</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

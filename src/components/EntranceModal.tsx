@@ -26,7 +26,7 @@ export default function EntranceModal({ onOpenConcoursForm }: EntranceModalProps
       {/* ── 1. POP-UP / CARTE D'ANNONCE EXPANSIONNELLE AU SURVOL ── */}
       {shouldShowDetails && (
         <div 
-          className="absolute bottom-16 left-0 w-[310px] sm:w-[360px] bg-white dark:bg-bg-secondary text-text-primary p-5 rounded-3xl shadow-2xl border-2 border-rose-500/50 dark:border-rose-500/40 animate-in fade-in slide-in-from-bottom-4 duration-300"
+          className="absolute bottom-16 left-0 w-[calc(100vw-3rem)] sm:w-[360px] max-w-[360px] bg-white dark:bg-bg-secondary text-text-primary p-5 rounded-3xl shadow-2xl border-2 border-rose-500/50 dark:border-rose-500/40 animate-in fade-in slide-in-from-bottom-4 duration-300"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
