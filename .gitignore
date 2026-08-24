@@ -1,14 +1,34 @@
+# Dependencies & Artifacts
 node_modules/
 build/
 dist/
 coverage/
+
+# OS & Environment Metadata
 .DS_Store
+Thumbs.db
 *.log
+.vercel
+
+# Environment & Credentials (Strict)
 .env*
 !.env.example
-.vercel
+
+# Backups & Database Dumps
 backup*.json
 backups/
 *.backup
 *.dump
+*.sql
+*.sqlite
+
+# Secret Keys & Certificates
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+
+# Scripts & Local Tools
 scripts/
