@@ -215,27 +215,16 @@ export default function Header({
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        onStudentLoginClick();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="text-xs font-bold text-text-primary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer"
-                    >
-                      <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
-                      <span>{t('nav_login')}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onAdminLoginClick();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="text-[11px] font-semibold text-text-secondary/60 hover:text-text-primary py-1.5 cursor-pointer"
-                    >
-                      Administration →
-                    </button>
-                  </>
+                  <button
+                    onClick={() => {
+                      onStudentLoginClick();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs font-bold text-text-primary hover:text-brand-primary flex items-center gap-1.5 py-1.5 cursor-pointer w-full justify-center sm:justify-start"
+                  >
+                    <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
+                    <span>{t('nav_login')}</span>
+                  </button>
                 )}
               </div>
             </div>
