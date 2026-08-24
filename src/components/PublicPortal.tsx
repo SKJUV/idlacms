@@ -418,7 +418,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
-              src="/hero-bg.png" 
+              src="/hero-bg.jpg" 
               alt="Campus IDLA" 
               className="w-full h-full object-cover object-center"
             />
