@@ -145,6 +145,21 @@ export const en: Record<TranslationKeys, string> = {
   admin_news_tab: "News & Events Management",
   admin_forms_tab: "Custom Forms Builder",
   admin_preregistrations_tab: "Pre-Registrations & Applications",
+  admin_email_automation_tab: "Automated Email Follow-ups",
+  admin_donations_tab: "Support & Donations",
+  admin_users_tab: "Users & Access Control",
+
+  // Referral & Sponsorship
+  referral_title: "IDLA Ambassador & Referral Program",
+  referral_code_label: "My Referral Code:",
+  referral_copy_btn: "Copy My Referral Link",
+  referral_copied: "Link Copied!",
+  referral_advantage: "Waived application fee for your referees",
+
+  // Notifications & Feedback
+  toast_success_saved: "Changes saved successfully.",
+  toast_error_generic: "An error occurred. Please try again.",
+  toast_timeout_warning: "Your session has expired due to prolonged inactivity.",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. All rights reserved. Official admissions and enrollment platform.",

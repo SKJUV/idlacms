@@ -111,24 +111,24 @@ export default function TestimonialsManagement({
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="font-sans font-bold text-lg text-[#00020e]">Témoignages</h3>
-        <p className="text-xs text-slate-400 mt-1">
+        <h3 className="font-sans font-bold text-lg text-text-primary">Témoignages</h3>
+        <p className="text-xs text-text-secondary mt-1">
           Les alumni soumettent leurs témoignages via le site public. Approuvez-les pour les publier.
         </p>
       </div>
 
       {/* File de modération */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold text-[#00020e] uppercase tracking-wider flex items-center gap-2">
+        <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
           En attente de modération
           {pendingTestimonials.length > 0 && (
-            <span className="bg-amber-500/10 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
               {pendingTestimonials.length}
             </span>
           )}
         </h4>
         {pendingTestimonials.length === 0 ? (
-          <p className="p-6 text-center text-xs text-slate-400 italic bg-white rounded-2xl border border-[#c6c6cf]">
+          <p className="p-6 text-center text-xs text-text-secondary italic bg-bg-secondary rounded-2xl border border-border-primary">
             Aucune soumission en attente.
           </p>
         ) : (
@@ -136,18 +136,18 @@ export default function TestimonialsManagement({
             {pendingTestimonials.map((t) => (
               <div
                 key={t.id}
-                className="bg-white p-5 rounded-2xl border border-amber-500/30 shadow-sm space-y-3"
+                className="bg-bg-secondary p-5 rounded-2xl border border-amber-500/30 shadow-sm space-y-3"
               >
-                <p className="text-xs text-[#0b1c30] italic leading-relaxed">"{t.text}"</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-[#c6c6cf]/30">
+                <p className="text-xs text-text-primary italic leading-relaxed">"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-3 border-t border-border-primary/40">
                   <img
-                    className="w-9 h-9 rounded-full object-cover border border-[#c6c6cf]"
+                    className="w-9 h-9 rounded-full object-cover border border-border-primary"
                     alt={t.name}
                     src={t.image}
                   />
                   <div className="flex-grow">
-                    <h4 className="font-bold text-xs text-[#00020e]">{t.name}</h4>
-                    <p className="text-[10px] text-slate-400">
+                    <h4 className="font-bold text-xs text-text-primary">{t.name}</h4>
+                    <p className="text-[10px] text-text-secondary">
                       {t.role} • {t.promo}
                     </p>
                   </div>
@@ -155,13 +155,13 @@ export default function TestimonialsManagement({
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApproveTestimonial(t.id)}
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" /> Approuver
                   </button>
                   <button
                     onClick={() => handleRejectTestimonial(t.id)}
-                    className="flex-1 bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 bg-bg-primary border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-[11px] font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <XCircle className="w-3.5 h-3.5" /> Rejeter
                   </button>
@@ -174,46 +174,46 @@ export default function TestimonialsManagement({
 
       {/* Témoignages publiés */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold text-[#00020e] uppercase tracking-wider">
+        <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
           Publiés sur le site ({testimonials.length})
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((t) => (
             <div
               key={t.id}
-              className="bg-white p-6 rounded-2xl border border-[#c6c6cf] shadow-sm flex flex-col justify-between"
+              className="bg-bg-secondary p-6 rounded-2xl border border-border-primary shadow-sm flex flex-col justify-between"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Quote className="w-6 h-6 text-[#006c49]" />
+                  <Quote className="w-6 h-6 text-brand-primary" />
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setEditingTestimonial(t)}
                       title="Modifier"
-                      className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all"
+                      className="text-text-secondary hover:text-brand-primary p-1.5 hover:bg-bg-primary rounded transition-all cursor-pointer"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteTestimonial(t.id)}
                       title="Supprimer"
-                      className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all"
+                      className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-all cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-[#0b1c30] italic leading-relaxed">"{t.text}"</p>
+                <p className="text-xs text-text-primary italic leading-relaxed">"{t.text}"</p>
               </div>
-              <div className="flex items-center gap-3 pt-4 mt-4 border-t border-[#c6c6cf]/30">
+              <div className="flex items-center gap-3 pt-4 mt-4 border-t border-border-primary/40">
                 <img
-                  className="w-10 h-10 rounded-full object-cover border border-[#c6c6cf]"
+                  className="w-10 h-10 rounded-full object-cover border border-border-primary"
                   alt={t.name}
                   src={t.image}
                 />
                 <div>
-                  <h4 className="font-bold text-xs text-[#00020e]">{t.name}</h4>
-                  <p className="text-[10px] text-slate-400">
+                  <h4 className="font-bold text-xs text-text-primary">{t.name}</h4>
+                  <p className="text-[10px] text-text-secondary">
                     {t.role} • {t.promo}
                   </p>
                 </div>
@@ -221,7 +221,7 @@ export default function TestimonialsManagement({
             </div>
           ))}
           {testimonials.length === 0 && (
-            <p className="col-span-full p-8 text-center text-slate-400 italic bg-white rounded-2xl border border-[#c6c6cf]">
+            <p className="col-span-full p-8 text-center text-text-secondary italic bg-bg-secondary rounded-2xl border border-border-primary">
               Aucun témoignage publié.
             </p>
           )}
@@ -231,18 +231,18 @@ export default function TestimonialsManagement({
       {/* MODALE — Édition d'un témoignage publié */}
       {editingTestimonial && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setEditingTestimonial(null)}
         >
           <div
-            className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+            className="bg-bg-secondary border border-border-primary w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#c6c6cf]/40 bg-slate-50">
-              <h3 className="font-bold text-base text-[#00020e]">Modifier le témoignage</h3>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary/50 bg-bg-primary">
+              <h3 className="font-bold text-base text-text-primary">Modifier le témoignage</h3>
               <button
                 onClick={() => setEditingTestimonial(null)}
-                className="text-slate-400 hover:text-[#00020e]"
+                className="text-text-secondary hover:text-text-primary cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -250,63 +250,63 @@ export default function TestimonialsManagement({
             <form onSubmit={handleSaveEditedTestimonial} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Nom</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Nom</label>
                   <input
                     type="text"
                     value={editingTestimonial.name}
                     onChange={(e) =>
                       setEditingTestimonial({ ...editingTestimonial, name: e.target.value })
                     }
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs"
                     required
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Promotion</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Promotion</label>
                   <input
                     type="text"
                     value={editingTestimonial.promo}
                     onChange={(e) =>
                       setEditingTestimonial({ ...editingTestimonial, promo: e.target.value })
                     }
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs"
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Fonction</label>
+                <label className="text-xs font-bold text-text-secondary uppercase">Fonction</label>
                 <input
                   type="text"
                   value={editingTestimonial.role}
                   onChange={(e) =>
                     setEditingTestimonial({ ...editingTestimonial, role: e.target.value })
                   }
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Témoignage</label>
+                <label className="text-xs font-bold text-text-secondary uppercase">Témoignage</label>
                 <textarea
                   value={editingTestimonial.text}
                   onChange={(e) =>
                     setEditingTestimonial({ ...editingTestimonial, text: e.target.value })
                   }
                   rows={4}
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs"
+                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs"
                   required
                 />
               </div>
-              <div className="pt-2 flex justify-end gap-3">
+              <div className="pt-2 flex justify-end gap-3 border-t border-border-primary/50">
                 <button
                   type="button"
                   onClick={() => setEditingTestimonial(null)}
-                  className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40"
+                  className="px-5 py-2 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg"
+                  className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md cursor-pointer transition-all"
                 >
                   Enregistrer
                 </button>

@@ -23,10 +23,11 @@ import Marketing from './admin/Marketing';
 import CmsSettings from './admin/CmsSettings';
 import TeachersManagement from './admin/TeachersManagement';
 import EmailAutomationSection from './admin/EmailAutomationSection';
+import FormsManagement from './admin/FormsManagement';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
-  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-[#006c49]' | 'admin-donations' | 'admin-marketing'
+  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-forms' | 'admin-donations' | 'admin-marketing'
   | 'admin-settings' | 'admin-teachers' | 'admin-profile' | 'admin-email-automation';
 
 interface AdminPortalProps {
@@ -562,7 +563,6 @@ export default function AdminPortal({
         <UsersManagement
           usersList={usersList}
           setUsersList={setUsersList}
-          handleDeleteUser={handleDeleteUser}
           setActiveTab={setActiveTab}
           logActivity={logActivity}
         />
@@ -617,6 +617,12 @@ export default function AdminPortal({
           setSelectedPreRegId={setSelectedPreRegId}
           logActivity={logActivity}
           onNavigateTab={(tab) => setActiveTab(tab as any)}
+        />
+      )}
+
+      {view === 'admin-forms' && (
+        <FormsManagement
+          logActivity={logActivity}
         />
       )}
 

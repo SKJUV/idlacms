@@ -1,4 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
+import { useToast } from './context/ToastContext';
+import { useAppStore } from './store/useAppStore';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import EntranceModal from './components/EntranceModal';
@@ -41,6 +43,7 @@ export type ActiveTab =
   | 'admin-testimonials'
   | 'admin-news'
   | 'admin-preregistrations'
+  | 'admin-forms'
   | 'admin-donations'
   | 'admin-marketing'
   | 'admin-email-automation'
@@ -60,7 +63,7 @@ const STUDENT_TABS: ActiveTab[] = [
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
-  'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-donations', 'admin-marketing',
+  'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations', 'admin-marketing',
   'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
@@ -92,6 +95,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-testimonials': '/admin/temoignages',
   'admin-news': '/admin/actualites',
   'admin-preregistrations': '/admin/pre-inscriptions',
+  'admin-forms': '/admin/formulaires',
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-email-automation': '/admin/relances',
@@ -119,6 +123,7 @@ const tabFromPath = (pathname: string): ActiveTab => {
 };
 
 export default function App() {
+  const { warning: showWarningToast } = useToast();
   const [activeTab, setActiveTab] = useState<ActiveTab>(() =>
     typeof window !== 'undefined' ? tabFromPath(window.location.pathname) : 'home'
   );
@@ -233,6 +238,11 @@ export default function App() {
     checkSession();
   }, []);
 
+  // Synchroniser avec Zustand Store
+  useEffect(() => {
+    useAppStore.setState({ role, activeTab, isSessionChecking });
+  }, [role, activeTab, isSessionChecking]);
+
   // Enforce role-based access control on tab changes
   useEffect(() => {
     if (isSessionChecking) return;
@@ -271,7 +281,7 @@ export default function App() {
       clearTimeout(timer);
       timer = setTimeout(() => {
         handleLogout();
-        alert("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
+        showWarningToast("Session fermée automatiquement suite à 15 minutes d'inactivité pour sécuriser votre compte.");
       }, INACTIVITY_TIMEOUT_MS);
     };
 

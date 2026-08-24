@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ToggleLeft, ToggleRight, ArrowLeft, Link as LinkIcon, Check } from 'lucide-react';
+import { Plus, BookOpen, Pencil, Trash2, Calendar, CheckCircle2, AlertCircle, Clock, ArrowLeft, Link as LinkIcon, Check } from 'lucide-react';
 import { Program, AcademicSession, DEFAULT_ACADEMIC_SESSIONS, DEFAULT_PROGRAM_DURATIONS } from '../../types';
 import { ID, Query, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from '../ProgramFilterBar';
@@ -62,7 +62,7 @@ export default function ProgramsManagement({
   const [showAddSessionForm, setShowAddSessionForm] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState('');
-  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('Rentrée Principale');
+  const [newSessionType, setNewSessionType] = useState<AcademicSession['type']>('principale');
   const [newSessionStatus, setNewSessionStatus] = useState<AcademicSession['status']>('ouverte');
   const [newSessionDeadline, setNewSessionDeadline] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -92,7 +92,7 @@ export default function ProgramsManagement({
 
   const resetSessionForm = () => {
     setNewSessionName('');
-    setNewSessionType('Rentrée Principale');
+    setNewSessionType('principale');
     setNewSessionStatus('ouverte');
     setNewSessionDeadline('');
     setNewSessionDescription('');
@@ -299,16 +299,6 @@ export default function ProgramsManagement({
     }
 
     logActivity('article', 'Super Admin', `a ajouté un nouveau programme : ${newProgramTitle}.`);
-    
-    const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
-    if (subscribers.length > 0) {
-      logActivity(
-        'registration',
-        'Système Mailer',
-        `a envoyé une notification email de réussite à ${subscribers.length} abonnés pour : "${newProgramTitle}".`
-      );
-    }
-
     resetProgramForm();
   };
 
@@ -371,8 +361,6 @@ export default function ProgramsManagement({
       logActivity('error', 'Super Admin', `a supprimé le programme : ${targetProgram.title}.`);
     }
   };
-
-
 
   const handleSubmitSession = (e: React.FormEvent) => {
     e.preventDefault();
@@ -437,36 +425,34 @@ export default function ProgramsManagement({
 
   return (
     <div className="space-y-6">
-
-
       {cloudSuccess && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm animate-fadeIn">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{cloudSuccess}</span>
           </div>
-          <button onClick={() => setCloudSuccess(null)} className="text-emerald-600 hover:text-emerald-900 font-bold ml-4">✕</button>
+          <button onClick={() => setCloudSuccess(null)} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 font-bold ml-4 cursor-pointer">✕</button>
         </div>
       )}
 
       {cloudError && (
-        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm animate-fadeIn">
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>{cloudError}</span>
           </div>
-          <button onClick={() => setCloudError(null)} className="text-amber-700 hover:text-amber-950 font-bold ml-4">✕</button>
+          <button onClick={() => setCloudError(null)} className="text-amber-700 dark:text-amber-300 hover:text-amber-900 font-bold ml-4 cursor-pointer">✕</button>
         </div>
       )}
 
       {/* ── Tabs Header ── */}
-      <div className="flex border-b border-[#c6c6cf]/40 gap-6">
+      <div className="flex border-b border-border-primary/50 gap-6">
         <button
           onClick={() => setActiveSubTab('programs')}
           className={`pb-3 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
             activeSubTab === 'programs'
-              ? 'border-b-2 border-[#006c49] text-[#006c49]'
-              : 'text-slate-500 hover:text-[#00020e]'
+              ? 'border-b-2 border-brand-primary text-brand-primary'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -476,8 +462,8 @@ export default function ProgramsManagement({
           onClick={() => setActiveSubTab('sessions')}
           className={`pb-3 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
             activeSubTab === 'sessions'
-              ? 'border-b-2 border-[#006c49] text-[#006c49]'
-              : 'text-slate-500 hover:text-[#00020e]'
+              ? 'border-b-2 border-brand-primary text-brand-primary'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -493,50 +479,50 @@ export default function ProgramsManagement({
               <div className="flex items-center gap-4">
                 <button
                   onClick={resetProgramForm}
-                  className="bg-white border border-[#c6c6cf] text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
+                  className="bg-bg-secondary border border-border-primary text-text-secondary hover:bg-bg-primary px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Retour
                 </button>
-                <h3 className="font-sans font-bold text-lg text-[#00020e]">
+                <h3 className="font-sans font-bold text-lg text-text-primary">
                   {editingProgramId ? 'Modifier le programme' : 'Nouveau programme'}
                 </h3>
               </div>
               <form
                 onSubmit={handleSubmitProgram}
-                className="bg-white border border-[#c6c6cf] rounded-2xl p-6 space-y-4 shadow-sm"
+                className="bg-bg-secondary border border-border-primary rounded-2xl p-6 space-y-4 shadow-sm"
               >
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Titre du programme *</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Titre du programme *</label>
                   <input
                     type="text"
                     value={newProgramTitle}
                     onChange={(e) => setNewProgramTitle(e.target.value)}
                     placeholder="ex: Master en Cybersécurité"
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Description *</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Description *</label>
                   <textarea
                     value={newProgramDescription}
                     onChange={(e) => setNewProgramDescription(e.target.value)}
                     placeholder="Description courte du programme"
                     rows={3}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Type (Durée auto-assignée) *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Type (Durée auto-assignée) *</label>
                     <select
                       value={newProgramType}
                       onChange={(e) => handleProgramTypeChange(e.target.value as any)}
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                      className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-bold"
                     >
                       <option value="Bachelor">Bachelor (3 ans / L1-L3)</option>
                       <option value="Master">Master (5 ans / Bac+5)</option>
@@ -546,8 +532,8 @@ export default function ProgramsManagement({
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Catégorie (Saisie libre ou Liste) *</label>
-                      <span className="text-[10px] text-slate-400 font-normal">Tapez ou cliquez un badge</span>
+                      <label className="text-xs font-bold text-text-secondary uppercase">Catégorie (Saisie libre ou Liste) *</label>
+                      <span className="text-[10px] text-text-secondary font-normal">Tapez ou cliquez un badge</span>
                     </div>
                     <input
                       type="text"
@@ -555,7 +541,7 @@ export default function ProgramsManagement({
                       value={newProgramCategory}
                       onChange={(e) => setNewProgramCategory(e.target.value)}
                       placeholder="ex: Tech, Finance, IA & Data, Cybersécurité..."
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e]"
+                      className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-bold"
                       required
                     />
                     <datalist id="category-options-list">
@@ -594,8 +580,8 @@ export default function ProgramsManagement({
                           onClick={() => setNewProgramCategory(cat)}
                           className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                             newProgramCategory === cat
-                              ? 'bg-[#006c49] text-white shadow-sm'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                              ? 'bg-brand-primary text-white shadow-sm'
+                              : 'bg-bg-primary hover:bg-border-primary/50 text-text-secondary border border-border-primary'
                           }`}
                         >
                           + {cat}
@@ -607,46 +593,46 @@ export default function ProgramsManagement({
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Durée de formation *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Durée de formation *</label>
                     <input
                       type="text"
                       value={newProgramDuration}
                       onChange={(e) => setNewProgramDuration(e.target.value)}
                       placeholder="ex: 3 ans (6 Semestres)"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                      className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                       required
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Prix</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Prix</label>
                     <input
                       type="text"
                       value={newProgramPrice}
                       onChange={(e) => setNewProgramPrice(e.target.value)}
                       placeholder="ex: 2000 € / an"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                      className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">URL Image *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">URL Image *</label>
                     <input
                       type="text"
                       value={newProgramImage}
                       onChange={(e) => setNewProgramImage(e.target.value)}
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                      className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2 bg-white p-4 rounded-lg border border-[#c6c6cf]">
+                  <label className="text-xs font-bold text-text-secondary uppercase">Procédures d'admission & Pièces requises par niveau (Optionnel)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2 bg-bg-primary p-4 rounded-xl border border-border-primary">
                     {[
                       "BEPC", "BAC", "Licence 1", "Licence 2", "Licence 3", 
                       "Master 1", "Master 2", "GCE Ordinary Level (GCE O/L)", "GCE Advanced Level (GCE A/L)"
                     ].map(diploma => (
-                      <label key={diploma} className="flex items-start gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                      <label key={diploma} className="flex items-start gap-2 text-xs font-semibold text-text-primary cursor-pointer">
                         <input
                           type="checkbox"
                           checked={(newProgramProcedures || '').includes(diploma)}
@@ -659,7 +645,7 @@ export default function ProgramsManagement({
                             }
                             setNewProgramProcedures(current.join(', '));
                           }}
-                          className="w-4 h-4 mt-0.5 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49] cursor-pointer"
+                          className="w-4 h-4 mt-0.5 accent-brand-primary border-border-primary rounded focus:ring-brand-primary cursor-pointer"
                         />
                         <span className="leading-tight">{diploma}</span>
                       </label>
@@ -667,27 +653,27 @@ export default function ProgramsManagement({
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase">
+                <label className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase cursor-pointer">
                   <input
                     type="checkbox"
                     checked={newProgramIsNew}
                     onChange={(e) => setNewProgramIsNew(e.target.checked)}
-                    className="w-4 h-4 text-[#006c49] border-[#c6c6cf] rounded focus:ring-[#006c49]"
+                    className="w-4 h-4 accent-brand-primary border-border-primary rounded focus:ring-brand-primary"
                   />
                   Marquer comme "Nouveau"
                 </label>
 
-                <div className="pt-4 flex justify-end gap-3 border-t border-[#c6c6cf]/30">
+                <div className="pt-4 flex justify-end gap-3 border-t border-border-primary/50">
                   <button
                     type="button"
                     onClick={resetProgramForm}
-                    className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40 transition-colors cursor-pointer"
+                    className="px-5 py-2 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary transition-colors cursor-pointer"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all cursor-pointer"
+                    className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-md"
                   >
                     {editingProgramId ? 'Mettre à jour' : 'Enregistrer le programme'}
                   </button>
@@ -697,10 +683,10 @@ export default function ProgramsManagement({
           ) : (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="font-sans font-bold text-lg text-[#00020e]">Programmes académiques IDLA</h3>
+                <h3 className="font-sans font-bold text-lg text-text-primary">Programmes académiques IDLA</h3>
                 <button
                   onClick={() => setShowAddProgramForm(true)}
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
+                  className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Ajouter un programme
@@ -714,10 +700,10 @@ export default function ProgramsManagement({
                 totalResults={filteredAdminPrograms.length}
               />
 
-              <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+                    <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/50 font-bold uppercase">
                       <th className="p-4">Programme</th>
                       <th className="p-4">Type</th>
                       <th className="p-4">Catégorie</th>
@@ -725,23 +711,23 @@ export default function ProgramsManagement({
                       <th className="p-4 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#c6c6cf]/20">
+                  <tbody className="divide-y divide-border-primary/40">
                     {filteredAdminPrograms.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/40">
-                        <td className="p-4 font-semibold text-[#00020e]">
+                      <tr key={p.id} className="hover:bg-bg-primary/50 transition-colors">
+                        <td className="p-4 font-semibold text-text-primary">
                           <div className="flex items-center gap-2">
-                            <BookOpen className="w-3.5 h-3.5 text-[#006c49] shrink-0" />
+                            <BookOpen className="w-3.5 h-3.5 text-brand-primary shrink-0" />
                             <span>{p.title}</span>
                             {p.isNew && (
-                              <span className="bg-[#006c49]/10 text-[#006c49] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
+                              <span className="bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
                                 Nouveau
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="p-4 font-medium text-slate-600">{p.type}</td>
-                        <td className="p-4 font-medium text-slate-600">{p.category}</td>
-                        <td className="p-4 text-slate-400">{p.duration}</td>
+                        <td className="p-4 font-medium text-text-secondary">{p.type}</td>
+                        <td className="p-4 font-medium text-text-secondary">{p.category}</td>
+                        <td className="p-4 text-text-secondary">{p.duration}</td>
                         <td className="p-4">
                           <div className="flex justify-center items-center gap-1">
                             <button
@@ -751,21 +737,21 @@ export default function ProgramsManagement({
                                 setCopySuccessId(p.id);
                                 setTimeout(() => setCopySuccessId(null), 3000);
                               }}
-                              className="text-sky-500 hover:text-sky-700 p-1.5 hover:bg-sky-50 rounded transition-all cursor-pointer"
+                              className="text-brand-primary hover:text-brand-hover p-1.5 hover:bg-bg-primary rounded transition-all cursor-pointer"
                               title={copySuccessId === p.id ? "Lien d'inscription copié !" : "Copier le lien d'inscription direct du programme"}
                             >
-                              {copySuccessId === p.id ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
+                              {copySuccessId === p.id ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <LinkIcon className="w-4 h-4" />}
                             </button>
                             <button
                               onClick={() => handleEditProgram(p)}
-                              className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
+                              className="text-text-secondary hover:text-brand-primary p-1.5 hover:bg-bg-primary rounded transition-all cursor-pointer"
                               title="Modifier le programme"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteProgram(p.id)}
-                              className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all cursor-pointer"
+                              className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-all cursor-pointer"
                               title="Supprimer le programme"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -776,7 +762,7 @@ export default function ProgramsManagement({
                     ))}
                     {programs.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                        <td colSpan={5} className="p-8 text-center text-text-secondary italic">
                           Aucun programme enregistré.
                         </td>
                       </tr>
@@ -791,10 +777,10 @@ export default function ProgramsManagement({
         /* ─── ONGLET SESSIONS & RENTRÉES UNIVERSITAIRES ─── */
         <div className="space-y-6">
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-start gap-3 text-xs text-emerald-900 dark:text-emerald-300">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">Synchronisation active avec le portail candidat :</span>
-              <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300">
+              <p className="mt-0.5 leading-relaxed text-text-secondary">
                 Les rentrées scolaires programmées ci-dessous et marquées comme <strong>"Ouverte"</strong> ou <strong>"Bientôt"</strong> apparaissent instantanément dans la liste de choix lors de la candidature d'un étudiant.
               </p>
             </div>
@@ -802,12 +788,12 @@ export default function ProgramsManagement({
 
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="font-sans font-bold text-lg text-[#00020e]">Calendrier des rentrées et admissions</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Programmez les sessions universitaires ouvertes aux candidatures</p>
+              <h3 className="font-sans font-bold text-lg text-text-primary">Calendrier des rentrées et admissions</h3>
+              <p className="text-xs text-text-secondary mt-0.5">Programmez les sessions universitaires ouvertes aux candidatures</p>
             </div>
             <button
               onClick={() => (showAddSessionForm ? resetSessionForm() : setShowAddSessionForm(true))}
-              className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
+              className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               {showAddSessionForm ? 'Fermer le formulaire' : 'Programmer une rentrée'}
@@ -817,31 +803,31 @@ export default function ProgramsManagement({
           {showAddSessionForm && (
             <form
               onSubmit={handleSubmitSession}
-              className="bg-white border border-[#c6c6cf] rounded-2xl p-6 space-y-4 shadow-sm"
+              className="bg-bg-secondary border border-border-primary rounded-2xl p-6 space-y-4 shadow-sm"
             >
-              <p className="text-sm font-bold text-[#00020e]">
+              <p className="text-sm font-bold text-text-primary">
                 {editingSessionId ? 'Modifier la rentrée universitaire' : 'Programmer une nouvelle rentrée'}
               </p>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Nom de la session / rentrée *</label>
+                <label className="text-xs font-bold text-text-secondary uppercase">Nom de la session / rentrée *</label>
                 <input
                   type="text"
                   value={newSessionName}
                   onChange={(e) => setNewSessionName(e.target.value)}
                   placeholder="ex: Session d'Octobre 2027 ou Rentrée MBA Spécialisée"
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Type *</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Type *</label>
                   <select
                     value={newSessionType}
                     onChange={(e) => setNewSessionType(e.target.value as any)}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e] cursor-pointer"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-bold cursor-pointer"
                   >
                     <option value="principale">Rentrée Principale</option>
                     <option value="hiver">Rentrée d'Hiver</option>
@@ -851,11 +837,11 @@ export default function ProgramsManagement({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Statut des candidatures *</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Statut des candidatures *</label>
                   <select
                     value={newSessionStatus}
                     onChange={(e) => setNewSessionStatus(e.target.value as any)}
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-bold text-[#00020e] cursor-pointer"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-bold cursor-pointer"
                   >
                     <option value="ouverte">Ouverte aux candidatures</option>
                     <option value="bientot">Bientôt ouverte</option>
@@ -863,39 +849,39 @@ export default function ProgramsManagement({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Date limite de candidature</label>
+                  <label className="text-xs font-bold text-text-secondary uppercase">Date limite de candidature</label>
                   <input
                     type="text"
                     value={newSessionDeadline}
                     onChange={(e) => setNewSessionDeadline(e.target.value)}
                     placeholder="ex: 15 Septembre 2027"
-                    className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                    className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase">Description / Note indicative (Optionnelle)</label>
+                <label className="text-xs font-bold text-text-secondary uppercase">Description / Note indicative (Optionnelle)</label>
                 <input
                   type="text"
                   value={newSessionDescription}
                   onChange={(e) => setNewSessionDescription(e.target.value)}
                   placeholder="ex: Rentrée principale pour tous les cursus Master et Bachelor"
-                  className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
                 />
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-[#c6c6cf]/30">
+              <div className="pt-4 flex justify-end gap-3 border-t border-border-primary/50">
                 <button
                   type="button"
                   onClick={resetSessionForm}
-                  className="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50 border border-[#c6c6cf]/40 transition-colors cursor-pointer"
+                  className="px-5 py-2 rounded-lg text-xs font-bold text-text-secondary hover:bg-bg-primary border border-border-primary transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all cursor-pointer"
+                  className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-md"
                 >
                   {editingSessionId ? 'Enregistrer les modifications' : 'Enregistrer la rentrée'}
                 </button>
@@ -903,10 +889,10 @@ export default function ProgramsManagement({
             </form>
           )}
 
-          <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+                <tr className="bg-bg-primary text-text-secondary border-b border-border-primary/50 font-bold uppercase">
                   <th className="p-4">Session / Rentrée</th>
                   <th className="p-4">Type</th>
                   <th className="p-4">Date limite / Clôture</th>
@@ -914,22 +900,22 @@ export default function ProgramsManagement({
                   <th className="p-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c6c6cf]/20">
+              <tbody className="divide-y divide-border-primary/40">
                 {sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/40">
-                    <td className="p-4 font-semibold text-[#00020e]">
+                  <tr key={s.id} className="hover:bg-bg-primary/50 transition-colors">
+                    <td className="p-4 font-semibold text-text-primary">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-[#006c49] shrink-0" />
+                        <Calendar className="w-3.5 h-3.5 text-brand-primary shrink-0" />
                         <div>
                           <span>{s.name}</span>
                           {s.description && (
-                            <p className="text-[10px] text-slate-400 font-normal mt-0.5">{s.description}</p>
+                            <p className="text-[10px] text-text-secondary font-normal mt-0.5">{s.description}</p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 font-medium text-slate-600 capitalize">{s.type}</td>
-                    <td className="p-4 font-medium text-slate-500">{s.deadline || '—'}</td>
+                    <td className="p-4 font-medium text-text-secondary capitalize">{s.type}</td>
+                    <td className="p-4 font-medium text-text-secondary">{s.deadline || '—'}</td>
                     <td className="p-4">
                       <button
                         onClick={() => handleToggleSessionStatus(s.id)}
@@ -937,17 +923,17 @@ export default function ProgramsManagement({
                         className="cursor-pointer transition-transform active:scale-95"
                       >
                         {s.status === 'ouverte' && (
-                          <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/20">
                             <CheckCircle2 className="w-3 h-3" /> Ouverte
                           </span>
                         )}
                         {s.status === 'bientot' && (
-                          <span className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          <span className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/20">
                             <Clock className="w-3 h-3" /> Bientôt
                           </span>
                         )}
                         {s.status === 'fermee' && (
-                          <span className="inline-flex items-center gap-1.5 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                          <span className="inline-flex items-center gap-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-rose-500/20">
                             <AlertCircle className="w-3 h-3" /> Clôturée
                           </span>
                         )}
@@ -957,14 +943,14 @@ export default function ProgramsManagement({
                       <div className="flex justify-center items-center gap-1">
                         <button
                           onClick={() => handleEditSession(s)}
-                          className="text-slate-500 hover:text-[#006c49] p-1.5 hover:bg-slate-100 rounded transition-all cursor-pointer"
+                          className="text-text-secondary hover:text-brand-primary p-1.5 hover:bg-bg-primary rounded transition-all cursor-pointer"
                           title="Modifier la session"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteSession(s.id)}
-                          className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded transition-all cursor-pointer"
+                          className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-all cursor-pointer"
                           title="Supprimer la session"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -975,7 +961,7 @@ export default function ProgramsManagement({
                 ))}
                 {sessions.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="p-8 text-center text-text-secondary italic">
                       Aucune rentrée programmée.
                     </td>
                   </tr>

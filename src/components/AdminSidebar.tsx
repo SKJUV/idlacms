@@ -19,6 +19,7 @@ import {
   SearchIcon,
   CalendarIcon,
   MessageSquareIcon,
+  FileTextIcon,
 } from './Icons';
 
 interface AdminSidebarProps {
@@ -59,6 +60,7 @@ export default function AdminSidebar({ role, activeTab, setActiveTab, onLogout, 
     { label: 'Utilisateurs & Accès', icon: UserCheckIcon, target: 'admin-users', activeOn: ['admin-users', 'admin-add-user'] },
     { label: 'Témoignages', icon: QuoteIcon, target: 'admin-testimonials', activeOn: ['admin-testimonials'] },
     { label: 'Actualités', icon: NewspaperIcon, target: 'admin-news', activeOn: ['admin-news'] },
+    { label: 'Formulaires', icon: FileTextIcon, target: 'admin-forms', activeOn: ['admin-forms'] },
     { label: 'Soutien & Dons', icon: HeartHandshakeIcon, target: 'admin-donations', activeOn: ['admin-donations'] },
     { label: 'Relances E-mails', icon: MessageSquareIcon, target: 'admin-email-automation', activeOn: ['admin-email-automation'] },
     { label: 'Marketing', icon: MegaphoneIcon, target: 'admin-marketing', activeOn: ['admin-marketing'] },

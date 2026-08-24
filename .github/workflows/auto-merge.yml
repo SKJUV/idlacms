@@ -12,11 +12,8 @@ jobs:
       contents: write
       pull-requests: write
 
-    # Exécuter uniquement si l'auteur de la PR est un Collaborateur, Membre ou Propriétaire du dépôt
-    if: >
-      github.event.pull_request.author_association == 'OWNER' ||
-      github.event.pull_request.author_association == 'MEMBER' ||
-      github.event.pull_request.author_association == 'COLLABORATOR'
+    # Workflow d'auto-merge réactivé pour les collaborateurs officiels
+    # if: false
 
     steps:
       - name: 🔍 Vérifier le statut de collaborateur officiel
