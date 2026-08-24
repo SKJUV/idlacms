@@ -120,7 +120,7 @@ export const en: Record<TranslationKeys, string> = {
   hero_title: "Empower Your Future with Academic Excellence at IDLA",
   hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance.",
   hero_btn_explore: "Explore Degree Programs",
-  hero_btn_apply: "Apply for Concours 2026-2027",
+  hero_btn_apply: "Apply Now",
 
   news_section_title: "Academic News & Announcements",
   news_section_subtitle: "Stay updated with academy events, entrance concours, thesis defenses, and international conferences.",

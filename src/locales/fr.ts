@@ -118,7 +118,7 @@ export const fr = {
   hero_title: "Formez-vous aux Métiers d'Avenir avec l'Excellence IDLA",
   hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance.",
   hero_btn_explore: "Découvrir nos Filières",
-  hero_btn_apply: "Postuler au Concours 2026-2027",
+  hero_btn_apply: "S'inscrire",
 
   news_section_title: "Actualités Académiques & Communiqués",
   news_section_subtitle: "Suivez les événements, concours d'entrée, jurys de soutenance et conférences de l'académie.",

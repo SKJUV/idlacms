@@ -65,7 +65,7 @@ describe('PublicPortal Component - Homepage Integrity Tests', () => {
     renderPublicPortal();
     expect(screen.getByText(/L'Excellence IDLA|Academic Excellence at IDLA/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Découvrir nos Filières|Explore Degree Programs/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Postuler au Concours 2026-2027|Apply for Concours 2026-2027/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /S'inscrire|Apply Now/i })).toBeInTheDocument();
   });
 
   it('renders 4 Stats Counter items', () => {
@@ -91,10 +91,10 @@ describe('PublicPortal Component - Homepage Integrity Tests', () => {
     expect(screen.getByText('Bachelor of Science in Computer Applications (BCA)')).toBeInTheDocument();
   });
 
-  it('triggers onApplyNow callback when hero CTA button is clicked', () => {
+  it('triggers setActiveTab("programmes") when hero CTA button is clicked', () => {
     renderPublicPortal();
-    const applyBtn = screen.getByRole('button', { name: /Postuler au Concours 2026-2027|Apply for Concours 2026-2027/i });
+    const applyBtn = screen.getByRole('button', { name: /S'inscrire|Apply Now/i });
     fireEvent.click(applyBtn);
-    expect(defaultProps.onApplyNow).toHaveBeenCalledTimes(1);
+    expect(defaultProps.setActiveTab).toHaveBeenCalledWith('programmes');
   });
 });

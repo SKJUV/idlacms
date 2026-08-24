@@ -453,7 +453,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
                 </button>
                 <button 
-                  onClick={() => onApplyNow()}
+                  onClick={() => setActiveTab('programmes')}
                   className="group relative px-8 py-4 rounded-xl font-bold transition-all duration-300 text-center cursor-pointer bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 hover:border-white shadow-md hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
                   <span>{t('hero_btn_apply')}</span>
