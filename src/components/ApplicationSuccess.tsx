@@ -115,7 +115,7 @@ export default function ApplicationSuccess({
         <div className="bg-bg-primary p-6 rounded-xl border border-border-primary/40 text-left space-y-4">
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-              <FileTextIcon className="w-4 h-4 text-emerald-600 shrink-0" /> Document Officiel du Concours & Grille Tarifaire (Appwrite)
+              <FileTextIcon className="w-4 h-4 text-emerald-600 shrink-0" /> Document Officiel du Concours & Grille Tarifaire
             </span>
             <a
               href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"

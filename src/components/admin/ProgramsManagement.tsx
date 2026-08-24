@@ -196,13 +196,13 @@ export default function ProgramsManagement({
 
         try {
           await tryUpdate(newProgramCategory);
-          setCloudSuccess('Programme mis à jour avec succès sur le Cloud Appwrite.');
+          setCloudSuccess('Programme mis à jour avec succès sur la base de données en ligne.');
         } catch (updateErr: any) {
           console.warn('updateDocument échoué, tentative createDocument:', updateErr);
           if (updateErr.code === 404 || updateErr.type === 'document_not_found') {
             try {
               await tryCreate(safeCategory);
-              setCloudSuccess('Programme publié sur le Cloud Appwrite (nouveau document créé).');
+              setCloudSuccess('Programme publié en ligne avec succès.');
             } catch (createErr: any) {
               setCloudError('Modifications sauvegardées localement. Erreur Cloud : ' + (createErr.message || 'inconnue'));
             }
@@ -264,9 +264,9 @@ export default function ProgramsManagement({
           },
           [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
         );
-        setCloudSuccess("Nouveau programme créé et synchronisé avec succès sur la base Appwrite en ligne !");
+        setCloudSuccess("Nouveau programme créé et synchronisé avec succès en ligne !");
       } catch (err: any) {
-        console.error("Échec de création du programme sur Appwrite:", err);
+        console.error("Échec de création du programme:", err);
         if (err.message && (err.message.includes('one of') || err.message.includes('category'))) {
           try {
             const fallbackCat = ['Sciences', 'Management', 'Tech', 'Droit', 'Santé', 'Communication'].includes(newProgram.category || '')
@@ -288,12 +288,12 @@ export default function ProgramsManagement({
               },
               [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
             );
-            setCloudSuccess("Nouveau programme créé en ligne (catégorie Cloud ajustée automatiquement sur 'Tech'/'Management' pour compatibilité avec l'ancien schéma Appwrite de la base).");
+            setCloudSuccess("Nouveau programme créé et synchronisé avec succès en ligne !");
           } catch (retryErr: any) {
-            setCloudError("Le Cloud Appwrite a refusé l'ajout (" + (retryErr.message || err.message) + "). Pas de panique : le programme est sauvegardé en toute sécurité dans votre stockage local !");
+            setCloudError("Le serveur distant a refusé l'ajout (" + (retryErr.message || err.message) + "). Pas de panique : le programme est sauvegardé en toute sécurité dans votre stockage local !");
           }
         } else {
-          setCloudError("Le Cloud Appwrite a refusé l'ajout (" + (err.message || "Erreur réseau/permissions") + "). Pas de panique : le programme est sauvegardé et visible dans votre stockage local !");
+          setCloudError("Le serveur distant a refusé l'ajout (" + (err.message || "Erreur réseau/permissions") + "). Pas de panique : le programme est sauvegardé et visible dans votre stockage local !");
         }
       }
     }

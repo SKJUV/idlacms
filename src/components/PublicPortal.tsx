@@ -1321,7 +1321,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                   <h4 className="font-extrabold text-2xl text-text-primary">Formulaire & Candidature Transmis avec Succès !</h4>
                   <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
-                    Vos informations ont bien été enregistrées. Le **document PDF officiel du dossier de candidature (hébergé sur Appwrite Storage)** a été ouvert automatiquement et une confirmation a été envoyée par e-mail.
+                    Vos informations ont bien été enregistrées. Le **document PDF officiel du dossier de candidature** a été ouvert automatiquement et une confirmation a été envoyée par e-mail.
                   </p>
                   <div className="bg-brand-primary/10 border border-brand-primary/30 p-4 rounded-2xl max-w-md mx-auto text-xs text-brand-primary font-bold">
                     ✉️ Vérifiez votre boîte de réception (et vos courriers indésirables / Spams).
@@ -1333,7 +1333,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       rel="noopener noreferrer"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
                     >
-                      <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel (Appwrite) ↗
+                      <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
                     </a>
                     <button
                       onClick={() => setActiveFormModal(null)}
