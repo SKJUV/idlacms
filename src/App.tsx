@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { useToast } from './context/ToastContext';
+import { useAppStore } from './store/useAppStore';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
 import EntranceModal from './components/EntranceModal';
@@ -236,6 +237,11 @@ export default function App() {
     };
     checkSession();
   }, []);
+
+  // Synchroniser avec Zustand Store
+  useEffect(() => {
+    useAppStore.setState({ role, activeTab, isSessionChecking });
+  }, [role, activeTab, isSessionChecking]);
 
   // Enforce role-based access control on tab changes
   useEffect(() => {
