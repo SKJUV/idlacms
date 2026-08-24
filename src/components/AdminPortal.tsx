@@ -23,6 +23,7 @@ import Marketing from './admin/Marketing';
 import CmsSettings from './admin/CmsSettings';
 import TeachersManagement from './admin/TeachersManagement';
 import EmailAutomationSection from './admin/EmailAutomationSection';
+import FormsManagement from './admin/FormsManagement';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
@@ -616,6 +617,12 @@ export default function AdminPortal({
           setSelectedPreRegId={setSelectedPreRegId}
           logActivity={logActivity}
           onNavigateTab={(tab) => setActiveTab(tab as any)}
+        />
+      )}
+
+      {view === 'admin-forms' && (
+        <FormsManagement
+          logActivity={logActivity}
         />
       )}
 
