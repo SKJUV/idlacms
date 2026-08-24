@@ -735,10 +735,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <p className="text-text-secondary text-base leading-relaxed">
                 Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
               </p>
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer"
+                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center justify-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto"
                 >
                   <HeartHandshake className="w-4 h-4 group-hover:scale-125 transition-transform duration-300" />
                   <span>Faire un don de soutien</span>
@@ -746,7 +746,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 </button>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
-                  className="group px-7 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-white/10 hover:bg-white text-text-primary hover:text-[#00020e] border border-border-primary hover:border-transparent shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center gap-2 cursor-pointer"
+                  className="group px-7 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-white/10 hover:bg-white text-text-primary hover:text-[#00020e] border border-border-primary hover:border-transparent shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                 >
                   <span>Devenir Partenaire académique</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -765,9 +765,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                 Inscrivez-vous à notre newsletter d'élite pour recevoir en exclusivité les nouveaux programmes et actualités académiques.
               </p>
             </div>
-            <form onSubmit={handleNewsletterSubmit} className="flex w-full md:w-auto max-w-md gap-2 shrink-0">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row w-full md:w-auto max-w-md gap-3 shrink-0">
               {subscribedNewsletter ? (
-                <div className="bg-brand-light text-brand-primary text-xs font-bold px-6 py-3.5 rounded-lg flex items-center gap-1.5 border border-brand-primary/20">
+                <div className="bg-brand-light text-brand-primary text-xs font-bold px-6 py-3.5 rounded-xl flex items-center justify-center gap-1.5 border border-brand-primary/20 w-full text-center">
                   Inscription réussie ! Vous recevrez nos e-mails d'actualité.
                 </div>
               ) : (
@@ -778,11 +778,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     placeholder="Votre adresse email d'excellence"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-grow md:w-64 p-3.5 rounded-xl border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium transition-all shadow-inner"
+                    className="w-full sm:w-64 p-3.5 rounded-xl border border-border-primary bg-bg-primary text-text-primary outline-none focus:ring-2 focus:ring-brand-primary text-sm font-medium transition-all shadow-inner"
                   />
                   <button
                     type="submit"
-                    className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_20px_rgba(2,132,199,0.4)] transition-all duration-300 cursor-pointer shrink-0 flex items-center gap-1.5 transform hover:-translate-y-0.5"
+                    className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-6 sm:px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_20px_rgba(2,132,199,0.4)] transition-all duration-300 cursor-pointer shrink-0 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 w-full sm:w-auto"
                   >
                     <span>S'abonner</span>
                     <Send className="w-3.5 h-3.5 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform duration-300" />
