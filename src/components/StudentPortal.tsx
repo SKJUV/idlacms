@@ -15,8 +15,10 @@ import {
 import { Paperclip, Video, FileText, Download, ExternalLink, Gift, Copy, Check } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
-import { loadAllReferralCodes, buildReferralLink } from '../lib/referral';
+import { loadAllReferralCodes } from '../lib/referral';
 import { ReferralCode } from '../types';
+import StudentScheduleView from './student/StudentScheduleView';
+import StudentReferralView from './student/StudentReferralView';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -1891,63 +1893,7 @@ export default function StudentPortal({
           )}
 
           {/* Parrainage Officiel Configuré par l'Admin */}
-          <div className="bg-gradient-to-r from-[#006c49]/10 via-brand-light to-emerald-500/10 border border-[#006c49]/20 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#006c49]/15 pb-4">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#006c49] bg-[#006c49]/10 px-2.5 py-0.5 rounded-full border border-[#006c49]/20">
-                  Programme Ambassadeur IDLA
-                </span>
-                <h3 className="font-sans font-bold text-lg text-text-primary mt-1 flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-[#006c49]" /> Mon Code & Lien de Parrainage Officiel
-                </h3>
-              </div>
-              <span className="text-xs text-text-secondary italic">
-                Créé et configuré par l'Administration
-              </span>
-            </div>
-
-            {myReferralCode ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-text-secondary">Mon Code Parrain</p>
-                    <p className="text-lg font-mono font-extrabold text-[#006c49]">{myReferralCode.code}</p>
-                  </div>
-                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-text-secondary">Avantage pour mes Filleuls</p>
-                    <p className="text-xs font-bold text-text-primary">{myReferralCode.discountReward || 'Frais de dossier offerts'}</p>
-                  </div>
-                  <div className="bg-bg-secondary p-4 rounded-xl border border-border-primary/50 space-y-1">
-                    <p className="text-[10px] font-bold uppercase text-text-secondary">Filleuls Inscrits</p>
-                    <p className="text-lg font-extrabold text-emerald-600">{myReferralCode.currentUses} {myReferralCode.maxUses ? `/ ${myReferralCode.maxUses}` : ''}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                  <div className="flex-1 w-full bg-bg-secondary border border-border-primary rounded-xl px-3.5 py-2.5 text-xs font-mono text-text-primary truncate">
-                    {buildReferralLink(myReferralCode.code)}
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(buildReferralLink(myReferralCode.code));
-                      setCopiedReferralLink(true);
-                      setTimeout(() => setCopiedReferralLink(false), 2500);
-                    }}
-                    className="w-full sm:w-auto bg-[#006c49] hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0 shadow"
-                  >
-                    {copiedReferralLink ? <><Check className="w-4 h-4 text-emerald-400" /> Lien copié !</> : <><Copy className="w-4 h-4" /> Copier mon lien parrain</>}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-bg-secondary/80 border border-border-primary/60 rounded-xl p-5 text-center space-y-2">
-                <p className="text-xs font-bold text-text-primary">Vous n'avez pas encore de code de parrainage officiel attribué.</p>
-                <p className="text-xs text-text-secondary max-w-xl mx-auto">
-                  Les liens de parrainage sont créés et attribués individuellement par l'Administration. Contactez le service des admissions pour faire une demande d'activation de votre statut d'Ambassadeur IDLA.
-                </p>
-              </div>
-            )}
-          </div>
+          <StudentReferralView myReferralCode={myReferralCode} />
 
           {/* Reprendre un cours */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2043,127 +1989,12 @@ export default function StudentPortal({
   // MES PROGRAMMES VIEW (candidatures réelles + explorer catalogue)
   // ════════════════════════════════════════════════════════════════════════════
   if (activeTab === 'student-schedule') {
-    const acceptedPrograms = applications
-      .filter((a) => (a.status || '').toLowerCase() === 'accepted' && a.program)
-      .map((a) => (a.program || '').trim().toLowerCase());
-
-    const mySchedules = teachersSchedules.filter((slot) => {
-      if (!slot.program) return false;
-      const slotProgNorm = slot.program.trim().toLowerCase();
-      return acceptedPrograms.some((ap) => ap === slotProgNorm || ap.includes(slotProgNorm) || slotProgNorm.includes(ap));
-    });
-    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-
-    // Détection stricte de tous les chevauchements d'horaires sur la même journée
-    const conflicts: { day: string; time: string; courseA: string; programA: string; courseB: string; programB: string }[] = [];
-    mySchedules.forEach((slot1, i) => {
-      mySchedules.forEach((slot2, j) => {
-        if (i < j && slot1.day === slot2.day) {
-          if (slot1.startTime < slot2.endTime && slot2.startTime < slot1.endTime) {
-            conflicts.push({
-              day: slot1.day,
-              time: `${slot1.startTime}-${slot1.endTime}`,
-              courseA: slot1.course,
-              programA: slot1.program,
-              courseB: slot2.course,
-              programB: slot2.program
-            });
-          }
-        }
-      });
-    });
-
     return (
-      <div className="flex-1 p-6 md:p-8 lg:p-12 pt-24 lg:pt-12 min-h-screen">
-        <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary">
-              <CalendarIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-text-primary font-sans">Mon Emploi du Temps</h2>
-              <p className="text-text-secondary text-sm">Consultez les horaires de cours de vos programmes validés.</p>
-            </div>
-          </div>
-
-          {conflicts.length > 0 && (
-            <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-xl text-rose-900 dark:text-rose-200 space-y-2 text-xs">
-              <div className="font-bold flex items-center gap-2 text-sm text-rose-600 uppercase">
-                <AlertCircleIcon className="w-5 h-5 shrink-0" />
-                <span>Attention : Chevauchement d'Emplois du Temps Détecté ({conflicts.length})</span>
-              </div>
-              <p className="leading-relaxed">
-                Des créneaux horaires sont planifiés simultanément le même jour. Veuillez contacter le secrétariat académique pour réorganiser votre emploi du temps.
-              </p>
-              <ul className="list-disc pl-5 space-y-1 font-semibold">
-                {conflicts.map((c, idx) => (
-                  <li key={idx}>
-                    <strong>{c.day} ({c.time})</strong> : "{c.courseA}" ({c.programA}) ⚡ EN CONFLIT AVEC ⚡ "{c.courseB}" ({c.programB})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="bg-bg-secondary border border-border-primary rounded-xl overflow-hidden shadow-sm">
-            {acceptedPrograms.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-bg-primary rounded-full flex items-center justify-center mx-auto mb-4 border border-border-primary">
-                  <BookOpenIcon className="w-8 h-8 text-text-secondary/50" />
-                </div>
-                <h3 className="text-lg font-bold text-text-primary mb-2">Aucun programme actif</h3>
-                <p className="text-text-secondary text-sm max-w-md mx-auto">Vous n'avez pas encore été admis dans un programme. Votre emploi du temps s'affichera ici une fois votre candidature acceptée.</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-6 border-b border-border-primary bg-bg-primary/50 text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  {days.map((day) => (
-                    <div key={day} className="p-4 text-center border-r border-border-primary last:border-0 hidden md:block">{day}</div>
-                  ))}
-                  {days.map((day) => (
-                    <div key={day + '-mobile'} className="p-3 text-center border-r border-border-primary last:border-0 md:hidden">{day.slice(0, 3)}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-6 min-h-[400px]">
-                  {days.map((day) => {
-                    const daySlots = mySchedules.filter((s: any) => s.day === day).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
-                    return (
-                      <div key={day} className="border-r border-border-primary last:border-0 p-2 space-y-2">
-                        {daySlots.map((slot: any, idx: number) => {
-                          const isConflicting = daySlots.some(
-                            (other: any) => other !== slot && (slot.startTime < other.endTime && other.startTime < slot.endTime)
-                          );
-                          return (
-                            <div key={idx} className={`p-3 rounded-lg text-sm transition-all border ${
-                              isConflicting 
-                                ? 'bg-rose-500/10 border-rose-500 text-rose-900 shadow-sm animate-pulse' 
-                                : 'bg-brand-light border-brand-primary/20 hover:shadow-md'
-                            }`}>
-                              <div className="flex items-center justify-between font-bold text-xs mb-1">
-                                <span className={isConflicting ? 'text-rose-600' : 'text-brand-primary'}>{slot.startTime} - {slot.endTime}</span>
-                                {isConflicting && <span className="bg-rose-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase">CONFLIT</span>}
-                              </div>
-                              <div className="font-semibold text-text-primary text-sm leading-tight mb-2">{slot.course}</div>
-                              <div className="text-xs text-text-secondary flex items-center gap-1.5 mb-1.5">
-                                <UsersIcon className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{slot.teacherName}</span>
-                              </div>
-                              <div className="text-[10px] text-text-secondary/80 truncate px-2 py-0.5 bg-bg-primary rounded inline-block border border-border-primary">{slot.program}</div>
-                            </div>
-                          );
-                        })}
-                        {daySlots.length === 0 && (
-                          <div className="text-center py-6 text-xs text-text-secondary/40">--</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <StudentScheduleView
+        applications={applications}
+        teachersSchedules={teachersSchedules}
+        MustChangePwdBanner={MustChangePwdBanner}
+      />
     );
   }
 
