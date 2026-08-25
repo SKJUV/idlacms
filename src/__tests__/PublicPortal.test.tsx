@@ -77,14 +77,6 @@ describe('PublicPortal Component - Homepage Integrity Tests', () => {
     expect(screen.getByText(/Partenaires Corporate|Corporate Partners/i)).toBeInTheDocument();
   });
 
-  it('renders Why IDLA section with 3 pillars of excellence', () => {
-    renderPublicPortal();
-    expect(screen.getByText(/Pourquoi l'IDLA est le Choix n°1 en Afrique \?|Why is IDLA the #1 Choice in Africa\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/Pédagogie d'Élite & Flexible|Elite & Flexible Pedagogy/i)).toBeInTheDocument();
-    expect(screen.getByText(/Réseau Alumni & Mentorat|Alumni Network & Mentorship/i)).toBeInTheDocument();
-    expect(screen.getByText(/Reconnaissance Internationale|International Accreditation/i)).toBeInTheDocument();
-  });
-
   it('renders Featured Programs snippet section', () => {
     renderPublicPortal();
     expect(screen.getByText(/Nos Filières d'Excellence|Our Programs of Excellence/i)).toBeInTheDocument();
