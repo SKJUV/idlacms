@@ -429,20 +429,20 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
         {/* Conteneur Formulaire ou Écran de Succès */}
         {isSuccess ? (
-          <div className="bg-white dark:bg-bg-secondary border border-emerald-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-12 h-12" />
+          <div className="bg-bg-secondary border border-border-primary rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto ring-8 ring-emerald-500/10">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-extrabold text-emerald-700 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                Validation & Enregistrement Effectué
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Enregistrement Confirmé
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
                 Candidature Transmise avec Succès !
               </h2>
               <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed pt-1">
-                Vos informations ont été enregistrées avec succès. Le document PDF officiel du dossier d'admission a été ouvert automatiquement et votre récépissé d'inscription a été transmis par e-mail.
+                Vos informations ont été enregistrées avec succès. Le document des modalités du programme a été ouvert et votre fiche d'inscription officielle a été transmise par e-mail.
               </p>
             </div>
 
@@ -464,15 +464,15 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
+                <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || 'Modalités des programmes'}
               </a>
               <button
                 onClick={handleDownloadPdf}
-                className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <DownloadIcon className="w-4 h-4" /> Télécharger mon Récépissé PDF
+                <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || "Fiche d'inscription à télécharger (à joindre au dossier)"}
               </button>
               <button
                 onClick={onBack}

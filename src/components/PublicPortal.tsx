@@ -19,6 +19,7 @@ import {
   UploadCloudIcon,
   LockIcon,
   FileTextIcon,
+  DownloadIcon,
   ShareIcon,
   CopyIcon,
 } from './Icons';
@@ -124,6 +125,23 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [activeFormModal, setActiveFormModal] = useState<CustomForm | null>(null);
   const [activeFormValues, setActiveFormValues] = useState<Record<string, any>>({});
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
+  const [modalPdfBase64, setModalPdfBase64] = useState<string>('');
+  const [modalRefNum, setModalRefNum] = useState<string>('');
+
+  const handleDownloadModalPdf = () => {
+    if (!modalPdfBase64) return;
+    const byteCharacters = atob(modalPdfBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Fiche_Inscription_IDLA_${modalRefNum || '2026'}.pdf`;
+    link.click();
+  };
 
   const handleOpenFormModal = async (formId: string) => {
     window.history.pushState({}, '', `/formulaire?id=${formId}`);
@@ -230,28 +248,31 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     // Génération du PDF et envoi par email
     try {
       const pdfBase64 = generateFormPdfBase64(activeFormModal, activeFormValues, refNum);
+      setModalPdfBase64(pdfBase64);
+      setModalRefNum(refNum);
+
       const emailBodyHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-          <div style="background-color: #166534; color: white; padding: 24px; text-align: center;">
+          <div style="background-color: #0284c7; color: white; padding: 24px; text-align: center;">
             <h2 style="margin: 0; font-size: 20px;">IDLA ACADEMY</h2>
-            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Récépissé Officiel</p>
+            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Fiche Officielle</p>
           </div>
           <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
             <p>Bonjour <strong>${respondentName}</strong>,</p>
             <p>Votre candidature pour le formulaire <strong>${activeFormModal.title}</strong> a bien été transmise et enregistrée.</p>
-            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #166534; display: inline-block; margin: 10px 0;">
+            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #0284c7; display: inline-block; margin: 10px 0;">
               Référence du dossier : ${refNum}
             </div>
-            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle et votre récépissé en format PDF</strong>.</p>
+            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle en format PDF</strong> à conserver et à joindre à votre dossier.</p>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <h4 style="color: #166534; margin-bottom: 8px;">Détails des informations soumises :</h4>
+            <h4 style="color: #0284c7; margin-bottom: 8px;">Détails des informations soumises :</h4>
             <ul style="padding-left: 20px; font-size: 13px; color: #334155;">
               ${Object.entries(activeFormValues).map(([k, v]) => `<li><strong>${k} :</strong> ${Array.isArray(v) ? v.join(', ') : v}</li>`).join('')}
             </ul>
           </div>
           <div style="background-color: #f8fafc; text-align: center; padding: 16px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #166534; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
-            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #166534;">admissions@idlaacademy.online</a>
+            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #0284c7; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
+            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #0284c7;">admissions@idlaacademy.online</a>
           </div>
         </div>
       `;
@@ -261,11 +282,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: [respondentEmail, 'admissions@idlaacademy.online', 'idlaacademy@gmail.com'],
-          subject: `[Récépissé IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
+          subject: `[Fiche Inscription IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
           html: emailBodyHtml,
           attachments: [
             {
-              filename: `Recepisse_Inscription_IDLA_${refNum}.pdf`,
+              filename: `Fiche_Inscription_IDLA_${refNum}.pdf`,
               content: pdfBase64,
             }
           ]
@@ -1236,10 +1257,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
+                    >
+                      <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || 'Modalités des programmes'}
+                    </a>
+                    <button
+                      onClick={handleDownloadModalPdf}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
                     >
-                      <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
-                    </a>
+                      <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || "Fiche d'inscription à télécharger (à joindre au dossier)"}
+                    </button>
                     <button
                       onClick={() => setActiveFormModal(null)}
                       className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-bold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer"

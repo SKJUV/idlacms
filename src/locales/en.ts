@@ -79,7 +79,7 @@ export const en: Record<TranslationKeys, string> = {
 
   // Form Page & Application Form
   form_hero_badge: "Official Application Form",
-  form_pdf_receipt_info: "Instant PDF Receipt",
+  form_pdf_receipt_info: "Official Registration Form PDF",
   form_notice_title: "Official Notice & Application Procedure",
   form_fee_title: "Examination Fee Payment (10,000 FCFA)",
   form_fee_desc: "The application fee of 10,000 FCFA must be paid through one of our partner banking institutions:",
@@ -92,13 +92,14 @@ export const en: Record<TranslationKeys, string> = {
   form_submission_physical: "📍 Physical submission:",
   form_submission_physical_address: "Tradex New Road Bastos",
   form_submit_btn: "Submit Official Application",
-  form_submitting: "Generating PDF Receipt & Submitting...",
+  form_submitting: "Generating Registration Form PDF & Submitting...",
   form_success_title: "Application Submitted Successfully!",
-  form_success_desc: "Your information has been successfully recorded. Your official registration receipt (PDF) has been sent by email to your address and to the IDLA academic admissions team.",
+  form_success_desc: "Your information has been successfully recorded. Your official registration form (PDF) has been sent by email to your address and to the IDLA academic admissions team.",
   form_ref_number: "Application Reference:",
   form_status: "Dossier Status:",
   form_status_analyzing: "Under Review",
-  form_download_pdf: "Download PDF Receipt",
+  form_download_pdf: "Download Registration Form (to attach to application)",
+  form_modalites_programmes: "Program Guidelines & Modalities",
 
   // Dossier Documents List (FR/EN)
   doc_1: "Duly completed registration form.",

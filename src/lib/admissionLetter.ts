@@ -35,136 +35,157 @@ export function downloadAdmissionLetterPdf(candidate: {
       <meta charset="UTF-8" />
       <title>Lettre d'Admission Officielle - IDLA - ${candidate.name}</title>
       <style>
-        @page { size: A4; margin: 20mm; }
+        @page { size: A4; margin: 15mm; }
         body {
-          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          font-family: 'Plus Jakarta Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
           color: #1e293b;
           line-height: 1.6;
           margin: 0;
-          padding: 30px;
+          padding: 25px;
           background: #fff;
         }
         .header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-b: 3px solid #006c49;
-          padding-bottom: 20px;
-          margin-bottom: 30px;
+          border-bottom: 3px solid #0284c7;
+          padding-bottom: 15px;
+          margin-bottom: 25px;
+        }
+        .brand-container {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+        .logo-img {
+          width: 55px;
+          height: 55px;
+          object-fit: contain;
         }
         .brand {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 900;
-          color: #006c49;
-          letter-spacing: 1px;
+          color: #0284c7;
+          letter-spacing: 0.5px;
+          line-height: 1.1;
         }
         .subbrand {
-          font-size: 11px;
+          font-size: 10px;
           color: #64748b;
           text-transform: uppercase;
           letter-spacing: 1.5px;
+          font-weight: 700;
+          margin-top: 3px;
         }
         .doc-type {
           text-align: right;
-          font-size: 12px;
+          font-size: 11px;
           color: #475569;
         }
         .doc-type strong {
           display: block;
-          font-size: 14px;
+          font-size: 13px;
           color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         .content {
-          margin-bottom: 40px;
+          margin-bottom: 30px;
         }
         .title-box {
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
-          padding: 15px 20px;
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+          border: 1px solid #bae6fd;
+          padding: 12px 20px;
           border-radius: 8px;
-          margin-bottom: 25px;
+          margin-bottom: 20px;
           text-align: center;
         }
         .title-box h1 {
           margin: 0;
-          font-size: 20px;
-          color: #166534;
+          font-size: 18px;
+          color: #0369a1;
           text-transform: uppercase;
           letter-spacing: 1px;
+          font-weight: 800;
         }
         .details-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 15px;
+          gap: 12px;
           background: #f8fafc;
           border: 1px solid #e2e8f0;
-          padding: 20px;
+          padding: 16px;
           border-radius: 8px;
-          margin-bottom: 25px;
+          margin-bottom: 20px;
         }
         .detail-item label {
           display: block;
-          font-size: 10px;
+          font-size: 9.5px;
           font-weight: 700;
           text-transform: uppercase;
           color: #64748b;
+          margin-bottom: 2px;
         }
         .detail-item span {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           color: #0f172a;
         }
         .matricule-badge {
-          background: #006c49;
+          background: #0284c7;
           color: #ffffff;
-          padding: 4px 10px;
+          padding: 3px 8px;
           border-radius: 4px;
           font-family: monospace;
           font-weight: bold;
+          font-size: 13px;
         }
         .body-text {
-          font-size: 14px;
+          font-size: 13px;
           color: #334155;
           text-align: justify;
+          line-height: 1.6;
         }
         .signatures {
-          margin-top: 50px;
+          margin-top: 35px;
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
         }
         .qr-box {
-          border: 1px dashed #cbd5e1;
-          padding: 10px;
+          border: 1px dashed #0284c7;
+          background: #f0f9ff;
+          padding: 10px 15px;
           border-radius: 6px;
           text-align: center;
           font-size: 10px;
-          color: #64748b;
+          color: #0369a1;
         }
         .stamp {
           text-align: center;
         }
         .stamp-circle {
-          width: 100px;
-          height: 100px;
-          border: 3px double #006c49;
+          width: 95px;
+          height: 95px;
+          border: 3px double #0284c7;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #006c49;
-          font-size: 10px;
+          color: #0284c7;
+          font-size: 9px;
           font-weight: bold;
           text-transform: uppercase;
           margin: 0 auto 5px;
           transform: rotate(-10deg);
+          line-height: 1.3;
         }
         .footer {
-          margin-top: 60px;
-          border-t: 1px solid #e2e8f0;
-          padding-top: 15px;
+          margin-top: 40px;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 12px;
           text-align: center;
-          font-size: 10px;
+          font-size: 9.5px;
           color: #94a3b8;
         }
         @media print {
@@ -174,9 +195,12 @@ export function downloadAdmissionLetterPdf(candidate: {
     </head>
     <body>
       <div class="header">
-        <div>
-          <div class="brand">IDLA</div>
-          <div class="subbrand">International Distance Learning Academy</div>
+        <div class="brand-container">
+          <img src="/logo.png" alt="Logo IDLA" class="logo-img" onerror="this.style.display='none'" />
+          <div>
+            <div class="brand">IDLA ACADEMY</div>
+            <div class="subbrand">International Distance Learning Academy</div>
+          </div>
         </div>
         <div class="doc-type">
           <strong>ATTESTATION D'ADMISSION</strong>
@@ -223,7 +247,7 @@ export function downloadAdmissionLetterPdf(candidate: {
 
       <div class="signatures">
         <div class="qr-box">
-          <div style="font-size: 20px; font-weight: bold; color: #006c49; margin-bottom: 4px;">IDLA-VERIFY</div>
+          <div style="font-size: 16px; font-weight: bold; color: #0284c7; margin-bottom: 4px;">IDLA-VERIFY</div>
           Code: ${matricule}<br />
           Délivré le : ${issueDate}
         </div>
@@ -232,7 +256,7 @@ export function downloadAdmissionLetterPdf(candidate: {
           <div class="stamp-circle">
             IDLA ACADEMIC<br />SEAL OF APPROVAL<br />★ YAOUNDÉ ★
           </div>
-          <strong style="font-size: 12px; color: #0f172a;">Le Directeur des Admissions</strong>
+          <strong style="font-size: 11px; color: #0f172a;">Le Directeur des Admissions</strong>
         </div>
       </div>
 

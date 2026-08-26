@@ -77,7 +77,7 @@ export const fr = {
 
   // Form Page & Application Form
   form_hero_badge: "Formulaire de Candidature Officiel",
-  form_pdf_receipt_info: "Récépissé PDF Immédiat",
+  form_pdf_receipt_info: "Fiche d'inscription officielle PDF",
   form_notice_title: "Notice Officielle & Procédure de Candidature",
   form_fee_title: "Règlement des Frais de Concours (10 000 FCFA)",
   form_fee_desc: "Le règlement des 10 000 FCFA de frais d'étude de dossier s'effectue auprès de l'un de nos établissements bancaires partenaires :",
@@ -90,13 +90,14 @@ export const fr = {
   form_submission_physical: "📍 Dépôt Du Dossier Physique :",
   form_submission_physical_address: "Tradex Nouvelle Route Bastos",
   form_submit_btn: "Transmettre ma Candidature Officielle",
-  form_submitting: "Génération Récépissé PDF & Envoi en cours...",
+  form_submitting: "Génération de la Fiche d'Inscription PDF & Envoi...",
   form_success_title: "Candidature Transmise avec Succès !",
-  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre récépissé officiel d'inscription (PDF) a été transmis par e-mail à votre adresse et à l'administration académique IDLA.",
+  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre fiche d'inscription officielle (PDF) a été transmise par e-mail à votre adresse et à l'administration académique IDLA.",
   form_ref_number: "Référence dossier :",
   form_status: "Statut du dossier :",
   form_status_analyzing: "En cours d'analyse",
-  form_download_pdf: "Télécharger mon Récépissé PDF",
+  form_download_pdf: "Fiche d'inscription à télécharger (à joindre au dossier)",
+  form_modalites_programmes: "Modalités des programmes",
 
   // Dossier Documents List (FR/EN)
   doc_1: "Formulaire d'inscription dûment complété.",
