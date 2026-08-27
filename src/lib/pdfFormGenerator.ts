@@ -234,7 +234,7 @@ export function generateFormPdfBase64(
   // ═══════════════════════════════════════════════════════════════════════
   // 4. PIÈCES REQUISES & MODALITÉS DU DOSSIER (y: ~185 à 220mm)
   // ═══════════════════════════════════════════════════════════════════════
-  const noticeBoxH = 29;
+  const noticeBoxH = 31;
   doc.setFillColor(240, 249, 255); // Sky 50
   doc.roundedRect(margin, y, contentWidth, noticeBoxH, 2, 2, 'F');
   doc.setDrawColor(186, 230, 253); // Sky 200
@@ -248,7 +248,7 @@ export function generateFormPdfBase64(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(bluePrimary[0], bluePrimary[1], bluePrimary[2]);
-  doc.text('PIÈCES JUSTIFICATIVES OBLIGATOIRES À JOINDRE AVEC CETTE FICHE :', margin + 5, y + 4.5);
+  doc.text('PIÈCES JUSTIFICATIVES OBLIGATOIRES & CENTRES D\'ÉVALUATION :', margin + 5, y + 4.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -256,22 +256,27 @@ export function generateFormPdfBase64(
   
   const colW = (contentWidth - 10) / 2;
   // Colonne gauche
-  doc.text('• 1. Cette fiche d\'inscription officielle imprimée et signée ci-dessous.', margin + 5, y + 9.5);
-  doc.text('• 2. Copie certifiée conforme de l\'acte de naissance + Photo 4x4.', margin + 5, y + 14.5);
-  doc.text('• 3. Relevés de notes des 3 dernières années d\'études ou diplôme.', margin + 5, y + 19.5);
+  doc.text('• 1. Cette fiche d\'inscription officielle imprimée et signée ci-dessous.', margin + 5, y + 9);
+  doc.text('• 2. Copie certifiée conforme de l\'acte de naissance + Photo 4x4.', margin + 5, y + 13.5);
+  doc.text('• 3. Relevés de notes des 3 dernières années d\'études ou diplôme.', margin + 5, y + 18);
   
   // Colonne droite
   const colRightX = margin + colW + 6;
-  doc.text('• 4. Reçu de versement des frais d\'étude de dossier (10 000 FCFA).', colRightX, y + 9.5);
-  doc.text('• 5. Attestation de réussite du Bac / GCE A-Level ou Licence.', colRightX, y + 14.5);
-  doc.text('• 6. Curriculum Vitae (CV) actualisé (pour Master et Certifications).', colRightX, y + 19.5);
+  doc.text('• 4. Reçu de versement des frais d\'étude de dossier (10 000 FCFA).', colRightX, y + 9);
+  doc.text('• 5. Attestation de réussite du Bac / GCE A-Level ou Licence.', colRightX, y + 13.5);
+  doc.text('• 6. Curriculum Vitae (CV) actualisé (pour Master et Certifications).', colRightX, y + 18);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(navyDark[0], navyDark[1], navyDark[2]);
-  doc.text('Dépôt physique : Campus IDLA, Nouvelle Route Bastos, Yaoundé  |  Dépôt numérique : admissions@idlaacademy.online', margin + 5, y + 25.5);
+  doc.setFontSize(6.2);
+  doc.setTextColor(bluePrimary[0], bluePrimary[1], bluePrimary[2]);
+  doc.text('Lieux d\'évaluation (Afrique Centrale) : Cameroun, Gabon, Congo, Tchad, Centrafrique (RCA), Guinée Équatoriale, RDC & En Ligne', margin + 5, y + 23);
 
-  y += noticeBoxH + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.2);
+  doc.setTextColor(navyDark[0], navyDark[1], navyDark[2]);
+  doc.text('Dépôt physique : Campus IDLA, Nouvelle Route Bastos, Yaoundé  |  Dépôt numérique : admissions@idlaacademy.online', margin + 5, y + 27.5);
+
+  y += noticeBoxH + 3;
 
   // ═══════════════════════════════════════════════════════════════════════
   // 5. SIGNATURES & VALIDATION OFFICIELLE (y: ~225 à 275mm)

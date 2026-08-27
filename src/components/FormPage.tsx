@@ -749,7 +749,45 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                   <span>{t('form_notice_title')}</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs leading-relaxed text-text-primary">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs leading-relaxed text-text-primary">
+                  {/* Lieux d'Évaluation (Afrique Centrale - Uniquement les Pays) */}
+                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                        🌍 {t('form_eval_locations_title')}
+                      </h4>
+                      <p className="text-text-secondary text-[11px]">
+                        {t('form_eval_locations_desc')}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5 pt-1 text-[11px]">
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_cameroon')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_gabon')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_congo')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_tchad')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_rca')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_guinea')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_rdc')}</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-brand-primary font-bold pt-1 border-t border-border-primary/60">
+                      {t('form_eval_online_note')}
+                    </p>
+                  </div>
+
                   {/* Consignes de Paiement et Banques Partenaires */}
                   <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
                     <div className="space-y-2">
