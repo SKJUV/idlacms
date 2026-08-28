@@ -127,7 +127,7 @@ export const fr = {
   // Public Portal Sections
   hero_tag: "Académie Internationale de Droit & de Technologie",
   hero_title: "Formez-vous aux Métiers d'Avenir avec l'Excellence IDLA",
-  hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance.",
+  hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance, etc ...",
   hero_btn_explore: "Découvrir nos Filières",
   hero_btn_apply: "S'inscrire",
 

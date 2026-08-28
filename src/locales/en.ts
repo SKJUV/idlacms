@@ -129,7 +129,7 @@ export const en: Record<TranslationKeys, string> = {
   // Public Portal Sections
   hero_tag: "International Academy of Law & Technology",
   hero_title: "Empower Your Future with Academic Excellence at IDLA",
-  hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance.",
+  hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance, etc...",
   hero_btn_explore: "Explore Degree Programs",
   hero_btn_apply: "Apply Now",
 

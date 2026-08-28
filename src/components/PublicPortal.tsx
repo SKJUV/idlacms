@@ -510,60 +510,90 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Featured programs snippet preview */}
-        <section className="py-16 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
-          <div className="max-w-[1440px] mx-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12">
-              <div>
-                <h2 className="text-3xl font-bold text-text-primary">{t('featured_title')}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t('featured_subtitle')}</p>
+        <section className="py-20 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
+          <div className="max-w-[1440px] mx-auto space-y-12">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-4 border-b border-border-primary/50">
+              <div className="space-y-3 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-bold uppercase tracking-wider">
+                  <Flame className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
+                  Cursus Universitaires d'Élite
+                </div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-text-primary tracking-tight leading-tight">
+                  {t('featured_title')}
+                </h2>
+                <p className="text-base sm:text-lg text-text-secondary leading-relaxed">
+                  {t('featured_subtitle')}
+                </p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
-                className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-sky-600/10 to-blue-600/10 hover:from-sky-600 hover:to-blue-600 text-brand-primary hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-brand-primary/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-sky-500/25 hover:-translate-y-0.5 cursor-pointer"
+                className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-base tracking-wide transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(2,132,199,0.5)] hover:-translate-y-1 cursor-pointer shrink-0 border border-sky-400/30"
               >
                 <span>{t('featured_view_all')}</span>
-                <span className="w-7 h-7 rounded-full bg-brand-primary/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
-                  <ArrowRight className="w-3.5 h-3.5" />
+                <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1.5">
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Grand Grid of Featured Programs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {activePrograms.filter(p => p.type !== 'Certification').slice(0, 3).map((p) => (
                 <div 
                   key={p.id} 
-                  className="md:col-span-4 relative bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-md hover:shadow-2xl hover:border-brand-primary/50 cursor-pointer transform hover:-translate-y-3 hover:scale-[1.02] hover:rotate-1 hover:z-10"
+                  className="relative bg-bg-secondary rounded-3xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-lg hover:shadow-2xl hover:border-brand-primary/60 cursor-pointer transform hover:-translate-y-3 hover:scale-[1.01]"
                   onClick={() => setActiveTab('programmes')}
                 >
-                  <div className="relative w-full overflow-hidden h-56 md:h-64">
+                  <div className="relative w-full overflow-hidden h-64 sm:h-72 md:h-80 bg-slate-900">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                       alt={p.title} 
                       src={p.image}
                     />
-                    <div className="absolute top-5 left-5 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1.5 shadow-sm">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {p.category}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+                      <div className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1.5 shadow-md">
+                        <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                        {p.category}
+                      </div>
+                      <span className="bg-brand-primary/90 backdrop-blur-md text-white text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                        {p.type}
+                      </span>
                     </div>
+                    {p.isNew && (
+                      <span className="absolute top-5 right-5 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-xs font-black px-3.5 py-1 rounded-full shadow-lg animate-pulse">
+                        Nouveau
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="p-6 md:p-8 flex flex-col flex-grow text-left">
-                    <h3 className="font-bold text-2xl text-text-primary mb-3 group-hover:text-brand-primary transition-colors leading-tight">{p.title}</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-6 flex-grow">{p.description}</p>
+                  <div className="p-7 sm:p-8 md:p-9 flex flex-col flex-grow text-left space-y-4">
+                    <h3 className="font-extrabold text-2xl sm:text-3xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight">
+                      {p.title}
+                    </h3>
+                    <p className="text-sm sm:text-base text-text-secondary leading-relaxed line-clamp-3 flex-grow">
+                      {p.description}
+                    </p>
                     
-                    <div className="flex flex-col gap-3 pt-5 border-t border-border-primary/50 mt-auto">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-brand-primary" /> {t('featured_intake')} {new Date().getFullYear()}
+                    <div className="flex flex-col gap-4 pt-6 border-t border-border-primary/50 mt-auto">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-secondary text-sm font-bold flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-brand-primary" /> {p.duration || 'Cursus complet'}
                         </span>
-                        {p.price && (
-                          <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
-                            {p.price}
-                          </div>
-                        )}
+                        <span className="text-xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20">
+                          {t('featured_intake')} {new Date().getFullYear()}
+                        </span>
                       </div>
-                      <div className="flex justify-end mt-1">
-                        <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
+
+                      {p.price && (
+                        <div className="text-white text-xs sm:text-sm leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-600 px-4 py-2.5 rounded-xl shadow-md w-full text-center">
+                          {p.price}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-text-secondary font-medium">Diplôme d'État & International</span>
+                        <span className="inline-flex items-center gap-2 text-brand-primary text-sm sm:text-base font-black group-hover:translate-x-1.5 transition-transform duration-300">
                           <span>{t('featured_view_details')}</span>
                           <ArrowRight className="w-4 h-4" />
                         </span>
@@ -575,7 +605,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             {/* Galerie Campus (Défilement horizontal) */}
-            <div className="mt-16 -mx-6 md:-mx-12 overflow-hidden relative group">
+            <div className="mt-20 -mx-6 md:-mx-12 overflow-hidden relative group">
               <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-bg-secondary to-transparent z-10 pointer-events-none"></div>
               <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-bg-secondary to-transparent z-10 pointer-events-none"></div>
               <div className="animate-scroll-x gap-4 py-4">
@@ -603,38 +633,96 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
             </div>
 
-            {/* Nos Certifications Internationales Section */}
-            <div className="mt-16 pt-12 border-t border-border-primary space-y-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h3 className="text-4xl font-extrabold text-text-primary flex items-center gap-3">
-                    <GraduationCapIcon className="w-9 h-9 text-brand-primary" /> Nos Certifications Internationales
+            {/* Nos Certifications Internationales Section — Grand Affichage Identique aux Programmes */}
+            <div className="mt-20 pt-16 border-t border-border-primary space-y-12">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-4 border-b border-border-primary/50">
+                <div className="space-y-3 max-w-3xl">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                    <GraduationCapIcon className="w-4 h-4 text-emerald-500" />
+                    Parcours Professionnels Certifiants en 9 Mois
+                  </div>
+                  <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight leading-tight flex items-center gap-3">
+                    Nos Certifications Internationales
                   </h3>
-                  <p className="text-base text-text-secondary mt-2">
-                    Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
+                  <p className="text-base sm:text-lg text-text-secondary leading-relaxed">
+                    Validez vos compétences avec des parcours professionnels d'élite en 9 mois, reconnus mondialement par les leaders de l'industrie technologique et managériale.
                   </p>
                 </div>
                 <button
                   onClick={() => { setFilters((p) => ({ ...p, type: 'Certification' })); setActiveTab('programmes'); }}
-                  className="px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                  className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-base tracking-wide transition-all duration-300 shadow-lg hover:shadow-sky-500/30 hover:-translate-y-1 cursor-pointer shrink-0"
                 >
-                  Voir toutes les certifications
+                  <span>Voir toutes les certifications</span>
+                  <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1.5">
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </span>
                 </button>
               </div>
 
-              {/* Grid of Certification shortcuts */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Grand Grid of Certification Cards matching Program Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 {activePrograms.filter(p => p.type === 'Certification').slice(0, 4).map((p) => (
                   <div 
                     key={p.id}
                     onClick={() => { setFilters((f) => ({ ...f, type: 'Certification' })); setActiveTab('programmes'); }}
-                    className="p-7 bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-2xl transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                    className="relative bg-bg-secondary rounded-3xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-md hover:shadow-2xl hover:border-brand-primary/60 cursor-pointer transform hover:-translate-y-2 hover:scale-[1.01]"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
-                      <GraduationCapIcon className="w-6 h-6" />
+                    <div className="relative w-full overflow-hidden h-56 sm:h-64 bg-slate-900">
+                      <img 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                        alt={p.title} 
+                        src={p.image}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                      <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                        <div className="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1 shadow-md">
+                          <BookOpen className="w-3 h-3 text-sky-400" />
+                          {p.category}
+                        </div>
+                        <span className="bg-emerald-600/90 backdrop-blur-md text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                          9 Mois
+                        </span>
+                      </div>
+                      <div className="absolute bottom-3 left-4 right-4">
+                        <span className="text-[11px] font-bold text-sky-200 bg-sky-950/80 px-2.5 py-1 rounded-md border border-sky-400/30 inline-block backdrop-blur-sm">
+                          Rentrée : 1er Octobre 2026
+                        </span>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors line-clamp-1">{p.title}</h4>
-                    <p className="text-sm text-text-secondary mt-2 leading-relaxed line-clamp-2">{p.description}</p>
+
+                    <div className="p-6 flex flex-col flex-grow text-left space-y-3">
+                      <h4 className="font-extrabold text-lg sm:text-xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight line-clamp-2">
+                        {p.title}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-3 flex-grow">
+                        {p.description}
+                      </p>
+
+                      <div className="flex flex-col gap-3 pt-4 border-t border-border-primary/50 mt-auto">
+                        <div className="flex items-center justify-between text-xs text-text-secondary font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-brand-primary" /> {p.duration || '9 mois'}
+                          </span>
+                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                            Certifiante
+                          </span>
+                        </div>
+
+                        {p.price && (
+                          <div className="text-white text-[11px] font-black bg-gradient-to-r from-brand-primary to-emerald-600 px-3 py-2 rounded-lg shadow-sm text-center">
+                            {p.price}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] text-text-secondary">Validation par projet</span>
+                          <span className="inline-flex items-center gap-1.5 text-brand-primary text-xs sm:text-sm font-bold group-hover:translate-x-1 transition-transform">
+                            <span>Postuler</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -642,38 +730,48 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
 
-        {/* Philanthropy CTA */}
-        <section className="py-16 px-6 md:px-12 bg-bg-primary">
-          <div className="max-w-[1200px] mx-auto bg-bg-secondary rounded-3xl overflow-hidden relative border border-border-primary">
-            <div className="absolute top-0 right-0 w-1/2 h-full opacity-35 pointer-events-none">
+        {/* Philanthropy CTA / Devenir Partenaire */}
+        <section className="py-20 px-6 md:px-12 bg-bg-primary">
+          <div className="max-w-[1440px] mx-auto bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950 text-white rounded-3xl md:rounded-4xl overflow-hidden relative border border-sky-500/30 shadow-2xl">
+            {/* Real Educational Philanthropy & Scholarships Image */}
+            <div className="absolute inset-0 z-0">
               <img 
-                className="object-cover w-full h-full" 
-                alt="philanthropy background" 
-                src="https://media.istockphoto.com/id/1460172015/photo/businessmen-making-handshake-with-partner-greeting-dealing-merger-and-acquisition-business.jpg?s=2048x2048&w=is&k=20&c=C-eErNHMrUsJz7D7Y3gZZklVHbDFu7l_Oh1z9vs4BVs="
+                className="object-cover object-center w-full h-full opacity-30 md:opacity-40" 
+                alt="Philanthropie éducative et bourses d'études IDLA" 
+                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1600&auto=format&fit=crop"
               />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent"></div>
             </div>
-            <div className="relative z-10 p-8 md:p-12 lg:p-16 max-w-2xl space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-text-primary leading-tight">
+
+            <div className="relative z-10 p-8 sm:p-12 md:p-16 lg:p-20 max-w-3xl space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/40 px-4 py-1.5 rounded-full backdrop-blur-md">
+                <HeartHandshake className="w-4 h-4 text-sky-300 animate-pulse" />
+                <span className="text-sky-200 font-bold text-xs uppercase tracking-wider">Philanthropie & Mécénat Éducatif</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-md">
                 Investissez dans le Capital Humain de l'Afrique
               </h2>
-              <p className="text-text-secondary text-base leading-relaxed">
-                Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
+
+              <p className="text-slate-200 text-base sm:text-lg leading-relaxed font-medium">
+                Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants, de financer l'accès au numérique et de développer nos infrastructures de recherche et d'enseignement d'élite à travers tout le continent.
               </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
+
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center justify-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto"
+                  className="group relative overflow-hidden bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-base font-extrabold hover:shadow-[0_0_30px_rgba(56,189,248,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto border border-sky-300/40 shadow-xl"
                 >
-                  <HeartHandshake className="w-4 h-4 group-hover:scale-125 transition-transform duration-300" />
+                  <HeartHandshake className="w-5 h-5 group-hover:scale-125 transition-transform duration-300 text-rose-300" />
                   <span>Faire un don de soutien</span>
                   <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
                 </button>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
-                  className="group px-7 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-white/10 hover:bg-white text-text-primary hover:text-[#00020e] border border-border-primary hover:border-transparent shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                  className="group px-8 py-4 rounded-2xl text-base font-bold transition-all duration-300 bg-white/10 hover:bg-white text-white hover:text-slate-950 border border-white/30 hover:border-transparent shadow-lg hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-3 cursor-pointer w-full sm:w-auto backdrop-blur-md"
                 >
                   <span>Devenir Partenaire académique</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </div>
             </div>
