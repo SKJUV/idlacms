@@ -44,13 +44,25 @@ export interface CertificationProgram {
 // ── Liste des 14 Certifications Professionnelles ──────────────────────
 export const CERTIFICATIONS: CertificationProgram[] = [
   {
+    id: 'cert_marketing_digital',
+    title: 'Marketing Digital',
+    description: 'Spécialisation opérationnelle en acquisition digitale certifiée CPD-UK (Royaume-Uni) : SEO/SEA, Community Management, Social Ads (Meta, Google, TikTok), stratégie de contenu, e-mailing et pilotage analytique ROI. Accréditation professionnelle internationale CPD-UK (United Kingdom).',
+    type: 'Certification',
+    category: 'Management',
+    duration: '9 mois',
+    price: '400 000 FCFA',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+    isNew: true,
+    procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
+  },
+  {
     id: 'cert_graphics_design',
     title: 'Graphics Design',
     description: 'Parcours professionnel complet en design graphique : identité visuelle, typographie, maîtrise de la suite Adobe (Photoshop, Illustrator, InDesign), création de supports publicitaires et UI design.',
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '350 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne + test de niveau initial.'
@@ -62,7 +74,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '350 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne + audition vidéo.'
@@ -74,22 +86,10 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Santé',
     duration: '9 mois',
-    price: '300 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier en ligne + entretien de motivation.'
-  },
-  {
-    id: 'cert_marketing_digital',
-    title: 'Marketing Digital',
-    description: 'Spécialisation opérationnelle en acquisition digitale : SEO/SEA, Community Management, Social Ads (Meta, Google, TikTok), stratégie de contenu, e-mailing et pilotage analytique ROI.',
-    type: 'Certification',
-    category: 'Management',
-    duration: '9 mois',
-    price: '350 000 FCFA (Facilités de paiement disponibles)',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
-    isNew: true,
-    procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
   },
   {
     id: 'cert_gestion_regie_streaming',
@@ -98,7 +98,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '380 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
@@ -110,7 +110,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Santé',
     duration: '9 mois',
-    price: '400 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Prérequis scientifique (Bac C, D, F8 ou équivalent).'
@@ -122,7 +122,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Tech',
     duration: '9 mois',
-    price: '450 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Test de logique et d\'algorithmique en ligne.'
@@ -134,7 +134,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '350 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
@@ -146,7 +146,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Santé',
     duration: '9 mois',
-    price: '350 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
@@ -158,7 +158,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Tech',
     duration: '9 mois',
-    price: '450 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Connaissances de base en informatique et réseaux.'
@@ -170,7 +170,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '380 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
@@ -182,7 +182,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Santé',
     duration: '9 mois',
-    price: '320 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Dossier de candidature en ligne.'
@@ -194,7 +194,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Tech',
     duration: '9 mois',
-    price: '480 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Connaissances de base en systèmes d\'exploitation (Linux/Windows).'
@@ -206,7 +206,7 @@ export const CERTIFICATIONS: CertificationProgram[] = [
     type: 'Certification',
     category: 'Communication',
     duration: '9 mois',
-    price: '280 000 FCFA (Facilités de paiement disponibles)',
+    price: '400 000 FCFA',
     image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=1200&q=80',
     isNew: true,
     procedures: 'Rentrée : 1er octobre 2026. Délai de candidature : 30 septembre 2026 à minuit. Test de positionnement linguistique initial.'
