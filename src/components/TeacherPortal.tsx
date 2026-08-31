@@ -15,6 +15,7 @@ import {
   Link as LinkIcon, FileCheck
 } from 'lucide-react';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
+import { dbAdapter } from '../lib/dbAdapter';
 
 interface TeacherPortalProps {
   activeTab: 'teacher-dashboard' | 'teacher-schedule' | 'teacher-students' | 'teacher-profile';
@@ -463,6 +464,26 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           if (typeof schedule === 'string') {
             try { schedule = JSON.parse(schedule); } catch (e) { schedule = []; }
           }
+
+          // Synchronisation automatique des UE LMD assignées
+          try {
+            const allUes = await dbAdapter.teachingUnits.list();
+            const teacherId = teacherDoc.$id || teacherDoc.id;
+            const teacherNameLower = (teacherDoc.name || '').toLowerCase().trim();
+            const myUes = allUes.filter((u) => 
+              (u.teacherId && teacherId && u.teacherId === teacherId) ||
+              (u.teacherName && teacherNameLower && u.teacherName.toLowerCase().trim() === teacherNameLower)
+            );
+            if (myUes.length > 0) {
+              const allProgs = await dbAdapter.programs.list();
+              myUes.forEach((u) => {
+                const prog = allProgs.find((p) => p.id === u.programId);
+                if (prog && !assigned.some((p: string) => p.startsWith(prog.title))) {
+                  assigned.push(prog.title);
+                }
+              });
+            }
+          } catch (e) {}
 
           setProfile({
             $id: teacherDoc.$id || teacherDoc.id,

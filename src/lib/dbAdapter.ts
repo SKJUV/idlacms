@@ -307,6 +307,104 @@ export const dbAdapter = {
     },
   },
 
+  // ── Teachers Synchronization Layer ───────────────────────────────────────
+  teachers: {
+    async list(): Promise<{ id: string; name: string; email: string; assignedPrograms?: string[]; speciality?: string }[]> {
+      let local: any[] = [];
+      try {
+        local = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]');
+      } catch (e) {}
+
+      if (!isAppwriteDbConfigured()) {
+        return local;
+      }
+
+      try {
+        const teachersMap = new Map<string, any>();
+
+        // Pre-populate with local teachers
+        local.forEach((t: any) => {
+          const emailKey = (t.email || '').toLowerCase().trim();
+          if (emailKey) {
+            teachersMap.set(emailKey, t);
+          }
+        });
+
+        // 1. Query cms_users where role === 'teacher'
+        const cmsUsersColl = APPWRITE_CONFIG.collections.cmsUsers || 'cms_users';
+        if (cmsUsersColl) {
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              cmsUsersColl,
+              [Query.equal('role', 'teacher'), Query.limit(100)]
+            );
+            res.documents.forEach((d: any) => {
+              let assigned = d.assignedPrograms;
+              if (typeof assigned === 'string') {
+                try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+              }
+              if (!Array.isArray(assigned)) assigned = [];
+              const emailKey = (d.email || '').toLowerCase().trim();
+              teachersMap.set(emailKey, {
+                id: d.$id,
+                name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.email,
+                email: d.email,
+                assignedPrograms: assigned,
+                speciality: d.speciality || '',
+              });
+            });
+          } catch (err) {
+            console.warn('dbAdapter.teachers cms_users query:', err);
+          }
+        }
+
+        // 2. Query teachers collection
+        const teachersColl = APPWRITE_CONFIG.collections.teachers || 'teachers';
+        if (teachersColl) {
+          try {
+            const res = await databases.listDocuments(
+              APPWRITE_CONFIG.databaseId,
+              teachersColl,
+              [Query.limit(100)]
+            );
+            res.documents.forEach((d: any) => {
+              let assigned = d.assignedPrograms;
+              if (typeof assigned === 'string') {
+                try { assigned = JSON.parse(assigned); } catch { assigned = []; }
+              }
+              if (!Array.isArray(assigned)) assigned = [];
+              const emailKey = (d.email || '').toLowerCase().trim();
+              if (!teachersMap.has(emailKey) || !teachersMap.get(emailKey).name) {
+                teachersMap.set(emailKey, {
+                  id: d.$id,
+                  name: `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.name || d.email,
+                  email: d.email,
+                  assignedPrograms: assigned,
+                  speciality: d.speciality || '',
+                });
+              }
+            });
+          } catch (err) {
+            console.warn('dbAdapter.teachers collection query:', err);
+          }
+        }
+
+        if (teachersMap.size > 0) {
+          const list = Array.from(teachersMap.values());
+          try {
+            localStorage.setItem('idla_local_teachers', JSON.stringify(list));
+          } catch (e) {}
+          return list;
+        }
+        return local;
+      } catch (err) {
+        console.warn('dbAdapter.teachers fallback:', err);
+        return local;
+      }
+    },
+  },
+
   // ── LMD : Semesters ──────────────────────────────────────────────────────
   semesters: {
     async list(programId?: string): Promise<Semester[]> {
@@ -360,7 +458,7 @@ export const dbAdapter = {
     },
 
     async create(data: Omit<Semester, 'id'>): Promise<Semester> {
-      const newId = `sem-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newId = ID.unique();
       const sem: Semester = { id: newId, ...data };
 
       try {
@@ -383,7 +481,12 @@ export const dbAdapter = {
               rattrapageStartDate: sem.rattrapageStartDate || '',
               rattrapageEndDate: sem.rattrapageEndDate || '',
               status: sem.status || 'actif',
-            }
+            },
+            [
+              Permission.read(Role.any()),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
+            ]
           );
         } catch (err) {
           console.warn('dbAdapter.semesters.create cloud error:', err);
@@ -494,7 +597,7 @@ export const dbAdapter = {
     },
 
     async create(data: Omit<TeachingUnit, 'id'>): Promise<TeachingUnit> {
-      const newId = `ue-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newId = ID.unique();
       const ue: TeachingUnit = { id: newId, ...data };
 
       try {
@@ -520,7 +623,12 @@ export const dbAdapter = {
               volumeTP: ue.volumeTP || 0,
               description: ue.description || '',
               prerequisiteUeId: ue.prerequisiteUeId || '',
-            }
+            },
+            [
+              Permission.read(Role.any()),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
+            ]
           );
         } catch (err) {
           console.warn('dbAdapter.teachingUnits.create cloud error:', err);
@@ -633,7 +741,7 @@ export const dbAdapter = {
     },
 
     async create(data: Omit<StudentUERecord, 'id'>): Promise<StudentUERecord> {
-      const newId = `rec-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newId = ID.unique();
       const rec: StudentUERecord = { id: newId, ...data };
 
       try {
@@ -658,7 +766,12 @@ export const dbAdapter = {
               validatedBy: rec.validatedBy || '',
               validatedAt: rec.validatedAt || '',
               remarks: rec.remarks || '',
-            }
+            },
+            [
+              Permission.read(Role.any()),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
+            ]
           );
         } catch (err) {
           console.warn('dbAdapter.studentUeRecords.create cloud error:', err);
@@ -742,7 +855,7 @@ export const dbAdapter = {
     },
 
     async create(data: Omit<CourseResource, 'id'>): Promise<CourseResource> {
-      const newId = `res-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newId = ID.unique();
       const resItem: CourseResource = { id: newId, ...data };
 
       try {
@@ -764,7 +877,12 @@ export const dbAdapter = {
               fileId: resItem.fileId || '',
               fileName: resItem.fileName || '',
               orderIndex: resItem.orderIndex || 1,
-            }
+            },
+            [
+              Permission.read(Role.any()),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
+            ]
           );
         } catch (err) {
           console.warn('dbAdapter.courseResources.create cloud error:', err);

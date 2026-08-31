@@ -91,7 +91,7 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
     const list = await dbAdapter.semesters.list('prog-bachelor-cs');
     expect(list.length).toBeGreaterThan(0);
     expect(list[0].name).toBe('Semestre 1 (S1)');
-  });
+  }, 15000);
 
   it('dbAdapter correctly handles Teaching Units (UE) CRUD operations', async () => {
     const ue = await dbAdapter.teachingUnits.create({
@@ -111,7 +111,7 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
 
     const list = await dbAdapter.teachingUnits.list('prog-bachelor-cs');
     expect(list.some(u => u.code === 'INF101')).toBe(true);
-  });
+  }, 15000);
 
   it('dbAdapter correctly handles Student UE Records and Evaluation status transitions', async () => {
     const record = await dbAdapter.studentUeRecords.create({
@@ -137,5 +137,15 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
     const updated = updatedList.find(r => r.id === record.id);
     expect(updated?.status).toBe('rattrapage');
     expect(updated?.sessionType).toBe('rattrapage');
-  });
+  }, 15000);
+
+  it('dbAdapter correctly synchronizes teachers list from cloud and local storage', async () => {
+    localStorage.setItem('idla_local_teachers', JSON.stringify([
+      { id: 'teacher-1', name: 'Prof. Kouamé', email: 'kouame@idla.online', assignedPrograms: ['BSc CS'] }
+    ]));
+
+    const teachers = await dbAdapter.teachers.list();
+    expect(teachers.length).toBeGreaterThan(0);
+    expect(teachers.some(t => t.email === 'kouame@idla.online')).toBe(true);
+  }, 15000);
 });

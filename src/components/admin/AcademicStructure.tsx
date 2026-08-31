@@ -87,19 +87,17 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
 
   const loadTeachersAndStudents = async () => {
     try {
-      // 1. Teachers
-      let teachers: any[] = [];
-      try {
-        const localT = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]');
-        teachers = localT;
-      } catch (e) {}
+      // 1. Teachers directly from unified dbAdapter (Appwrite cms_users + teachers collection + localStorage)
+      const teachers = await dbAdapter.teachers.list();
       setTeachersList(teachers.map((t: any) => ({
-        id: t.id || t.$id,
-        name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.email,
-        email: t.email
+        id: t.id || (t as any).$id,
+        name: t.name || `${(t as any).firstName || ''} ${(t as any).lastName || ''}`.trim() || t.email,
+        email: t.email,
+        assignedPrograms: t.assignedPrograms || [],
+        speciality: t.speciality || ''
       })));
 
-      // 2. Accepted applications
+      // 2. Accepted applications from Appwrite
       const apps = await dbAdapter.applications.list();
       const accepted = apps.filter((a) => (a.status || '').toLowerCase() === 'accepted');
       setAcceptedStudents(accepted);
@@ -125,6 +123,62 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
       }
     } catch (e: any) {
       showToast('Erreur lors du chargement des données LMD: ' + e.message, true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── Sync / Import existing courses from teacher schedules / local data ──
+  const handleSyncExistingCourses = async () => {
+    if (!selectedProgram || semesters.length === 0) {
+      showToast("Veuillez d'abord générer des semestres pour ce programme.", true);
+      return;
+    }
+    const s1 = semesters.find((s) => s.number === 1) || semesters[0];
+    let imported = 0;
+    setIsLoading(true);
+    try {
+      let localCourses: any[] = [];
+      try {
+        localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
+      } catch (e) {}
+
+      const progTitle = selectedProgram.title.toLowerCase();
+      const matchCourses = localCourses.filter((c: any) => {
+        const cp = (c.program || '').toLowerCase();
+        return cp && (cp === progTitle || progTitle.includes(cp) || cp.includes(progTitle));
+      });
+
+      for (const c of matchCourses) {
+        const alreadyExists = teachingUnits.some(
+          (u) => u.code.toLowerCase() === (c.code || '').toLowerCase() || u.title.toLowerCase() === c.title.toLowerCase()
+        );
+        if (!alreadyExists) {
+          await dbAdapter.teachingUnits.create({
+            programId: selectedProgram.id,
+            semesterId: s1.id,
+            code: c.code || `UE${Math.floor(100 + Math.random() * 900)}`,
+            title: c.title,
+            teacherId: c.teacherId || '',
+            teacherName: c.teacherName || '',
+            volumeCM: c.volumeCM || 20,
+            volumeTD: c.volumeTD || 10,
+            volumeTP: c.volumeTP || 10,
+            description: c.description || ''
+          });
+          imported++;
+        }
+      }
+
+      if (imported > 0) {
+        const ues = await dbAdapter.teachingUnits.list(selectedProgram.id);
+        setTeachingUnits(ues);
+        showToast(`${imported} matière(s) synchronisée(s) et importée(s) dans le Semestre 1 !`);
+      } else {
+        showToast("Toutes les matières de ce programme sont déjà synchronisées.");
+      }
+    } catch (e: any) {
+      showToast("Erreur synchronisation : " + e.message, true);
     } finally {
       setIsLoading(false);
     }
@@ -537,16 +591,26 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-wrap justify-between items-center gap-3">
                 <p className="text-xs text-text-secondary">
-                  {semesters.length} semestre(s) actif(s) pour <strong className="text-text-primary">{selectedProgram?.title}</strong>
+                  {semesters.length} semestre(s) actif(s) pour <strong className="text-text-primary">{selectedProgram?.title}</strong> • {teachingUnits.length} Unité(s) d'Enseignement
                 </p>
-                <button
-                  onClick={handleAutoGenerateSemesters}
-                  className="text-xs text-brand-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Régénérer
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSyncExistingCourses}
+                    className="text-xs bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary text-text-primary px-3 py-1.5 rounded-lg font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    title="Importer et synchroniser les cours existants vers ce programme"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Synchroniser les matières existantes
+                  </button>
+                  <button
+                    onClick={handleAutoGenerateSemesters}
+                    className="text-xs text-brand-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Régénérer
+                  </button>
+                </div>
               </div>
 
               {/* Semesters List */}
