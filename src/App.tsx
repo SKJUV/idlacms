@@ -40,6 +40,7 @@ export type ActiveTab =
   | 'admin-teachers'
   | 'admin-add-user'
   | 'admin-programmes'
+  | 'admin-academic'
   | 'admin-testimonials'
   | 'admin-news'
   | 'admin-preregistrations'
@@ -63,8 +64,8 @@ const STUDENT_TABS: ActiveTab[] = [
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
-  'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations', 'admin-marketing',
-  'admin-email-automation', 'admin-settings', 'admin-profile',
+  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations',
+  'admin-marketing', 'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
   'teacher-dashboard', 'teacher-schedule', 'teacher-students', 'teacher-profile',
@@ -92,6 +93,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-add-user': '/admin/utilisateurs/nouveau',
   'admin-teachers': '/admin/enseignants',
   'admin-programmes': '/admin/programmes',
+  'admin-academic': '/admin/structure-academique',
   'admin-testimonials': '/admin/temoignages',
   'admin-news': '/admin/actualites',
   'admin-preregistrations': '/admin/pre-inscriptions',

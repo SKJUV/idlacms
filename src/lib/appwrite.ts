@@ -34,6 +34,10 @@ export const APPWRITE_CONFIG = {
     formResponses: import.meta.env.VITE_APPWRITE_COLLECTION_FORM_RESPONSES || 'form_responses',
     teachers: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHERS || 'teachers',
     referrals: import.meta.env.VITE_APPWRITE_COLLECTION_REFERRALS || 'referrals',
+    semesters: import.meta.env.VITE_APPWRITE_COLLECTION_SEMESTERS || 'semesters',
+    teachingUnits: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHING_UNITS || 'teaching_units',
+    studentUeRecords: import.meta.env.VITE_APPWRITE_COLLECTION_STUDENT_UE_RECORDS || 'student_ue_records',
+    courseResources: import.meta.env.VITE_APPWRITE_COLLECTION_COURSE_RESOURCES || 'course_resources',
   },
   buckets: {
     documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || 'documents',

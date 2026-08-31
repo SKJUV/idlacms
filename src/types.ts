@@ -186,6 +186,64 @@ export interface ScheduleSlot {
   isCompleted?: boolean;
 }
 
+// ─── Système LMD Officiel ──────────────────────────────────────────────────
+
+export type SemesterStatus = 'actif' | 'termine' | 'rattrapage_en_cours' | 'cloture';
+
+export interface Semester {
+  id: string;
+  programId: string;
+  name: string;             // Ex: "Semestre 1 (S1)"
+  number: number;           // 1 à 6
+  startDate?: string;       // "01 Octobre 2026"
+  endDate?: string;         // "28 Février 2027"
+  rattrapageStartDate?: string; // "01 Mars 2027"
+  rattrapageEndDate?: string;   // "15 Mars 2027"
+  status?: SemesterStatus;
+}
+
+export type UERecordStatus = 'inscrit' | 'valide' | 'non_valide' | 'rattrapage' | 'en_dette';
+
+export interface TeachingUnit {
+  id: string;
+  programId: string;
+  semesterId: string;
+  code: string;             // Ex: "INF101"
+  title: string;            // Ex: "Algorithmique & Programmation"
+  teacherId?: string;
+  teacherName?: string;
+  volumeCM?: number;
+  volumeTD?: number;
+  volumeTP?: number;
+  description?: string;
+  prerequisiteUeId?: string;
+}
+
+export interface StudentUERecord {
+  id: string;
+  studentEmail: string;
+  studentName?: string;
+  ueId: string;
+  semesterId: string;
+  programId: string;
+  sessionType: 'normale' | 'rattrapage';
+  status: UERecordStatus;
+  validatedBy?: string;
+  validatedAt?: string;
+  remarks?: string;
+}
+
+export interface CourseResource {
+  id: string;
+  ueId: string;
+  title: string;
+  type: 'video' | 'pdf';
+  contentUrl?: string;
+  fileId?: string;
+  fileName?: string;
+  orderIndex: number;
+}
+
 export interface EquivalenceChecklist {
   previousTranscriptsVerified: boolean;
   previousDiplomaVerified: boolean;

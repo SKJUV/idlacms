@@ -24,9 +24,11 @@ import CmsSettings from './admin/CmsSettings';
 import TeachersManagement from './admin/TeachersManagement';
 import EmailAutomationSection from './admin/EmailAutomationSection';
 import FormsManagement from './admin/FormsManagement';
+import AcademicStructure from './admin/AcademicStructure';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
+  | 'admin-academic'
   | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-forms' | 'admin-donations' | 'admin-marketing'
   | 'admin-settings' | 'admin-teachers' | 'admin-profile' | 'admin-email-automation';
 
@@ -586,6 +588,13 @@ export default function AdminPortal({
         <ProgramsManagement
           programs={programs}
           setPrograms={setPrograms}
+          logActivity={logActivity}
+        />
+      )}
+
+      {view === 'admin-academic' && (
+        <AcademicStructure
+          programs={programs}
           logActivity={logActivity}
         />
       )}
