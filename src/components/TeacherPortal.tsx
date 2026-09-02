@@ -12,7 +12,7 @@ import {
 } from './Icons';
 import { 
   Paperclip, Video, FileText, Download, ExternalLink, X, Sparkles, Plus, 
-  Link as LinkIcon, FileCheck, Trash2
+  Link as LinkIcon, FileCheck, Trash2, Upload
 } from 'lucide-react';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
 
@@ -1329,7 +1329,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                         onClick={() => materialVideoInputRef.current?.click()}
                         className="bg-bg-primary border border-border-primary hover:border-brand-primary text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all"
                       >
-                        <UploadIcon className="w-4 h-4 text-brand-primary" /> Téléverser vidéo
+                        <Upload className="w-4 h-4 text-brand-primary" /> Téléverser vidéo
                       </button>
                       <input
                         ref={materialVideoInputRef}
@@ -1368,7 +1368,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                         onClick={() => materialPdfInputRef.current?.click()}
                         className="bg-bg-primary border border-border-primary hover:border-brand-primary text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all"
                       >
-                        <UploadIcon className="w-4 h-4 text-brand-primary" /> Téléverser un PDF
+                        <Upload className="w-4 h-4 text-brand-primary" /> Téléverser un PDF
                       </button>
                       <input
                         ref={materialPdfInputRef}

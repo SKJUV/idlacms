@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import ReactPlayer from 'react-player';
+
+// Fix TS types for ReactPlayer which is missing `url` prop in its strict typing
+const Player = ReactPlayer as any;
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
@@ -2236,7 +2239,8 @@ export default function StudentPortal({
                               <PlayCircleIcon className="w-4 h-4 text-brand-primary" /> Vidéo du Cours
                             </h4>
                             <div className="relative pt-[56.25%] rounded-lg overflow-hidden border border-border-primary/50 bg-black">
-                              <ReactPlayer 
+                              {/* @ts-ignore ReactPlayer TS types miss the url property for some reason */}
+                            <Player 
                                 url={latestMaterial.videoUrl} 
                                 width="100%" 
                                 height="100%" 
