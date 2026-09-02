@@ -134,12 +134,15 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC' | 'teacher' | 'Enseignant';
+  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC' | 'teacher' | 'Enseignant' | 'student';
   status: 'Actif' | 'Inactif' | 'Bloqué';
   lastLogin: string;
   initials: string;
   avatar?: string;
   assignedPrograms?: string[];
+  program?: string;
+  programId?: string;
+  matricule?: string;
 }
 
 export interface TeacherProfile {
@@ -223,6 +226,7 @@ export interface StudentUERecord {
   id: string;
   studentEmail: string;
   studentName?: string;
+  studentId?: string;
   ueId: string;
   semesterId: string;
   programId: string;
@@ -256,6 +260,7 @@ export interface PreRegistration {
   name: string;
   email: string;
   program?: string;
+  programId?: string;
   dateApplied: string;
   status: 'In Review' | 'New' | 'Accepted' | 'Rejected';
   initials: string;
