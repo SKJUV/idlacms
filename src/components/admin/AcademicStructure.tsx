@@ -18,6 +18,7 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
     return programs.length > 0 ? programs[0].id : '';
   });
   const [programSearch, setProgramSearch] = useState('');
+  const [filterActiveOnly, setFilterActiveOnly] = useState<boolean>(true);
 
   // ── Tabs ──
   const [activeTab, setActiveTab] = useState<'semesters_ue' | 'evaluations' | 'deliberations'>('semesters_ue');
@@ -26,8 +27,9 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [teachingUnits, setTeachingUnits] = useState<TeachingUnit[]>([]);
   const [studentRecords, setStudentRecords] = useState<StudentUERecord[]>([]);
-  const [teachersList, setTeachersList] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [teachersList, setTeachersList] = useState<{ id: string; name: string; email: string; assignedPrograms?: string[] }[]>([]);
   const [acceptedStudents, setAcceptedStudents] = useState<any[]>([]);
+  const [allUesList, setAllUesList] = useState<TeachingUnit[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -54,15 +56,75 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
   const [evalUeFilter, setEvalUeFilter] = useState<string>('all');
   const [evalSearch, setEvalSearch] = useState('');
 
-  const selectedProgram = useMemo(() => {
-    return programs.find((p) => p.id === selectedProgramId) || programs[0] || null;
-  }, [programs, selectedProgramId]);
+  // Calcul des statistiques d'attribution et d'activité par programme
+  const programStats = useMemo(() => {
+    const stats: Record<string, { teachersCount: number; studentsCount: number; uesCount: number; isActive: boolean }> = {};
+    
+    programs.forEach((prog) => {
+      const pTitleLower = (prog.title || '').toLowerCase().trim();
+      const pId = prog.id;
 
-  const filteredPrograms = useMemo(() => {
-    if (!programSearch.trim()) return programs;
+      // Enseignants affectés
+      const teachers = teachersList.filter((t) => {
+        const hasAssigned = (t.assignedPrograms || []).some((ap: string) => {
+          const apLower = ap.toLowerCase().trim();
+          return apLower === pTitleLower || apLower.startsWith(pTitleLower) || pTitleLower.startsWith(apLower);
+        });
+        const hasUe = allUesList.some((u) => u.programId === pId && (u.teacherId === t.id || (u.teacherName && u.teacherName.toLowerCase().trim() === t.name.toLowerCase().trim())));
+        return hasAssigned || hasUe;
+      });
+
+      // Étudiants admis
+      const students = acceptedStudents.filter((s) => {
+        if (s.programId && s.programId === pId) return true;
+        const sProg = (s.program || '').toLowerCase().trim();
+        return sProg === pTitleLower || sProg.includes(pTitleLower) || pTitleLower.includes(sProg);
+      });
+
+      // UEs configurées
+      const ues = allUesList.filter((u) => u.programId === pId);
+
+      const isActive = teachers.length > 0 || students.length > 0 || ues.length > 0;
+      stats[pId] = {
+        teachersCount: teachers.length,
+        studentsCount: students.length,
+        uesCount: ues.length,
+        isActive
+      };
+    });
+
+    return stats;
+  }, [programs, teachersList, acceptedStudents, allUesList]);
+
+  const activeProgramsCount = useMemo(() => {
+    return programs.filter((p) => programStats[p.id]?.isActive).length;
+  }, [programs, programStats]);
+
+  const displayedPrograms = useMemo(() => {
+    let list = programs;
+    if (filterActiveOnly) {
+      const activeList = list.filter((p) => programStats[p.id]?.isActive);
+      if (activeList.length > 0) {
+        list = activeList;
+      }
+    }
+    if (!programSearch.trim()) return list;
     const q = programSearch.toLowerCase();
-    return programs.filter((p) => p.title.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
-  }, [programs, programSearch]);
+    return list.filter((p) => p.title.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+  }, [programs, programStats, filterActiveOnly, programSearch]);
+
+  const filteredPrograms = displayedPrograms;
+
+  const selectedProgram = useMemo(() => {
+    return displayedPrograms.find((p) => p.id === selectedProgramId) || programs.find((p) => p.id === selectedProgramId) || displayedPrograms[0] || programs[0] || null;
+  }, [displayedPrograms, programs, selectedProgramId]);
+
+  // Synchroniser la sélection par défaut dès que la liste active est résolue
+  useEffect(() => {
+    if (displayedPrograms.length > 0 && !displayedPrograms.some((p) => p.id === selectedProgramId)) {
+      setSelectedProgramId(displayedPrograms[0].id);
+    }
+  }, [displayedPrograms, selectedProgramId]);
 
   // Load all LMD data when selected program changes
   useEffect(() => {
@@ -88,7 +150,12 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
   const loadTeachersAndStudents = async () => {
     try {
       // 1. Teachers directly from unified dbAdapter (Appwrite cms_users + teachers collection + localStorage)
-      const teachers = await dbAdapter.teachers.list();
+      const [teachers, apps, ues] = await Promise.all([
+        dbAdapter.teachers.list(),
+        dbAdapter.applications.list(),
+        dbAdapter.teachingUnits.list()
+      ]);
+
       setTeachersList(teachers.map((t: any) => ({
         id: t.id || (t as any).$id,
         name: t.name || `${(t as any).firstName || ''} ${(t as any).lastName || ''}`.trim() || t.email,
@@ -97,10 +164,8 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
         speciality: t.speciality || ''
       })));
 
-      // 2. Accepted applications from Appwrite
-      const apps = await dbAdapter.applications.list();
-      const accepted = apps.filter((a) => (a.status || '').toLowerCase() === 'accepted');
-      setAcceptedStudents(accepted);
+      setAcceptedStudents(apps.filter((a) => (a.status || '').toLowerCase() === 'accepted'));
+      setAllUesList(ues);
     } catch (e) {
       console.warn('Error loading teachers/students:', e);
     }
@@ -497,34 +562,144 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
       )}
 
       {/* Header Banner */}
-      <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold">
-            <GraduationCap className="w-6 h-6" />
+      <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-5">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold shrink-0">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-text-primary">Structure Académique &amp; Gestion LMD</h1>
+              <p className="text-xs text-text-secondary">
+                Gouvernance des Semestres, Unités d'Enseignement (UE), Calendrier des Rattrapages et Délibérations de Passage.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-text-primary">Structure Académique &amp; Gestion LMD</h1>
-            <p className="text-xs text-text-secondary">
-              Gouvernance des Semestres, Unités d'Enseignement (UE), Calendrier des Rattrapages et Délibérations de Passage.
-            </p>
+
+          {/* Program Selector & Filter Toggle */}
+          <div className="w-full lg:w-auto space-y-2">
+            {/* Filter Toggle */}
+            <div className="flex items-center gap-1 bg-bg-primary p-1 rounded-xl border border-border-primary text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setFilterActiveOnly(true)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterActiveOnly
+                    ? 'bg-brand-primary text-white shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <span>Formations Actives</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterActiveOnly ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
+                  {activeProgramsCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterActiveOnly(false)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  !filterActiveOnly
+                    ? 'bg-brand-primary text-white shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <span>Tous les programmes</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${!filterActiveOnly ? 'bg-white/20 text-white' : 'bg-bg-secondary text-text-secondary'}`}>
+                  {programs.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Select dropdown */}
+            <div className="relative">
+              <select
+                value={selectedProgramId}
+                onChange={(e) => setSelectedProgramId(e.target.value)}
+                className="w-full lg:w-[420px] bg-bg-primary border border-border-primary rounded-xl px-3.5 py-2.5 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer truncate"
+              >
+                {displayedPrograms.map((prog) => {
+                  const stats = programStats[prog.id];
+                  const details = stats?.isActive
+                    ? `(${stats.studentsCount} étud. • ${stats.teachersCount} ens. • ${stats.uesCount} UE)`
+                    : '(Non configuré)';
+                  return (
+                    <option key={prog.id} value={prog.id}>
+                      [{prog.type}] {prog.title} {details}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Program Selector Dropdown */}
-        <div className="w-full md:w-80 space-y-1">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Programme Sélectionné</label>
-          <select
-            value={selectedProgramId}
-            onChange={(e) => setSelectedProgramId(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded-xl px-3.5 py-2.5 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand-primary"
-          >
-            {programs.map((prog) => (
-              <option key={prog.id} value={prog.id}>
-                [{prog.type}] {prog.title}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Selected Program Summary Pills */}
+        {selectedProgram && (
+          <div className="pt-4 border-t border-border-primary/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                {selectedProgram.type || 'Formation'}
+              </span>
+              <span className="font-bold text-text-primary text-sm">
+                {selectedProgram.title}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-bg-primary px-3 py-1 rounded-lg border border-border-primary">
+                <span className="text-[11px] text-text-secondary font-medium">Étudiants admis :</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {programStats[selectedProgram.id]?.studentsCount || 0}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-bg-primary px-3 py-1 rounded-lg border border-border-primary">
+                <span className="text-[11px] text-text-secondary font-medium">Enseignants affectés :</span>
+                <span className="font-bold text-brand-primary">
+                  {programStats[selectedProgram.id]?.teachersCount || 0}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-bg-primary px-3 py-1 rounded-lg border border-border-primary">
+                <span className="text-[11px] text-text-secondary font-medium">UE configurées :</span>
+                <span className="font-bold text-text-primary">
+                  {teachingUnits.length}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action banner if no semesters configured */}
+        {selectedProgram && semesters.length === 0 && !isLoading && (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>Cette formation n'a pas encore de Semestres ou d'UEs initialisés dans la structure LMD.</span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                setIsLoading(true);
+                try {
+                  await dbAdapter.academicStructure.ensureProgramInitialized(selectedProgram.id);
+                  showToast('Semestre 1 (S1) initialisé avec succès.');
+                  await loadProgramLmdData(selectedProgram.id);
+                  const ues = await dbAdapter.teachingUnits.list();
+                  setAllUesList(ues);
+                } catch (e: any) {
+                  showToast('Erreur initialisation: ' + e.message, true);
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm shrink-0 cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" /> Initialiser Semestre 1 (S1)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Navigation Tabs */}

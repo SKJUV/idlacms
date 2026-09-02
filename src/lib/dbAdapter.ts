@@ -968,4 +968,65 @@ export const dbAdapter = {
       }
     },
   },
+
+  // ── LMD : Interconnection & Auto-Initialization Engine ───────────────────
+  academicStructure: {
+    async ensureProgramInitialized(
+      programTitleOrId: string, 
+      options?: {
+        courseTitles?: string[];
+        teacherId?: string;
+        teacherName?: string;
+      }
+    ): Promise<{ programId: string; semesterId: string; ues: TeachingUnit[] }> {
+      const progId = (await dbAdapter.programs.resolveProgramId(programTitleOrId)) || programTitleOrId;
+      
+      // 1. Ensure Semestre 1 exists
+      let sems = await dbAdapter.semesters.list(progId);
+      let s1 = sems.find((s) => s.number === 1) || sems[0];
+      if (!s1) {
+        s1 = await dbAdapter.semesters.create({
+          programId: progId,
+          name: 'Semestre 1 (S1)',
+          number: 1,
+          status: 'actif',
+        });
+      }
+
+      // 2. Ensure UEs exist for specified courses or defaults
+      const existingUes = await dbAdapter.teachingUnits.list(progId, s1.id);
+      const createdOrUpdatedUes: TeachingUnit[] = [...existingUes];
+
+      if (options?.courseTitles && options.courseTitles.length > 0) {
+        for (const cTitle of options.courseTitles) {
+          const matchUe = existingUes.find((u) => u.title.toLowerCase().trim() === cTitle.toLowerCase().trim());
+          if (matchUe) {
+            if (options.teacherId && (!matchUe.teacherId || matchUe.teacherId !== options.teacherId)) {
+              await dbAdapter.teachingUnits.update(matchUe.id, {
+                teacherId: options.teacherId,
+                teacherName: options.teacherName || matchUe.teacherName,
+              });
+              matchUe.teacherId = options.teacherId;
+              matchUe.teacherName = options.teacherName || matchUe.teacherName;
+            }
+          } else {
+            const newUe = await dbAdapter.teachingUnits.create({
+              programId: progId,
+              semesterId: s1.id,
+              code: `UE${Math.floor(100 + Math.random() * 900)}`,
+              title: cTitle,
+              teacherId: options.teacherId || '',
+              teacherName: options.teacherName || '',
+              volumeCM: 20,
+              volumeTD: 10,
+              volumeTP: 10,
+            });
+            createdOrUpdatedUes.push(newUe);
+          }
+        }
+      }
+
+      return { programId: progId, semesterId: s1.id, ues: createdOrUpdatedUes };
+    }
+  },
 };

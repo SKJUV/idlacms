@@ -153,25 +153,21 @@ export default function PreRegistrations({
         // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du Semestre 1 LMD
         if (resolvedProgId && target?.email) {
           try {
-            const sems = await dbAdapter.semesters.list(resolvedProgId);
-            const s1 = sems.find((s) => s.number === 1) || sems[0];
-            if (s1) {
-              const ues = await dbAdapter.teachingUnits.list(resolvedProgId, s1.id);
-              if (ues.length > 0) {
-                await dbAdapter.studentUeRecords.bulkEnroll(
-                  ues.map((u) => ({
-                    studentEmail: target.email,
-                    studentName: target.name || 'Étudiant',
-                    ueId: u.id,
-                    semesterId: s1.id,
-                    programId: resolvedProgId,
-                    sessionType: 'normale',
-                    status: 'inscrit',
-                    validatedBy: 'Admin (Admission)',
-                    validatedAt: new Date().toISOString(),
-                  }))
-                );
-              }
+            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+            if (ues.length > 0) {
+              await dbAdapter.studentUeRecords.bulkEnroll(
+                ues.map((u) => ({
+                  studentEmail: target.email,
+                  studentName: target.name || 'Étudiant',
+                  ueId: u.id,
+                  semesterId: semesterId,
+                  programId: resolvedProgId,
+                  sessionType: 'normale',
+                  status: 'inscrit',
+                  validatedBy: 'Admin (Admission)',
+                  validatedAt: new Date().toISOString(),
+                }))
+              );
             }
           } catch (lmdErr) {
             console.warn("Auto-inscription LMD student_ue_records:", lmdErr);
@@ -358,25 +354,21 @@ export default function PreRegistrations({
       // Auto-inscription LMD
       if (resolvedProgId && selected.email) {
         try {
-          const sems = await dbAdapter.semesters.list(resolvedProgId);
-          const s1 = sems.find((s) => s.number === 1) || sems[0];
-          if (s1) {
-            const ues = await dbAdapter.teachingUnits.list(resolvedProgId, s1.id);
-            if (ues.length > 0) {
-              await dbAdapter.studentUeRecords.bulkEnroll(
-                ues.map((u) => ({
-                  studentEmail: selected.email,
-                  studentName: selected.name || 'Étudiant',
-                  ueId: u.id,
-                  semesterId: s1.id,
-                  programId: resolvedProgId,
-                  sessionType: 'normale',
-                  status: 'inscrit',
-                  validatedBy: 'Admin (Manuel)',
-                  validatedAt: new Date().toISOString(),
-                }))
-              );
-            }
+          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+          if (ues.length > 0) {
+            await dbAdapter.studentUeRecords.bulkEnroll(
+              ues.map((u) => ({
+                studentEmail: selected.email,
+                studentName: selected.name || 'Étudiant',
+                ueId: u.id,
+                semesterId: semesterId,
+                programId: resolvedProgId,
+                sessionType: 'normale',
+                status: 'inscrit',
+                validatedBy: 'Admin (Manuel)',
+                validatedAt: new Date().toISOString(),
+              }))
+            );
           }
         } catch (lmdErr) {
           console.warn("Auto-inscription LMD manuel student_ue_records:", lmdErr);

@@ -205,4 +205,36 @@ describe('LMD Full Interconnection & Data Flow Tests', () => {
     expect(remaining.length).toBe(1);
     expect(remaining[0].id).toBe(res2.id);
   });
+
+  it('5. Automatically initializes LMD Semesters and UEs when a teacher is assigned courses', async () => {
+    const progId = 'prog-cloud-300';
+    const prog: Program = {
+      id: progId,
+      title: 'Master Cloud Computing & DevOps',
+      description: 'Programme Cloud',
+      type: 'Master',
+      category: 'Tech',
+      duration: '2 ans',
+      image: 'https://example.com/cloud.jpg',
+    };
+    localStorage.setItem('idla_local_programs', JSON.stringify([prog]));
+
+    const result = await dbAdapter.academicStructure.ensureProgramInitialized(prog.title, {
+      courseTitles: ['Architecture Kubernetes & Conteneurs', 'CI/CD & GitOps'],
+      teacherId: 'teacher-prof-alain',
+      teacherName: 'Pr. Alain Bernard',
+    });
+
+    expect(result.programId).toBe(progId);
+    expect(result.ues.length).toBe(2);
+
+    const sems = await dbAdapter.semesters.list(progId);
+    expect(sems.length).toBe(1);
+    expect(sems[0].name).toBe('Semestre 1 (S1)');
+
+    const ues = await dbAdapter.teachingUnits.list(progId);
+    expect(ues.length).toBe(2);
+    expect(ues[0].teacherId).toBe('teacher-prof-alain');
+    expect(ues[0].teacherName).toBe('Pr. Alain Bernard');
+  });
 });

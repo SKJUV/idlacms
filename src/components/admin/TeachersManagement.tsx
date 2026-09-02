@@ -13,6 +13,7 @@ import {
   ClockIcon
 } from '../Icons';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../../lib/appwrite';
+import { dbAdapter } from '../../lib/dbAdapter';
 
 interface TeachersManagementProps {
   programs: any[];
@@ -409,6 +410,29 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
       const updatedList = teachers.map(t => (t.$id === normalizedDoc.id || t.id === normalizedDoc.id) ? normalizedDoc : t);
       setTeachers(updatedList);
       try { localStorage.setItem('idla_local_teachers', JSON.stringify(updatedList)); } catch {}
+
+      // ── Synchronisation automatique vers la Structure Académique LMD ──
+      try {
+        const teacherId = normalizedDoc.id || normalizedDoc.$id;
+        const teacherName = normalizedDoc.name || `${normalizedDoc.firstName || ''} ${normalizedDoc.lastName || ''}`.trim();
+        
+        for (const progTitle of assigned) {
+          const baseProg = progTitle.split(' - ')[0];
+          // Get courses for this program from finalSchedule
+          const progCourses = finalSchedule
+            .filter((s: any) => (s.program || '').startsWith(baseProg))
+            .map((s: any) => s.course)
+            .filter(Boolean);
+
+          await dbAdapter.academicStructure.ensureProgramInitialized(baseProg, {
+            courseTitles: progCourses.length > 0 ? progCourses : undefined,
+            teacherId,
+            teacherName,
+          });
+        }
+      } catch (lmdErr) {
+        console.warn("Erreur auto-initialisation LMD enseignant:", lmdErr);
+      }
 
       logActivity('article', 'Admin', `a mis à jour la programmation de l'enseignant ${editingSchedule.name}`);
       setEditingSchedule(null);
