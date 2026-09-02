@@ -12,7 +12,7 @@ import {
 } from './Icons';
 import { 
   Paperclip, Video, FileText, Download, ExternalLink, X, Sparkles, Plus, 
-  Link as LinkIcon, FileCheck
+  Link as LinkIcon, FileCheck, Trash2
 } from 'lucide-react';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
 
@@ -56,6 +56,16 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [meetingTime, setMeetingTime] = useState('');
   const [isUploadingChatFile, setIsUploadingChatFile] = useState(false);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Material (Support de cours) States
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [materialVideoUrl, setMaterialVideoUrl] = useState('');
+  const [materialVideoFile, setMaterialVideoFile] = useState<File | null>(null);
+  const [materialPdfUrl, setMaterialPdfUrl] = useState('');
+  const [materialPdfFile, setMaterialPdfFile] = useState<File | null>(null);
+  const [isUploadingMaterial, setIsUploadingMaterial] = useState(false);
+  const materialPdfInputRef = useRef<HTMLInputElement>(null);
+  const materialVideoInputRef = useRef<HTMLInputElement>(null);
 
   const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
     const c = (courseName || 'general').trim().toLowerCase();
@@ -119,6 +129,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
     const loadClassMessages = async () => {
       const localMsgs = getStoredLocalClassMessages(classId).map((m: any) => ({
+        id: m.id,
         sender: m.sender,
         text: m.text,
         type: m.type || 'text',
@@ -129,6 +140,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         meetingTitle: m.meetingTitle,
         meetingPlatform: m.meetingPlatform,
         meetingTime: m.meetingTime,
+        videoUrl: m.videoUrl,
+        pdfUrl: m.pdfUrl,
         time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
         senderName: m.senderName,
         createdAt: m.createdAt
@@ -164,11 +177,14 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   meetingTitle: data.meetingTitle,
                   meetingPlatform: data.meetingPlatform,
                   meetingTime: data.meetingTime,
+                  videoUrl: data.videoUrl,
+                  pdfUrl: data.pdfUrl,
                 };
               }
             } catch (e) {}
 
             return {
+              id: m.$id,
               sender: m.sender,
               text: parsedText,
               type: msgType,
@@ -206,6 +222,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     setChatMessage('');
 
     const userMsg = {
+      id: ID.unique(),
       sender: 'advisor',
       text,
       type: 'text',
@@ -215,6 +232,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     };
 
     storeLocalClassMessage({
+      id: userMsg.id,
       channelId: classId,
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
@@ -277,6 +295,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const nowIso = new Date().toISOString();
 
     const fileMsg = {
+      id: ID.unique(),
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
       text: `Document joint : ${file.name}`,
@@ -290,6 +309,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     };
 
     storeLocalClassMessage({
+      id: fileMsg.id,
       channelId: classId,
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
@@ -342,6 +362,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     const nowIso = new Date().toISOString();
 
     const meetingMsg = {
+      id: ID.unique(),
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
       text: `Réunion en direct : ${meetingTitle}`,
@@ -355,6 +376,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
     };
 
     storeLocalClassMessage({
+      id: meetingMsg.id,
       channelId: classId,
       sender: 'advisor',
       senderName: profile?.name || 'Enseignant',
@@ -398,6 +420,141 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         );
       } catch (err) {
         console.error("Erreur enregistrement réunion Appwrite:", err);
+      }
+    }
+  };
+
+  const handleSendMaterialMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProgram) return;
+
+    // Check size limit (100MB) for file uploads
+    if (materialVideoFile && materialVideoFile.size > 100 * 1024 * 1024) {
+      alert("Le fichier vidéo est très volumineux (limite recommandée : 100 Mo). L'envoi risque de prendre beaucoup de temps.");
+    }
+
+    setIsUploadingMaterial(true);
+    let finalPdfUrl = materialPdfUrl;
+    let finalVideoUrl = materialVideoUrl;
+
+    try {
+      if (materialPdfFile) {
+        if (isAppwriteStorageConfigured()) {
+          const res = await storage.createFile(APPWRITE_CONFIG.buckets.documents, ID.unique(), materialPdfFile);
+          finalPdfUrl = storage.getFileView(APPWRITE_CONFIG.buckets.documents, res.$id).toString();
+        } else {
+          finalPdfUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(materialPdfFile);
+          });
+        }
+      }
+      
+      if (materialVideoFile) {
+        if (isAppwriteStorageConfigured()) {
+          const res = await storage.createFile(APPWRITE_CONFIG.buckets.documents, ID.unique(), materialVideoFile);
+          finalVideoUrl = storage.getFileView(APPWRITE_CONFIG.buckets.documents, res.$id).toString();
+        } else {
+          finalVideoUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(materialVideoFile);
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Erreur téléversement fichier support:", err);
+      setIsUploadingMaterial(false);
+      return;
+    }
+
+    if (!finalVideoUrl.trim() && !finalPdfUrl.trim()) {
+      setIsUploadingMaterial(false);
+      return; // Nothing to send
+    }
+
+    const classId = getClassChatId(selectedProgram, selectedCourse, selectedLevel);
+    const nowIso = new Date().toISOString();
+
+    const materialMsg = {
+      id: ID.unique(),
+      sender: 'advisor',
+      senderName: profile?.name || 'Enseignant',
+      text: `Nouveau support de cours mis en ligne.`,
+      type: 'course_material',
+      videoUrl: finalVideoUrl.trim() || undefined,
+      pdfUrl: finalPdfUrl.trim() || undefined,
+      time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      createdAt: nowIso
+    };
+
+    storeLocalClassMessage({
+      id: materialMsg.id,
+      channelId: classId,
+      sender: 'advisor',
+      senderName: profile?.name || 'Enseignant',
+      text: materialMsg.text,
+      type: 'course_material',
+      videoUrl: materialMsg.videoUrl,
+      pdfUrl: materialMsg.pdfUrl,
+      createdAt: nowIso
+    });
+
+    setChatHistory((curr) => [...curr, materialMsg]);
+    setShowMaterialModal(false);
+    setMaterialVideoUrl('');
+    setMaterialVideoFile(null);
+    setMaterialPdfUrl('');
+    setMaterialPdfFile(null);
+    setIsUploadingMaterial(false);
+
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+      try {
+        const payloadStr = JSON.stringify({
+          n: profile?.name || 'Enseignant',
+          t: materialMsg.text,
+          type: 'course_material',
+          videoUrl: materialMsg.videoUrl,
+          pdfUrl: materialMsg.pdfUrl,
+        });
+
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.messages,
+          ID.unique(),
+          {
+            applicationId: classId,
+            sender: 'advisor',
+            text: payloadStr,
+            createdAt: nowIso
+          }
+        );
+      } catch (err) {
+        console.error("Erreur enregistrement support Appwrite:", err);
+      }
+    }
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!confirm('Voulez-vous vraiment supprimer cet élément ?')) return;
+    
+    // 1. Remove from state
+    setChatHistory(curr => curr.filter(m => m.id !== msgId));
+    
+    // 2. Remove from LocalStorage
+    try {
+      const list = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+      const newList = list.filter((m: any) => m.id !== msgId);
+      localStorage.setItem('idla_local_class_messages', JSON.stringify(newList));
+    } catch (e) {}
+
+    // 3. Remove from Appwrite
+    if (msgId && isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+      try {
+        await databases.deleteDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.messages, msgId);
+      } catch (err) {
+        console.error('Erreur lors de la suppression du message Appwrite:', err);
       }
     }
   };
@@ -984,6 +1141,16 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                               <span>{msg.senderName || 'Étudiant'}</span>
                             </div>
                           )}
+                          
+                          {isMe && msg.id && (
+                            <button 
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="absolute top-2 right-2 text-white/50 hover:text-white transition-colors p-1"
+                              title="Supprimer ce message"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {/* 1. FILE MESSAGE */}
                           {msg.type === 'file' ? (
@@ -1043,10 +1210,18 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                                 </a>
                               )}
                             </div>
-                          ) : (
-                            /* 3. STANDARD TEXT MESSAGE */
+                          ) : msg.type === 'course_material' ? (
+                            <div className={`p-4 rounded-xl border flex flex-col gap-3 ${
+                              isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-bg-secondary border-border-primary text-text-primary'
+                            }`}>
+                              <h4 className="font-bold text-sm flex items-center gap-2">
+                                <BookOpenIcon className="w-4 h-4" /> Support de Cours Modifié
+                              </h4>
+                              <p className="text-xs opacity-90">Un support a été ajouté. Il est désormais visible par les étudiants dans leur onglet "Support de cours".</p>
+                            </div>
+                          ) : msg.type !== 'meeting' && msg.type !== 'file' ? (
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
-                          )}
+                          ) : null}
 
                           <div className={`text-[10px] mt-1.5 text-right ${isMe ? 'text-white/70' : 'text-text-secondary'}`}>
                             {msg.time}
@@ -1065,7 +1240,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   {/* File Attachment Button */}
                   <button
                     type="button"
-                    onClick={() => chatFileInputRef.current?.click()}
+                    onClick={() => {
+                      // Prevent massive files from stalling the UI immediately when attaching to chat
+                      chatFileInputRef.current?.click();
+                    }}
                     disabled={isUploadingChatFile}
                     className="p-2.5 text-text-secondary hover:text-brand-primary bg-bg-secondary hover:bg-brand-primary/10 border border-border-primary rounded-xl transition-all cursor-pointer"
                     title="Joindre un cours / document (PDF, Word, Image)"
@@ -1076,6 +1254,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                     ref={chatFileInputRef}
                     type="file"
                     className="hidden"
+                    accept=".pdf,.doc,.docx,.jpg,.png,.jpeg,.txt,.xls,.xlsx"
                     onChange={handleSendFileMessage}
                   />
 
@@ -1087,6 +1266,16 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                     title="Partager un lien de réunion (Google Meet, Zoom...)"
                   >
                     <Video className="w-4 h-4" />
+                  </button>
+
+                  {/* Course Material Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowMaterialModal(true)}
+                    className="p-2.5 text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl transition-all cursor-pointer"
+                    title="Ajouter un support de cours (Vidéo / PDF)"
+                  >
+                    <BookOpenIcon className="w-4 h-4" />
                   </button>
 
                   <input
@@ -1106,6 +1295,121 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                   </button>
                 </form>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODALE : Ajouter un Support de Cours (Vidéo/PDF) */}
+        {showMaterialModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowMaterialModal(false)}>
+            <div className="bg-bg-secondary text-text-primary w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-border-primary space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-primary">
+                <h4 className="font-bold text-sm flex items-center gap-2 text-rose-500">
+                  <BookOpenIcon className="w-5 h-5" /> Configurer le Support de Cours
+                </h4>
+                <button onClick={() => setShowMaterialModal(false)} className="text-text-secondary hover:text-text-primary cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSendMaterialMessage} className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-text-secondary uppercase flex items-center justify-between">
+                      <span>Lien ou Fichier Vidéo du Cours (Optionnel)</span>
+                      {materialVideoFile && (
+                        <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2Icon className="w-3 h-3" /> {materialVideoFile.name}
+                        </span>
+                      )}
+                    </label>
+                    <div className="flex gap-2 items-center mt-1">
+                      <button
+                        type="button"
+                        onClick={() => materialVideoInputRef.current?.click()}
+                        className="bg-bg-primary border border-border-primary hover:border-brand-primary text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all"
+                      >
+                        <UploadIcon className="w-4 h-4 text-brand-primary" /> Téléverser vidéo
+                      </button>
+                      <input
+                        ref={materialVideoInputRef}
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setMaterialVideoFile(file);
+                        }}
+                      />
+                      <div className="text-[10px] text-text-secondary">ou</div>
+                      <input
+                        type="url"
+                        value={materialVideoUrl}
+                        onChange={(e) => setMaterialVideoUrl(e.target.value)}
+                        placeholder="Lien YouTube, Vimeo, mp4..."
+                        disabled={!!materialVideoFile}
+                        className="flex-1 p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-border-primary pt-4">
+                    <label className="text-xs font-bold text-text-secondary uppercase flex items-center justify-between">
+                      <span>Document PDF (Optionnel)</span>
+                      {materialPdfFile && (
+                        <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2Icon className="w-3 h-3" /> {materialPdfFile.name}
+                        </span>
+                      )}
+                    </label>
+                    <div className="flex gap-2 items-center mt-1">
+                      <button
+                        type="button"
+                        onClick={() => materialPdfInputRef.current?.click()}
+                        className="bg-bg-primary border border-border-primary hover:border-brand-primary text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all"
+                      >
+                        <UploadIcon className="w-4 h-4 text-brand-primary" /> Téléverser un PDF
+                      </button>
+                      <input
+                        ref={materialPdfInputRef}
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setMaterialPdfFile(file);
+                        }}
+                      />
+                      <div className="text-[10px] text-text-secondary">ou</div>
+                      <input
+                        type="url"
+                        value={materialPdfUrl}
+                        onChange={(e) => setMaterialPdfUrl(e.target.value)}
+                        placeholder="Lien externe vers un PDF"
+                        disabled={!!materialPdfFile}
+                        className="flex-1 p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-primary">
+                  <button type="button" onClick={() => setShowMaterialModal(false)} className="px-4 py-2 text-xs font-bold text-text-secondary hover:bg-bg-primary rounded-lg transition-all">
+                    Annuler
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isUploadingMaterial || (!materialVideoUrl && !materialVideoFile && !materialPdfUrl && !materialPdfFile)}
+                    className="bg-brand-primary hover:bg-brand-hover text-white px-5 py-2 rounded-lg text-xs font-bold shadow flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isUploadingMaterial ? (
+                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> En cours...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" /> Publier le Support</>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

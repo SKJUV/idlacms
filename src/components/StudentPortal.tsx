@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import ReactPlayer from 'react-player';
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
@@ -143,6 +144,7 @@ export default function StudentPortal({
   const [classChatMessage, setClassChatMessage] = useState('');
   const [classChatHistory, setClassChatHistory] = useState<any[]>([]);
   const classChatEndRef = useRef<HTMLDivElement>(null);
+  const [courseTab, setCourseTab] = useState<'chat' | 'material'>('chat');
 
   const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
     const c = (courseName || 'general').trim().toLowerCase();
@@ -536,6 +538,8 @@ export default function StudentPortal({
         meetingTitle: m.meetingTitle,
         meetingPlatform: m.meetingPlatform,
         meetingTime: m.meetingTime,
+        videoUrl: m.videoUrl,
+        pdfUrl: m.pdfUrl,
         time: new Date(m.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
         senderName: m.senderName,
         createdAt: m.createdAt
@@ -570,6 +574,8 @@ export default function StudentPortal({
                   meetingTitle: data.meetingTitle,
                   meetingPlatform: data.meetingPlatform,
                   meetingTime: data.meetingTime,
+                  videoUrl: data.videoUrl,
+                  pdfUrl: data.pdfUrl,
                 };
               }
             } catch (e) {}
@@ -2088,14 +2094,14 @@ export default function StudentPortal({
 
             {/* Colonne Droite : Fil de Discussion Interactif (2/3) */}
             <div className="lg:col-span-2 bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden flex flex-col shadow-sm">
-              {/* Header du Chat */}
-              <div className="p-4 border-b border-border-primary bg-bg-primary flex items-center justify-between shrink-0">
+              {/* Header du Chat & Onglets */}
+              <div className="p-4 border-b border-border-primary bg-bg-primary flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold shrink-0">
                     <MessageSquareIcon className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-text-primary">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-sm text-text-primary truncate">
                       {selectedClassCourse ? selectedClassCourse : (myCourseList[0]?.title || 'Discussion du cours')}
                     </h3>
                     <p className="text-[10px] text-text-secondary flex items-center gap-2 mt-0.5">
@@ -2103,10 +2109,27 @@ export default function StudentPortal({
                     </p>
                   </div>
                 </div>
+                
+                <div className="flex bg-bg-secondary p-1 rounded-xl border border-border-primary shrink-0 self-stretch sm:self-auto">
+                  <button 
+                    onClick={() => setCourseTab('chat')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${courseTab === 'chat' ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Discussion
+                  </button>
+                  <button 
+                    onClick={() => setCourseTab('material')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${courseTab === 'material' ? 'bg-white shadow-sm text-brand-primary' : 'text-text-secondary hover:text-brand-primary'}`}
+                  >
+                    <BookOpenIcon className="w-3.5 h-3.5" /> Support de cours
+                  </button>
+                </div>
               </div>
 
-              {/* Chat History */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-bg-primary/20 min-h-[420px]">
+              {courseTab === 'chat' ? (
+                <>
+                  {/* Chat History */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-bg-primary/20 min-h-[420px]">
                 {classChatHistory.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-text-secondary space-y-2 opacity-60 py-12">
                     <MessageSquareIcon className="w-12 h-12 text-brand-primary/40" />
@@ -2188,6 +2211,68 @@ export default function StudentPortal({
                   </button>
                 </form>
               </div>
+              </>
+              ) : (
+                <div className="flex-1 p-5 bg-bg-primary/20 min-h-[420px] flex flex-col space-y-6">
+                  {(() => {
+                    const materials = classChatHistory.filter(m => m.type === 'course_material');
+                    const latestMaterial = materials[materials.length - 1];
+
+                    if (!latestMaterial) {
+                      return (
+                        <div className="flex-1 flex flex-col items-center justify-center text-text-secondary opacity-70">
+                          <BookOpenIcon className="w-12 h-12 mb-3 text-brand-primary/40" />
+                          <h4 className="font-bold text-sm text-text-primary">Aucun support disponible</h4>
+                          <p className="text-xs text-center mt-1">L'enseignant n'a pas encore ajouté de contenu (Vidéo/PDF) pour ce cours.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-8 flex-1 flex flex-col">
+                        {latestMaterial.videoUrl && (
+                          <div className="space-y-3 bg-bg-secondary border border-border-primary rounded-xl p-4 shadow-sm">
+                            <h4 className="font-bold text-sm text-text-primary flex items-center gap-2">
+                              <PlayCircleIcon className="w-4 h-4 text-brand-primary" /> Vidéo du Cours
+                            </h4>
+                            <div className="relative pt-[56.25%] rounded-lg overflow-hidden border border-border-primary/50 bg-black">
+                              <ReactPlayer 
+                                url={latestMaterial.videoUrl} 
+                                width="100%" 
+                                height="100%" 
+                                controls 
+                                className="absolute top-0 left-0"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {latestMaterial.pdfUrl && (
+                          <div className="space-y-3 bg-bg-secondary border border-border-primary rounded-xl p-4 shadow-sm flex-1 flex flex-col min-h-[500px]">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-bold text-sm text-text-primary flex items-center gap-2">
+                                <FileTextIcon className="w-4 h-4 text-rose-500" /> Document PDF
+                              </h4>
+                              <a href={latestMaterial.pdfUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1">
+                                <DownloadIcon className="w-3.5 h-3.5" /> Télécharger
+                              </a>
+                            </div>
+                            <div className="flex-1 rounded-lg overflow-hidden border border-border-primary bg-bg-primary">
+                              <iframe 
+                                src={`${latestMaterial.pdfUrl}#view=FitH`} 
+                                width="100%" 
+                                height="100%" 
+                                className="w-full h-full border-none min-h-[500px]"
+                                title="Support PDF"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </div>
         </div>
