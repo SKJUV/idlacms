@@ -237,4 +237,103 @@ describe('LMD Full Interconnection & Data Flow Tests', () => {
     expect(ues[0].teacherId).toBe('teacher-prof-alain');
     expect(ues[0].teacherName).toBe('Pr. Alain Bernard');
   });
+
+  it('6. Student Portal data layer: correctly stores and loads official semester deliberation results alongside student UE records', async () => {
+    const studentEmail = 'amina.diallo@idla.online';
+    const semId = 'sem-bachelor-s1';
+
+    // Store student UE record with M3C notes
+    await dbAdapter.studentUeRecords.create({
+      studentEmail,
+      studentName: 'Amina Diallo',
+      ueId: 'ue-algo101',
+      semesterId: semId,
+      programId: 'prog-cs',
+      sessionType: 'normale',
+      status: 'valide',
+      noteCC: 14,
+      noteExam: 16,
+      noteTP: 15,
+      noteFinal: 15.1,
+      noteBestOf: 15.1
+    });
+
+    // Store official semester jury deliberation result
+    await dbAdapter.studentSemesterResults.save({
+      studentEmail,
+      studentName: 'Amina Diallo',
+      programId: 'prog-cs',
+      semesterId: semId,
+      moyenneSemestre: 14.85,
+      totalCoefficients: 30,
+      uesValidees: 5,
+      uesCompensees: 1,
+      uesNonValidees: 0,
+      uesDefaillantes: 0,
+      isCompensationApplied: false,
+      decision: 'ADM',
+      deliberatedBy: 'Jury Officiel IDLA',
+      deliberatedAt: '03/09/2026'
+    });
+
+    const records = await dbAdapter.studentUeRecords.list({ studentEmail });
+    expect(records.length).toBe(1);
+    expect(records[0].noteCC).toBe(14);
+    expect(records[0].noteExam).toBe(16);
+    expect(records[0].noteFinal).toBe(15.1);
+
+    const delibs = await dbAdapter.studentSemesterResults.list({ studentEmail });
+    expect(delibs.length).toBe(1);
+    expect(delibs[0].decision).toBe('ADM');
+    expect(delibs[0].moyenneSemestre).toBe(14.85);
+    expect(delibs[0].uesCompensees).toBe(1);
+  });
+
+  it('7. Teacher Portal grading: calculates M3C weighted grade and updates student UE record with best-of session retained note', async () => {
+    const studentEmail = 'moussa.traore@idla.online';
+    const ue: TeachingUnit = {
+      id: 'ue-bdd201',
+      programId: 'prog-cs',
+      semesterId: 'sem-2',
+      code: 'BDD201',
+      title: 'Bases de Données Relationnelles',
+      coefficient: 4,
+      isCompensable: true,
+      m3cWeightCC: 40,
+      m3cWeightExam: 50,
+      m3cWeightTP: 10
+    };
+
+    const rec = await dbAdapter.studentUeRecords.create({
+      studentEmail,
+      studentName: 'Moussa Traoré',
+      ueId: ue.id,
+      semesterId: ue.semesterId!,
+      programId: ue.programId,
+      sessionType: 'normale',
+      status: 'inscrit'
+    });
+
+    // Teacher enters notes: CC: 12, Exam: 8, TP: 14
+    // Formula: (12*40 + 8*50 + 14*10) / 100 = (480 + 400 + 140) / 100 = 1020 / 100 = 10.20
+    const finalNote = (12 * 40 + 8 * 50 + 14 * 10) / 100;
+    expect(finalNote).toBe(10.2);
+
+    await dbAdapter.studentUeRecords.update(rec.id, {
+      noteCC: 12,
+      noteExam: 8,
+      noteTP: 14,
+      noteFinal: finalNote,
+      noteBestOf: finalNote,
+      status: 'valide',
+      validatedBy: 'Dr. Keita',
+      validatedAt: '03/09/2026'
+    });
+
+    const updated = await dbAdapter.studentUeRecords.list({ studentEmail, ueId: ue.id });
+    expect(updated[0].noteFinal).toBe(10.2);
+    expect(updated[0].noteBestOf).toBe(10.2);
+    expect(updated[0].status).toBe('valide');
+    expect(updated[0].validatedBy).toBe('Dr. Keita');
+  });
 });

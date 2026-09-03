@@ -114,8 +114,9 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
   }, 15000);
 
   it('dbAdapter correctly handles Student UE Records and Evaluation status transitions', async () => {
+    const testEmail = `fatou.${Date.now()}@idla.online`;
     const record = await dbAdapter.studentUeRecords.create({
-      studentEmail: 'etudiant@idla.online',
+      studentEmail: testEmail,
       studentName: 'Fatou Camara',
       ueId: 'ue-inf101',
       semesterId: 'sem-1',
@@ -133,7 +134,7 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
       validatedBy: 'Admin'
     });
 
-    const updatedList = await dbAdapter.studentUeRecords.list({ studentEmail: 'etudiant@idla.online' });
+    const updatedList = await dbAdapter.studentUeRecords.list({ studentEmail: testEmail });
     const updated = updatedList.find(r => r.id === record.id);
     expect(updated?.status).toBe('rattrapage');
     expect(updated?.sessionType).toBe('rattrapage');
@@ -147,5 +148,47 @@ describe('AcademicStructure — LMD System & Admin Safeguard Tests', () => {
     const teachers = await dbAdapter.teachers.list();
     expect(teachers.length).toBeGreaterThan(0);
     expect(teachers.some(t => t.email === 'kouame@idla.online')).toBe(true);
+  }, 15000);
+
+  it('displays evaluation filters and annual compensation tools', () => {
+    render(<AcademicStructure programs={mockPrograms} />);
+    
+    // Inscriptions & Evaluations tab
+    const evalTab = screen.getByText(/Inscriptions & Suivi des Évaluations/i);
+    fireEvent.click(evalTab);
+    expect(screen.getByPlaceholderText(/Rechercher étudiant.../i)).toBeInTheDocument();
+    expect(screen.getByText(/Aucune évaluation trouvée/i)).toBeInTheDocument();
+
+    // Deliberations tab
+    const delibTab = screen.getByText(/Délibérations & Rattrapages/i);
+    fireEvent.click(delibTab);
+    expect(screen.getByText(/Compensation Annuelle Inter-Semestres/i)).toBeInTheDocument();
+    expect(screen.getByText(/Calculer la Compensation Annuelle/i)).toBeInTheDocument();
+    expect(screen.getByText(/Exporter PV \(CSV\)/i)).toBeInTheDocument();
+  });
+
+  it('dbAdapter correctly stores and retrieves LMD coefficients and M3C weights on Teaching Units', async () => {
+    const ue = await dbAdapter.teachingUnits.create({
+      programId: 'prog-bachelor-cs',
+      semesterId: 'sem-1',
+      code: 'MATH101',
+      title: 'Algèbre Linéaire & Analyse',
+      coefficient: 4,
+      isCompensable: true,
+      m3cWeightCC: 40,
+      m3cWeightExam: 50,
+      m3cWeightTP: 10
+    });
+
+    expect(ue.coefficient).toBe(4);
+    expect(ue.isCompensable).toBe(true);
+    expect(ue.m3cWeightCC).toBe(40);
+    expect(ue.m3cWeightExam).toBe(50);
+    expect(ue.m3cWeightTP).toBe(10);
+
+    const list = await dbAdapter.teachingUnits.list('prog-bachelor-cs');
+    const retrieved = list.find(u => u.code === 'MATH101');
+    expect(retrieved?.coefficient).toBe(4);
+    expect(retrieved?.m3cWeightExam).toBe(50);
   }, 15000);
 });
