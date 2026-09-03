@@ -205,7 +205,28 @@ export interface Semester {
   status?: SemesterStatus;
 }
 
-export type UERecordStatus = 'inscrit' | 'valide' | 'non_valide' | 'rattrapage' | 'en_dette';
+export type UERecordStatus = 'inscrit' | 'valide' | 'non_valide' | 'rattrapage' | 'en_dette' | 'compense' | 'defaillant';
+
+export type SemesterDecision = 
+  | 'ADM'      // Admis : moyenne >= 10.00, toutes UE validées ou compensées
+  | 'ADM_COMP' // Admis par compensation annuelle
+  | 'AJAC'     // Ajourné mais Autorisé à Continuer (dettes ≤ 2 UE)
+  | 'AJ'       // Ajourné / Redoublement (dettes > 2 UE ou échec rattrapage)
+  | 'DEF'      // Défaillant (absence injustifiée ou note éliminatoire bloquante)
+  | 'EN_COURS' // En cours d'évaluation / Délibération non clôturée
+  ;
+
+export interface LmdThresholdConfig {
+  eliminatoryThreshold: number; // Note plancher en dessous de laquelle l'UE n'est pas compensable (7.00)
+  passingThreshold: number;     // Note minimale pour valider directement l'UE ou le semestre (10.00)
+  maxDebtsForAjac: number;      // Nombre maximum d'UE en dette pour autoriser le passage (2)
+}
+
+export const DEFAULT_LMD_THRESHOLDS: LmdThresholdConfig = {
+  eliminatoryThreshold: 7.0,
+  passingThreshold: 10.0,
+  maxDebtsForAjac: 2,
+};
 
 export interface TeachingUnit {
   id: string;
@@ -220,6 +241,13 @@ export interface TeachingUnit {
   volumeTP?: number;
   description?: string;
   prerequisiteUeId?: string;
+  // Cadre réglementaire LMD (M3C, pondération & compensation)
+  coefficient?: number;     // Poids dans le semestre (défaut: 3)
+  isCompensable?: boolean;  // true = compensable, false = UE verrou (mémoire, stage...)
+  bccId?: string;           // Identifiant Bloc de Compétences (anticipation phase ultérieure)
+  m3cWeightCC?: number;     // Poids Contrôle Continu en % (ex: 40)
+  m3cWeightExam?: number;   // Poids Examen Final en % (ex: 50)
+  m3cWeightTP?: number;     // Poids TP en % (ex: 10)
 }
 
 export interface StudentUERecord {
@@ -234,6 +262,36 @@ export interface StudentUERecord {
   status: UERecordStatus;
   validatedBy?: string;
   validatedAt?: string;
+  remarks?: string;
+  // Notes et traçabilité LMD
+  noteCC?: number;          // Note Contrôle Continu /20
+  noteExam?: number;        // Note Examen Final /20
+  noteTP?: number;          // Note Travaux Pratiques /20
+  noteFinal?: number;       // Note Session 1 calculée ou forcée /20
+  isOverridden?: boolean;   // true si noteFinal saisie directement manuellement
+  noteRattrapage?: number;  // Note obtenue à la session de rattrapage /20
+  noteBestOf?: number;      // Max(noteFinal, noteRattrapage) retenue pour délibération
+  isDefaillant?: boolean;   // Absence injustifiée / défaillance bloquante
+  isCompensated?: boolean;  // true si l'UE a été validée par compensation
+}
+
+export interface StudentSemesterResult {
+  id: string;
+  studentEmail: string;
+  studentName?: string;
+  studentId?: string;
+  programId: string;
+  semesterId: string;
+  moyenneSemestre?: number;     // Moyenne pondérée du semestre /20
+  totalCoefficients: number;    // Somme des coefficients des UE du semestre
+  uesValidees: number;
+  uesNonValidees: number;
+  uesCompensees: number;
+  uesDefaillantes: number;
+  decision: SemesterDecision;
+  isCompensationApplied: boolean;
+  deliberatedBy?: string;
+  deliberatedAt?: string;
   remarks?: string;
 }
 

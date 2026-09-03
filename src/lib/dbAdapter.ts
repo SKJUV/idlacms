@@ -1,8 +1,10 @@
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query, Permission, Role } from './appwrite';
 import { 
   Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog, 
-  Course, ScheduleSlot, AcademicSession, Semester, TeachingUnit, StudentUERecord, CourseResource 
+  Course, ScheduleSlot, AcademicSession, Semester, TeachingUnit, StudentUERecord, 
+  CourseResource, StudentSemesterResult 
 } from '../types';
+import { lmdEvaluationEngine } from './lmdEvaluationEngine';
 
 /**
  * IDLA CMS — Unified Clean Database Adapter & Service Layer
@@ -611,6 +613,12 @@ export const dbAdapter = {
           volumeTP: d.volumeTP || 0,
           description: d.description || '',
           prerequisiteUeId: d.prerequisiteUeId || '',
+          coefficient: d.coefficient !== undefined ? Number(d.coefficient) : 3,
+          isCompensable: d.isCompensable !== false,
+          bccId: d.bccId || '',
+          m3cWeightCC: d.m3cWeightCC !== undefined ? Number(d.m3cWeightCC) : 40,
+          m3cWeightExam: d.m3cWeightExam !== undefined ? Number(d.m3cWeightExam) : 50,
+          m3cWeightTP: d.m3cWeightTP !== undefined ? Number(d.m3cWeightTP) : 10,
         }));
 
         if (remote.length > 0) {
@@ -634,7 +642,15 @@ export const dbAdapter = {
 
     async create(data: Omit<TeachingUnit, 'id'>): Promise<TeachingUnit> {
       const newId = ID.unique();
-      const ue: TeachingUnit = { id: newId, ...data };
+      const ue: TeachingUnit = { 
+        id: newId, 
+        coefficient: 3, 
+        isCompensable: true, 
+        m3cWeightCC: 40, 
+        m3cWeightExam: 50, 
+        m3cWeightTP: 10, 
+        ...data 
+      };
 
       try {
         const curr: TeachingUnit[] = JSON.parse(localStorage.getItem('idla_local_teaching_units') || '[]');
@@ -643,23 +659,31 @@ export const dbAdapter = {
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.teachingUnits) {
         try {
+          const docData: any = {
+            programId: ue.programId,
+            semesterId: ue.semesterId,
+            code: ue.code,
+            title: ue.title,
+            teacherId: ue.teacherId || '',
+            teacherName: ue.teacherName || '',
+            volumeCM: ue.volumeCM || 0,
+            volumeTD: ue.volumeTD || 0,
+            volumeTP: ue.volumeTP || 0,
+            description: ue.description || '',
+            prerequisiteUeId: ue.prerequisiteUeId || '',
+          };
+          if (ue.coefficient !== undefined) docData.coefficient = Number(ue.coefficient);
+          if (ue.isCompensable !== undefined) docData.isCompensable = !!ue.isCompensable;
+          if (ue.bccId) docData.bccId = ue.bccId;
+          if (ue.m3cWeightCC !== undefined) docData.m3cWeightCC = Number(ue.m3cWeightCC);
+          if (ue.m3cWeightExam !== undefined) docData.m3cWeightExam = Number(ue.m3cWeightExam);
+          if (ue.m3cWeightTP !== undefined) docData.m3cWeightTP = Number(ue.m3cWeightTP);
+
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.teachingUnits,
             newId,
-            {
-              programId: ue.programId,
-              semesterId: ue.semesterId,
-              code: ue.code,
-              title: ue.title,
-              teacherId: ue.teacherId || '',
-              teacherName: ue.teacherName || '',
-              volumeCM: ue.volumeCM || 0,
-              volumeTD: ue.volumeTD || 0,
-              volumeTP: ue.volumeTP || 0,
-              description: ue.description || '',
-              prerequisiteUeId: ue.prerequisiteUeId || '',
-            },
+            docData,
             [
               Permission.read(Role.any()),
               Permission.update(Role.any()),
@@ -765,6 +789,15 @@ export const dbAdapter = {
           validatedBy: d.validatedBy || '',
           validatedAt: d.validatedAt || '',
           remarks: d.remarks || '',
+          noteCC: d.noteCC !== undefined && d.noteCC !== null ? Number(d.noteCC) : undefined,
+          noteExam: d.noteExam !== undefined && d.noteExam !== null ? Number(d.noteExam) : undefined,
+          noteTP: d.noteTP !== undefined && d.noteTP !== null ? Number(d.noteTP) : undefined,
+          noteFinal: d.noteFinal !== undefined && d.noteFinal !== null ? Number(d.noteFinal) : undefined,
+          isOverridden: !!d.isOverridden,
+          noteRattrapage: d.noteRattrapage !== undefined && d.noteRattrapage !== null ? Number(d.noteRattrapage) : undefined,
+          noteBestOf: d.noteBestOf !== undefined && d.noteBestOf !== null ? Number(d.noteBestOf) : undefined,
+          isDefaillant: !!d.isDefaillant,
+          isCompensated: !!d.isCompensated,
         }));
 
         if (remote.length > 0) {
@@ -815,6 +848,15 @@ export const dbAdapter = {
             remarks: rec.remarks || '',
           };
           if (rec.studentId) docData.studentId = rec.studentId;
+          if (rec.noteCC !== undefined) docData.noteCC = Number(rec.noteCC);
+          if (rec.noteExam !== undefined) docData.noteExam = Number(rec.noteExam);
+          if (rec.noteTP !== undefined) docData.noteTP = Number(rec.noteTP);
+          if (rec.noteFinal !== undefined) docData.noteFinal = Number(rec.noteFinal);
+          if (rec.isOverridden !== undefined) docData.isOverridden = !!rec.isOverridden;
+          if (rec.noteRattrapage !== undefined) docData.noteRattrapage = Number(rec.noteRattrapage);
+          if (rec.noteBestOf !== undefined) docData.noteBestOf = Number(rec.noteBestOf);
+          if (rec.isDefaillant !== undefined) docData.isDefaillant = !!rec.isDefaillant;
+          if (rec.isCompensated !== undefined) docData.isCompensated = !!rec.isCompensated;
 
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
@@ -1029,4 +1071,151 @@ export const dbAdapter = {
       return { programId: progId, semesterId: s1.id, ues: createdOrUpdatedUes };
     }
   },
+
+  // ── LMD : Student Semester Results & Délibérations ────────────────────────
+  studentSemesterResults: {
+    async list(filters?: { studentEmail?: string; programId?: string; semesterId?: string }): Promise<StudentSemesterResult[]> {
+      let local: StudentSemesterResult[] = [];
+      try {
+        local = JSON.parse(localStorage.getItem('idla_local_student_semester_results') || '[]');
+      } catch (e) {}
+
+      if (filters?.studentEmail) {
+        local = local.filter((r) => r.studentEmail.toLowerCase().trim() === filters.studentEmail!.toLowerCase().trim());
+      }
+      if (filters?.programId) {
+        local = local.filter((r) => r.programId === filters.programId);
+      }
+      if (filters?.semesterId) {
+        local = local.filter((r) => r.semesterId === filters.semesterId);
+      }
+
+      if (!isAppwriteDbConfigured() || !APPWRITE_CONFIG.collections.studentSemesterResults) {
+        return local;
+      }
+
+      try {
+        const queries = [Query.limit(5000), Query.orderDesc('$createdAt')];
+        if (filters?.studentEmail) queries.push(Query.equal('studentEmail', filters.studentEmail.toLowerCase().trim()));
+        if (filters?.programId) queries.push(Query.equal('programId', filters.programId));
+        if (filters?.semesterId) queries.push(Query.equal('semesterId', filters.semesterId));
+
+        const res = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.studentSemesterResults,
+          queries
+        );
+        const remote: StudentSemesterResult[] = res.documents.map((d: any) => ({
+          id: d.$id,
+          studentEmail: d.studentEmail,
+          studentName: d.studentName || '',
+          studentId: d.studentId || '',
+          programId: d.programId,
+          semesterId: d.semesterId,
+          moyenneSemestre: d.moyenneSemestre !== undefined ? Number(d.moyenneSemestre) : undefined,
+          totalCoefficients: Number(d.totalCoefficients || 0),
+          uesValidees: Number(d.uesValidees || 0),
+          uesNonValidees: Number(d.uesNonValidees || 0),
+          uesCompensees: Number(d.uesCompensees || 0),
+          uesDefaillantes: Number(d.uesDefaillantes || 0),
+          decision: d.decision || 'EN_COURS',
+          isCompensationApplied: !!d.isCompensationApplied,
+          deliberatedBy: d.deliberatedBy || '',
+          deliberatedAt: d.deliberatedAt || '',
+          remarks: d.remarks || '',
+        }));
+
+        if (remote.length > 0) {
+          return remote;
+        }
+        return local;
+      } catch (err) {
+        return local;
+      }
+    },
+
+    async save(data: Omit<StudentSemesterResult, 'id'> & { id?: string }): Promise<StudentSemesterResult> {
+      const email = data.studentEmail.toLowerCase().trim();
+      const existing = await this.list({ studentEmail: email, semesterId: data.semesterId });
+      const current = existing[0];
+      const targetId = data.id || current?.id || ID.unique();
+      const record: StudentSemesterResult = { ...data, id: targetId, studentEmail: email };
+
+      try {
+        const curr: StudentSemesterResult[] = JSON.parse(localStorage.getItem('idla_local_student_semester_results') || '[]');
+        const next = curr.filter((r) => r.id !== targetId && !(r.studentEmail === email && r.semesterId === data.semesterId));
+        localStorage.setItem('idla_local_student_semester_results', JSON.stringify([...next, record]));
+      } catch (e) {}
+
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.studentSemesterResults) {
+        try {
+          const docData: any = {
+            studentEmail: email,
+            studentName: record.studentName || '',
+            programId: record.programId,
+            semesterId: record.semesterId,
+            totalCoefficients: record.totalCoefficients,
+            uesValidees: record.uesValidees,
+            uesNonValidees: record.uesNonValidees,
+            uesCompensees: record.uesCompensees,
+            uesDefaillantes: record.uesDefaillantes,
+            decision: record.decision,
+            isCompensationApplied: record.isCompensationApplied,
+            deliberatedBy: record.deliberatedBy || '',
+            deliberatedAt: record.deliberatedAt || '',
+            remarks: record.remarks || '',
+          };
+          if (record.moyenneSemestre !== undefined) docData.moyenneSemestre = record.moyenneSemestre;
+          if (record.studentId) docData.studentId = record.studentId;
+
+          if (current?.id) {
+            await databases.updateDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.studentSemesterResults,
+              current.id,
+              docData
+            );
+          } else {
+            await databases.createDocument(
+              APPWRITE_CONFIG.databaseId,
+              APPWRITE_CONFIG.collections.studentSemesterResults,
+              targetId,
+              docData,
+              [
+                Permission.read(Role.any()),
+                Permission.update(Role.any()),
+                Permission.delete(Role.any()),
+              ]
+            );
+          }
+        } catch (err) {
+          console.warn('dbAdapter.studentSemesterResults.save cloud error:', err);
+        }
+      }
+      return record;
+    },
+
+    async delete(id: string): Promise<void> {
+      try {
+        const curr: StudentSemesterResult[] = JSON.parse(localStorage.getItem('idla_local_student_semester_results') || '[]');
+        const next = curr.filter((r) => r.id !== id);
+        localStorage.setItem('idla_local_student_semester_results', JSON.stringify(next));
+      } catch (e) {}
+
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.studentSemesterResults) {
+        try {
+          await databases.deleteDocument(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.studentSemesterResults,
+            id
+          );
+        } catch (err) {
+          console.warn('dbAdapter.studentSemesterResults.delete cloud error:', err);
+        }
+      }
+    }
+  },
+
+  // ── LMD : Evaluation Engine ───────────────────────────────────────────────
+  evaluation: lmdEvaluationEngine,
 };
