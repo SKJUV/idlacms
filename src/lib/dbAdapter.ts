@@ -347,10 +347,15 @@ export const dbAdapter = {
 
   // ── Teachers Synchronization Layer ───────────────────────────────────────
   teachers: {
-    async list(): Promise<{ id: string; name: string; email: string; assignedPrograms?: string[]; speciality?: string }[]> {
+    async list(): Promise<{ id: string; name: string; email: string; assignedPrograms?: string[]; assignedCourses?: string[]; scheduleData?: any; speciality?: string }[]> {
       let local: any[] = [];
       try {
-        local = JSON.parse(localStorage.getItem('idla_local_teachers') || '[]');
+        local = JSON.parse(
+          localStorage.getItem('idla_local_teachers') || 
+          localStorage.getItem('idla_teachers') || 
+          localStorage.getItem('teachers') || 
+          '[]'
+        );
       } catch (e) {}
 
       if (!isAppwriteDbConfigured()) {
@@ -473,6 +478,8 @@ export const dbAdapter = {
           programId: d.programId,
           name: d.name,
           number: d.number,
+          academicYear: d.academicYear || '',
+          academicLevel: d.academicLevel || '',
           startDate: d.startDate,
           endDate: d.endDate,
           rattrapageStartDate: d.rattrapageStartDate,
@@ -480,13 +487,14 @@ export const dbAdapter = {
           status: d.status || 'actif',
         }));
 
-        if (remote.length > 0) {
-          try {
-            const allLocal: Semester[] = JSON.parse(localStorage.getItem('idla_local_semesters') || '[]');
-            const filtered = programId ? allLocal.filter((s) => s.programId !== programId) : [];
-            localStorage.setItem('idla_local_semesters', JSON.stringify([...filtered, ...remote]));
-          } catch (e) {}
-          return remote;
+        const mergedMap = new Map<string, Semester>();
+        remote.forEach((r) => mergedMap.set(r.id, r));
+        local.forEach((l) => {
+          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        });
+        const merged = Array.from(mergedMap.values());
+        if (merged.length > 0) {
+          return merged.sort((a, b) => a.number - b.number);
         }
         return local.sort((a, b) => a.number - b.number);
       } catch (err) {
@@ -506,20 +514,24 @@ export const dbAdapter = {
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.semesters) {
         try {
+          const docData: any = {
+            programId: sem.programId,
+            name: sem.name,
+            number: sem.number,
+            startDate: sem.startDate || '',
+            endDate: sem.endDate || '',
+            rattrapageStartDate: sem.rattrapageStartDate || '',
+            rattrapageEndDate: sem.rattrapageEndDate || '',
+            status: sem.status || 'actif',
+          };
+          if (sem.academicYear) docData.academicYear = sem.academicYear;
+          if (sem.academicLevel) docData.academicLevel = sem.academicLevel;
+
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.semesters,
             newId,
-            {
-              programId: sem.programId,
-              name: sem.name,
-              number: sem.number,
-              startDate: sem.startDate || '',
-              endDate: sem.endDate || '',
-              rattrapageStartDate: sem.rattrapageStartDate || '',
-              rattrapageEndDate: sem.rattrapageEndDate || '',
-              status: sem.status || 'actif',
-            },
+            docData,
             [
               Permission.read(Role.any()),
               Permission.update(Role.any()),
@@ -1072,6 +1084,260 @@ export const dbAdapter = {
       }
 
       return { programId: progId, semesterId: s1.id, ues: createdOrUpdatedUes };
+    },
+
+    /**
+     * Synchronise exhaustivement tous les cours et UE existants dans la plateforme :
+     * - Scanne les créneaux scheduleData et les assignedCourses des professeurs.
+     * - Scanne les cours locaux déclarés.
+     * - Détecte le niveau d'étude (L1, L2, L3, M1, M2...).
+     * - Ventile chaque cours dans le semestre adéquat (L1 -> S1/S2, L2 -> S3/S4, L3 -> S5/S6, M1 -> S1/S2, M2 -> S3/S4).
+     * - Assigne le professeur, le coefficient réglementaire (3) et la pondération M3C.
+     */
+    async syncAllExistingCourses(targetProgramId?: string): Promise<{
+      totalFound: number;
+      imported: number;
+      alreadySynced: number;
+      details: Array<{ programTitle: string; level: string; semesterName: string; courseTitle: string; teacherName?: string }>;
+    }> {
+      const details: Array<{ programTitle: string; level: string; semesterName: string; courseTitle: string; teacherName?: string }> = [];
+      let imported = 0;
+      let alreadySynced = 0;
+
+      // 1. Programmes
+      const allPrograms = await dbAdapter.programs.list();
+      
+      // 2. Enseignants
+      const teachers = await dbAdapter.teachers.list();
+      
+      // 3. Cours locaux
+      const localCourses = await dbAdapter.courses.list();
+
+      interface DetectedCourse {
+        programId: string;
+        programTitle: string;
+        level: string; // 'L1', 'L2', 'L3', 'M1', 'M2'
+        title: string;
+        teacherId?: string;
+        teacherName?: string;
+        volumeCM?: number;
+        volumeTD?: number;
+        volumeTP?: number;
+      }
+
+      const detectedMap = new Map<string, DetectedCourse>();
+
+      // A. Parser les créneaux scheduleData des enseignants
+      teachers.forEach((t: any) => {
+        let schedule: any[] = [];
+        try {
+          schedule = typeof t.scheduleData === 'string' ? JSON.parse(t.scheduleData) : (t.scheduleData || []);
+        } catch (e) {}
+
+        if (Array.isArray(schedule)) {
+          schedule.forEach((slot) => {
+            if (!slot.course || !slot.course.trim()) return;
+            const cTitle = slot.course.trim();
+            const slotProg = slot.program || '';
+            const slotLevel = (slot.level || 'L1').trim().toUpperCase();
+
+            const matchedProg = allPrograms.find((p) => 
+              (slotProg && p.title.toLowerCase().includes(slotProg.toLowerCase().split(' - ')[0])) ||
+              (slotProg && slotProg.toLowerCase().includes(p.title.toLowerCase()))
+            );
+
+            if (matchedProg) {
+              const key = `${matchedProg.id}___${slotLevel}___${cTitle.toLowerCase()}`;
+              if (!detectedMap.has(key)) {
+                detectedMap.set(key, {
+                  programId: matchedProg.id,
+                  programTitle: matchedProg.title,
+                  level: slotLevel,
+                  title: cTitle,
+                  teacherId: t.id,
+                  teacherName: t.name,
+                  volumeCM: slot.type === 'CM' ? 24 : 16,
+                  volumeTD: slot.type === 'TD' ? 16 : 8,
+                  volumeTP: slot.type === 'TP' ? 16 : 8,
+                });
+              }
+            }
+          });
+        }
+
+        // B. Parser assignedCourses des enseignants
+        const assignedCourses = t.assignedCourses || [];
+        const assignedProgs = t.assignedPrograms || [];
+        if (Array.isArray(assignedCourses) && assignedCourses.length > 0) {
+          assignedCourses.forEach((cName: string) => {
+            if (!cName || !cName.trim()) return;
+            const clean = cName.trim();
+            assignedProgs.forEach((ap: string) => {
+              const baseP = ap.split(' - ')[0];
+              const levelPart = ap.includes(' - ') ? ap.split(' - ')[1].trim().toUpperCase() : 'L1';
+              const matchedProg = allPrograms.find((p) => p.title.toLowerCase().includes(baseP.toLowerCase()));
+              if (matchedProg) {
+                const key = `${matchedProg.id}___${levelPart}___${clean.toLowerCase()}`;
+                if (!detectedMap.has(key)) {
+                  detectedMap.set(key, {
+                    programId: matchedProg.id,
+                    programTitle: matchedProg.title,
+                    level: levelPart,
+                    title: clean,
+                    teacherId: t.id,
+                    teacherName: t.name,
+                    volumeCM: 20,
+                    volumeTD: 10,
+                    volumeTP: 10,
+                  });
+                }
+              }
+            });
+          });
+        }
+      });
+
+      // C. Parser les cours locaux
+      localCourses.forEach((c) => {
+        if (!c.title || !c.title.trim()) return;
+        const cTitle = c.title.trim();
+        const cp = (c.program || '').toLowerCase();
+        const matchedProg = allPrograms.find((p) => p.title.toLowerCase() === cp || p.title.toLowerCase().includes(cp));
+        if (matchedProg) {
+          const key = `${matchedProg.id}___L1___${cTitle.toLowerCase()}`;
+          if (!detectedMap.has(key)) {
+            detectedMap.set(key, {
+              programId: matchedProg.id,
+              programTitle: matchedProg.title,
+              level: 'L1',
+              title: cTitle,
+              teacherId: c.teacherId || '',
+              teacherName: c.teacherName || '',
+              volumeCM: c.volumeCM || 20,
+              volumeTD: c.volumeTD || 10,
+              volumeTP: c.volumeTP || 10,
+            });
+          }
+        }
+      });
+
+      let coursesToSync = Array.from(detectedMap.values());
+      if (targetProgramId) {
+        coursesToSync = coursesToSync.filter((c) => c.programId === targetProgramId);
+      }
+
+      const byProgram = new Map<string, DetectedCourse[]>();
+      coursesToSync.forEach((c) => {
+        const arr = byProgram.get(c.programId) || [];
+        arr.push(c);
+        byProgram.set(c.programId, arr);
+      });
+
+      for (const [progId, progCourses] of byProgram.entries()) {
+        const prog = allPrograms.find((p) => p.id === progId);
+        if (!prog) continue;
+
+        let sems = await dbAdapter.semesters.list(progId);
+        if (sems.length === 0) {
+          const isMaster = prog.type === 'Master';
+          const totalSem = isMaster ? 4 : (prog.type === 'Certification' ? 1 : 6);
+          const currentYr = new Date().getFullYear();
+          const academicYear = `${currentYr}-${currentYr + 1}`;
+
+          for (let i = 1; i <= totalSem; i++) {
+            let academicLevel = 'L1';
+            if (isMaster) {
+              academicLevel = i <= 2 ? 'M1' : 'M2';
+            } else if (prog.type === 'Doctorat') {
+              academicLevel = i <= 2 ? 'D1' : (i <= 4 ? 'D2' : 'D3');
+            } else {
+              academicLevel = i <= 2 ? 'L1' : (i <= 4 ? 'L2' : 'L3');
+            }
+
+            const newSem = await dbAdapter.semesters.create({
+              programId: progId,
+              name: `Semestre ${i} (S${i})`,
+              number: i,
+              academicYear,
+              academicLevel,
+              status: i === 1 ? 'actif' : 'cloture',
+            });
+            sems.push(newSem);
+          }
+        }
+
+        const existingUes = await dbAdapter.teachingUnits.list(progId);
+
+        for (const c of progCourses) {
+          let targetSemesterNumber = 1;
+          const lvl = c.level.toUpperCase();
+
+          if (lvl.includes('L2') || lvl.includes('NIVEAU 2')) {
+            targetSemesterNumber = 3;
+          } else if (lvl.includes('L3') || lvl.includes('NIVEAU 3')) {
+            targetSemesterNumber = 5;
+          } else if (lvl.includes('M1')) {
+            targetSemesterNumber = 1;
+          } else if (lvl.includes('M2')) {
+            targetSemesterNumber = 3;
+          } else {
+            targetSemesterNumber = 1;
+          }
+
+          let targetSem = sems.find((s) => s.number === targetSemesterNumber);
+          if (!targetSem) {
+            targetSem = sems[0];
+          }
+
+          const already = existingUes.find((u) => 
+            u.title.toLowerCase().trim() === c.title.toLowerCase().trim() ||
+            (u.semesterId === targetSem!.id && u.title.toLowerCase().includes(c.title.toLowerCase()))
+          );
+
+          if (already) {
+            alreadySynced++;
+            if (c.teacherId && !already.teacherId) {
+              await dbAdapter.teachingUnits.update(already.id, {
+                teacherId: c.teacherId,
+                teacherName: c.teacherName,
+              });
+            }
+          } else {
+            const newUe = await dbAdapter.teachingUnits.create({
+              programId: progId,
+              semesterId: targetSem.id,
+              code: `UE${Math.floor(100 + Math.random() * 900)}`,
+              title: c.title,
+              teacherId: c.teacherId || '',
+              teacherName: c.teacherName || '',
+              volumeCM: c.volumeCM || 20,
+              volumeTD: c.volumeTD || 10,
+              volumeTP: c.volumeTP || 10,
+              coefficient: 3,
+              isCompensable: true,
+              m3cWeightCC: 40,
+              m3cWeightExam: 50,
+              m3cWeightTP: 10,
+            });
+            existingUes.push(newUe);
+            imported++;
+            details.push({
+              programTitle: prog.title,
+              level: targetSem.academicLevel || c.level,
+              semesterName: targetSem.name,
+              courseTitle: c.title,
+              teacherName: c.teacherName,
+            });
+          }
+        }
+      }
+
+      return {
+        totalFound: coursesToSync.length,
+        imported,
+        alreadySynced,
+        details,
+      };
     }
   },
 

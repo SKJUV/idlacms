@@ -198,6 +198,8 @@ export interface Semester {
   programId: string;
   name: string;             // Ex: "Semestre 1 (S1)"
   number: number;           // 1 à 6
+  academicYear?: string;    // Ex: "2026-2027"
+  academicLevel?: string;   // Ex: "L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"
   startDate?: string;       // "01 Octobre 2026"
   endDate?: string;         // "28 Février 2027"
   rattrapageStartDate?: string; // "01 Mars 2027"
@@ -273,6 +275,7 @@ export interface StudentUERecord {
   noteBestOf?: number;      // Max(noteFinal, noteRattrapage) retenue pour délibération
   isDefaillant?: boolean;   // Absence injustifiée / défaillance bloquante
   isCompensated?: boolean;  // true si l'UE a été validée par compensation
+  academicYear?: string;    // Année académique de rattachement (ex: "2026-2027")
 }
 
 export interface StudentSemesterResult {
@@ -282,6 +285,7 @@ export interface StudentSemesterResult {
   studentId?: string;
   programId: string;
   semesterId: string;
+  academicYear?: string;        // Année académique de rattachement (ex: "2026-2027")
   moyenneSemestre?: number;     // Moyenne pondérée du semestre /20
   totalCoefficients: number;    // Somme des coefficients des UE du semestre
   uesValidees: number;

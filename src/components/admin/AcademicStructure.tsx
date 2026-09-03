@@ -350,6 +350,12 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
   const [annualSem2Id, setAnnualSem2Id] = useState<string>('');
   const [annualResults, setAnnualResults] = useState<any[]>([]);
 
+  // ── Année Académique & Niveaux d'Étude ──
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>(() => {
+    return localStorage.getItem('idla_academic_year') || '2026-2027';
+  });
+  const academicYearsList = ['2025-2026', '2026-2027', '2027-2028', '2028-2029'];
+
   // Calcul des statistiques d'attribution et d'activité par programme
   const programStats = useMemo(() => {
     const stats: Record<string, { teachersCount: number; studentsCount: number; uesCount: number; isActive: boolean }> = {};
@@ -412,6 +418,85 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
   const selectedProgram = useMemo(() => {
     return displayedPrograms.find((p) => p.id === selectedProgramId) || programs.find((p) => p.id === selectedProgramId) || displayedPrograms[0] || programs[0] || null;
   }, [displayedPrograms, programs, selectedProgramId]);
+
+  const semestersByLevel = useMemo(() => {
+    const groups: Array<{
+      levelKey: string;
+      levelTitle: string;
+      levelSubtitle: string;
+      semesters: Semester[];
+    }> = [];
+
+    const isMaster = selectedProgram?.type === 'Master';
+    const isDoctorat = selectedProgram?.type === 'Doctorat';
+    const isCertif = selectedProgram?.type === 'Certification';
+
+    if (isCertif) {
+      groups.push({
+        levelKey: 'Certifiant',
+        levelTitle: 'Formation Continue & Certifiante',
+        levelSubtitle: 'Modules spécialisés et certifications professionnelles',
+        semesters: semesters,
+      });
+    } else if (isMaster) {
+      const m1Sems = semesters.filter(s => (s.academicLevel === 'M1') || (s.number <= 2));
+      if (m1Sems.length > 0) {
+        groups.push({
+          levelKey: 'M1',
+          levelTitle: 'Niveau Master 1 (M1) — 1ère Année de Master',
+          levelSubtitle: 'Approfondissement des fondamentaux et spécialisation initiale (Semestres 1 & 2)',
+          semesters: m1Sems,
+        });
+      }
+      const m2Sems = semesters.filter(s => (s.academicLevel === 'M2') || (s.number >= 3));
+      if (m2Sems.length > 0) {
+        groups.push({
+          levelKey: 'M2',
+          levelTitle: 'Niveau Master 2 (M2) — 2ème Année de Master',
+          levelSubtitle: 'Expertise avancée, stage de fin d\'études et mémoire professionnel (Semestres 3 & 4)',
+          semesters: m2Sems,
+        });
+      }
+    } else if (isDoctorat) {
+      const d1Sems = semesters.filter(s => (s.academicLevel === 'D1') || (s.number <= 2));
+      const d2Sems = semesters.filter(s => (s.academicLevel === 'D2') || (s.number === 3 || s.number === 4));
+      const d3Sems = semesters.filter(s => (s.academicLevel === 'D3') || (s.number >= 5));
+      if (d1Sems.length > 0) groups.push({ levelKey: 'D1', levelTitle: 'Doctorat 1ère Année (D1)', levelSubtitle: 'Recherche doctorale et séminaires méthodologiques (Semestres 1 & 2)', semesters: d1Sems });
+      if (d2Sems.length > 0) groups.push({ levelKey: 'D2', levelTitle: 'Doctorat 2ème Année (D2)', levelSubtitle: 'Travaux de recherche et publications scientifiques (Semestres 3 & 4)', semesters: d2Sems });
+      if (d3Sems.length > 0) groups.push({ levelKey: 'D3', levelTitle: 'Doctorat 3ème Année (D3)', levelSubtitle: 'Finalisation de la thèse et soutenance devant jury (Semestres 5 & 6)', semesters: d3Sems });
+    } else {
+      // Licence / Bachelor: L1, L2, L3
+      const l1Sems = semesters.filter(s => (s.academicLevel === 'L1') || (s.number <= 2));
+      const l2Sems = semesters.filter(s => (s.academicLevel === 'L2') || (s.number === 3 || s.number === 4));
+      const l3Sems = semesters.filter(s => (s.academicLevel === 'L3') || (s.number >= 5));
+      if (l1Sems.length > 0) {
+        groups.push({
+          levelKey: 'L1',
+          levelTitle: 'Niveau Licence 1 (L1) — 1ère Année de Bachelor',
+          levelSubtitle: 'Acquisition des socles fondamentaux et méthodologies universitaires (Semestres 1 & 2)',
+          semesters: l1Sems,
+        });
+      }
+      if (l2Sems.length > 0) {
+        groups.push({
+          levelKey: 'L2',
+          levelTitle: 'Niveau Licence 2 (L2) — 2ème Année de Bachelor',
+          levelSubtitle: 'Consolidation des compétences techniques et enseignements appliqués (Semestres 3 & 4)',
+          semesters: l2Sems,
+        });
+      }
+      if (l3Sems.length > 0) {
+        groups.push({
+          levelKey: 'L3',
+          levelTitle: 'Niveau Licence 3 (L3) — 3ème Année de Bachelor',
+          levelSubtitle: 'Approfondissement métier, projet tuteuré et diplomation (Semestres 5 & 6)',
+          semesters: l3Sems,
+        });
+      }
+    }
+
+    return groups;
+  }, [semesters, selectedProgram]);
 
   // Synchroniser la sélection par défaut dès que la liste active est résolue
   useEffect(() => {
@@ -492,54 +577,27 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
     }
   };
 
-  // ── Sync / Import existing courses from teacher schedules / local data ──
+  // ── Sync / Import existing courses from teacher schedules / levels / local data ──
   const handleSyncExistingCourses = async () => {
-    if (!selectedProgram || semesters.length === 0) {
-      showToast("Veuillez d'abord générer des semestres pour ce programme.", true);
-      return;
-    }
-    const s1 = semesters.find((s) => s.number === 1) || semesters[0];
-    let imported = 0;
+    if (!selectedProgram) return;
     setIsLoading(true);
     try {
-      let localCourses: any[] = [];
-      try {
-        localCourses = JSON.parse(localStorage.getItem('idla_local_courses') || '[]');
-      } catch (e) {}
+      const res = await dbAdapter.academicStructure.syncAllExistingCourses(selectedProgram.id);
+      
+      const [sems, ues] = await Promise.all([
+        dbAdapter.semesters.list(selectedProgram.id),
+        dbAdapter.teachingUnits.list(selectedProgram.id)
+      ]);
+      setSemesters(sems);
+      setTeachingUnits(ues);
 
-      const progTitle = selectedProgram.title.toLowerCase();
-      const matchCourses = localCourses.filter((c: any) => {
-        const cp = (c.program || '').toLowerCase();
-        return cp && (cp === progTitle || progTitle.includes(cp) || cp.includes(progTitle));
-      });
-
-      for (const c of matchCourses) {
-        const alreadyExists = teachingUnits.some(
-          (u) => u.code.toLowerCase() === (c.code || '').toLowerCase() || u.title.toLowerCase() === c.title.toLowerCase()
-        );
-        if (!alreadyExists) {
-          await dbAdapter.teachingUnits.create({
-            programId: selectedProgram.id,
-            semesterId: s1.id,
-            code: c.code || `UE${Math.floor(100 + Math.random() * 900)}`,
-            title: c.title,
-            teacherId: c.teacherId || '',
-            teacherName: c.teacherName || '',
-            volumeCM: c.volumeCM || 20,
-            volumeTD: c.volumeTD || 10,
-            volumeTP: c.volumeTP || 10,
-            description: c.description || ''
-          });
-          imported++;
-        }
-      }
-
-      if (imported > 0) {
-        const ues = await dbAdapter.teachingUnits.list(selectedProgram.id);
-        setTeachingUnits(ues);
-        showToast(`${imported} matière(s) synchronisée(s) et importée(s) dans le Semestre 1 !`);
+      if (res.imported > 0) {
+        showToast(`${res.imported} cours historique(s) importé(s) et ventilé(s) par niveau d'étude ! (${res.alreadySynced} déjà synchronisé(s))`);
+        if (logActivity) logActivity('article', 'Admin', `Synchronisation de ${res.imported} cours LMD pour ${selectedProgram.title}`);
+      } else if (res.alreadySynced > 0) {
+        showToast(`Tous les cours (${res.alreadySynced}) sont déjà synchronisés et ventilés pour ce programme.`);
       } else {
-        showToast("Toutes les matières de ce programme sont déjà synchronisées.");
+        showToast("Aucun cours ou emploi du temps existant à importer pour ce programme.");
       }
     } catch (e: any) {
       showToast("Erreur synchronisation : " + e.message, true);
@@ -548,7 +606,7 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
     }
   };
 
-  // ── Auto-generate Semesters based on program type ──
+  // ── Auto-generate Semesters based on program type, academic year & level ──
   const handleAutoGenerateSemesters = async () => {
     if (!selectedProgram) return;
     const progType = selectedProgram.type;
@@ -557,7 +615,8 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
     else if (progType === 'Doctorat') count = 6;
     else if (progType === 'Certification') count = 1;
 
-    const currentYear = new Date().getFullYear();
+    const [startYrStr] = selectedAcademicYear.split('-');
+    const baseYear = parseInt(startYrStr, 10) || new Date().getFullYear();
     const created: Semester[] = [];
 
     setIsLoading(true);
@@ -565,17 +624,31 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
       for (let i = 1; i <= count; i++) {
         const isOdd = i % 2 !== 0;
         const yearOffset = Math.floor((i - 1) / 2);
-        const yr = currentYear + yearOffset;
+        const yr = baseYear + yearOffset;
 
         const startMonth = isOdd ? `01 Octobre ${yr}` : `01 Mars ${yr + 1}`;
         const endMonth = isOdd ? `28 Février ${yr + 1}` : `31 Juillet ${yr + 1}`;
         const rattrapageStart = isOdd ? `01 Mars ${yr + 1}` : `01 Août ${yr + 1}`;
         const rattrapageEnd = isOdd ? `15 Mars ${yr + 1}` : `15 Août ${yr + 1}`;
 
+        const isMaster = progType === 'Master';
+        let academicLevel = 'L1';
+        if (isMaster) {
+          academicLevel = i <= 2 ? 'M1' : 'M2';
+        } else if (progType === 'Doctorat') {
+          academicLevel = i <= 2 ? 'D1' : (i <= 4 ? 'D2' : 'D3');
+        } else if (progType === 'Certification') {
+          academicLevel = 'Certifiant';
+        } else {
+          academicLevel = i <= 2 ? 'L1' : (i <= 4 ? 'L2' : 'L3');
+        }
+
         const sem = await dbAdapter.semesters.create({
           programId: selectedProgram.id,
           name: `Semestre ${i} (S${i})`,
           number: i,
+          academicYear: selectedAcademicYear,
+          academicLevel,
           startDate: startMonth,
           endDate: endMonth,
           rattrapageStartDate: rattrapageStart,
@@ -587,8 +660,8 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
 
       setSemesters(created);
       if (created.length > 0) setExpandedSemesterId(created[0].id);
-      showToast(`${count} semestres générés avec succès pour ${selectedProgram.title} !`);
-      if (logActivity) logActivity('article', 'Admin', `Génération de ${count} semestres LMD pour ${selectedProgram.title}`);
+      showToast(`${count} semestres générés pour ${selectedProgram.title} (${selectedAcademicYear}) !`);
+      if (logActivity) logActivity('article', 'Admin', `Génération de ${count} semestres LMD pour ${selectedProgram.title} (${selectedAcademicYear})`);
     } catch (e: any) {
       showToast('Erreur génération semestres: ' + e.message, true);
     } finally {
@@ -936,6 +1009,7 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
         studentName,
         programId: selectedProgram.id,
         semesterId,
+        academicYear: selectedAcademicYear,
         moyenneSemestre: outcome.moyenneSemestre ?? undefined,
         totalCoefficients: outcome.totalCoefficients,
         uesValidees: outcome.uesValidees,
@@ -1083,37 +1157,59 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
 
           {/* Program Selector & Filter Toggle */}
           <div className="w-full lg:w-auto space-y-2">
-            {/* Filter Toggle */}
-            <div className="flex items-center gap-1 bg-bg-primary p-1 rounded-xl border border-border-primary text-[11px] font-bold">
-              <button
-                type="button"
-                onClick={() => setFilterActiveOnly(true)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  filterActiveOnly
-                    ? 'bg-brand-primary text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                <span>Formations Actives</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterActiveOnly ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
-                  {activeProgramsCount}
-                </span>
-              </button>
+            {/* Année Académique & Filter Toggle */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-bg-primary px-3 py-1.5 rounded-xl border border-border-primary">
+                <Calendar className="w-3.5 h-3.5 text-brand-primary shrink-0" />
+                <span className="text-[11px] font-bold text-text-secondary">Année :</span>
+                <select
+                  value={selectedAcademicYear}
+                  onChange={(e) => {
+                    const yr = e.target.value;
+                    setSelectedAcademicYear(yr);
+                    localStorage.setItem('idla_academic_year', yr);
+                  }}
+                  className="bg-transparent text-xs font-bold text-text-primary outline-none cursor-pointer"
+                >
+                  {academicYearsList.map((yr) => (
+                    <option key={yr} value={yr} className="bg-bg-secondary text-text-primary">
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setFilterActiveOnly(false)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  !filterActiveOnly
-                    ? 'bg-brand-primary text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                <span>Tous les programmes</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${!filterActiveOnly ? 'bg-white/20 text-white' : 'bg-bg-secondary text-text-secondary'}`}>
-                  {programs.length}
-                </span>
-              </button>
+              <div className="flex items-center gap-1 bg-bg-primary p-1 rounded-xl border border-border-primary text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setFilterActiveOnly(true)}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    filterActiveOnly
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <span>Formations Actives</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filterActiveOnly ? 'bg-white/20 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
+                    {activeProgramsCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterActiveOnly(false)}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    !filterActiveOnly
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <span>Tous les programmes</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${!filterActiveOnly ? 'bg-white/20 text-white' : 'bg-bg-secondary text-text-secondary'}`}>
+                    {programs.length}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Select dropdown */}
@@ -1278,44 +1374,74 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleSyncExistingCourses}
-                    className="text-xs bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary text-text-primary px-3 py-1.5 rounded-lg font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                    title="Importer et synchroniser les cours existants vers ce programme"
+                    className="text-xs bg-bg-secondary hover:bg-brand-primary hover:text-white border border-border-primary text-text-primary px-3 py-1.5 rounded-lg font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    title="Synchroniser automatiquement tous les cours existants et les ventiler par niveau d'étude"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    Synchroniser les matières existantes
+                    Synchroniser les cours historiques
                   </button>
                   <button
                     onClick={handleAutoGenerateSemesters}
                     className="text-xs text-brand-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Régénérer
+                    <RefreshCw className="w-3.5 h-3.5" /> Régénérer ({selectedAcademicYear})
                   </button>
                 </div>
               </div>
 
-              {/* Semesters List */}
-              <div className="space-y-4">
-                {semesters.map((sem) => {
-                  const isExpanded = expandedSemesterId === sem.id;
-                  const semUes = teachingUnits.filter((u) => u.semesterId === sem.id);
+              {/* Semesters Grouped by Academic Level */}
+              <div className="space-y-6">
+                {semestersByLevel.map((group) => (
+                  <div key={group.levelKey} className="space-y-3">
+                    {/* Level Header Banner */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-brand-primary/5 border border-brand-primary/15 rounded-xl px-4 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow-sm">
+                          {group.levelKey}
+                        </span>
+                        <div>
+                          <h3 className="font-bold text-xs text-text-primary">{group.levelTitle}</h3>
+                          <p className="text-[10px] text-text-secondary">{group.levelSubtitle}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-bg-primary text-text-secondary border border-border-primary w-fit">
+                        {group.semesters.length} semestre(s) • Année {selectedAcademicYear}
+                      </span>
+                    </div>
 
-                  return (
-                    <div
-                      key={sem.id}
-                      className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm transition-all"
-                    >
-                      {/* Semester Header Accordion */}
-                      <div className="p-4 md:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-bg-primary/40 border-b border-border-primary/50">
-                        <div
-                          className="flex items-center gap-3 cursor-pointer select-none"
-                          onClick={() => setExpandedSemesterId(isExpanded ? null : sem.id)}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center font-bold text-xs">
-                            S{sem.number}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-bold text-text-primary">{sem.name}</h3>
+                    {/* Semesters in this level */}
+                    <div className="space-y-4">
+                      {group.semesters.map((sem) => {
+                        const isExpanded = expandedSemesterId === sem.id;
+                        const semUes = teachingUnits.filter((u) => u.semesterId === sem.id);
+
+                        return (
+                          <div
+                            key={sem.id}
+                            className="bg-bg-secondary border border-border-primary rounded-2xl overflow-hidden shadow-sm transition-all"
+                          >
+                            {/* Semester Header Accordion */}
+                            <div className="p-4 md:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-bg-primary/40 border-b border-border-primary/50">
+                              <div
+                                className="flex items-center gap-3 cursor-pointer select-none"
+                                onClick={() => setExpandedSemesterId(isExpanded ? null : sem.id)}
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-brand-primary text-white flex items-center justify-center font-bold text-xs">
+                                  S{sem.number}
+                                </div>
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-sm font-bold text-text-primary">{sem.name}</h3>
+                                    {sem.academicLevel && (
+                                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                                        {sem.academicLevel}
+                                      </span>
+                                    )}
+                                    {sem.academicYear && (
+                                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-bg-primary text-text-secondary border border-border-primary">
+                                        {sem.academicYear}
+                                      </span>
+                                    )}
                               <span
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                                   sem.status === 'actif'
@@ -1474,14 +1600,17 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
                           )}
                         </div>
                       )}
-                    </div>
-                  );
-                })}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
+    </div>
+  )}
 
       {/* ── TAB 2 : Inscriptions & Suivi des Évaluations ── */}
       {activeTab === 'evaluations' && (
