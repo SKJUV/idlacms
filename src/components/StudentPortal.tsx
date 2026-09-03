@@ -12,9 +12,11 @@ import {
   SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon, GraduationCapIcon,
 } from './Icons';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
+import { dbAdapter } from '../lib/dbAdapter';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
+  Semester, TeachingUnit, StudentUERecord, CourseResource,
 } from '../types';
 import { Paperclip, Video, FileText, Download, ExternalLink, Gift, Copy, Check } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
@@ -118,6 +120,13 @@ export default function StudentPortal({
   const [applications, setApplications] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
   const [teachersSchedules, setTeachersSchedules] = useState<any[]>([]);
+
+  // ── Cursus LMD & Ressources Pédagogiques Réelles ──
+  const [studentLmdRecords, setStudentLmdRecords] = useState<StudentUERecord[]>([]);
+  const [studentTeachingUnits, setStudentTeachingUnits] = useState<TeachingUnit[]>([]);
+  const [studentSemesters, setStudentSemesters] = useState<Semester[]>([]);
+  const [studentUeResources, setStudentUeResources] = useState<Record<string, CourseResource[]>>({});
+  const [lmdLoading, setLmdLoading] = useState(false);
 
   // ── Suivi de candidature et messagerie intégrés ──
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -418,6 +427,42 @@ export default function StudentPortal({
           } catch (err) {
             console.warn("Erreur chargement emplois du temps:", err);
           }
+        }
+
+        // ── Charger le Cursus LMD de l'étudiant ──
+        try {
+          setLmdLoading(true);
+          const userRecords = await dbAdapter.studentUeRecords.list({ studentEmail: userEmail });
+          setStudentLmdRecords(userRecords);
+
+          const acceptedApp = loadedApps.find((a: any) => (a.status || '').toLowerCase() === 'accepted' && a.program);
+          let progId = acceptedApp?.programId || '';
+          if (!progId && acceptedApp?.program) {
+            progId = (await dbAdapter.programs.resolveProgramId(acceptedApp.program)) || '';
+          }
+
+          if (progId) {
+            const [sems, ues] = await Promise.all([
+              dbAdapter.semesters.list(progId),
+              dbAdapter.teachingUnits.list(progId),
+            ]);
+            setStudentSemesters(sems);
+            setStudentTeachingUnits(ues);
+
+            // Charger les ressources de chaque UE
+            const resMap: Record<string, CourseResource[]> = {};
+            for (const u of ues) {
+              try {
+                const rList = await dbAdapter.courseResources.list(u.id);
+                if (rList.length > 0) resMap[u.id] = rList;
+              } catch (e) {}
+            }
+            setStudentUeResources(resMap);
+          }
+        } catch (lmdErr) {
+          console.warn("Erreur chargement cursus LMD étudiant:", lmdErr);
+        } finally {
+          setLmdLoading(false);
         }
       } catch (err) {
         console.warn("Erreur lors de l'initialisation du portail étudiant :", err);
@@ -2590,6 +2635,124 @@ export default function StudentPortal({
                           </form>
                         </div>
                       </div>
+
+                      {/* ── Cursus LMD de l'Étudiant & Supports Pédagogiques (Vidéos & PDF) ── */}
+                      {app.status === 'Accepted' && studentTeachingUnits.length > 0 && (
+                        <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-primary pb-4">
+                            <div>
+                              <h3 className="font-sans font-bold text-base text-text-primary flex items-center gap-2">
+                                <GraduationCapIcon className="w-5 h-5 text-brand-primary" /> Mon Cursus Semestriel &amp; Unités d'Enseignement (LMD)
+                              </h3>
+                              <p className="text-xs text-text-secondary mt-0.5">
+                                Suivi officiel de vos matières, statuts d'inscription, volumes horaires et supports de cours (vidéos / PDF).
+                              </p>
+                            </div>
+                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
+                              Matricule : {app.matricule || 'En cours d\'attribution'}
+                            </span>
+                          </div>
+
+                          <div className="space-y-6">
+                            {(studentSemesters.length > 0 ? studentSemesters : [{ id: 's1', number: 1, name: 'Semestre 1 (S1)', status: 'actif' as const }]).map((sem) => {
+                              const semUes = studentTeachingUnits.filter((u) => !u.semesterId || u.semesterId === sem.id);
+                              if (semUes.length === 0) return null;
+
+                              return (
+                                <div key={sem.id} className="space-y-3">
+                                  <div className="flex items-center justify-between bg-bg-primary px-4 py-2.5 rounded-xl border border-border-primary">
+                                    <div className="flex items-center gap-2 font-bold text-xs text-text-primary">
+                                      <BookOpenIcon className="w-4 h-4 text-brand-primary" />
+                                      <span>{sem.name}</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary">
+                                      {semUes.length} matière(s)
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {semUes.map((ue) => {
+                                      const rec = studentLmdRecords.find((r) => r.ueId === ue.id);
+                                      const status = rec?.status || 'inscrit';
+                                      const resources = studentUeResources[ue.id] || [];
+
+                                      const statusBadge = () => {
+                                        if (status === 'valide') return { label: 'Validé', cls: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
+                                        if (status === 'rattrapage') return { label: 'Rattrapage', cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+                                        if (status === 'en_dette') return { label: 'En dette', cls: 'bg-rose-500/10 text-rose-600 border-rose-500/20' };
+                                        return { label: 'Inscrit', cls: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20' };
+                                      };
+
+                                      const badge = statusBadge();
+
+                                      return (
+                                        <div key={ue.id} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3 shadow-sm">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-primary/10 text-brand-primary">
+                                                {ue.code}
+                                              </span>
+                                              <h4 className="font-bold text-xs text-text-primary mt-1.5">{ue.title}</h4>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                                              {badge.label}
+                                            </span>
+                                          </div>
+
+                                          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">CM</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeCM || 0}h</span>
+                                            </div>
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">TD</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeTD || 0}h</span>
+                                            </div>
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">TP</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeTP || 0}h</span>
+                                            </div>
+                                          </div>
+
+                                          {/* Ressources pédagogiques (Vidéos & PDF) */}
+                                          {resources.length > 0 && (
+                                            <div className="pt-2 border-t border-border-primary/50 space-y-1.5">
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">
+                                                Supports ({resources.length})
+                                              </span>
+                                              <div className="space-y-1">
+                                                {resources.map((res) => (
+                                                  <a
+                                                    key={res.id}
+                                                    href={res.contentUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-between p-1.5 rounded bg-bg-secondary hover:bg-brand-primary/10 text-[11px] text-brand-primary font-medium transition-all group"
+                                                  >
+                                                    <div className="flex items-center gap-1.5 truncate">
+                                                      {res.type === 'video' ? (
+                                                        <Video className="w-3.5 h-3.5 shrink-0 text-brand-primary" />
+                                                      ) : (
+                                                        <FileText className="w-3.5 h-3.5 shrink-0 text-brand-primary" />
+                                                      )}
+                                                      <span className="truncate">{res.title}</span>
+                                                    </div>
+                                                    <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover:opacity-100" />
+                                                  </a>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()

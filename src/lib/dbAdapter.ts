@@ -54,6 +54,22 @@ export const dbAdapter = {
       }
     },
 
+    async resolveProgramId(programTitleOrId: string): Promise<string | null> {
+      if (!programTitleOrId) return null;
+      const all = await this.list();
+      // Match by exact ID
+      const byId = all.find((p) => p.id === programTitleOrId);
+      if (byId) return byId.id;
+
+      // Match by exact or normalized Title
+      const target = programTitleOrId.toLowerCase().trim();
+      const byTitle = all.find((p) => {
+        const title = (p.title || '').toLowerCase().trim();
+        return title === target || target.includes(title) || title.includes(target);
+      });
+      return byTitle ? byTitle.id : null;
+    },
+
     async create(progData: Omit<Program, 'id'>): Promise<Program> {
       const newId = `prog-${Math.floor(100000 + Math.random() * 900000)}`;
       const program: Program = { id: newId, ...progData };
@@ -144,6 +160,7 @@ export const dbAdapter = {
           name: doc.name,
           email: doc.email,
           program: doc.program,
+          programId: doc.programId || doc.program_id || '',
           dateApplied: doc.dateApplied || doc.$createdAt,
           status: doc.status || 'New',
           initials: doc.initials || (doc.name || 'CN').substring(0, 2).toUpperCase(),
@@ -153,6 +170,8 @@ export const dbAdapter = {
           graduationYear: doc.graduationYear,
           motivation: doc.motivation,
           documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
+          matricule: doc.matricule || '',
+          entryLevel: doc.entryLevel || '',
         }));
 
         if (remoteApps.length > 0) {
@@ -172,7 +191,12 @@ export const dbAdapter = {
 
     async create(appData: Omit<PreRegistration, 'id'>): Promise<PreRegistration> {
       const newId = `app-${Date.now()}`;
-      const app: PreRegistration = { id: newId, ...appData };
+      let resolvedProgId = appData.programId || '';
+      if (!resolvedProgId && appData.program && appData.program !== 'Inscription seule') {
+        resolvedProgId = (await dbAdapter.programs.resolveProgramId(appData.program)) || '';
+      }
+
+      const app: PreRegistration = { id: newId, ...appData, programId: resolvedProgId };
 
       try {
         const curr = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
@@ -181,24 +205,27 @@ export const dbAdapter = {
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
         try {
+          const docData: any = {
+            name: app.name,
+            email: app.email,
+            phone: app.phone || '',
+            nationality: app.nationality || '',
+            program: app.program || 'General',
+            highestDegree: app.highestDegree || '',
+            graduationYear: app.graduationYear ? Number(app.graduationYear) : null,
+            status: app.status || 'New',
+            dateApplied: app.dateApplied || new Date().toISOString(),
+            initials: app.initials || 'CN',
+            motivation: app.motivation || '',
+            files: JSON.stringify(app.documents || []),
+          };
+          if (resolvedProgId) docData.programId = resolvedProgId;
+
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.applications,
             newId,
-            {
-              name: app.name,
-              email: app.email,
-              phone: app.phone || '',
-              nationality: app.nationality || '',
-              program: app.program || 'General',
-              highestDegree: app.highestDegree || '',
-              graduationYear: app.graduationYear ? Number(app.graduationYear) : null,
-              status: app.status || 'New',
-              dateApplied: app.dateApplied || new Date().toISOString(),
-              initials: app.initials || 'CN',
-              motivation: app.motivation || '',
-              files: JSON.stringify(app.documents || []),
-            },
+            docData,
             [
               Permission.create(Role.any()),
               Permission.read(Role.team('admins')),
@@ -213,20 +240,29 @@ export const dbAdapter = {
       return app;
     },
 
-    async updateStatus(id: string, status: PreRegistration['status'], matricule?: string): Promise<void> {
+    async updateStatus(id: string, status: PreRegistration['status'], matricule?: string, programId?: string): Promise<void> {
       try {
         const curr: PreRegistration[] = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
-        const next = curr.map((a) => (a.id === id ? { ...a, status, ...(matricule ? { matricule } : {}) } : a));
+        const next = curr.map((a) => (a.id === id ? { 
+          ...a, 
+          status, 
+          ...(matricule ? { matricule } : {}),
+          ...(programId ? { programId } : {})
+        } : a));
         localStorage.setItem('idla_local_applications', JSON.stringify(next));
       } catch (e) {}
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.applications) {
         try {
+          const updates: any = { status };
+          if (matricule) updates.matricule = matricule;
+          if (programId) updates.programId = programId;
+
           await databases.updateDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.applications,
             id,
-            { status }
+            updates
           );
         } catch (err) {
           console.error('dbAdapter.applications.updateStatus cloud error:', err);
@@ -720,6 +756,7 @@ export const dbAdapter = {
           id: d.$id,
           studentEmail: d.studentEmail,
           studentName: d.studentName || '',
+          studentId: d.studentId || d.student_id || '',
           ueId: d.ueId,
           semesterId: d.semesterId,
           programId: d.programId,
@@ -741,8 +778,22 @@ export const dbAdapter = {
     },
 
     async create(data: Omit<StudentUERecord, 'id'>): Promise<StudentUERecord> {
+      const email = data.studentEmail.toLowerCase().trim();
+      
+      // Check existing to prevent duplicate enrolments
+      try {
+        const existing = await this.list({ 
+          studentEmail: email, 
+          ueId: data.ueId 
+        });
+        const match = existing.find((r) => r.sessionType === (data.sessionType || 'normale'));
+        if (match) {
+          return match;
+        }
+      } catch (e) {}
+
       const newId = ID.unique();
-      const rec: StudentUERecord = { id: newId, ...data };
+      const rec: StudentUERecord = { id: newId, ...data, studentEmail: email };
 
       try {
         const curr: StudentUERecord[] = JSON.parse(localStorage.getItem('idla_local_student_ue_records') || '[]');
@@ -751,22 +802,25 @@ export const dbAdapter = {
 
       if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.studentUeRecords) {
         try {
+          const docData: any = {
+            studentEmail: email,
+            studentName: rec.studentName || '',
+            ueId: rec.ueId,
+            semesterId: rec.semesterId,
+            programId: rec.programId,
+            sessionType: rec.sessionType || 'normale',
+            status: rec.status || 'inscrit',
+            validatedBy: rec.validatedBy || '',
+            validatedAt: rec.validatedAt || '',
+            remarks: rec.remarks || '',
+          };
+          if (rec.studentId) docData.studentId = rec.studentId;
+
           await databases.createDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.studentUeRecords,
             newId,
-            {
-              studentEmail: rec.studentEmail.toLowerCase().trim(),
-              studentName: rec.studentName || '',
-              ueId: rec.ueId,
-              semesterId: rec.semesterId,
-              programId: rec.programId,
-              sessionType: rec.sessionType,
-              status: rec.status,
-              validatedBy: rec.validatedBy || '',
-              validatedAt: rec.validatedAt || '',
-              remarks: rec.remarks || '',
-            },
+            docData,
             [
               Permission.read(Role.any()),
               Permission.update(Role.any()),
@@ -801,10 +855,13 @@ export const dbAdapter = {
       }
     },
 
-    async bulkEnroll(records: Omit<StudentUERecord, 'id'>[]): Promise<void> {
+    async bulkEnroll(records: Omit<StudentUERecord, 'id'>[]): Promise<StudentUERecord[]> {
+      const results: StudentUERecord[] = [];
       for (const rec of records) {
-        await this.create(rec);
+        const created = await this.create(rec);
+        results.push(created);
       }
+      return results;
     },
   },
 
@@ -910,5 +967,66 @@ export const dbAdapter = {
         }
       }
     },
+  },
+
+  // ── LMD : Interconnection & Auto-Initialization Engine ───────────────────
+  academicStructure: {
+    async ensureProgramInitialized(
+      programTitleOrId: string, 
+      options?: {
+        courseTitles?: string[];
+        teacherId?: string;
+        teacherName?: string;
+      }
+    ): Promise<{ programId: string; semesterId: string; ues: TeachingUnit[] }> {
+      const progId = (await dbAdapter.programs.resolveProgramId(programTitleOrId)) || programTitleOrId;
+      
+      // 1. Ensure Semestre 1 exists
+      let sems = await dbAdapter.semesters.list(progId);
+      let s1 = sems.find((s) => s.number === 1) || sems[0];
+      if (!s1) {
+        s1 = await dbAdapter.semesters.create({
+          programId: progId,
+          name: 'Semestre 1 (S1)',
+          number: 1,
+          status: 'actif',
+        });
+      }
+
+      // 2. Ensure UEs exist for specified courses or defaults
+      const existingUes = await dbAdapter.teachingUnits.list(progId, s1.id);
+      const createdOrUpdatedUes: TeachingUnit[] = [...existingUes];
+
+      if (options?.courseTitles && options.courseTitles.length > 0) {
+        for (const cTitle of options.courseTitles) {
+          const matchUe = existingUes.find((u) => u.title.toLowerCase().trim() === cTitle.toLowerCase().trim());
+          if (matchUe) {
+            if (options.teacherId && (!matchUe.teacherId || matchUe.teacherId !== options.teacherId)) {
+              await dbAdapter.teachingUnits.update(matchUe.id, {
+                teacherId: options.teacherId,
+                teacherName: options.teacherName || matchUe.teacherName,
+              });
+              matchUe.teacherId = options.teacherId;
+              matchUe.teacherName = options.teacherName || matchUe.teacherName;
+            }
+          } else {
+            const newUe = await dbAdapter.teachingUnits.create({
+              programId: progId,
+              semesterId: s1.id,
+              code: `UE${Math.floor(100 + Math.random() * 900)}`,
+              title: cTitle,
+              teacherId: options.teacherId || '',
+              teacherName: options.teacherName || '',
+              volumeCM: 20,
+              volumeTD: 10,
+              volumeTP: 10,
+            });
+            createdOrUpdatedUes.push(newUe);
+          }
+        }
+      }
+
+      return { programId: progId, semesterId: s1.id, ues: createdOrUpdatedUes };
+    }
   },
 };

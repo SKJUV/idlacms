@@ -68,6 +68,62 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const materialPdfInputRef = useRef<HTMLInputElement>(null);
   const materialVideoInputRef = useRef<HTMLInputElement>(null);
 
+  // LMD UE & Course Resources States
+  const [myTeachingUnits, setMyTeachingUnits] = useState<any[]>([]);
+  const [managingUe, setManagingUe] = useState<any | null>(null);
+  const [ueResources, setUeResources] = useState<any[]>([]);
+  const [resTitle, setResTitle] = useState('');
+  const [resType, setResType] = useState<'video' | 'pdf'>('video');
+  const [resUrl, setResUrl] = useState('');
+  const [isSavingRes, setIsSavingRes] = useState(false);
+  const [allProgramsList, setAllProgramsList] = useState<any[]>([]);
+  const [allSemestersList, setAllSemestersList] = useState<any[]>([]);
+  const [ueStudentCounts, setUeStudentCounts] = useState<Record<string, number>>({});
+
+  const handleOpenUeResources = async (ue: any) => {
+    setManagingUe(ue);
+    setResTitle('');
+    setResUrl('');
+    setResType('video');
+    try {
+      const res = await dbAdapter.courseResources.list(ue.id || ue.$id);
+      setUeResources(res);
+    } catch (e) {
+      setUeResources([]);
+    }
+  };
+
+  const handleAddResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managingUe || !resTitle.trim() || !resUrl.trim()) return;
+    setIsSavingRes(true);
+    try {
+      const created = await dbAdapter.courseResources.create({
+        ueId: managingUe.id || managingUe.$id,
+        title: resTitle.trim(),
+        type: resType,
+        contentUrl: resUrl.trim(),
+        orderIndex: ueResources.length + 1,
+      });
+      setUeResources((prev) => [...prev, created]);
+      setResTitle('');
+      setResUrl('');
+    } catch (err: any) {
+      console.warn("Erreur ajout ressource UE:", err);
+    } finally {
+      setIsSavingRes(false);
+    }
+  };
+
+  const handleDeleteResource = async (resId: string) => {
+    try {
+      await dbAdapter.courseResources.delete(resId);
+      setUeResources((prev) => prev.filter((r) => r.id !== resId));
+    } catch (e) {
+      console.warn("Erreur suppression ressource UE:", e);
+    }
+  };
+
   const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
     const c = (courseName || 'general').trim().toLowerCase();
     const l = (levelName || 'L1').trim().toLowerCase();
@@ -625,14 +681,32 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           // Synchronisation automatique des UE LMD assignées
           try {
             const allUes = await dbAdapter.teachingUnits.list();
+            const allProgs = await dbAdapter.programs.list();
+            const allSems = await dbAdapter.semesters.list();
+            setAllProgramsList(allProgs);
+            setAllSemestersList(allSems);
+
             const teacherId = teacherDoc.$id || teacherDoc.id;
             const teacherNameLower = (teacherDoc.name || '').toLowerCase().trim();
             const myUes = allUes.filter((u) => 
               (u.teacherId && teacherId && u.teacherId === teacherId) ||
               (u.teacherName && teacherNameLower && u.teacherName.toLowerCase().trim() === teacherNameLower)
             );
+            setMyTeachingUnits(myUes);
+
+            // Charger les effectifs d'étudiants par UE
+            const studentCounts: Record<string, number> = {};
+            for (const u of myUes) {
+              try {
+                const recs = await dbAdapter.studentUeRecords.list({ ueId: u.id });
+                studentCounts[u.id] = recs.length;
+              } catch (e) {
+                studentCounts[u.id] = 0;
+              }
+            }
+            setUeStudentCounts(studentCounts);
+
             if (myUes.length > 0) {
-              const allProgs = await dbAdapter.programs.list();
               myUes.forEach((u) => {
                 const prog = allProgs.find((p) => p.id === u.programId);
                 if (prog && !assigned.some((p: string) => p.startsWith(prog.title))) {
@@ -640,7 +714,9 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                 }
               });
             }
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Erreur chargement UEs LMD enseignant:", e);
+          }
 
           setProfile({
             $id: teacherDoc.$id || teacherDoc.id,
@@ -861,6 +937,80 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           })}
         </div>
       </div>
+
+      {/* ── Section LMD : Mes Unités d'Enseignement (UE) & Supports Pédagogiques ── */}
+      {myTeachingUnits.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-border-primary">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="font-sans font-bold text-lg text-text-primary flex items-center gap-2">
+                <BookOpenIcon className="w-5 h-5 text-brand-primary" /> Mes Unités d'Enseignement (UE) &amp; Supports Pédagogiques
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Matières officielles assignées dans la structure LMD. Gérez vos cours magistraux, travaux dirigés et supports (vidéos / PDF).
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary border border-brand-primary/20 w-fit">
+              {myTeachingUnits.length} UE assignée(s)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {myTeachingUnits.map((ue: any) => {
+              const prog = allProgramsList.find((p) => p.id === ue.programId);
+              const sem = allSemestersList.find((s) => s.id === ue.semesterId);
+              const enrolledCount = ueStudentCounts[ue.id] || 0;
+
+              return (
+                <div key={ue.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-brand-primary/40 transition-all">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                        {ue.code || 'UE'}
+                      </span>
+                      {sem && (
+                        <span className="text-[11px] font-medium text-text-secondary bg-bg-primary px-2 py-0.5 rounded border border-border-primary">
+                          {sem.name}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="font-bold text-base text-text-primary line-clamp-2">{ue.title}</h3>
+                    <p className="text-xs text-text-secondary line-clamp-1">{prog?.title || 'Programme IDLA'}</p>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border-primary/50 text-center">
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">CM</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeCM || 0}h</div>
+                      </div>
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">TD</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeTD || 0}h</div>
+                      </div>
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">TP</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeTP || 0}h</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border-primary flex items-center justify-between gap-2">
+                    <span className="text-xs text-text-secondary flex items-center gap-1.5 font-medium">
+                      <UsersIcon className="w-3.5 h-3.5 text-brand-primary" /> {enrolledCount} inscrit(s)
+                    </span>
+                    <button
+                      onClick={() => handleOpenUeResources(ue)}
+                      className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Paperclip className="w-3 h-3" /> Supports &amp; Vidéos
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1599,6 +1749,146 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         {activeTab === 'teacher-schedule' && renderSchedule()}
         {activeTab === 'teacher-students' && renderStudents()}
         {activeTab === 'teacher-profile' && renderProfile()}
+
+        {/* ── Modal Gestionnaire de Ressources Pédagogiques (Vidéos & PDF) ── */}
+        {managingUe && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 border-b border-border-primary pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                      {managingUe.code}
+                    </span>
+                    <h2 className="font-sans font-bold text-lg text-text-primary">{managingUe.title}</h2>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Ajoutez et gérez les supports de cours (vidéos de cours magistraux, documents PDF, syllabus) accessibles par les étudiants.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setManagingUe(null)}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Formulaire d'ajout de ressource */}
+              <form onSubmit={handleAddResource} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-4">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-text-primary flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-brand-primary" /> Ajouter un nouveau support
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] font-bold text-text-secondary">Titre du support *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Cours 1 - Introduction à la programmation"
+                      value={resTitle}
+                      onChange={(e) => setResTitle(e.target.value)}
+                      className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-text-secondary">Type de support *</label>
+                    <select
+                      value={resType}
+                      onChange={(e) => setResType(e.target.value as any)}
+                      className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary cursor-pointer"
+                    >
+                      <option value="video">Vidéo de cours</option>
+                      <option value="pdf">Document PDF</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-text-secondary">
+                    {resType === 'video' ? 'Lien de la vidéo (YouTube, Vimeo, Cloud Drive, etc.) *' : 'Lien ou URL du document PDF *'}
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    placeholder={resType === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://.../document.pdf'}
+                    value={resUrl}
+                    onChange={(e) => setResUrl(e.target.value)}
+                    className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary font-mono text-[11px]"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingRes || !resTitle.trim() || !resUrl.trim()}
+                    className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    {isSavingRes ? 'Enregistrement...' : 'Enregistrer le support'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Liste des supports existants */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-text-primary flex items-center justify-between">
+                  <span>Supports publiés ({ueResources.length})</span>
+                </h3>
+
+                {ueResources.length === 0 ? (
+                  <div className="text-center py-8 bg-bg-primary rounded-xl border border-border-primary/50 text-xs text-text-secondary italic">
+                    Aucun support pédagogique déposé pour cette UE pour le moment.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {ueResources.map((res: any) => (
+                      <div
+                        key={res.id}
+                        className="bg-bg-primary border border-border-primary p-3 rounded-xl flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center shrink-0">
+                            {res.type === 'video' ? <Video className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs text-text-primary truncate">{res.title}</h4>
+                            <a
+                              href={res.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-brand-primary hover:underline flex items-center gap-1 truncate"
+                            >
+                              <LinkIcon className="w-3 h-3 shrink-0" /> {res.contentUrl}
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={res.contentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg border border-border-primary text-text-secondary hover:text-brand-primary transition-all text-xs flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteResource(res.id)}
+                            className="p-1.5 rounded-lg border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 transition-all text-xs cursor-pointer"
+                            title="Supprimer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
