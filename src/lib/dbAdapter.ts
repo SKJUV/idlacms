@@ -621,17 +621,14 @@ export const dbAdapter = {
           m3cWeightTP: d.m3cWeightTP !== undefined ? Number(d.m3cWeightTP) : 10,
         }));
 
-        if (remote.length > 0) {
-          try {
-            const allLocal: TeachingUnit[] = JSON.parse(localStorage.getItem('idla_local_teaching_units') || '[]');
-            const notMatching = allLocal.filter((u) => {
-              if (programId && u.programId === programId) return false;
-              if (semesterId && u.semesterId === semesterId) return false;
-              return true;
-            });
-            localStorage.setItem('idla_local_teaching_units', JSON.stringify([...notMatching, ...remote]));
-          } catch (e) {}
-          return remote;
+        const mergedMap = new Map<string, TeachingUnit>();
+        remote.forEach((r) => mergedMap.set(r.id, r));
+        local.forEach((l) => {
+          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        });
+        const merged = Array.from(mergedMap.values());
+        if (merged.length > 0) {
+          return merged;
         }
         return local;
       } catch (err) {
@@ -800,8 +797,14 @@ export const dbAdapter = {
           isCompensated: !!d.isCompensated,
         }));
 
-        if (remote.length > 0) {
-          return remote;
+        const mergedMap = new Map<string, StudentUERecord>();
+        remote.forEach((r) => mergedMap.set(r.id, r));
+        local.forEach((l) => {
+          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        });
+        const merged = Array.from(mergedMap.values());
+        if (merged.length > 0) {
+          return merged;
         }
         return local;
       } catch (err) {
