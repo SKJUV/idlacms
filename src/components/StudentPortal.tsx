@@ -16,7 +16,7 @@ import { dbAdapter } from '../lib/dbAdapter';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
-  Semester, TeachingUnit, StudentUERecord, CourseResource,
+  Semester, TeachingUnit, StudentUERecord, CourseResource, StudentSemesterResult,
 } from '../types';
 import { Paperclip, Video, FileText, Download, ExternalLink, Gift, Copy, Check } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
@@ -125,6 +125,7 @@ export default function StudentPortal({
   const [studentLmdRecords, setStudentLmdRecords] = useState<StudentUERecord[]>([]);
   const [studentTeachingUnits, setStudentTeachingUnits] = useState<TeachingUnit[]>([]);
   const [studentSemesters, setStudentSemesters] = useState<Semester[]>([]);
+  const [studentSemesterResults, setStudentSemesterResults] = useState<StudentSemesterResult[]>([]);
   const [studentUeResources, setStudentUeResources] = useState<Record<string, CourseResource[]>>({});
   const [lmdLoading, setLmdLoading] = useState(false);
 
@@ -432,8 +433,12 @@ export default function StudentPortal({
         // ── Charger le Cursus LMD de l'étudiant ──
         try {
           setLmdLoading(true);
-          const userRecords = await dbAdapter.studentUeRecords.list({ studentEmail: userEmail });
+          const [userRecords, userDelibs] = await Promise.all([
+            dbAdapter.studentUeRecords.list({ studentEmail: userEmail }),
+            dbAdapter.studentSemesterResults.list({ studentEmail: userEmail }),
+          ]);
           setStudentLmdRecords(userRecords);
+          setStudentSemesterResults(userDelibs);
 
           const acceptedApp = loadedApps.find((a: any) => (a.status || '').toLowerCase() === 'accepted' && a.program);
           let progId = acceptedApp?.programId || '';
@@ -2658,16 +2663,60 @@ export default function StudentPortal({
                               const semUes = studentTeachingUnits.filter((u) => !u.semesterId || u.semesterId === sem.id);
                               if (semUes.length === 0) return null;
 
+                              const semDelib = studentSemesterResults.find((sr) => sr.semesterId === sem.id);
+
                               return (
-                                <div key={sem.id} className="space-y-3">
-                                  <div className="flex items-center justify-between bg-bg-primary px-4 py-2.5 rounded-xl border border-border-primary">
-                                    <div className="flex items-center gap-2 font-bold text-xs text-text-primary">
-                                      <BookOpenIcon className="w-4 h-4 text-brand-primary" />
-                                      <span>{sem.name}</span>
+                                <div key={sem.id} className="space-y-4">
+                                  {/* Semester Header with Official Deliberation Verdict */}
+                                  <div className="bg-bg-primary px-4 py-3 rounded-2xl border border-border-primary space-y-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 font-bold text-xs text-text-primary">
+                                        <BookOpenIcon className="w-4 h-4 text-brand-primary" />
+                                        <span>{sem.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary">
+                                          {semUes.length} matière(s)
+                                        </span>
+                                        {semDelib && (
+                                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                            semDelib.decision === 'ADM' || semDelib.decision === 'ADM_COMP'
+                                              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                              : semDelib.decision === 'AJAC'
+                                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                              : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                          }`}>
+                                            {semDelib.decision === 'ADM' && '✅ ADMIS (Semestre validé)'}
+                                            {semDelib.decision === 'ADM_COMP' && '⚖️ ADMIS PAR COMPENSATION'}
+                                            {semDelib.decision === 'AJAC' && '⚠️ PASSAGE CONDITIONNEL (AJAC)'}
+                                            {semDelib.decision === 'AJ' && '❌ AJOURNÉ (Redoublement)'}
+                                            {semDelib.decision === 'DEF' && '⛔ DÉFAILLANT'}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary">
-                                      {semUes.length} matière(s)
-                                    </span>
+
+                                    {semDelib && (
+                                      <div className="pt-2 border-t border-border-primary/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+                                        <div className="flex items-center gap-4">
+                                          <div>
+                                            <span className="text-[10px] text-text-secondary uppercase font-bold block">Moyenne Semestre</span>
+                                            <span className="font-mono font-extrabold text-brand-primary text-sm">
+                                              {semDelib.moyenneSemestre !== undefined ? `${semDelib.moyenneSemestre.toFixed(2)}/20` : '—'}
+                                            </span>
+                                          </div>
+                                          <div className="h-6 w-px bg-border-primary"></div>
+                                          <div className="flex items-center gap-2 text-[11px]">
+                                            <span className="text-emerald-600 font-bold">{semDelib.uesValidees} validée(s)</span>
+                                            {semDelib.uesCompensees > 0 && <span className="text-amber-600 font-bold">• {semDelib.uesCompensees} compensée(s)</span>}
+                                            {semDelib.uesNonValidees > 0 && <span className="text-rose-600 font-bold">• {semDelib.uesNonValidees} dette(s)</span>}
+                                          </div>
+                                        </div>
+                                        <span className="text-[10px] text-text-secondary italic">
+                                          Délibéré le {semDelib.deliberatedAt} par {semDelib.deliberatedBy}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2678,20 +2727,33 @@ export default function StudentPortal({
 
                                       const statusBadge = () => {
                                         if (status === 'valide') return { label: 'Validé', cls: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
-                                        if (status === 'rattrapage') return { label: 'Rattrapage', cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+                                        if (status === 'compense') return { label: 'Compensé', cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+                                        if (status === 'rattrapage') return { label: 'Rattrapage', cls: 'bg-sky-500/10 text-sky-600 border-sky-500/20' };
                                         if (status === 'en_dette') return { label: 'En dette', cls: 'bg-rose-500/10 text-rose-600 border-rose-500/20' };
+                                        if (status === 'defaillant') return { label: 'Défaillant', cls: 'bg-rose-500/20 text-rose-700 border-rose-500/40' };
                                         return { label: 'Inscrit', cls: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20' };
                                       };
 
                                       const badge = statusBadge();
+                                      const hasNotes = rec && (rec.noteFinal !== undefined || rec.noteCC !== undefined || rec.noteExam !== undefined || rec.noteBestOf !== undefined);
 
                                       return (
                                         <div key={ue.id} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3 shadow-sm">
                                           <div className="flex items-start justify-between gap-2">
                                             <div>
-                                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-primary/10 text-brand-primary">
-                                                {ue.code}
-                                              </span>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-primary/10 text-brand-primary">
+                                                  {ue.code}
+                                                </span>
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-bg-secondary border border-border-primary text-text-secondary">
+                                                  Coeff. {ue.coefficient ?? 3}
+                                                </span>
+                                                {ue.isCompensable === false && (
+                                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                                                    Verrou
+                                                  </span>
+                                                )}
+                                              </div>
                                               <h4 className="font-bold text-xs text-text-primary mt-1.5">{ue.title}</h4>
                                             </div>
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
@@ -2699,6 +2761,7 @@ export default function StudentPortal({
                                             </span>
                                           </div>
 
+                                          {/* Volume horaire CM / TD / TP */}
                                           <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
                                             <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
                                               <span className="text-text-secondary block">CM</span>
@@ -2713,6 +2776,41 @@ export default function StudentPortal({
                                               <span className="font-bold text-text-primary">{ue.volumeTP || 0}h</span>
                                             </div>
                                           </div>
+
+                                          {/* Évaluations & Notes M3C */}
+                                          {hasNotes && (
+                                            <div className="bg-bg-secondary/60 rounded-lg p-2.5 border border-border-primary/60 space-y-2 text-xs">
+                                              <div className="flex items-center justify-between text-[11px]">
+                                                <span className="font-bold text-text-secondary">Sous-notes M3C :</span>
+                                                <div className="flex items-center gap-2 font-mono text-[10px]">
+                                                  {rec.noteCC !== undefined && <span>CC: <strong>{rec.noteCC}/20</strong></span>}
+                                                  {rec.noteExam !== undefined && <span>Ex: <strong>{rec.noteExam}/20</strong></span>}
+                                                  {rec.noteTP !== undefined && <span>TP: <strong>{rec.noteTP}/20</strong></span>}
+                                                </div>
+                                              </div>
+
+                                              <div className="flex items-center justify-between pt-1 border-t border-border-primary/40">
+                                                <div>
+                                                  <span className="text-[10px] text-text-secondary block font-bold uppercase">Note Retenue</span>
+                                                  {rec.noteRattrapage !== undefined && (
+                                                    <span className="text-[9px] text-amber-500 block">Session 2 : {rec.noteRattrapage}/20</span>
+                                                  )}
+                                                </div>
+                                                <div className="text-right">
+                                                  <span className="font-mono font-extrabold text-sm text-text-primary">
+                                                    {rec.noteBestOf !== undefined
+                                                      ? `${rec.noteBestOf.toFixed(2)}/20`
+                                                      : rec.noteFinal !== undefined
+                                                      ? `${rec.noteFinal.toFixed(2)}/20`
+                                                      : '—'}
+                                                  </span>
+                                                  {rec.isCompensated && (
+                                                    <span className="text-[9px] text-amber-600 block font-semibold">Compensée au jury</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
 
                                           {/* Ressources pédagogiques (Vidéos & PDF) */}
                                           {resources.length > 0 && (
