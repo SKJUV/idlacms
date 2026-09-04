@@ -80,8 +80,8 @@ export const dbAdapter = {
             },
             [
               Permission.read(Role.any()),
-              Permission.update(Role.team('admins')),
-              Permission.delete(Role.team('admins')),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -107,8 +107,8 @@ export const dbAdapter = {
             updates as any,
             [
               Permission.read(Role.any()),
-              Permission.update(Role.team('admins')),
-              Permission.delete(Role.team('admins')),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -198,9 +198,9 @@ export const dbAdapter = {
             },
             [
               Permission.create(Role.any()),
-              Permission.read(Role.team('admins')),
-              Permission.update(Role.team('admins')),
-              Permission.delete(Role.team('admins')),
+              Permission.read(Role.label('admin')),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -294,7 +294,7 @@ export const dbAdapter = {
             time: "À l'instant",
           },
           [
-            Permission.read(Role.team('admins')),
+            Permission.read(Role.label('admin')),
             Permission.create(Role.users()),
           ]
         );
