@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import ReactPlayer from 'react-player';
+import _ReactPlayer from 'react-player';
 
 // Fix TS types for ReactPlayer which is missing `url` prop in its strict typing
-const Player = ReactPlayer as any;
+const Player = (_ReactPlayer as any).default || _ReactPlayer;
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
@@ -2280,9 +2280,22 @@ export default function StudentPortal({
                       <div className="space-y-8 flex-1 flex flex-col">
                         {latestMaterial.videoUrl && (
                           <div className="space-y-3 bg-bg-secondary border border-border-primary rounded-xl p-4 shadow-sm">
-                            <h4 className="font-bold text-sm text-text-primary flex items-center gap-2">
-                              <PlayCircleIcon className="w-4 h-4 text-brand-primary" /> Vidéo du Cours
-                            </h4>
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-bold text-sm text-text-primary flex items-center gap-2">
+                                <PlayCircleIcon className="w-4 h-4 text-brand-primary" /> Vidéo du Cours
+                              </h4>
+                              {latestMaterial.videoUrl.match(/(youtube\.com|youtu\.be)/i) && (
+                                <a 
+                                  href={latestMaterial.videoUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  Voir sur YouTube
+                                </a>
+                              )}
+                            </div>
                             <div className="relative pt-[56.25%] rounded-lg overflow-hidden border border-border-primary/50 bg-black">
                               {/* @ts-ignore ReactPlayer TS types miss the url property for some reason */}
                             <Player 
