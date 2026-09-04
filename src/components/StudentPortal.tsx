@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import ReactPlayer from 'react-player';
+import _ReactPlayer from 'react-player';
 
 // Fix TS types for ReactPlayer which is missing `url` prop in its strict typing
-const Player = ReactPlayer as any;
+const Player = (_ReactPlayer as any).default || _ReactPlayer;
 import {
   LockIcon, MailIcon, AlertCircleIcon, CheckCircle2Icon,
   ArrowLeftIcon, ChevronRightIcon, AwardIcon, PlayCircleIcon, BookmarkIcon,
