@@ -1316,7 +1316,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-text-secondary uppercase flex items-center justify-between">
-                      <span>Lien ou Fichier Vidéo du Cours (Optionnel)</span>
+                      <span>Lien (YouTube recommandé) ou Fichier Vidéo du Cours</span>
                       {materialVideoFile && (
                         <span className="text-[10px] text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <CheckCircle2Icon className="w-3 h-3" /> {materialVideoFile.name}
