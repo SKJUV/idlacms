@@ -6,6 +6,7 @@ import AdminSidebar from './components/AdminSidebar';
 import EntranceModal from './components/EntranceModal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
+import { dbAdapter } from './lib/dbAdapter';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -495,6 +496,12 @@ export default function App() {
             );
           }
         }
+
+        // Fetch Donations
+        try {
+          const dons = await dbAdapter.donations.list();
+          setDonations(dons);
+        } catch (e) {}
       } catch (err: any) {
         console.error("Impossible d'accéder au serveur Appwrite:", err);
         if (localPrograms.length > 0) setPrograms(localPrograms);
@@ -635,16 +642,25 @@ export default function App() {
     ]);
   };
 
-  const handleSubmitDonation = (d: Pick<Donation, 'donor' | 'email' | 'amount' | 'message'>) => {
-    setDonations((curr) => [
-      {
+  const handleSubmitDonation = async (d: Pick<Donation, 'donor' | 'email' | 'amount' | 'message'>) => {
+    try {
+      const created = await dbAdapter.donations.create({
         ...d,
-        id: `don-${Date.now()}`,
         date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
         status: 'Nouveau',
-      },
-      ...curr,
-    ]);
+      });
+      setDonations((curr) => [created, ...curr]);
+    } catch (e) {
+      setDonations((curr) => [
+        {
+          ...d,
+          id: `don-${Date.now()}`,
+          date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
+          status: 'Nouveau',
+        },
+        ...curr,
+      ]);
+    }
   };
 
   const handleLogout = () => {

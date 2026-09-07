@@ -2,7 +2,7 @@ import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwrite
 import { 
   Program, NewsArticle, Testimonial, User, PreRegistration, ActivityLog, 
   Course, ScheduleSlot, AcademicSession, Semester, TeachingUnit, StudentUERecord, 
-  CourseResource, StudentSemesterResult 
+  CourseResource, StudentSemesterResult, Donation, Campaign 
 } from '../types';
 import { lmdEvaluationEngine } from './lmdEvaluationEngine';
 
@@ -418,15 +418,13 @@ export const dbAdapter = {
               }
               if (!Array.isArray(assigned)) assigned = [];
               const emailKey = (d.email || '').toLowerCase().trim();
-              if (!teachersMap.has(emailKey) || !teachersMap.get(emailKey).name) {
-                teachersMap.set(emailKey, {
-                  id: d.$id,
-                  name: `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.name || d.email,
-                  email: d.email,
-                  assignedPrograms: assigned,
-                  speciality: d.speciality || '',
-                });
-              }
+              teachersMap.set(emailKey, {
+                id: d.$id,
+                name: `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.name || d.email,
+                email: d.email,
+                assignedPrograms: assigned,
+                speciality: d.speciality || '',
+              });
             });
           } catch (err) {
             console.warn('dbAdapter.teachers collection query:', err);
@@ -488,9 +486,9 @@ export const dbAdapter = {
         }));
 
         const mergedMap = new Map<string, Semester>();
-        remote.forEach((r) => mergedMap.set(r.id, r));
-        local.forEach((l) => {
-          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        local.forEach((l) => mergedMap.set(l.id, l));
+        remote.forEach((r) => {
+          mergedMap.set(r.id, { ...(mergedMap.get(r.id) || {}), ...r });
         });
         const merged = Array.from(mergedMap.values());
         if (merged.length > 0) {
@@ -634,9 +632,9 @@ export const dbAdapter = {
         }));
 
         const mergedMap = new Map<string, TeachingUnit>();
-        remote.forEach((r) => mergedMap.set(r.id, r));
-        local.forEach((l) => {
-          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        local.forEach((l) => mergedMap.set(l.id, l));
+        remote.forEach((r) => {
+          mergedMap.set(r.id, { ...(mergedMap.get(r.id) || {}), ...r });
         });
         const merged = Array.from(mergedMap.values());
         if (merged.length > 0) {
@@ -793,6 +791,7 @@ export const dbAdapter = {
           ueId: d.ueId,
           semesterId: d.semesterId,
           programId: d.programId,
+          academicYear: d.academicYear || '',
           sessionType: d.sessionType || 'normale',
           status: d.status || 'inscrit',
           validatedBy: d.validatedBy || '',
@@ -810,9 +809,9 @@ export const dbAdapter = {
         }));
 
         const mergedMap = new Map<string, StudentUERecord>();
-        remote.forEach((r) => mergedMap.set(r.id, r));
-        local.forEach((l) => {
-          mergedMap.set(l.id, { ...(mergedMap.get(l.id) || {}), ...l });
+        local.forEach((l) => mergedMap.set(l.id, l));
+        remote.forEach((r) => {
+          mergedMap.set(r.id, { ...(mergedMap.get(r.id) || {}), ...r });
         });
         const merged = Array.from(mergedMap.values());
         if (merged.length > 0) {
@@ -862,6 +861,7 @@ export const dbAdapter = {
             validatedAt: rec.validatedAt || '',
             remarks: rec.remarks || '',
           };
+          if (rec.academicYear) docData.academicYear = rec.academicYear;
           if (rec.studentId) docData.studentId = rec.studentId;
           if (rec.noteCC !== undefined) docData.noteCC = Number(rec.noteCC);
           if (rec.noteExam !== undefined) docData.noteExam = Number(rec.noteExam);
@@ -1381,6 +1381,7 @@ export const dbAdapter = {
           studentId: d.studentId || '',
           programId: d.programId,
           semesterId: d.semesterId,
+          academicYear: d.academicYear || '',
           moyenneSemestre: d.moyenneSemestre !== undefined ? Number(d.moyenneSemestre) : undefined,
           totalCoefficients: Number(d.totalCoefficients || 0),
           uesValidees: Number(d.uesValidees || 0),
@@ -1394,8 +1395,12 @@ export const dbAdapter = {
           remarks: d.remarks || '',
         }));
 
-        if (remote.length > 0) {
-          return remote;
+        const mergedMap = new Map<string, StudentSemesterResult>();
+        local.forEach((l) => mergedMap.set(l.id, l));
+        remote.forEach((r) => mergedMap.set(r.id, { ...(mergedMap.get(r.id) || {}), ...r }));
+        const merged = Array.from(mergedMap.values());
+        if (merged.length > 0) {
+          return merged;
         }
         return local;
       } catch (err) {
@@ -1482,6 +1487,138 @@ export const dbAdapter = {
           console.warn('dbAdapter.studentSemesterResults.delete cloud error:', err);
         }
       }
+    }
+  },
+
+  // ── Donations ─────────────────────────────────────────────────────────────
+  donations: {
+    async list(): Promise<Donation[]> {
+      let local: Donation[] = [];
+      try {
+        local = JSON.parse(localStorage.getItem('idla_local_donations') || '[]');
+      } catch (e) {}
+
+      const donationsColl = (APPWRITE_CONFIG.collections as any).donations || 'donations';
+      if (!isAppwriteDbConfigured() || !donationsColl) {
+        return local;
+      }
+
+      try {
+        const res = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          donationsColl,
+          [Query.limit(100), Query.orderDesc('$createdAt')]
+        );
+        const remote: Donation[] = res.documents.map((d: any) => ({
+          id: d.$id,
+          donor: d.donor || '',
+          email: d.email || '',
+          amount: Number(d.amount || 0),
+          message: d.message || '',
+          date: d.date || new Date(d.$createdAt).toLocaleDateString('fr-FR'),
+          status: d.status || 'Nouveau',
+        }));
+
+        const mergedMap = new Map<string, Donation>();
+        local.forEach((l) => mergedMap.set(l.id, l));
+        remote.forEach((r) => mergedMap.set(r.id, { ...(mergedMap.get(r.id) || {}), ...r }));
+        const merged = Array.from(mergedMap.values());
+        try { localStorage.setItem('idla_local_donations', JSON.stringify(merged)); } catch (e) {}
+        return merged.length > 0 ? merged : local;
+      } catch (err) {
+        return local;
+      }
+    },
+
+    async create(data: Omit<Donation, 'id'>): Promise<Donation> {
+      const newId = `don-${Date.now()}`;
+      const donation: Donation = { ...data, id: newId };
+
+      try {
+        const curr: Donation[] = JSON.parse(localStorage.getItem('idla_local_donations') || '[]');
+        localStorage.setItem('idla_local_donations', JSON.stringify([donation, ...curr]));
+      } catch (e) {}
+
+      const donationsColl = (APPWRITE_CONFIG.collections as any).donations || 'donations';
+      if (isAppwriteDbConfigured() && donationsColl) {
+        try {
+          await databases.createDocument(
+            APPWRITE_CONFIG.databaseId,
+            donationsColl,
+            ID.unique(),
+            {
+              donor: donation.donor,
+              email: donation.email,
+              amount: donation.amount,
+              message: donation.message || '',
+              date: donation.date,
+              status: donation.status,
+            }
+          );
+        } catch (err) {
+          console.warn('dbAdapter.donations.create cloud error:', err);
+        }
+      }
+      return donation;
+    },
+
+    async update(id: string, updates: Partial<Donation>): Promise<void> {
+      try {
+        const curr: Donation[] = JSON.parse(localStorage.getItem('idla_local_donations') || '[]');
+        const next = curr.map((d) => (d.id === id ? { ...d, ...updates } : d));
+        localStorage.setItem('idla_local_donations', JSON.stringify(next));
+      } catch (e) {}
+
+      const donationsColl = (APPWRITE_CONFIG.collections as any).donations || 'donations';
+      if (isAppwriteDbConfigured() && donationsColl) {
+        try {
+          await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            donationsColl,
+            id,
+            updates
+          );
+        } catch (err) {
+          console.warn('dbAdapter.donations.update cloud error:', err);
+        }
+      }
+    },
+
+    async delete(id: string): Promise<void> {
+      try {
+        const curr: Donation[] = JSON.parse(localStorage.getItem('idla_local_donations') || '[]');
+        const next = curr.filter((d) => d.id !== id);
+        localStorage.setItem('idla_local_donations', JSON.stringify(next));
+      } catch (e) {}
+
+      const donationsColl = (APPWRITE_CONFIG.collections as any).donations || 'donations';
+      if (isAppwriteDbConfigured() && donationsColl) {
+        try {
+          await databases.deleteDocument(
+            APPWRITE_CONFIG.databaseId,
+            donationsColl,
+            id
+          );
+        } catch (err) {
+          console.warn('dbAdapter.donations.delete cloud error:', err);
+        }
+      }
+    }
+  },
+
+  // ── Campaigns ─────────────────────────────────────────────────────────────
+  campaigns: {
+    async list(): Promise<Campaign[]> {
+      let local: Campaign[] = [];
+      try {
+        local = JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+      } catch (e) {}
+      return local;
+    },
+    async save(campaigns: Campaign[]): Promise<void> {
+      try {
+        localStorage.setItem('idla_local_campaigns', JSON.stringify(campaigns));
+      } catch (e) {}
     }
   },
 
