@@ -1068,12 +1068,85 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
           studentEmail: st.studentEmail,
           studentName: st.studentName,
           matricule: st.matricule,
-          annual
+          annual: {
+            ...annual,
+            s1Average: s1.moyenneSemestre ?? null,
+            s2Average: s2.moyenneSemestre ?? null,
+            annualAverage: annual.moyenneAnnuelle,
+            annualDecision: annual.decision,
+          }
         });
       }
     });
     setAnnualResults(results);
     showToast(`Calcul de compensation annuelle exécuté pour ${results.length} étudiant(s).`);
+  };
+
+  // ── Commit Annual Compensation Deliberation ──
+  const handleCommitAnnualCompensation = async () => {
+    if (!selectedProgram || annualResults.length === 0) return;
+    setIsLoading(true);
+    try {
+      let savedCount = 0;
+      for (const item of annualResults) {
+        if (!item.annual.annualAverage || item.annual.annualDecision === 'EN_COURS') continue;
+
+        if (item.annual.isCompensationApplied) {
+          const studentEmailNorm = item.studentEmail.toLowerCase().trim();
+          const targetUeRecords = studentRecords.filter((r) => 
+            r.studentEmail.toLowerCase().trim() === studentEmailNorm &&
+            (r.semesterId === annualSem1Id || r.semesterId === annualSem2Id) &&
+            r.status !== 'valide' &&
+            !r.isDefaillant
+          );
+
+          for (const rec of targetUeRecords) {
+            const ue = teachingUnits.find((u) => u.id === rec.ueId);
+            if (ue?.isCompensable !== false && (rec.noteBestOf ?? rec.noteFinal ?? 0) >= DEFAULT_LMD_THRESHOLDS.eliminatoryThreshold) {
+              await dbAdapter.studentUeRecords.update(rec.id, {
+                status: 'compense',
+                isCompensated: true,
+                validatedBy: 'Jury Annuel IDLA (Compensation)',
+                validatedAt: new Date().toLocaleDateString('fr-FR'),
+              });
+            }
+          }
+        }
+
+        if (annualSem2Id) {
+          await dbAdapter.studentSemesterResults.save({
+            studentEmail: item.studentEmail,
+            studentName: item.studentName,
+            programId: selectedProgram.id,
+            semesterId: annualSem2Id,
+            academicYear: selectedAcademicYear,
+            moyenneSemestre: item.annual.annualAverage,
+            totalCoefficients: item.annual.totalCoefficients,
+            uesValidees: item.annual.annualDecision === 'ADM_COMP' || item.annual.annualDecision === 'ADM' ? item.annual.totalCoefficients : 0,
+            uesNonValidees: 0,
+            uesCompensees: item.annual.isCompensationApplied ? 1 : 0,
+            uesDefaillantes: item.annual.annualDecision === 'DEF' ? 1 : 0,
+            decision: item.annual.annualDecision,
+            isCompensationApplied: item.annual.isCompensationApplied,
+            deliberatedBy: 'Jury Annuel IDLA',
+            deliberatedAt: new Date().toLocaleDateString('fr-FR'),
+            remarks: `Délibération annuelle : Moyenne ${item.annual.annualAverage}/20. Décision : ${item.annual.annualDecision}`,
+          });
+        }
+        savedCount++;
+      }
+
+      showToast(`Délibération annuelle validée et enregistrée pour ${savedCount} étudiant(s).`);
+      const refreshedRecords = await dbAdapter.studentUeRecords.list({ programId: selectedProgram.id });
+      setStudentRecords(refreshedRecords);
+      const refreshedRes = await dbAdapter.studentSemesterResults.list({ programId: selectedProgram.id });
+      setSemesterResults(refreshedRes);
+    } catch (err: any) {
+      console.error('Erreur enregistrement délibération annuelle:', err);
+      showToast(err.message || 'Erreur lors de l\'enregistrement annuel.', true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // ── Export Deliberation PV to CSV ──
@@ -1820,6 +1893,18 @@ export default function AcademicStructure({ programs, logActivity }: AcademicStr
                 <Sparkles className="w-3.5 h-3.5" />
                 Calculer la Compensation Annuelle
               </button>
+
+              {annualResults.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCommitAnnualCompensation}
+                  disabled={isLoading}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-xl font-bold transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Valider et Enregistrer la Délibération Annuelle ({annualResults.length})
+                </button>
+              )}
             </div>
 
             {annualResults.length > 0 && (

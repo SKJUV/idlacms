@@ -1034,24 +1034,36 @@ export const dbAdapter = {
         courseTitles?: string[];
         teacherId?: string;
         teacherName?: string;
+        semesterNumber?: number;
+        entryLevel?: string;
       }
     ): Promise<{ programId: string; semesterId: string; ues: TeachingUnit[] }> {
       const progId = (await dbAdapter.programs.resolveProgramId(programTitleOrId)) || programTitleOrId;
       
-      // 1. Ensure Semestre 1 exists
+      let targetSemesterNum = options?.semesterNumber || 1;
+      if (options?.entryLevel) {
+        const lvl = options.entryLevel.toUpperCase().trim();
+        if (lvl.includes('L3') || lvl.includes('LICENCE 3')) targetSemesterNum = 5;
+        else if (lvl.includes('L2') || lvl.includes('LICENCE 2')) targetSemesterNum = 3;
+        else if (lvl.includes('M2') || lvl.includes('MASTER 2')) targetSemesterNum = 3;
+        else if (lvl.includes('M1') || lvl.includes('MASTER 1')) targetSemesterNum = 1;
+        else if (lvl.includes('L1') || lvl.includes('LICENCE 1')) targetSemesterNum = 1;
+      }
+
+      // 1. Ensure Target Semestre exists
       let sems = await dbAdapter.semesters.list(progId);
-      let s1 = sems.find((s) => s.number === 1) || sems[0];
-      if (!s1) {
-        s1 = await dbAdapter.semesters.create({
+      let targetSem = sems.find((s) => s.number === targetSemesterNum) || (targetSemesterNum === 1 ? sems[0] : undefined);
+      if (!targetSem) {
+        targetSem = await dbAdapter.semesters.create({
           programId: progId,
-          name: 'Semestre 1 (S1)',
-          number: 1,
+          name: `Semestre ${targetSemesterNum} (S${targetSemesterNum})`,
+          number: targetSemesterNum,
           status: 'actif',
         });
       }
 
       // 2. Ensure UEs exist for specified courses or defaults
-      const existingUes = await dbAdapter.teachingUnits.list(progId, s1.id);
+      const existingUes = await dbAdapter.teachingUnits.list(progId, targetSem.id);
       const createdOrUpdatedUes: TeachingUnit[] = [...existingUes];
 
       if (options?.courseTitles && options.courseTitles.length > 0) {
@@ -1069,7 +1081,7 @@ export const dbAdapter = {
           } else {
             const newUe = await dbAdapter.teachingUnits.create({
               programId: progId,
-              semesterId: s1.id,
+              semesterId: targetSem.id,
               code: `UE${Math.floor(100 + Math.random() * 900)}`,
               title: cTitle,
               teacherId: options.teacherId || '',
@@ -1083,7 +1095,7 @@ export const dbAdapter = {
         }
       }
 
-      return { programId: progId, semesterId: s1.id, ues: createdOrUpdatedUes };
+      return { programId: progId, semesterId: targetSem.id, ues: createdOrUpdatedUes };
     },
 
     /**
