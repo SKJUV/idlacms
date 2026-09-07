@@ -116,6 +116,10 @@ const tabFromPath = (pathname: string): ActiveTab => {
   // On n'écrase plus l'onglet par 'home' si c'est une route protégée.
   // On laisse la vérification de session gérer l'accès plus tard.
 
+  if (clean === '/candidat' || clean === '/candidat/dossier') {
+    return 'student-login';
+  }
+
   const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
     const cleanPath = path.replace(/\/+$/, '') || '/';
     return cleanPath === clean;

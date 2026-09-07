@@ -333,35 +333,38 @@ export default function AdminPortal({
     name: string,
     email: string,
     role: User['role'],
-    status: User['status']
+    status: User['status'],
+    password?: string
   ) => {
     const names = name.split(' ');
-    const initials = names.map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    const initials = names.map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'UN';
+    let createdId = Math.floor(1000 + Math.random() * 9000).toString();
 
-    const newUser: User = {
-      id: Math.floor(1000 + Math.random() * 9000).toString(),
-      name,
-      email,
-      role,
-      status,
-      lastLogin: "À l'instant",
-      initials: initials || 'UN',
-    };
-
-    setUsersList((curr) => [newUser, ...curr]);
-
-    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+    if (password) {
+      const resp = await fetch('/api/create-cms-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role, status }),
+      });
+      const resData = await resp.json();
+      if (!resp.ok || !resData.success) {
+        throw new Error(resData.error || "Échec lors de la création du compte dans l'authentification.");
+      }
+      if (resData.userId) {
+        createdId = resData.userId;
+      }
+    } else if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
       try {
         await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.cmsUsers,
-          newUser.id,
+          createdId,
           {
-            name: newUser.name,
-            email: newUser.email,
-            role: newUser.role,
-            status: newUser.status,
-            initials: newUser.initials,
+            name,
+            email,
+            role,
+            status,
+            initials,
             lastLogin: new Date().toISOString(),
           }
         );
@@ -370,6 +373,17 @@ export default function AdminPortal({
       }
     }
 
+    const newUser: User = {
+      id: createdId,
+      name,
+      email,
+      role,
+      status,
+      lastLogin: "À l'instant",
+      initials,
+    };
+
+    setUsersList((curr) => [newUser, ...curr]);
     logActivity('registration', 'Super Admin', `a créé l'utilisateur CMS : ${name} (${role}).`);
   };
 

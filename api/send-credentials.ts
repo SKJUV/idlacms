@@ -150,7 +150,7 @@ export default async function handler(req: any, res: any) {
           </div>` : ''}
           <p>Connectez-vous à votre espace candidat pour explorer les programmes, postuler et échanger avec votre conseillère d'admission :</p>
           <div style="text-align: center; margin: 24px 0;">
-            <a href="https://idlaacademy.online/candidat" style="display: inline-block; background-color: #0d9488; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px;">
+            <a href="https://idlaacademy.online/etudiant" style="display: inline-block; background-color: #0d9488; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: bold; font-size: 14px;">
               Accéder à mon espace candidat →
             </a>
           </div>

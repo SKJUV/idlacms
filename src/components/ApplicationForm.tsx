@@ -73,13 +73,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // OTP State
+  // OTP State (Sécurisé côté serveur)
   const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
+  const [otpToken, setOtpToken] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   const isCertification = selectedProgramType === 'Certification';
 
@@ -255,14 +256,12 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       setErrorMessage('Vous devez accepter la déclaration sur l\'honneur avant de recevoir le code.');
       return;
     }
-    const generated = Math.floor(100000 + Math.random() * 900000).toString();
-    setOtpCode(generated);
-    setOtpSent(true);
+    setOtpSent(false);
     setOtpVerified(false);
     setOtpInput('');
+    setOtpToken('');
 
     const fullName = `${firstName} ${lastName}`.trim() || 'Candidat(e)';
-
     setIsSendingOtp(true);
     try {
       const response = await fetch('/api/send-otp', {
@@ -271,32 +270,61 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: email.trim().toLowerCase(),
           fullName,
-          selectedProgram,
-          otpCode: generated,
         }),
       });
 
-      if (response.ok) {
-        // OTP envoyé avec succès
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.token) {
+        setOtpToken(data.token);
+        setOtpSent(true);
       } else {
-        const errData = await response.json();
-        console.warn("Erreur envoi OTP:", errData);
+        setOtpError(data.error || "Échec de l'envoi du code OTP. Veuillez vérifier votre adresse e-mail.");
       }
     } catch (err) {
-      console.warn("Erreur fetch envoi OTP:", err);
+      setOtpError("Erreur de connexion lors de l'envoi du code OTP.");
     } finally {
       setIsSendingOtp(false);
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     setOtpError('');
-    if (otpInput.trim() === otpCode || otpInput.trim() === '123456') {
-      setOtpVerified(true);
-    } else {
-      setOtpError('Code incorrect. Veuillez vérifier le code reçu (ou saisir 123456 en secours) et réessayer.');
+    if (!otpInput.trim()) {
+      setOtpError('Veuillez saisir le code reçu par e-mail.');
+      return;
+    }
+    if (!otpToken) {
+      setOtpError('Aucun jeton de vérification valide. Veuillez redemander un code.');
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const response = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otpCode: otpInput.trim(),
+          token: otpToken,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.success) {
+        setOtpVerified(true);
+        setOtpError('');
+      } else {
+        setOtpError(data.error || 'Code de vérification incorrect ou expiré. Veuillez vérifier le code reçu et réessayer.');
+      }
+    } catch (err) {
+      setOtpError('Erreur de validation du code. Veuillez réessayer.');
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
@@ -1155,10 +1183,11 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                           <button
                             type="button"
                             onClick={handleVerifyOtp}
-                            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                            disabled={isVerifyingOtp || otpInput.trim().length < 6}
+                            className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                           >
-                            <ShieldCheck className="w-4 h-4" />
-                            Vérifier
+                            <ShieldCheck className={`w-4 h-4 ${isVerifyingOtp ? 'animate-spin' : ''}`} />
+                            {isVerifyingOtp ? 'Vérification...' : 'Vérifier'}
                           </button>
                         </div>
                         <button
