@@ -220,18 +220,10 @@ export async function sendTemplateEmail(
       message: `Échec d'envoi Resend (${resendRes.status})${detailMsg ? `: ${detailMsg}` : ' - Erreur du serveur d\'envoi.'}`
     };
   } else {
-    // Proxy inaccessible (CORS / réseau) — enregistrer la relance dans les logs locaux
-    logEmailSent({
-      email: recipientEmail,
-      templateKey,
-      templateLabel: spec.label,
-      subject,
-      sentAt: new Date().toISOString()
-    });
-
+    // Proxy inaccessible (réseau / serveur injoignable) — échec réel
     return {
-      success: true,
-      message: `Relance enregistrée pour ${recipientEmail}. (Conseil: Déployez la fonction backend pour l'envoi en direct sans restriction CORS navigateur).`
+      success: false,
+      message: `Impossible de contacter le service d'envoi d'e-mails pour ${recipientEmail}. Veuillez vérifier la connexion ou la clé API.`
     };
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SendIcon, MessageSquareIcon, Paperclip } from 'lucide-react';
+import { SendIcon, MessageSquareIcon } from 'lucide-react';
 import { formatDateTime, getClassChatId } from '../../lib/utils';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
 
 interface StudentClassChatProps {
   studentName: string;
@@ -22,55 +23,144 @@ export default function StudentClassChat({
   const channelId = getClassChatId('Program', courseTitle, level);
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
-      const filtered = stored.filter((m: any) => m.channelId === channelId);
-      if (filtered.length > 0) {
-        setMessages(filtered);
-      } else {
-        setMessages([
-          {
-            id: 'welcome-1',
-            senderName: 'Enseignant Referent',
-            sender: 'teacher',
-            text: `Bienvenue dans le salon virtuel de ${courseTitle} (${level}). Posez vos questions ici.`,
-            time: 'Aujourd\'hui',
-          },
-        ]);
+    let isMounted = true;
+
+    const loadMessages = async () => {
+      // 1. Local storage fallback
+      let localList: any[] = [];
+      try {
+        const stored = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
+        localList = stored.filter((m: any) => m.channelId === channelId);
+      } catch (e) {}
+
+      // 2. Fetch from Appwrite messages collection if configured
+      if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+        try {
+          const res = await databases.listDocuments(
+            APPWRITE_CONFIG.databaseId,
+            APPWRITE_CONFIG.collections.messages,
+            [Query.equal('applicationId', channelId), Query.orderAsc('$createdAt'), Query.limit(100)]
+          );
+
+          if (isMounted && res.documents.length > 0) {
+            const cloudMsgs = res.documents.map((d: any) => {
+              let parsedText = d.text;
+              let sName = d.sender === 'advisor' ? 'Enseignant Référent' : (studentName || 'Étudiant');
+              let senderType = d.sender === 'advisor' ? 'teacher' : 'student';
+
+              try {
+                const data = JSON.parse(d.text);
+                if (data.t || data.text) {
+                  parsedText = data.t || data.text;
+                  sName = data.n || data.name || sName;
+                  if (data.email) {
+                    senderType = data.email.toLowerCase().trim() === studentEmail.toLowerCase().trim() ? 'student' : (d.sender === 'advisor' ? 'teacher' : 'student');
+                  }
+                }
+              } catch (e) {}
+
+              return {
+                id: d.$id,
+                channelId,
+                senderName: sName,
+                sender: senderType,
+                text: parsedText,
+                time: formatDateTime(d.$createdAt || d.createdAt || new Date().toISOString()),
+                createdAt: d.$createdAt || d.createdAt,
+              };
+            });
+
+            setMessages(cloudMsgs);
+            return;
+          }
+        } catch (err) {
+          console.warn('Erreur chargement messages de classe Appwrite:', err);
+        }
       }
-    } catch (e) {
-      setMessages([]);
-    }
-  }, [channelId, courseTitle, level]);
+
+      if (isMounted) {
+        if (localList.length > 0) {
+          setMessages(localList);
+        } else {
+          setMessages([
+            {
+              id: 'welcome-1',
+              senderName: 'Enseignant Référent',
+              sender: 'teacher',
+              text: `Bienvenue dans le salon virtuel de ${courseTitle} (${level}). Posez vos questions ici.`,
+              time: 'Aujourd\'hui',
+            },
+          ]);
+        }
+      }
+    };
+
+    loadMessages();
+    const interval = setInterval(loadMessages, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [channelId, courseTitle, level, studentEmail, studentName]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
+    const textToSend = inputText.trim();
+    const nowIso = new Date().toISOString();
+    const localId = `msg-${Date.now()}`;
+
     const newMsg = {
-      id: `msg-${Date.now()}`,
+      id: localId,
       channelId,
       senderName: studentName || 'Étudiant',
       senderEmail: studentEmail,
       sender: 'student',
-      text: inputText.trim(),
-      time: formatDateTime(new Date().toISOString()),
-      createdAt: new Date().toISOString(),
+      text: textToSend,
+      time: formatDateTime(nowIso),
+      createdAt: nowIso,
     };
 
-    const updated = [...messages, newMsg];
-    setMessages(updated);
+    setMessages((curr) => [...curr, newMsg]);
     setInputText('');
 
+    // Persist to local storage
     try {
       const allMsgs = JSON.parse(localStorage.getItem('idla_local_class_messages') || '[]');
       allMsgs.push(newMsg);
       localStorage.setItem('idla_local_class_messages', JSON.stringify(allMsgs));
     } catch (e) {}
+
+    // Persist to Appwrite Cloud
+    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
+      try {
+        const payloadStr = JSON.stringify({
+          n: studentName || 'Étudiant',
+          t: textToSend,
+          email: studentEmail,
+          type: 'text'
+        });
+
+        await databases.createDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.messages,
+          ID.unique(),
+          {
+            applicationId: channelId,
+            sender: 'student',
+            text: payloadStr,
+            createdAt: nowIso
+          }
+        );
+      } catch (err) {
+        console.error("Erreur envoi message classe Appwrite:", err);
+      }
+    }
   };
 
   return (

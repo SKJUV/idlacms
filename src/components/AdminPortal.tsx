@@ -83,8 +83,20 @@ export default function AdminPortal({
   // Pre-registrations selected ID
   const [selectedPreRegId, setSelectedPreRegId] = useState<string | null>(null);
 
-  // Marketing campaigns state
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  // Marketing campaigns state with local persistence
+  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('idla_local_campaigns', JSON.stringify(campaigns));
+    } catch (e) {}
+  }, [campaigns]);
 
   // CMS Settings States
   const [settingsName, setSettingsName] = useState('Administrateur');

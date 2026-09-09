@@ -1,6 +1,7 @@
 import React from 'react';
 import { HeartHandshake, CheckCircle2, Trash2 } from 'lucide-react';
 import { Donation } from '../../types';
+import { dbAdapter } from '../../lib/dbAdapter';
 
 interface DonationsProps {
   donations: Donation[];
@@ -13,8 +14,9 @@ export default function Donations({
   setDonations,
   logActivity,
 }: DonationsProps) {
-  const handleConfirmDonation = (id: string) => {
+  const handleConfirmDonation = async (id: string) => {
     setDonations((curr) => curr.map((d) => (d.id === id ? { ...d, status: 'Confirmé' } : d)));
+    await dbAdapter.donations.update(id, { status: 'Confirmé' });
     const target = donations.find((d) => d.id === id);
     if (target) {
       logActivity(
@@ -25,8 +27,9 @@ export default function Donations({
     }
   };
 
-  const handleDeleteDonation = (id: string) => {
+  const handleDeleteDonation = async (id: string) => {
     setDonations((curr) => curr.filter((d) => d.id !== id));
+    await dbAdapter.donations.delete(id);
   };
 
   return (
