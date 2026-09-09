@@ -344,7 +344,7 @@ export default function PreRegistrations({
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
               createData,
-              [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
+              [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
             );
           } catch (e) {
             console.error('Erreur création inscription manuelle Appwrite DB:', e);
