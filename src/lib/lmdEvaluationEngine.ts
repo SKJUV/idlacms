@@ -193,8 +193,27 @@ export const lmdEvaluationEngine = {
     programId: string,
     thresholds: LmdThresholdConfig = DEFAULT_LMD_THRESHOLDS
   ): SemesterDeliberationOutcome {
+    if (!ues || ues.length === 0) {
+      return {
+        studentEmail,
+        semesterId,
+        programId,
+        moyenneSemestre: null,
+        totalCoefficients: 0,
+        uesValidees: 0,
+        uesCompensees: 0,
+        uesNonValidees: 0,
+        uesDefaillantes: 0,
+        decision: 'EN_COURS',
+        isCompensationApplied: false,
+        hasIncompleteNotes: true,
+        details: []
+      };
+    }
+
     let totalWeightedPoints = 0;
     let totalCoefficients = 0;
+    let evaluatedCoefficients = 0;
     let hasIncompleteNotes = false;
     let hasDefaillant = false;
 
@@ -227,6 +246,7 @@ export const lmdEvaluationEngine = {
       totalCoefficients += coeff;
       if (effectiveNote !== null) {
         totalWeightedPoints += effectiveNote * coeff;
+        evaluatedCoefficients += coeff;
       }
 
       details.push({
@@ -250,8 +270,9 @@ export const lmdEvaluationEngine = {
       totalCoefficients = 1;
     }
 
-    const moyenneSemestre = hasIncompleteNotes && details.every(d => d.effectiveNote === null)
-      ? null
+    // Moyenne provisoire sur les UE déjà notées ou officielle si tout est noté
+    const moyenneSemestre = hasIncompleteNotes
+      ? (evaluatedCoefficients > 0 ? this.roundNote(totalWeightedPoints / evaluatedCoefficients) : null)
       : this.roundNote(totalWeightedPoints / totalCoefficients);
 
     // Si des notes manquent et la session n'est pas clôturée
@@ -367,19 +388,25 @@ export const lmdEvaluationEngine = {
     decision: SemesterDecision;
     isCompensationApplied: boolean;
   } {
+    const totalCoeff = (sem1Result.totalCoefficients || 0) + (sem2Result.totalCoefficients || 0);
+
+    // 1. Défaillance bloquante
     if (
       sem1Result.decision === 'DEF' || 
       sem2Result.decision === 'DEF'
     ) {
       return {
         moyenneAnnuelle: null,
-        totalCoefficients: sem1Result.totalCoefficients + sem2Result.totalCoefficients,
+        totalCoefficients: totalCoeff,
         decision: 'DEF',
         isCompensationApplied: false
       };
     }
 
+    // 2. Semestres non clôturés ou notes manquantes
     if (
+      sem1Result.decision === 'EN_COURS' ||
+      sem2Result.decision === 'EN_COURS' ||
       sem1Result.moyenneSemestre === undefined || 
       sem1Result.moyenneSemestre === null ||
       sem2Result.moyenneSemestre === undefined || 
@@ -387,19 +414,30 @@ export const lmdEvaluationEngine = {
     ) {
       return {
         moyenneAnnuelle: null,
-        totalCoefficients: sem1Result.totalCoefficients + sem2Result.totalCoefficients,
+        totalCoefficients: totalCoeff,
         decision: 'EN_COURS',
         isCompensationApplied: false
       };
     }
 
-    const totalCoeff = sem1Result.totalCoefficients + sem2Result.totalCoefficients;
+    // 3. Moyenne annuelle pondérée
     const weightedSum = 
-      (sem1Result.moyenneSemestre * sem1Result.totalCoefficients) +
-      (sem2Result.moyenneSemestre * sem2Result.totalCoefficients);
+      (sem1Result.moyenneSemestre * (sem1Result.totalCoefficients || 1)) +
+      (sem2Result.moyenneSemestre * (sem2Result.totalCoefficients || 1));
 
     const moyenneAnnuelle = this.roundNote(weightedSum / (totalCoeff > 0 ? totalCoeff : 1));
 
+    // 4. Si les deux semestres sont déjà admis individuellement
+    if (sem1Result.decision === 'ADM' && sem2Result.decision === 'ADM') {
+      return {
+        moyenneAnnuelle,
+        totalCoefficients: totalCoeff,
+        decision: 'ADM',
+        isCompensationApplied: false
+      };
+    }
+
+    // 5. Compensation annuelle : Moyenne >= 10.00
     if (moyenneAnnuelle >= thresholds.passingThreshold) {
       return {
         moyenneAnnuelle,
@@ -409,7 +447,8 @@ export const lmdEvaluationEngine = {
       };
     }
 
-    const totalDebts = sem1Result.uesNonValidees + sem2Result.uesNonValidees;
+    // 6. Ajournement (AJAC ou AJ selon nombre de dettes cumulées)
+    const totalDebts = (sem1Result.uesNonValidees || 0) + (sem2Result.uesNonValidees || 0);
     return {
       moyenneAnnuelle,
       totalCoefficients: totalCoeff,

@@ -12,7 +12,7 @@ import {
 } from './Icons';
 import { 
   Paperclip, Video, FileText, Download, ExternalLink, X, Sparkles, Plus, 
-  Link as LinkIcon, FileCheck, Trash2, Upload, Award, Save, AlertTriangle
+  Link as LinkIcon, FileCheck, Trash2, Upload, Award, Save, AlertTriangle, Lock
 } from 'lucide-react';
 import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
 import { dbAdapter } from '../lib/dbAdapter';
@@ -22,10 +22,12 @@ import { lmdEvaluationEngine } from '../lib/lmdEvaluationEngine';
 function TeacherGradeRow({
   rec,
   ue,
+  isLocked = false,
   onSaveGrade,
 }: {
   rec: StudentUERecord;
   ue: any;
+  isLocked?: boolean;
   onSaveGrade: (recordId: string, updates: Partial<StudentUERecord>) => Promise<void>;
 }) {
   const [cc, setCc] = useState<string>(rec.noteCC !== undefined && rec.noteCC !== null ? String(rec.noteCC) : '');
@@ -56,6 +58,7 @@ function TeacherGradeRow({
   }, [cc, exam, tp, liveSession1, rattrapage, isDefaillant, ue]);
 
   const handleSave = async () => {
+    if (isLocked) return;
     setIsSaving(true);
     try {
       await onSaveGrade(rec.id, {
@@ -84,7 +87,7 @@ function TeacherGradeRow({
           min={0}
           max={20}
           step={0.25}
-          disabled={isDefaillant}
+          disabled={isDefaillant || isLocked}
           value={cc}
           onChange={(e) => setCc(e.target.value)}
           placeholder="—"
@@ -97,7 +100,7 @@ function TeacherGradeRow({
           min={0}
           max={20}
           step={0.25}
-          disabled={isDefaillant}
+          disabled={isDefaillant || isLocked}
           value={exam}
           onChange={(e) => setExam(e.target.value)}
           placeholder="—"
@@ -110,7 +113,7 @@ function TeacherGradeRow({
           min={0}
           max={20}
           step={0.25}
-          disabled={isDefaillant}
+          disabled={isDefaillant || isLocked}
           value={tp}
           onChange={(e) => setTp(e.target.value)}
           placeholder="—"
@@ -128,7 +131,7 @@ function TeacherGradeRow({
           min={0}
           max={20}
           step={0.25}
-          disabled={isDefaillant}
+          disabled={isDefaillant || isLocked}
           value={rattrapage}
           onChange={(e) => setRattrapage(e.target.value)}
           placeholder="—"
@@ -148,22 +151,29 @@ function TeacherGradeRow({
           <input
             type="checkbox"
             checked={isDefaillant}
+            disabled={isLocked}
             onChange={(e) => setIsDefaillant(e.target.checked)}
-            className="rounded text-rose-600 focus:ring-rose-500 h-3.5 w-3.5"
+            className="rounded text-rose-600 focus:ring-rose-500 h-3.5 w-3.5 disabled:opacity-40"
           />
           <span className={isDefaillant ? 'font-bold text-rose-600' : ''}>DEF</span>
         </label>
       </td>
       <td className="p-3 text-right">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="bg-brand-primary hover:bg-brand-hover text-white px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
-        >
-          <Save className="w-3 h-3" />
-          <span>Enregistrer</span>
-        </button>
+        {isLocked ? (
+          <span className="inline-flex items-center gap-1 text-[10px] text-text-secondary font-bold px-2 py-1 rounded bg-bg-primary border border-border-primary">
+            <Lock className="w-3 h-3 text-text-secondary" /> Verrouillé
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-brand-primary hover:bg-brand-hover text-white px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+          >
+            <Save className="w-3 h-3" />
+            <span>Enregistrer</span>
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -264,6 +274,11 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
 
   const handleUpdateStudentGrade = async (recordId: string, updates: Partial<StudentUERecord>) => {
     if (!gradingUe) return;
+    const currentSem = allSemestersList.find((s) => s.id === gradingUe.semesterId);
+    if (currentSem?.status === 'cloture' || currentSem?.status === 'archive') {
+      alert("Action refusée : ce semestre est officiellement clôturé. Les notes ne peuvent plus être modifiées.");
+      return;
+    }
     const rec = ueStudentsList.find((r) => r.id === recordId);
     if (!rec) return;
 
@@ -2115,7 +2130,10 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         )}
 
         {/* ── Modal Saisie des Notes M3C (Enseignant) ── */}
-        {gradingUe && (
+        {gradingUe && (() => {
+          const currentSem = allSemestersList.find((s) => s.id === gradingUe.semesterId);
+          const isSemesterClosed = currentSem?.status === 'cloture' || currentSem?.status === 'archive';
+          return (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
             <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-4xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4 border-b border-border-primary pb-4">
@@ -2168,6 +2186,13 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                 )}
               </div>
 
+              {isSemesterClosed && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 text-xs font-semibold">
+                  <Lock className="w-4 h-4 shrink-0" />
+                  <span>Semestre clôturé : les notes sont verrouillées en lecture seule conformément au règlement LMD.</span>
+                </div>
+              )}
+
               {/* Table of Students */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-text-secondary">
@@ -2204,6 +2229,7 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
                               key={rec.id}
                               rec={rec}
                               ue={gradingUe}
+                              isLocked={isSemesterClosed}
                               onSaveGrade={handleUpdateStudentGrade}
                             />
                           ))}
@@ -2215,7 +2241,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

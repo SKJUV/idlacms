@@ -233,5 +233,105 @@ describe('LMD Regulatory Framework — Evaluation & Deliberation Engine', () => 
       expect(annualOutcome.decision).toBe('ADM_COMP');
       expect(annualOutcome.isCompensationApplied).toBe(true);
     });
+
+    it('retourne EN_COURS et bloque la compensation annuelle si l\'un des semestres est EN_COURS', () => {
+      const sem1: StudentSemesterResult = {
+        id: 'res-s1',
+        studentEmail: 'frank@test.com',
+        programId: 'p1',
+        semesterId: 's1',
+        moyenneSemestre: 12.00,
+        totalCoefficients: 15,
+        uesValidees: 5,
+        uesNonValidees: 0,
+        uesCompensees: 0,
+        uesDefaillantes: 0,
+        decision: 'ADM',
+        isCompensationApplied: false,
+      };
+
+      const sem2: StudentSemesterResult = {
+        id: 'res-s2',
+        studentEmail: 'frank@test.com',
+        programId: 'p1',
+        semesterId: 's2',
+        moyenneSemestre: 14.00,
+        totalCoefficients: 15,
+        uesValidees: 2,
+        uesNonValidees: 0,
+        uesCompensees: 0,
+        uesDefaillantes: 0,
+        decision: 'EN_COURS',
+        isCompensationApplied: false,
+      };
+
+      const annualOutcome = lmdEvaluationEngine.deliberateAnnualCompensation(sem1, sem2);
+      expect(annualOutcome.decision).toBe('EN_COURS');
+      expect(annualOutcome.isCompensationApplied).toBe(false);
+      expect(annualOutcome.moyenneAnnuelle).toBeNull();
+    });
+
+    it('retourne ADM sans compensation si les deux semestres sont déjà admis individuellement', () => {
+      const sem1: StudentSemesterResult = {
+        id: 'res-s1',
+        studentEmail: 'frank@test.com',
+        programId: 'p1',
+        semesterId: 's1',
+        moyenneSemestre: 12.00,
+        totalCoefficients: 15,
+        uesValidees: 5,
+        uesNonValidees: 0,
+        uesCompensees: 0,
+        uesDefaillantes: 0,
+        decision: 'ADM',
+        isCompensationApplied: false,
+      };
+
+      const sem2: StudentSemesterResult = {
+        id: 'res-s2',
+        studentEmail: 'frank@test.com',
+        programId: 'p1',
+        semesterId: 's2',
+        moyenneSemestre: 13.00,
+        totalCoefficients: 15,
+        uesValidees: 5,
+        uesNonValidees: 0,
+        uesCompensees: 0,
+        uesDefaillantes: 0,
+        decision: 'ADM',
+        isCompensationApplied: false,
+      };
+
+      const annualOutcome = lmdEvaluationEngine.deliberateAnnualCompensation(sem1, sem2);
+      expect(annualOutcome.decision).toBe('ADM');
+      expect(annualOutcome.isCompensationApplied).toBe(false);
+      expect(annualOutcome.moyenneAnnuelle).toBe(12.50);
+    });
+  });
+
+  describe('5. Garde-fous et Cas Limites LMD', () => {
+    it('renvoie EN_COURS et 0 coefficients si la liste d\'UE est vide (ne jamais accorder ADM sur 0 UE)', () => {
+      const outcome = lmdEvaluationEngine.deliberateSemester([], [], 'student@test.com', 's1', 'p1');
+      expect(outcome.decision).toBe('EN_COURS');
+      expect(outcome.moyenneSemestre).toBeNull();
+      expect(outcome.totalCoefficients).toBe(0);
+      expect(outcome.uesValidees).toBe(0);
+    });
+
+    it('calcule la moyenne provisoire uniquement sur les UE évaluées sans déflater par les coefficients manquants', () => {
+      const ues: TeachingUnit[] = [
+        { id: 'u1', programId: 'p1', semesterId: 's1', code: 'U1', title: 'UE1', coefficient: 3, isCompensable: true },
+        { id: 'u2', programId: 'p1', semesterId: 's1', code: 'U2', title: 'UE2', coefficient: 3, isCompensable: true },
+      ];
+      // Seule U1 est notée à 16/20. U2 n'a pas encore de note.
+      const records: StudentUERecord[] = [
+        { id: 'r1', studentEmail: 'test@test.com', ueId: 'u1', semesterId: 's1', programId: 'p1', sessionType: 'normale', status: 'inscrit', noteFinal: 16, isOverridden: true },
+      ];
+
+      const outcome = lmdEvaluationEngine.deliberateSemester(records, ues, 'test@test.com', 's1', 'p1');
+      expect(outcome.decision).toBe('EN_COURS');
+      expect(outcome.hasIncompleteNotes).toBe(true);
+      // La moyenne provisoire doit être 16.00 (sur l'UE notée), et NON 16*3/(3+3) = 8.00 !
+    });
   });
 });

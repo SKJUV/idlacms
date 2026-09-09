@@ -150,10 +150,11 @@ export default function PreRegistrations({
           }
         }
 
-        // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du Semestre 1 LMD
+        // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du semestre LMD approprié
         if (resolvedProgId && target?.email) {
           try {
-            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+            const targetLevel = target.entryLevel || (target.motivation ? target.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
             if (ues.length > 0) {
               await dbAdapter.studentUeRecords.bulkEnroll(
                 ues.map((u) => ({
@@ -351,10 +352,11 @@ export default function PreRegistrations({
         }
       }
 
-      // Auto-inscription LMD
+      // Auto-inscription LMD au semestre adéquat
       if (resolvedProgId && selected.email) {
         try {
-          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+          const targetLevel = selected.entryLevel || (selected.motivation ? selected.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
           if (ues.length > 0) {
             await dbAdapter.studentUeRecords.bulkEnroll(
               ues.map((u) => ({
