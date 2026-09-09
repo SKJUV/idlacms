@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { NewsArticle, CustomForm, User } from '../../types';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../../lib/appwrite';
-import emailjs from '@emailjs/browser';
 
 interface NewsManagementProps {
   news: NewsArticle[];
@@ -20,9 +19,6 @@ export default function NewsManagement({
   logActivity,
   usersList
 }: NewsManagementProps) {
-  const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
-  const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
-  const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
 
   const [customForms, setCustomForms] = useState<CustomForm[]>([]);
 
@@ -251,27 +247,28 @@ export default function NewsManagement({
 
     logActivity('article', 'Super Admin', `a publié une nouvelle actualité : ${newNewsTitle}.`);
       
-    // Envoi de l'e-mail de notification
-    if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
-      const nonAdminUsers = usersList.filter(u => u.role !== 'Admin' && u.email);
-      if (nonAdminUsers.length > 0) {
-        const bccList = nonAdminUsers.map(u => u.email).join(',');
-        
-        emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          {
-            to_name: 'Communauté IDLA',
-            bcc: bccList,
-            article_title: newArticle.title,
-            article_category: newArticle.category,
-            article_description: newArticle.description,
-            link: window.location.origin + '/actualites',
-          },
-          EMAILJS_PUBLIC_KEY
-        ).catch((err) => {
-          console.error('Erreur lors de l\'envoi des e-mails :', err);
-        });
+    // Envoi de l'e-mail de notification via API Resend unifiée
+    const recipients = usersList.filter(u => u.role !== 'Admin' && u.email).slice(0, 5).map(u => u.email);
+    if (recipients.length > 0) {
+      try {
+        fetch('/api/resend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: recipients,
+            subject: `[IDLA Actualités] ${newArticle.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: auto;">
+                <h2 style="color: #0284c7;">${newArticle.title}</h2>
+                <p><strong>Catégorie :</strong> ${newArticle.category}</p>
+                <p>${newArticle.description}</p>
+                <p><a href="${window.location.origin}/actualites" style="display: inline-block; padding: 10px 18px; background: #0284c7; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">Consulter l'article</a></p>
+              </div>
+            `
+          })
+        }).catch(err => console.warn('Notification actualité ignorée :', err));
+      } catch (e) {
+        console.warn('Erreur envoi notification actualités :', e);
       }
     }
 
