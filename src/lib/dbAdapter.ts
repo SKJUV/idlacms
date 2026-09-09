@@ -229,8 +229,7 @@ export const dbAdapter = {
             newId,
             docData,
             [
-              Permission.create(Role.any()),
-              Permission.read(Role.label('admin')),
+              Permission.read(Role.any()),
               Permission.update(Role.label('admin')),
               Permission.delete(Role.label('admin')),
             ]
@@ -336,7 +335,7 @@ export const dbAdapter = {
           },
           [
             Permission.read(Role.label('admin')),
-            Permission.create(Role.users()),
+            Permission.update(Role.label('admin')),
           ]
         );
       } catch (e) {
