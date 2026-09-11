@@ -14,7 +14,7 @@ import {
   Paperclip, Video, FileText, Download, ExternalLink, X, Sparkles, Plus, 
   Link as LinkIcon, FileCheck, Trash2, Upload, Award, Save, AlertTriangle, Lock
 } from 'lucide-react';
-import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
+import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID, Permission, Role } from '../lib/appwrite';
 import { dbAdapter } from '../lib/dbAdapter';
 import { StudentUERecord, DEFAULT_LMD_THRESHOLDS } from '../types';
 import { lmdEvaluationEngine } from '../lib/lmdEvaluationEngine';
@@ -538,7 +538,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor', 
             text: payloadStr, 
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur envoi message Appwrite:", err);
@@ -628,7 +629,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement message fichier Appwrite:", err);
@@ -698,7 +700,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement réunion Appwrite:", err);
@@ -810,7 +813,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement support Appwrite:", err);

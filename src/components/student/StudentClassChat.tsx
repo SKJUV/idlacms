@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SendIcon, MessageSquareIcon } from 'lucide-react';
 import { formatDateTime, getClassChatId } from '../../lib/utils';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
 
 interface StudentClassChatProps {
   studentName: string;
@@ -152,10 +152,11 @@ export default function StudentClassChat({
           ID.unique(),
           {
             applicationId: channelId,
-            sender: 'student',
+            sender: 'candidate',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur envoi message classe Appwrite:", err);

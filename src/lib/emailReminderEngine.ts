@@ -4,7 +4,7 @@
  */
 
 import { EMAIL_TEMPLATES, EmailTemplateKey, EmailTemplateData, BASE_URL } from './emailTemplates';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from './appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from './appwrite';
 import { generateMatricule } from './admissionLetter';
 
 export interface StudentAccountAnalysis {
@@ -191,11 +191,12 @@ export async function sendTemplateEmail(
           APPWRITE_CONFIG.collections.logs,
           ID.unique(),
           {
-            type: 'email_reminder',
+            type: 'registration',
             user: recipientEmail,
-            action: `Envoi e-mail: ${spec.label} (${subject})`,
-            timestamp: new Date().toISOString()
-          }
+            text: `Envoi e-mail: ${spec.label} (${subject})`,
+            time: new Date().toISOString()
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (e) {}
     }

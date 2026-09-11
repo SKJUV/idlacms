@@ -142,7 +142,8 @@ export default function PreRegistrations({
                   program: target.program,
                   programId: resolvedProgId,
                   createdAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
             }
           } catch (uErr) {
@@ -252,9 +253,18 @@ export default function PreRegistrations({
     const newMsg = { sender: 'advisor', text, time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) };
     setChatMessages((curr) => [...curr, newMsg]);
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-      await databases.createDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.messages, ID.unique(), {
-        applicationId: selectedAppIdForChat, sender: 'advisor', text, createdAt: new Date().toISOString(),
-      }).catch(console.error);
+      await databases.createDocument(
+        APPWRITE_CONFIG.databaseId, 
+        APPWRITE_CONFIG.collections.messages, 
+        ID.unique(), 
+        {
+          applicationId: selectedAppIdForChat, 
+          sender: 'advisor', 
+          text, 
+          createdAt: new Date().toISOString(),
+        },
+        [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+      ).catch(console.error);
     }
   };
 
@@ -344,7 +354,7 @@ export default function PreRegistrations({
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
               createData,
-              [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           } catch (e) {
             console.error('Erreur création inscription manuelle Appwrite DB:', e);

@@ -5,7 +5,7 @@ import {
   GraduationCapIcon, ClockIcon, DownloadIcon, CopyIcon, SunIcon, MoonIcon
 } from './Icons';
 import { CustomForm, CustomFormResponse, NewsArticle, Program } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -218,7 +218,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             respondentEmail: newResponse.respondentEmail,
             submittedAt: newResponse.submittedAt,
             data: JSON.stringify(newResponse.data)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement réponse Appwrite:", err);

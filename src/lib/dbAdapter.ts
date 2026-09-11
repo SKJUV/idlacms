@@ -101,8 +101,8 @@ export const dbAdapter = {
             },
             [
               Permission.read(Role.any()),
-              Permission.update(Role.label('admin')),
-              Permission.delete(Role.label('admin')),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
             ]
           );
         } catch (err) {
@@ -128,8 +128,8 @@ export const dbAdapter = {
             updates as any,
             [
               Permission.read(Role.any()),
-              Permission.update(Role.label('admin')),
-              Permission.delete(Role.label('admin')),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
             ]
           );
         } catch (err) {
@@ -230,8 +230,8 @@ export const dbAdapter = {
             docData,
             [
               Permission.read(Role.any()),
-              Permission.update(Role.label('admin')),
-              Permission.delete(Role.label('admin')),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
             ]
           );
         } catch (err) {
@@ -331,11 +331,12 @@ export const dbAdapter = {
             type,
             user,
             text,
-            time: "À l'instant",
+            time: new Date().toISOString(),
           },
           [
-            Permission.read(Role.label('admin')),
-            Permission.update(Role.label('admin')),
+            Permission.read(Role.any()),
+            Permission.update(Role.any()),
+            Permission.delete(Role.any()),
           ]
         );
       } catch (e) {
@@ -1564,7 +1565,12 @@ export const dbAdapter = {
               message: donation.message || '',
               date: donation.date,
               status: donation.status,
-            }
+            },
+            [
+              Permission.read(Role.any()),
+              Permission.update(Role.any()),
+              Permission.delete(Role.any()),
+            ]
           );
         } catch (err) {
           console.warn('dbAdapter.donations.create cloud error:', err);

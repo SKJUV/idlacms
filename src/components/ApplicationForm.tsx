@@ -8,7 +8,7 @@ import {
   AlertCircleIcon,
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
-import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query } from '../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
 import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
 import { ReferralCode } from '../types';
 
@@ -509,7 +509,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
               sponsorCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
               referralCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
               sponsorEmail: validatedReferral?.sponsorEmail || undefined,
-            }
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
           if (sponsorCodeInput) {
             registerReferralCodeUsage(sponsorCodeInput).catch(() => {});
@@ -538,7 +539,8 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                   mimeType: fileObj.type,
                   uploadedBy: 'candidate',
                   uploadedAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
             } catch (docErr) {
               console.error("Échec liaison document Appwrite:", docErr);

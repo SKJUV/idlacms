@@ -126,8 +126,9 @@ export default function AdminPortal({
             type,
             user,
             text,
-            time: "À l'instant",
-          }
+            time: new Date().toISOString(),
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Impossible de sauvegarder le log d'activité sur Appwrite:", err);
@@ -262,6 +263,8 @@ export default function AdminPortal({
           highestDegree: doc.highestDegree,
           graduationYear: doc.graduationYear,
           motivation: doc.motivation,
+          matricule: doc.matricule,
+          programId: doc.programId,
           documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
         }));
 
@@ -296,7 +299,7 @@ export default function AdminPortal({
                 type: doc.type,
                 user: doc.user,
                 text: doc.text,
-                time: doc.time || "À l'instant",
+                time: doc.time ? (isNaN(new Date(doc.time).getTime()) ? doc.time : new Date(doc.time).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) : "À l'instant",
               }))
             );
           }
@@ -378,7 +381,8 @@ export default function AdminPortal({
             status,
             initials,
             lastLogin: new Date().toISOString(),
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de la création de l'utilisateur sur Appwrite:", err);

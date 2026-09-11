@@ -24,7 +24,7 @@ import {
   CopyIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 import { useLanguage } from '../context/LanguageContext';
@@ -233,7 +233,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             respondentEmail: newResponse.respondentEmail,
             submittedAt: newResponse.submittedAt,
             data: JSON.stringify(newResponse.data)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);

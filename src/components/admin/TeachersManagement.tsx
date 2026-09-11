@@ -12,7 +12,7 @@ import {
   SaveIcon,
   ClockIcon
 } from '../Icons';
-import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID } from '../../lib/appwrite';
+import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, ID, Permission, Role } from '../../lib/appwrite';
 import { dbAdapter } from '../../lib/dbAdapter';
 
 interface TeachersManagementProps {
@@ -185,7 +185,8 @@ export default function TeachersManagement({ programs, logActivity }: TeachersMa
               initials: newDoc.initials,
               assignedPrograms: newAssignedPrograms,
               scheduleData: '[]'
-            }
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
           newDoc = { ...doc, id: doc.$id, name: fullName, initials: newDoc.initials, assignedPrograms: newAssignedPrograms };
         } catch (e: any) {

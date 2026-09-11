@@ -588,7 +588,7 @@ export default function App() {
                     price: lp.price,
                     procedures: lp.procedures,
                   },
-                  [Permission.read(AppwriteRole.any())]
+                  [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
                 );
               } catch (e: any) {
                 if (e?.code !== 409) {

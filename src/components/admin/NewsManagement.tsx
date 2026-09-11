@@ -4,7 +4,7 @@ import {
   FileText, Link as LinkIcon, Check, Calendar
 } from 'lucide-react';
 import { NewsArticle, CustomForm, User } from '../../types';
-import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID } from '../../lib/appwrite';
+import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Permission, Role } from '../../lib/appwrite';
 
 interface NewsManagementProps {
   news: NewsArticle[];
@@ -238,7 +238,8 @@ export default function NewsManagement({
             formUrl: attachedFormUrl || '',
             startDate: eventStartDate || '',
             endDate: eventEndDate || '',
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de la création sur Appwrite:", err);

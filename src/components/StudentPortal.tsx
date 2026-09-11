@@ -11,7 +11,7 @@ import {
   ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon, SettingsIcon,
   SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon, GraduationCapIcon,
 } from './Icons';
-import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
+import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query, Permission, Role } from '../lib/appwrite';
 import { dbAdapter } from '../lib/dbAdapter';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
@@ -681,7 +681,8 @@ export default function StudentPortal({
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
-          { applicationId: selectedAppId, sender: 'candidate', text, createdAt: new Date().toISOString() }
+          { applicationId: selectedAppId, sender: 'candidate', text, createdAt: new Date().toISOString() },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement du message sur Appwrite:", err);
@@ -698,7 +699,8 @@ export default function StudentPortal({
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
             ID.unique(),
-            { applicationId: selectedAppId, sender: 'advisor', text: replyText, createdAt: new Date().toISOString() }
+            { applicationId: selectedAppId, sender: 'advisor', text: replyText, createdAt: new Date().toISOString() },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         } catch (err) {
           console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);
@@ -769,7 +771,8 @@ export default function StudentPortal({
             sender: 'candidate', 
             text: payloadStr, 
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement du message de classe sur Appwrite:", err);
@@ -809,7 +812,8 @@ export default function StudentPortal({
               mimeType: file.type,
               uploadedBy: 'candidate',
               uploadedAt: new Date().toISOString(),
-            }
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         }
 
@@ -926,7 +930,8 @@ export default function StudentPortal({
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
-              payload
+              payload,
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           } catch (e: any) {
             delete payload.motivation;
@@ -934,7 +939,8 @@ export default function StudentPortal({
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
-              payload
+              payload,
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           }
           newAppId = createdDoc.$id || createdDoc.id;
@@ -975,7 +981,8 @@ export default function StudentPortal({
                   mimeType: item.file.type,
                   uploadedBy: 'candidate',
                   uploadedAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
               newUploadedDocsList.push({
                 name: docName,

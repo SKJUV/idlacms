@@ -180,7 +180,7 @@ export default function ProgramsManagement({
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
             { ...updatedData, category: cat } as any,
-            [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         };
 
@@ -190,7 +190,7 @@ export default function ProgramsManagement({
             APPWRITE_CONFIG.collections.programs,
             editingProgramId,
             { ...updatedData, category: cat } as any,
-            [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         };
 
@@ -262,7 +262,7 @@ export default function ProgramsManagement({
             image: newProgram.image,
             isNew: newProgram.isNew,
           },
-          [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
         setCloudSuccess("Nouveau programme créé et synchronisé avec succès en ligne !");
       } catch (err: any) {
@@ -286,7 +286,7 @@ export default function ProgramsManagement({
                 image: newProgram.image,
                 isNew: newProgram.isNew,
               },
-              [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
             setCloudSuccess("Nouveau programme créé et synchronisé avec succès en ligne !");
           } catch (retryErr: any) {
