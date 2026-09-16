@@ -22,6 +22,8 @@ import {
   DownloadIcon,
   ShareIcon,
   CopyIcon,
+  AwardIcon,
+  MailIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../lib/appwrite';
@@ -62,6 +64,562 @@ export const EVENT_REGISTRATION_FORM: CustomForm = {
     { id: 'deja_participe', label: 'Avez-vous déjà participé à nos événements ?', type: 'radio', required: true, options: ['Oui', 'Non'] },
   ]
 };
+
+/**
+ * Renders a raw text description with proper formatting:
+ * - Detects ARTICLE / section headers (lines starting with ARTICLE, all-caps lines)
+ * - Detects bullet points (•, -, ●, ▶)
+ * - Detects separator lines (━, ═, ─, ──)
+ * - Renders normal paragraphs with proper spacing
+ */
+/**
+ * Utility to linkify raw URLs and emails in text strings
+ */
+function linkifyText(str: string): React.ReactNode[] {
+  const regex = /(https?:\/\/[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+  const parts = str.split(regex);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-primary font-semibold hover:underline inline-flex items-center gap-1 break-all"
+        >
+          <span>{part}</span>
+          <span className="text-[10px]">↗</span>
+        </a>
+      );
+    }
+    if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(part)) {
+      return (
+        <a
+          key={i}
+          href={`mailto:${part}`}
+          className="text-brand-primary font-semibold hover:underline inline-flex items-center gap-1"
+        >
+          <MailIcon className="w-3.5 h-3.5 inline shrink-0" />
+          <span>{part}</span>
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+/**
+ * Extracts a clean, informative text summary for the news feed cards,
+ * skipping institutional header banners, separators, and title lines.
+ */
+function getArticlePreview(text: string): string {
+  if (!text) return '';
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !/^[━═─—–\-]{4,}$/.test(l));
+  const meaningfulLine = lines.find(l => 
+    !l.startsWith('INTERNATIONAL DISTANCE LEARNING') &&
+    !l.startsWith('OFFICIAL SCHOLARSHIP') &&
+    !l.startsWith('Academic Year') &&
+    !l.startsWith('ARTICLE') &&
+    l.length > 25
+  );
+  return meaningfulLine || lines[0] || '';
+}
+
+/**
+ * FormattedDescription:
+ * Renders rich academic and event articles with structured typography,
+ * detecting institutional headers, multi-article sections, coverage matrices,
+ * financial highlights, and student commitment blocks.
+ */
+function FormattedDescription({ text, className = '' }: { text: string; className?: string }) {
+  if (!text) return null;
+
+  // ── Step 1: Parse raw text into structured semantic blocks ──
+  interface Block {
+    type: 'preamble' | 'article_header' | 'coverage_row' | 'numbered_item' | 'bullet' | 'total_highlight' | 'signature_block' | 'cta' | 'paragraph';
+    lines?: string[];
+    num?: string;
+    title?: string;
+    description?: string;
+    category?: string;
+    isCovered?: boolean;
+    party?: string;
+    detail?: string;
+    text?: string;
+    subLines?: string[];
+  }
+
+  const lines = text.split('\n');
+  const rawBlocks: Block[] = [];
+  let i = 0;
+
+  // Detect official institutional header
+  if (lines[0] && lines[0].includes('INTERNATIONAL DISTANCE LEARNING ACADEMY')) {
+    const preambleLines: string[] = [];
+    while (i < lines.length && !lines[i].includes('━━━━') && !lines[i].startsWith('ARTICLE')) {
+      const t = lines[i].trim();
+      if (t) preambleLines.push(t);
+      i++;
+    }
+    rawBlocks.push({ type: 'preamble', lines: preambleLines });
+  }
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+
+    if (!trimmed || /^[━═─—–\-]{4,}$/.test(trimmed)) {
+      i++;
+      continue;
+    }
+
+    // Article Header: ARTICLE 1: ...
+    const artMatch = trimmed.match(/^ARTICLE\s+(\d+)[:\s–—]+(.*)/i);
+    if (artMatch) {
+      rawBlocks.push({ type: 'article_header', num: artMatch[1], title: artMatch[2].trim() });
+      i++;
+      continue;
+    }
+
+    // Total Highlight Card
+    if (trimmed.startsWith('TOTAL ANNUAL DEPOSIT DUE:') || trimmed.startsWith('TOTAL :') || trimmed.startsWith('TOTAL ANNUEL')) {
+      rawBlocks.push({ type: 'total_highlight', text: trimmed });
+      i++;
+      continue;
+    }
+
+    // CTA / Admissions Callout
+    if (/^POUR CANDIDATER/i.test(trimmed)) {
+      const ctaLines = [trimmed];
+      i++;
+      while (i < lines.length && lines[i].trim()) {
+        ctaLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'cta', lines: ctaLines });
+      continue;
+    }
+
+    // Student Signature / Acknowledgment Box
+    if (trimmed.startsWith('Student Signature:') || trimmed.startsWith('Full Name:') || trimmed.startsWith('Date:')) {
+      const sigLines = [trimmed];
+      i++;
+      while (i < lines.length && (lines[i].trim().startsWith('Student Signature:') || lines[i].trim().startsWith('Full Name:') || lines[i].trim().startsWith('Date:'))) {
+        sigLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'signature_block', lines: sigLines });
+      continue;
+    }
+
+    // Numbered item: 1. ... or 2. ...
+    const numMatch = trimmed.match(/^(\d+)\.\s+([^:]+):?(.*)/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const title = numMatch[2].trim();
+      const rest = numMatch[3].trim();
+      i++;
+      const descLines = rest ? [rest] : [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !lines[i].trim().startsWith('•') &&
+        !lines[i].trim().startsWith('- ') &&
+        !/^\d+\./.test(lines[i].trim()) &&
+        !lines[i].includes('━━━━') &&
+        !lines[i].startsWith('TOTAL') &&
+        !lines[i].startsWith('ARTICLE') &&
+        !lines[i].startsWith('Student Signature')
+      ) {
+        descLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'numbered_item', num, title, description: descLines.join(' ') });
+      continue;
+    }
+
+    // Bullet point: • ...
+    if (trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('● ')) {
+      const bulletText = trimmed.replace(/^[•\-●]\s*/, '').trim();
+      i++;
+      const subLines: string[] = [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !lines[i].trim().startsWith('•') &&
+        !lines[i].trim().startsWith('- ') &&
+        !lines[i].trim().startsWith('● ') &&
+        !/^\d+\./.test(lines[i].trim()) &&
+        !lines[i].includes('━━━━') &&
+        !lines[i].startsWith('TOTAL') &&
+        !lines[i].startsWith('ARTICLE') &&
+        !lines[i].startsWith('Student Signature')
+      ) {
+        if (lines[i].startsWith('  ') || lines[i].startsWith('\t') || lines[i].includes('Responsible Party') || lines[i].includes('COVERED')) {
+          subLines.push(lines[i].trim());
+          i++;
+        } else {
+          break;
+        }
+      }
+
+      // Check if this bullet belongs to a Scholarship Coverage Matrix
+      const isCoverage = subLines.some(l => /COVERED/i.test(l)) || /COVERED/i.test(bulletText);
+      if (isCoverage) {
+        const category = bulletText.replace(/:$/, '').trim();
+        const allText = [bulletText, ...subLines].join(' ');
+        const isCovered = /100%\s*COVERED/i.test(allText);
+        let party = "Étudiant / Candidat";
+        if (allText.includes('IDLA') || allText.includes('Scholarship Fund') || allText.includes('WQ')) {
+          party = 'IDLA - WQ / Fonds de Bourse';
+        }
+        const detail = isCovered ? '100% Pris en charge (38 612 USD / an)' : 'Non couvert';
+        rawBlocks.push({ type: 'coverage_row', category, isCovered, party, detail });
+      } else {
+        rawBlocks.push({ type: 'bullet', text: bulletText, subLines });
+      }
+      continue;
+    }
+
+    // Normal paragraph
+    const pLines = [trimmed];
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].trim().startsWith('•') &&
+      !lines[i].trim().startsWith('- ') &&
+      !lines[i].trim().startsWith('● ') &&
+      !/^\d+\./.test(lines[i].trim()) &&
+      !lines[i].includes('━━━━') &&
+      !lines[i].startsWith('ARTICLE') &&
+      !lines[i].startsWith('TOTAL') &&
+      !lines[i].startsWith('POUR CANDIDATER') &&
+      !lines[i].startsWith('Student Signature')
+    ) {
+      pLines.push(lines[i].trim());
+      i++;
+    }
+    rawBlocks.push({ type: 'paragraph', text: pLines.join(' ') });
+  }
+
+  // ── Step 2: Render semantic blocks with cohesive styling ──
+  const renderedElements: React.ReactNode[] = [];
+  let k = 0;
+
+  for (let idx = 0; idx < rawBlocks.length; idx++) {
+    const block = rawBlocks[idx];
+
+    // Preamble: Official IDLA Header Banner
+    if (block.type === 'preamble') {
+      renderedElements.push(
+        <div
+          key={`preamble-${k++}`}
+          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-700/60 my-2"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3.5 mb-3.5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-brand-primary/25 border border-brand-primary/40 flex items-center justify-center font-black text-xs text-sky-400">
+                IDLA
+              </div>
+              <div>
+                <div className="text-[11px] font-extrabold tracking-widest text-sky-400 uppercase">
+                  International Distance Learning Academy
+                </div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                  Document Officiel Académique
+                </div>
+              </div>
+            </div>
+            <span className="bg-white/10 text-white border border-white/15 text-[10.5px] font-bold px-3 py-1 rounded-full backdrop-blur-xs">
+              Année Académique 2026 / 2027
+            </span>
+          </div>
+          <h3 className="font-bold text-base md:text-lg text-white tracking-tight leading-snug">
+            OFFICIAL SCHOLARSHIP COVERAGE & LOCAL CHARGES POLICY
+          </h3>
+          <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+            Cadre réglementaire officiel de prise en charge d'excellence et modalités de contribution aux infrastructures technologiques locales du campus de Yaoundé.
+          </p>
+        </div>
+      );
+      continue;
+    }
+
+    // Article Section Header (ARTICLE 1, 2, 3, 4...)
+    if (block.type === 'article_header') {
+      renderedElements.push(
+        <div key={`art-${k++}`} className="pt-5 pb-1 border-t border-border-primary/60 first:border-t-0 first:pt-0">
+          <div className="flex flex-wrap items-center gap-2.5 mb-2">
+            <span className="bg-brand-primary text-white text-[11px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider shadow-xs">
+              Article {block.num}
+            </span>
+            <h3 className="text-[15px] md:text-base font-bold text-text-primary tracking-tight">
+              {block.title}
+            </h3>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Coverage Matrix Rows (group consecutive coverage rows into one table)
+    if (block.type === 'coverage_row') {
+      const matrixRows: Block[] = [block];
+      while (idx + 1 < rawBlocks.length && rawBlocks[idx + 1].type === 'coverage_row') {
+        idx++;
+        matrixRows.push(rawBlocks[idx]);
+      }
+
+      renderedElements.push(
+        <div
+          key={`coverage-matrix-${k++}`}
+          className="bg-bg-primary/50 dark:bg-slate-900/40 rounded-2xl border border-border-primary/80 overflow-hidden shadow-xs my-3 divide-y divide-border-primary/40"
+        >
+          <div className="bg-slate-100/90 dark:bg-slate-800/90 px-4 py-2.5 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+            <span>Poste de Frais / Catégorie</span>
+            <div className="flex items-center gap-6">
+              <span>Statut Prise en Charge</span>
+              <span className="hidden sm:inline">Partie Responsable</span>
+            </div>
+          </div>
+          {matrixRows.map((r, rIdx) => (
+            <div
+              key={rIdx}
+              className={`p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-colors ${
+                r.isCovered ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 'hover:bg-bg-primary/80'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    r.isCovered ? 'bg-emerald-500 ring-4 ring-emerald-500/20' : 'bg-slate-400'
+                  }`}
+                />
+                <span className="font-bold text-xs md:text-sm text-text-primary">
+                  {r.category}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:self-auto self-start pl-4.5 sm:pl-0">
+                <span
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                    r.isCovered
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                      : 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  {r.isCovered ? '✓ 100% Couvert ($38 612 USD/an)' : '✗ Non couvert'}
+                </span>
+                <span className="text-[11px] text-text-secondary font-medium hidden sm:inline">
+                  • {r.party}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered Item (e.g., "1. Administrative Fees ...")
+    if (block.type === 'numbered_item') {
+      // Check if title has a price tag e.g. "($265.42 USD TTC / 150,000 FCFA)"
+      const priceMatch = block.title?.match(/\(([^)]+)\)/);
+      const cleanTitle = block.title?.replace(/\s*\([^)]+\)/, '').trim() || block.title;
+      const priceTag = priceMatch ? priceMatch[1] : null;
+
+      renderedElements.push(
+        <div
+          key={`num-${k++}`}
+          className="bg-bg-primary/60 dark:bg-slate-900/40 border border-border-primary/80 rounded-xl p-4 space-y-2 my-2.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-brand-primary/15 border border-brand-primary/30 text-brand-primary font-black text-xs flex items-center justify-center shrink-0">
+                {block.num}
+              </span>
+              <span className="font-bold text-sm text-text-primary">
+                {cleanTitle}
+              </span>
+            </div>
+            {priceTag && (
+              <span className="text-[11px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
+                {priceTag}
+              </span>
+            )}
+          </div>
+          {block.description && (
+            <p className="text-[13.5px] leading-relaxed text-text-secondary pl-8">
+              {linkifyText(block.description)}
+            </p>
+          )}
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet Items (group consecutive bullets)
+    if (block.type === 'bullet') {
+      const bulletsList: Block[] = [block];
+      while (idx + 1 < rawBlocks.length && rawBlocks[idx + 1].type === 'bullet') {
+        idx++;
+        bulletsList.push(rawBlocks[idx]);
+      }
+
+      renderedElements.push(
+        <ul key={`bullets-${k++}`} className="space-y-2.5 my-2.5 pl-1">
+          {bulletsList.map((b, bIdx) => {
+            const rawB = b.text || '';
+            const colonIdx = rawB.indexOf(':');
+            const hasColon = colonIdx > 0 && colonIdx < 50;
+            const label = hasColon ? rawB.slice(0, colonIdx).trim() : null;
+            const content = hasColon ? rawB.slice(colonIdx + 1).trim() : rawB;
+
+            return (
+              <li key={bIdx} className="flex items-start gap-3 text-[13.5px] leading-[1.7] text-text-secondary">
+                <span className="text-brand-primary mt-1 shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-brand-primary" />
+                </span>
+                <div>
+                  {label ? (
+                    <>
+                      <strong className="font-bold text-text-primary mr-1.5">{label} :</strong>
+                      <span>{linkifyText(content)}</span>
+                    </>
+                  ) : (
+                    <span>{linkifyText(rawB)}</span>
+                  )}
+                  {b.subLines && b.subLines.length > 0 && (
+                    <div className="mt-1 space-y-1 text-xs text-text-secondary pl-2 border-l-2 border-border-primary">
+                      {b.subLines.map((sub, sIdx) => (
+                        <p key={sIdx}>{linkifyText(sub)}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      );
+      continue;
+    }
+
+    // Total Highlight Card
+    if (block.type === 'total_highlight') {
+      renderedElements.push(
+        <div
+          key={`total-${k++}`}
+          className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border-l-4 border-amber-500 rounded-r-2xl p-4 my-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+              <AwardIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Montant Total Annuel Exigible</span>
+            </div>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Dépôt obligatoire d'infrastructure locale (Campus IDLA Yaoundé)
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <div className="text-lg font-black text-amber-800 dark:text-amber-300">
+              400 000 FCFA
+            </div>
+            <div className="text-[11px] font-semibold text-text-secondary">
+              (ou 707,79 USD TTC / an)
+            </div>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Student Acknowledgment & Signature Box
+    if (block.type === 'signature_block') {
+      renderedElements.push(
+        <div
+          key={`sig-${k++}`}
+          className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 md:p-5 my-4 space-y-3.5"
+        >
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-primary">
+            <FileTextIcon className="w-4 h-4 text-brand-primary" />
+            <span>Cadre Officiel d'Engagement & Signature du Candidat</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Nom complet légal
+              </span>
+              <span className="text-xs text-text-secondary italic">Conforme à la pièce d'identité</span>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Date d'engagement
+              </span>
+              <span className="text-xs text-text-secondary font-mono">____ / ____ / 2026</span>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Signature candidat
+              </span>
+              <span className="text-xs text-text-secondary italic">Mention manuscrite "Lu et approuvé"</span>
+            </div>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // CTA / Admissions
+    if (block.type === 'cta') {
+      const ctaBody = block.lines?.slice(1).join(' ') || '';
+      renderedElements.push(
+        <div
+          key={`cta-${k++}`}
+          className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6"
+        >
+          <div className="space-y-1">
+            <h4 className="font-bold text-sm text-brand-primary flex items-center gap-2">
+              <GraduationCapIcon className="w-4 h-4" />
+              <span>Candidature & Service des Admissions</span>
+            </h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {ctaBody ? linkifyText(ctaBody) : "Déposez votre dossier en ligne ou contactez le pôle académique pour toute question d'éligibilité."}
+            </p>
+          </div>
+          <a
+            href="mailto:admissions@idlaacademy.online"
+            className="inline-flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm shrink-0"
+          >
+            <MailIcon className="w-3.5 h-3.5" />
+            <span>admissions@idlaacademy.online</span>
+          </a>
+        </div>
+      );
+      continue;
+    }
+
+    // Default: Standard Paragraph
+    if (block.type === 'paragraph') {
+      renderedElements.push(
+        <p
+          key={`p-${k++}`}
+          className="text-[13.5px] leading-[1.75] text-[#334155] dark:text-slate-300 font-normal"
+          style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
+        >
+          {linkifyText(block.text || '')}
+        </p>
+      );
+    }
+  }
+
+  return (
+    <div className={`space-y-3.5 ${className}`} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+      {renderedElements}
+    </div>
+  );
+}
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
   const { t, language } = useLanguage();
@@ -1133,8 +1691,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           </div>
                         )}
 
-                        <p className="text-xs text-text-secondary leading-relaxed line-clamp-4 whitespace-pre-line">
-                          {n.description}
+                        {/* Indicateur de document officiel multi-articles */}
+                        {n.description?.includes('ARTICLE 1') && (
+                          <div className="inline-flex items-center gap-1.5 bg-sky-500/10 text-sky-700 dark:text-sky-300 font-bold text-[11px] px-2.5 py-1 rounded-lg border border-sky-500/20 w-fit">
+                            <FileTextIcon className="w-3.5 h-3.5 text-brand-primary" />
+                            <span>Document Officiel — 4 Articles Réglementaires & Grille Tarifaire</span>
+                          </div>
+                        )}
+
+                        <p className="text-[13.5px] text-text-secondary leading-relaxed line-clamp-3 font-normal" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+                          {getArticlePreview(n.description || '')}
                         </p>
 
                         {/* Lien rapide vers le formulaire ou action officielle */}
@@ -1278,7 +1844,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
               {/* Contenu scrollable */}
               <div className="overflow-y-auto flex-1 p-6 md:p-8 space-y-5">
-                <h2 className="font-sans font-bold text-2xl text-[#00020e] dark:text-white leading-tight">
+                <h2 className="font-bold text-xl md:text-2xl text-[#00020e] dark:text-white leading-snug tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
                   {selectedArticle.title}
                 </h2>
                 {selectedArticle.category === 'Événements' && (selectedArticle.startDate || selectedArticle.endDate) && (
@@ -1286,9 +1852,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     📅 Du {selectedArticle.startDate || '?'} au {selectedArticle.endDate || '?'}
                   </div>
                 )}
-                <div className="text-[#45464e] dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans space-y-3">
-                  {selectedArticle.description}
-                </div>
+                <FormattedDescription text={selectedArticle.description || ''} />
 
                 {/* Bannière d'action dédiée pour la Bourse MScFE ou formulaire rattaché */}
                 {(selectedArticle.formUrl === '#candidature' || selectedArticle.id === 'news-mscfe-scholarship-policy' || selectedArticle.title?.includes('MScFE')) ? (
