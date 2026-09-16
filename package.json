@@ -15,7 +15,8 @@
     "appwrite:setup": "tsx scripts/setup-appwrite.ts",
     "seed:certifications": "tsx scripts/seed-certifications.ts",
     "seed:programs": "tsx scripts/seed-programs.ts",
-    "lmd:setup": "node scripts/setup-lmd-collections.cjs"
+    "lmd:setup": "node scripts/setup-lmd-collections.cjs",
+    "setup:mscfe": "node scripts/create-mscfe-program-and-form.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

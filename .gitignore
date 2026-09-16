@@ -31,4 +31,5 @@ backups/
 *.cer
 
 # Scripts & Local Tools
-scripts/
+scripts/*
+!scripts/create-mscfe-program-and-form.mjs

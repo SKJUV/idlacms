@@ -833,6 +833,16 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                         <AlertCircle className="w-3.5 h-3.5" /> Procédures d'admission & Pièces par Niveau
                       </div>
                       <p className="leading-relaxed text-[11px] text-text-secondary">{matchedProg.procedures}</p>
+                      {matchedProg.title?.includes('MScFE') && (
+                        <div className="pt-1.5">
+                          <a 
+                            href="/formulaire?id=form-mscfe-scholarship-2026"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
+                          >
+                            <span>→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE</span>
+                          </a>
+                        </div>
+                      )}
                     </div>
                   );
                 }

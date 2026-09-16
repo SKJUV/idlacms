@@ -173,7 +173,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }
     }
 
-    const respondentName = formValues['Nom complet'] || formValues['Nom & Prénom'] || formValues['Nom'] || formValues['Nom de famille'] || 'Candidat IDLA';
+    const respondentName = 
+      formValues['1. Full Legal Name / Nom complet légal'] ||
+      formValues['Nom complet'] || 
+      formValues['Nom & Prénom'] || 
+      formValues['Nom'] || 
+      formValues['Nom de famille'] || 
+      Object.entries(formValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+      'Candidat IDLA';
 
     // Strict Email Detection
     const emailKey = Object.keys(formValues).find(

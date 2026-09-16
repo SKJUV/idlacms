@@ -187,7 +187,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       }
     }
 
-    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || activeFormValues['Nom de famille'] || 'Candidat IDLA';
+    const respondentName = 
+      activeFormValues['1. Full Legal Name / Nom complet légal'] ||
+      activeFormValues['Nom complet'] || 
+      activeFormValues['Nom & Prénom'] || 
+      activeFormValues['Nom'] || 
+      activeFormValues['Nom de famille'] || 
+      Object.entries(activeFormValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+      'Candidat IDLA';
     
     // Détection stricte de l'adresse email
     const emailKey = Object.keys(activeFormValues).find(
@@ -985,10 +992,19 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                               </div>
                             )}
                           </div>
-                          <div className="flex justify-end mt-1">
+                          <div className="flex items-center justify-between gap-2 mt-1">
+                            {p.title?.includes('MScFE') && (
+                              <button 
+                                onClick={() => handleOpenFormModal('form-mscfe-scholarship-2026')}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-brand-primary hover:bg-brand-hover px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                              >
+                                <FileTextIcon className="w-3.5 h-3.5" />
+                                <span>Questionnaire Bourse</span>
+                              </button>
+                            )}
                             <button 
                               onClick={() => onApplyNow(p.title)}
-                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer"
+                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer ml-auto"
                             >
                               S'inscrire
                               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -1127,19 +1143,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (n.formUrl === '#candidature' || n.title?.includes('MScFE')) {
-                                  onApplyNow('MSc in Financial Engineering (MScFE)');
+                                if (n.formId) {
+                                  handleOpenFormModal(n.formId);
+                                } else if (n.formUrl === '#candidature' || n.title?.includes('MScFE')) {
+                                  handleOpenFormModal('form-mscfe-scholarship-2026');
                                 } else if (n.formUrl) {
                                   window.open(n.formUrl, '_blank', 'noopener,noreferrer');
-                                } else if (n.formId || n.category === 'Événements') {
-                                  handleOpenFormModal(n.formId || (n.category === 'Événements' ? 'system_event_registration' : '6a86f5cc003484813061'));
+                                } else if (n.category === 'Événements') {
+                                  handleOpenFormModal('system_event_registration');
                                 }
                               }}
                               className="inline-flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer border border-brand-primary/20"
                             >
                               <FileTextIcon className="w-4 h-4" />
-                              {n.formUrl === '#candidature' || n.title?.includes('MScFE')
-                                ? "Postuler à cette bourse (MScFE)"
+                              {n.title?.includes('MScFE')
+                                ? "Remplir le questionnaire MScFE"
                                 : (n.category === 'Événements' ? "S'inscrire à l'événement" : "Accéder au formulaire")}
                             </button>
 
@@ -1291,12 +1309,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <button
                         onClick={() => {
                           setSelectedArticle(null);
-                          onApplyNow('MSc in Financial Engineering (MScFE)');
+                          handleOpenFormModal(selectedArticle.formId || 'form-mscfe-scholarship-2026');
                         }}
                         className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
                       >
                         <FileTextIcon className="w-4 h-4" />
-                        <span>Déposer ma candidature (MScFE)</span>
+                        <span>Remplir le Questionnaire Bourse (MScFE)</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedArticle(null);
+                          onApplyNow('MSc in Financial Engineering (MScFE)');
+                        }}
+                        className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        <span>Candidature Standard</span>
                       </button>
                       <button
                         onClick={() => downloadMScFEPolicyPdf()}
