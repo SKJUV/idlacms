@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Quote, Pencil, Trash2, CheckCircle2, XCircle, X } from 'lucide-react';
 import { Testimonial } from '../../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Permission, Role } from '../../lib/appwrite';
 
 interface TestimonialsManagementProps {
   testimonials: Testimonial[];
@@ -43,7 +43,8 @@ export default function TestimonialsManagement({
             image: approved.image,
             promo: approved.promo,
             category: approved.category,
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de la publication du témoignage sur Appwrite:", err);

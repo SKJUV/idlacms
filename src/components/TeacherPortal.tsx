@@ -12,9 +12,172 @@ import {
 } from './Icons';
 import { 
   Paperclip, Video, FileText, Download, ExternalLink, X, Sparkles, Plus, 
-  Link as LinkIcon, FileCheck, Trash2, Upload
+  Link as LinkIcon, FileCheck, Trash2, Upload, Award, Save, AlertTriangle, Lock
 } from 'lucide-react';
-import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID } from '../lib/appwrite';
+import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, Query, ID, Permission, Role } from '../lib/appwrite';
+import { dbAdapter } from '../lib/dbAdapter';
+import { StudentUERecord, DEFAULT_LMD_THRESHOLDS } from '../types';
+import { lmdEvaluationEngine } from '../lib/lmdEvaluationEngine';
+
+function TeacherGradeRow({
+  rec,
+  ue,
+  isLocked = false,
+  onSaveGrade,
+}: {
+  rec: StudentUERecord;
+  ue: any;
+  isLocked?: boolean;
+  onSaveGrade: (recordId: string, updates: Partial<StudentUERecord>) => Promise<void>;
+}) {
+  const [cc, setCc] = useState<string>(rec.noteCC !== undefined && rec.noteCC !== null ? String(rec.noteCC) : '');
+  const [exam, setExam] = useState<string>(rec.noteExam !== undefined && rec.noteExam !== null ? String(rec.noteExam) : '');
+  const [tp, setTp] = useState<string>(rec.noteTP !== undefined && rec.noteTP !== null ? String(rec.noteTP) : '');
+  const [rattrapage, setRattrapage] = useState<string>(rec.noteRattrapage !== undefined && rec.noteRattrapage !== null ? String(rec.noteRattrapage) : '');
+  const [isDefaillant, setIsDefaillant] = useState<boolean>(!!rec.isDefaillant);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const liveSession1 = useMemo(() => {
+    return lmdEvaluationEngine.computeUeFinalNote({
+      noteCC: cc !== '' ? Number(cc) : undefined,
+      noteExam: exam !== '' ? Number(exam) : undefined,
+      noteTP: tp !== '' ? Number(tp) : undefined,
+      isDefaillant
+    }, ue);
+  }, [cc, exam, tp, isDefaillant, ue]);
+
+  const liveBestOf = useMemo(() => {
+    return lmdEvaluationEngine.computeBestOfNote({
+      noteCC: cc !== '' ? Number(cc) : undefined,
+      noteExam: exam !== '' ? Number(exam) : undefined,
+      noteTP: tp !== '' ? Number(tp) : undefined,
+      noteFinal: liveSession1.note ?? undefined,
+      noteRattrapage: rattrapage !== '' ? Number(rattrapage) : undefined,
+      isDefaillant
+    }, ue);
+  }, [cc, exam, tp, liveSession1, rattrapage, isDefaillant, ue]);
+
+  const handleSave = async () => {
+    if (isLocked) return;
+    setIsSaving(true);
+    try {
+      await onSaveGrade(rec.id, {
+        noteCC: cc !== '' ? Number(cc) : null,
+        noteExam: exam !== '' ? Number(exam) : null,
+        noteTP: tp !== '' ? Number(tp) : null,
+        noteRattrapage: rattrapage !== '' ? Number(rattrapage) : null,
+        isDefaillant,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const isEliminatory = liveBestOf !== null && liveBestOf < DEFAULT_LMD_THRESHOLDS.eliminatoryThreshold;
+
+  return (
+    <tr className="hover:bg-bg-primary/50 text-xs transition-colors">
+      <td className="p-3">
+        <span className="font-bold text-text-primary block">{rec.studentName || 'Étudiant'}</span>
+        <span className="text-[10px] text-text-secondary">{rec.studentEmail}</span>
+      </td>
+      <td className="p-3 text-center">
+        <input
+          type="number"
+          min={0}
+          max={20}
+          step={0.25}
+          disabled={isDefaillant || isLocked}
+          value={cc}
+          onChange={(e) => setCc(e.target.value)}
+          placeholder="—"
+          className="w-14 bg-bg-secondary border border-border-primary rounded-lg px-2 py-1 text-center font-mono font-bold text-text-primary disabled:opacity-40"
+        />
+      </td>
+      <td className="p-3 text-center">
+        <input
+          type="number"
+          min={0}
+          max={20}
+          step={0.25}
+          disabled={isDefaillant || isLocked}
+          value={exam}
+          onChange={(e) => setExam(e.target.value)}
+          placeholder="—"
+          className="w-14 bg-bg-secondary border border-border-primary rounded-lg px-2 py-1 text-center font-mono font-bold text-text-primary disabled:opacity-40"
+        />
+      </td>
+      <td className="p-3 text-center">
+        <input
+          type="number"
+          min={0}
+          max={20}
+          step={0.25}
+          disabled={isDefaillant || isLocked}
+          value={tp}
+          onChange={(e) => setTp(e.target.value)}
+          placeholder="—"
+          className="w-14 bg-bg-secondary border border-border-primary rounded-lg px-2 py-1 text-center font-mono font-bold text-text-primary disabled:opacity-40"
+        />
+      </td>
+      <td className="p-3 text-center">
+        <span className={`font-mono font-bold ${liveSession1.note !== null ? (liveSession1.note >= 10 ? 'text-emerald-600' : 'text-rose-600') : 'text-text-secondary'}`}>
+          {liveSession1.note !== null ? `${liveSession1.note.toFixed(2)}` : '—'}
+        </span>
+      </td>
+      <td className="p-3 text-center">
+        <input
+          type="number"
+          min={0}
+          max={20}
+          step={0.25}
+          disabled={isDefaillant || isLocked}
+          value={rattrapage}
+          onChange={(e) => setRattrapage(e.target.value)}
+          placeholder="—"
+          className="w-14 bg-bg-secondary border border-border-primary rounded-lg px-2 py-1 text-center font-mono font-bold text-text-primary disabled:opacity-40"
+        />
+      </td>
+      <td className="p-3 text-center">
+        <div>
+          <span className={`font-mono font-extrabold ${liveBestOf !== null ? (liveBestOf >= 10 ? 'text-emerald-600' : (isEliminatory ? 'text-rose-600' : 'text-amber-600')) : 'text-text-secondary'}`}>
+            {liveBestOf !== null ? `${liveBestOf.toFixed(2)}/20` : '—'}
+          </span>
+          {isEliminatory && <span className="text-[9px] text-rose-600 block font-bold">Éliminatoire</span>}
+        </div>
+      </td>
+      <td className="p-3 text-center">
+        <label className="inline-flex items-center gap-1 text-[10px] text-text-secondary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isDefaillant}
+            disabled={isLocked}
+            onChange={(e) => setIsDefaillant(e.target.checked)}
+            className="rounded text-rose-600 focus:ring-rose-500 h-3.5 w-3.5 disabled:opacity-40"
+          />
+          <span className={isDefaillant ? 'font-bold text-rose-600' : ''}>DEF</span>
+        </label>
+      </td>
+      <td className="p-3 text-right">
+        {isLocked ? (
+          <span className="inline-flex items-center gap-1 text-[10px] text-text-secondary font-bold px-2 py-1 rounded bg-bg-primary border border-border-primary">
+            <Lock className="w-3 h-3 text-text-secondary" /> Verrouillé
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-brand-primary hover:bg-brand-hover text-white px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+          >
+            <Save className="w-3 h-3" />
+            <span>Enregistrer</span>
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
 
 interface TeacherPortalProps {
   activeTab: 'teacher-dashboard' | 'teacher-schedule' | 'teacher-students' | 'teacher-profile';
@@ -66,6 +229,125 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
   const [isUploadingMaterial, setIsUploadingMaterial] = useState(false);
   const materialPdfInputRef = useRef<HTMLInputElement>(null);
   const materialVideoInputRef = useRef<HTMLInputElement>(null);
+
+  // LMD UE & Course Resources States
+  const [myTeachingUnits, setMyTeachingUnits] = useState<any[]>([]);
+  const [managingUe, setManagingUe] = useState<any | null>(null);
+  const [ueResources, setUeResources] = useState<any[]>([]);
+  const [resTitle, setResTitle] = useState('');
+  const [resType, setResType] = useState<'video' | 'pdf'>('video');
+  const [resUrl, setResUrl] = useState('');
+  const [isSavingRes, setIsSavingRes] = useState(false);
+  const [allProgramsList, setAllProgramsList] = useState<any[]>([]);
+  const [allSemestersList, setAllSemestersList] = useState<any[]>([]);
+  const [ueStudentCounts, setUeStudentCounts] = useState<Record<string, number>>({});
+
+  const handleOpenUeResources = async (ue: any) => {
+    setManagingUe(ue);
+    setResTitle('');
+    setResUrl('');
+    setResType('video');
+    try {
+      const res = await dbAdapter.courseResources.list(ue.id || ue.$id);
+      setUeResources(res);
+    } catch (e) {
+      setUeResources([]);
+    }
+  };
+
+  // LMD Grading states & handlers
+  const [gradingUe, setGradingUe] = useState<any | null>(null);
+  const [ueStudentsList, setUeStudentsList] = useState<StudentUERecord[]>([]);
+  const [isSavingGrades, setIsSavingGrades] = useState(false);
+  const [gradingFeedback, setGradingFeedback] = useState<string | null>(null);
+
+  const handleOpenUeGrades = async (ue: any) => {
+    setGradingUe(ue);
+    setGradingFeedback(null);
+    try {
+      const recs = await dbAdapter.studentUeRecords.list({ ueId: ue.id || ue.$id });
+      setUeStudentsList(recs);
+    } catch (e) {
+      setUeStudentsList([]);
+    }
+  };
+
+  const handleUpdateStudentGrade = async (recordId: string, updates: Partial<StudentUERecord>) => {
+    if (!gradingUe) return;
+    const currentSem = allSemestersList.find((s) => s.id === gradingUe.semesterId);
+    if (currentSem?.status === 'cloture' || currentSem?.status === 'archive') {
+      alert("Action refusée : ce semestre est officiellement clôturé. Les notes ne peuvent plus être modifiées.");
+      return;
+    }
+    const rec = ueStudentsList.find((r) => r.id === recordId);
+    if (!rec) return;
+
+    const merged = { ...rec, ...updates };
+    const finalResult = lmdEvaluationEngine.computeUeFinalNote(merged, gradingUe);
+    const bestOf = lmdEvaluationEngine.computeBestOfNote({ ...merged, noteFinal: finalResult.note ?? undefined }, gradingUe);
+
+    let status = rec.status;
+    if (merged.isDefaillant) {
+      status = 'defaillant';
+    } else if (bestOf !== null) {
+      if (bestOf >= DEFAULT_LMD_THRESHOLDS.passingThreshold) {
+        status = 'valide';
+      } else if (merged.noteRattrapage !== undefined && merged.noteRattrapage !== null) {
+        status = 'en_dette';
+      } else {
+        status = 'rattrapage';
+      }
+    }
+
+    const payload: Partial<StudentUERecord> = {
+      ...updates,
+      noteFinal: finalResult.note ?? undefined,
+      noteBestOf: bestOf ?? undefined,
+      status,
+      validatedBy: profile?.name || 'Enseignant',
+      validatedAt: new Date().toLocaleDateString('fr-FR'),
+    };
+
+    try {
+      await dbAdapter.studentUeRecords.update(recordId, payload);
+      setUeStudentsList((prev) => prev.map((r) => (r.id === recordId ? { ...r, ...payload } : r)));
+      setGradingFeedback(`Note enregistrée pour ${rec.studentName || rec.studentEmail}`);
+      setTimeout(() => setGradingFeedback(null), 3000);
+    } catch (err: any) {
+      console.warn('Erreur saisie note enseignant:', err);
+    }
+  };
+
+  const handleAddResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managingUe || !resTitle.trim() || !resUrl.trim()) return;
+    setIsSavingRes(true);
+    try {
+      const created = await dbAdapter.courseResources.create({
+        ueId: managingUe.id || managingUe.$id,
+        title: resTitle.trim(),
+        type: resType,
+        contentUrl: resUrl.trim(),
+        orderIndex: ueResources.length + 1,
+      });
+      setUeResources((prev) => [...prev, created]);
+      setResTitle('');
+      setResUrl('');
+    } catch (err: any) {
+      console.warn("Erreur ajout ressource UE:", err);
+    } finally {
+      setIsSavingRes(false);
+    }
+  };
+
+  const handleDeleteResource = async (resId: string) => {
+    try {
+      await dbAdapter.courseResources.delete(resId);
+      setUeResources((prev) => prev.filter((r) => r.id !== resId));
+    } catch (e) {
+      console.warn("Erreur suppression ressource UE:", e);
+    }
+  };
 
   const getClassChatId = (_programName?: string | null, courseName?: string | null, levelName?: string | null) => {
     const c = (courseName || 'general').trim().toLowerCase();
@@ -256,7 +538,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor', 
             text: payloadStr, 
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur envoi message Appwrite:", err);
@@ -346,7 +629,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement message fichier Appwrite:", err);
@@ -416,7 +700,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement réunion Appwrite:", err);
@@ -528,7 +813,8 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
             sender: 'advisor',
             text: payloadStr,
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement support Appwrite:", err);
@@ -619,6 +905,46 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           let schedule = teacherDoc.scheduleData || [];
           if (typeof schedule === 'string') {
             try { schedule = JSON.parse(schedule); } catch (e) { schedule = []; }
+          }
+
+          // Synchronisation automatique des UE LMD assignées
+          try {
+            const allUes = await dbAdapter.teachingUnits.list();
+            const allProgs = await dbAdapter.programs.list();
+            const allSems = await dbAdapter.semesters.list();
+            setAllProgramsList(allProgs);
+            setAllSemestersList(allSems);
+
+            const teacherId = teacherDoc.$id || teacherDoc.id;
+            const teacherNameLower = (teacherDoc.name || '').toLowerCase().trim();
+            const myUes = allUes.filter((u) => 
+              (u.teacherId && teacherId && u.teacherId === teacherId) ||
+              (u.teacherName && teacherNameLower && u.teacherName.toLowerCase().trim() === teacherNameLower)
+            );
+            setMyTeachingUnits(myUes);
+
+            // Charger les effectifs d'étudiants par UE
+            const studentCounts: Record<string, number> = {};
+            for (const u of myUes) {
+              try {
+                const recs = await dbAdapter.studentUeRecords.list({ ueId: u.id });
+                studentCounts[u.id] = recs.length;
+              } catch (e) {
+                studentCounts[u.id] = 0;
+              }
+            }
+            setUeStudentCounts(studentCounts);
+
+            if (myUes.length > 0) {
+              myUes.forEach((u) => {
+                const prog = allProgs.find((p) => p.id === u.programId);
+                if (prog && !assigned.some((p: string) => p.startsWith(prog.title))) {
+                  assigned.push(prog.title);
+                }
+              });
+            }
+          } catch (e) {
+            console.warn("Erreur chargement UEs LMD enseignant:", e);
           }
 
           setProfile({
@@ -840,6 +1166,94 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
           })}
         </div>
       </div>
+
+      {/* ── Section LMD : Mes Unités d'Enseignement (UE) & Supports Pédagogiques ── */}
+      {myTeachingUnits.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-border-primary">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="font-sans font-bold text-lg text-text-primary flex items-center gap-2">
+                <BookOpenIcon className="w-5 h-5 text-brand-primary" /> Mes Unités d'Enseignement (UE) &amp; Supports Pédagogiques
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Matières officielles assignées dans la structure LMD. Gérez vos cours magistraux, travaux dirigés et supports (vidéos / PDF).
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary border border-brand-primary/20 w-fit">
+              {myTeachingUnits.length} UE assignée(s)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {myTeachingUnits.map((ue: any) => {
+              const prog = allProgramsList.find((p) => p.id === ue.programId);
+              const sem = allSemestersList.find((s) => s.id === ue.semesterId);
+              const enrolledCount = ueStudentCounts[ue.id] || 0;
+
+              return (
+                <div key={ue.id} className="bg-bg-secondary border border-border-primary rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-brand-primary/40 transition-all">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                        {ue.code || 'UE'}
+                      </span>
+                      {sem && (
+                        <span className="text-[11px] font-medium text-text-secondary bg-bg-primary px-2 py-0.5 rounded border border-border-primary">
+                          {sem.name}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="font-bold text-base text-text-primary line-clamp-2">{ue.title}</h3>
+                    <p className="text-xs text-text-secondary line-clamp-1">{prog?.title || 'Programme IDLA'}</p>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border-primary/50 text-center">
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">CM</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeCM || 0}h</div>
+                      </div>
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">TD</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeTD || 0}h</div>
+                      </div>
+                      <div className="bg-bg-primary p-2 rounded-lg border border-border-primary/40">
+                        <div className="text-[10px] text-text-secondary font-bold">TP</div>
+                        <div className="text-xs font-bold text-text-primary">{ue.volumeTP || 0}h</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary pt-1">
+                      <span className="font-bold text-brand-primary">Coeff. {ue.coefficient ?? 3}</span>
+                      <span>•</span>
+                      <span>CC {ue.m3cWeightCC ?? 40}% / Ex {ue.m3cWeightExam ?? 50}% / TP {ue.m3cWeightTP ?? 10}%</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border-primary flex items-center justify-between gap-2">
+                    <span className="text-xs text-text-secondary flex items-center gap-1.5 font-medium">
+                      <UsersIcon className="w-3.5 h-3.5 text-brand-primary" /> {enrolledCount} inscrit(s)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleOpenUeGrades(ue)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        title="Saisir les notes M3C"
+                      >
+                        <Award className="w-3 h-3" /> Notes M3C
+                      </button>
+                      <button
+                        onClick={() => handleOpenUeResources(ue)}
+                        className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <Paperclip className="w-3 h-3" /> Supports
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1578,6 +1992,261 @@ export default function TeacherPortal({ activeTab, setActiveTab, isLoggedIn, pro
         {activeTab === 'teacher-schedule' && renderSchedule()}
         {activeTab === 'teacher-students' && renderStudents()}
         {activeTab === 'teacher-profile' && renderProfile()}
+
+        {/* ── Modal Gestionnaire de Ressources Pédagogiques (Vidéos & PDF) ── */}
+        {managingUe && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 border-b border-border-primary pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                      {managingUe.code}
+                    </span>
+                    <h2 className="font-sans font-bold text-lg text-text-primary">{managingUe.title}</h2>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Ajoutez et gérez les supports de cours (vidéos de cours magistraux, documents PDF, syllabus) accessibles par les étudiants.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setManagingUe(null)}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Formulaire d'ajout de ressource */}
+              <form onSubmit={handleAddResource} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-4">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-text-primary flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-brand-primary" /> Ajouter un nouveau support
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] font-bold text-text-secondary">Titre du support *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Cours 1 - Introduction à la programmation"
+                      value={resTitle}
+                      onChange={(e) => setResTitle(e.target.value)}
+                      className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-text-secondary">Type de support *</label>
+                    <select
+                      value={resType}
+                      onChange={(e) => setResType(e.target.value as any)}
+                      className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary cursor-pointer"
+                    >
+                      <option value="video">Vidéo de cours</option>
+                      <option value="pdf">Document PDF</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-text-secondary">
+                    {resType === 'video' ? 'Lien de la vidéo (YouTube, Vimeo, Cloud Drive, etc.) *' : 'Lien ou URL du document PDF *'}
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    placeholder={resType === 'video' ? 'https://www.youtube.com/watch?v=...' : 'https://.../document.pdf'}
+                    value={resUrl}
+                    onChange={(e) => setResUrl(e.target.value)}
+                    className="w-full mt-1 p-2 rounded-lg border border-border-primary bg-bg-secondary text-text-primary text-xs outline-none focus:border-brand-primary font-mono text-[11px]"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingRes || !resTitle.trim() || !resUrl.trim()}
+                    className="bg-brand-primary hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    {isSavingRes ? 'Enregistrement...' : 'Enregistrer le support'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Liste des supports existants */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-text-primary flex items-center justify-between">
+                  <span>Supports publiés ({ueResources.length})</span>
+                </h3>
+
+                {ueResources.length === 0 ? (
+                  <div className="text-center py-8 bg-bg-primary rounded-xl border border-border-primary/50 text-xs text-text-secondary italic">
+                    Aucun support pédagogique déposé pour cette UE pour le moment.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {ueResources.map((res: any) => (
+                      <div
+                        key={res.id}
+                        className="bg-bg-primary border border-border-primary p-3 rounded-xl flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-brand-primary/10 text-brand-primary flex items-center justify-center shrink-0">
+                            {res.type === 'video' ? <Video className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs text-text-primary truncate">{res.title}</h4>
+                            <a
+                              href={res.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-brand-primary hover:underline flex items-center gap-1 truncate"
+                            >
+                              <LinkIcon className="w-3 h-3 shrink-0" /> {res.contentUrl}
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={res.contentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg border border-border-primary text-text-secondary hover:text-brand-primary transition-all text-xs flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteResource(res.id)}
+                            className="p-1.5 rounded-lg border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 transition-all text-xs cursor-pointer"
+                            title="Supprimer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal Saisie des Notes M3C (Enseignant) ── */}
+        {gradingUe && (() => {
+          const currentSem = allSemestersList.find((s) => s.id === gradingUe.semesterId);
+          const isSemesterClosed = currentSem?.status === 'cloture' || currentSem?.status === 'archive';
+          return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-bg-secondary border border-border-primary rounded-2xl max-w-4xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 border-b border-border-primary pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      {gradingUe.code}
+                    </span>
+                    <h2 className="font-sans font-bold text-lg text-text-primary">
+                      Évaluations &amp; Notes M3C — {gradingUe.title}
+                    </h2>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Saisie directe des sous-notes (Contrôle Continu, Examen, TP) selon les modalités de contrôle des connaissances.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setGradingUe(null)}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* M3C Parameters Banner */}
+              <div className="bg-bg-primary border border-border-primary rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <span className="text-[10px] text-text-secondary font-bold block">Pondération M3C</span>
+                    <span className="font-mono font-bold text-text-primary">
+                      CC : {gradingUe.m3cWeightCC ?? 40}% | Exam : {gradingUe.m3cWeightExam ?? 50}% | TP : {gradingUe.m3cWeightTP ?? 10}%
+                    </span>
+                  </div>
+                  <div className="h-6 w-px bg-border-primary"></div>
+                  <div>
+                    <span className="text-[10px] text-text-secondary font-bold block">Coefficient</span>
+                    <span className="font-mono font-bold text-brand-primary">Coeff. {gradingUe.coefficient ?? 3}</span>
+                  </div>
+                  {gradingUe.isCompensable === false && (
+                    <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 border border-rose-500/20 font-bold text-[10px]">
+                      UE Verrou (Non compensable)
+                    </span>
+                  )}
+                </div>
+
+                {gradingFeedback && (
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                    <CheckCircle2Icon className="w-4 h-4" /> {gradingFeedback}
+                  </div>
+                )}
+              </div>
+
+              {isSemesterClosed && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-center gap-2 text-amber-700 dark:text-amber-300 text-xs font-semibold">
+                  <Lock className="w-4 h-4 shrink-0" />
+                  <span>Semestre clôturé : les notes sont verrouillées en lecture seule conformément au règlement LMD.</span>
+                </div>
+              )}
+
+              {/* Table of Students */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-text-secondary">
+                  <span>Étudiants inscrits ({ueStudentsList.length})</span>
+                  <span className="text-[11px] font-normal italic">
+                    Formule : Note = (CC × {gradingUe.m3cWeightCC ?? 40}% + Exam × {gradingUe.m3cWeightExam ?? 50}% + TP × {gradingUe.m3cWeightTP ?? 10}%) / 100
+                  </span>
+                </div>
+
+                {ueStudentsList.length === 0 ? (
+                  <div className="text-center py-10 bg-bg-primary rounded-xl border border-border-primary/50 text-xs text-text-secondary italic">
+                    Aucun étudiant inscrit dans cette UE pour le moment.
+                  </div>
+                ) : (
+                  <div className="bg-bg-primary border border-border-primary rounded-xl overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-border-primary text-[10px] uppercase font-bold text-text-secondary bg-bg-secondary/40">
+                            <th className="p-3">Étudiant</th>
+                            <th className="p-3 text-center">CC ({gradingUe.m3cWeightCC ?? 40}%)</th>
+                            <th className="p-3 text-center">Exam ({gradingUe.m3cWeightExam ?? 50}%)</th>
+                            <th className="p-3 text-center">TP ({gradingUe.m3cWeightTP ?? 10}%)</th>
+                            <th className="p-3 text-center">Session 1</th>
+                            <th className="p-3 text-center">Rattrapage</th>
+                            <th className="p-3 text-center">Retenue</th>
+                            <th className="p-3 text-center">Déf.</th>
+                            <th className="p-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border-primary/50">
+                          {ueStudentsList.map((rec) => (
+                            <TeacherGradeRow
+                              key={rec.id}
+                              rec={rec}
+                              ue={gradingUe}
+                              isLocked={isSemesterClosed}
+                              onSaveGrade={handleUpdateStudentGrade}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          );
+        })()}
       </div>
     </div>
   );

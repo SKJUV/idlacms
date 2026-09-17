@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Key, Eye, EyeOff, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface AddUserProps {
   onCreateUser: (
     name: string,
     email: string,
     role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC',
-    status: 'Actif' | 'Inactif' | 'Bloqué'
+    status: 'Actif' | 'Inactif' | 'Bloqué',
+    password?: string
   ) => Promise<void>;
   setActiveTab: (tab: any) => void;
 }
@@ -14,21 +15,43 @@ interface AddUserProps {
 export default function AddUser({ onCreateUser, setActiveTab }: AddUserProps) {
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [newUserRole, setNewUserRole] = useState<'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC'>('Admin');
   const [newUserStatus, setNewUserStatus] = useState<'Actif' | 'Inactif' | 'Bloqué'>('Actif');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const generateStrongPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+    let pwd = 'Idla!';
+    for (let i = 0; i < 9; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewUserPassword(pwd);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserName.trim() || !newUserEmail.trim()) return;
+    setErrorMessage('');
+    if (!newUserName.trim() || !newUserEmail.trim()) {
+      setErrorMessage('Veuillez renseigner le nom et l\'adresse email.');
+      return;
+    }
+    if (!newUserPassword || newUserPassword.length < 8) {
+      setErrorMessage('Le mot de passe initial doit comporter au moins 8 caractères.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await onCreateUser(newUserName, newUserEmail, newUserRole, newUserStatus);
+      await onCreateUser(newUserName, newUserEmail, newUserRole, newUserStatus, newUserPassword);
       setNewUserName('');
       setNewUserEmail('');
+      setNewUserPassword('');
       setActiveTab('admin-users');
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Erreur lors de la création de l\'utilisateur.');
     } finally {
       setIsSubmitting(false);
     }
@@ -45,9 +68,16 @@ export default function AddUser({ onCreateUser, setActiveTab }: AddUserProps) {
         </button>
         <div>
           <h3 className="font-sans font-bold text-base text-text-primary">Créer un nouvel utilisateur</h3>
-          <p className="text-[11px] text-text-secondary">Renseignez les détails du compte de l'équipe IDLA</p>
+          <p className="text-[11px] text-text-secondary">Renseignez les détails du compte et configurez ses accès</p>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2.5 text-red-500 text-xs font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
@@ -69,11 +99,48 @@ export default function AddUser({ onCreateUser, setActiveTab }: AddUserProps) {
             type="email"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
-            placeholder="ex: ml.mba@idla.edu"
+            placeholder="ex: ml.mba@idla.online"
             className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-medium"
             required
             disabled={isSubmitting}
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-text-secondary uppercase">Mot de passe initial *</label>
+            <button
+              type="button"
+              onClick={generateStrongPassword}
+              className="text-[11px] font-semibold text-brand-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Générer mot de passe
+            </button>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-secondary">
+              <Key className="w-3.5 h-3.5" />
+            </div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              placeholder="Minimum 8 caractères"
+              className="w-full pl-9 pr-10 p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-xs font-mono font-medium"
+              required
+              minLength={8}
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary hover:text-text-primary cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-[10px] text-text-secondary">Ce mot de passe sera configuré dans l'authentification sécurisée IDLA pour lui permettre de se connecter.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -86,6 +153,7 @@ export default function AddUser({ onCreateUser, setActiveTab }: AddUserProps) {
               disabled={isSubmitting}
             >
               <option value="Admin">Admin</option>
+              <option value="Super Admin">Super Admin</option>
               <option value="Writer">Writer (Rédacteur Actualités)</option>
               <option value="Marketer">Marketer</option>
               <option value="OC">OC (Conseiller Admissions)</option>
@@ -117,10 +185,10 @@ export default function AddUser({ onCreateUser, setActiveTab }: AddUserProps) {
           </button>
           <button
             type="submit"
-            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all shadow-md cursor-pointer"
+            className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-6 py-2.5 rounded-lg transition-all shadow-md cursor-pointer disabled:opacity-50"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Enregistrement...' : "Enregistrer l'utilisateur"}
+            {isSubmitting ? 'Création du compte...' : "Créer le compte et enregistrer"}
           </button>
         </div>
       </form>

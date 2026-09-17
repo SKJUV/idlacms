@@ -5,7 +5,7 @@ import {
   GraduationCapIcon, ClockIcon, DownloadIcon, CopyIcon, SunIcon, MoonIcon
 } from './Icons';
 import { CustomForm, CustomFormResponse, NewsArticle, Program } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -173,7 +173,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }
     }
 
-    const respondentName = formValues['Nom complet'] || formValues['Nom & Prénom'] || formValues['Nom'] || formValues['Nom de famille'] || 'Candidat IDLA';
+    const respondentName = 
+      formValues['1. Full Legal Name / Nom complet légal'] ||
+      formValues['Nom complet'] || 
+      formValues['Nom & Prénom'] || 
+      formValues['Nom'] || 
+      formValues['Nom de famille'] || 
+      Object.entries(formValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+      'Candidat IDLA';
 
     // Strict Email Detection
     const emailKey = Object.keys(formValues).find(
@@ -218,7 +225,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             respondentEmail: newResponse.respondentEmail,
             submittedAt: newResponse.submittedAt,
             data: JSON.stringify(newResponse.data)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement réponse Appwrite:", err);
@@ -429,20 +437,20 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
         {/* Conteneur Formulaire ou Écran de Succès */}
         {isSuccess ? (
-          <div className="bg-white dark:bg-bg-secondary border border-emerald-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-12 h-12" />
+          <div className="bg-bg-secondary border border-border-primary rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-2xl animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto ring-8 ring-emerald-500/10">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-extrabold text-emerald-700 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                Validation & Enregistrement Effectué
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Enregistrement Confirmé
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
                 Candidature Transmise avec Succès !
               </h2>
               <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed pt-1">
-                Vos informations ont été enregistrées avec succès. Le document PDF officiel du dossier d'admission a été ouvert automatiquement et votre récépissé d'inscription a été transmis par e-mail.
+                Vos informations ont été enregistrées avec succès. Le document des modalités du programme a été ouvert et votre fiche d'inscription officielle a été transmise par e-mail.
               </p>
             </div>
 
@@ -464,15 +472,15 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
+                <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || 'Modalités des programmes'}
               </a>
               <button
                 onClick={handleDownloadPdf}
-                className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <DownloadIcon className="w-4 h-4" /> Télécharger mon Récépissé PDF
+                <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || "Fiche d'inscription à télécharger (à joindre au dossier)"}
               </button>
               <button
                 onClick={onBack}
@@ -749,7 +757,45 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                   <span>{t('form_notice_title')}</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs leading-relaxed text-text-primary">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs leading-relaxed text-text-primary">
+                  {/* Lieux d'Évaluation (Afrique Centrale - Uniquement les Pays) */}
+                  <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <h4 className="font-extrabold text-brand-primary text-xs flex items-center gap-1.5">
+                        🌍 {t('form_eval_locations_title')}
+                      </h4>
+                      <p className="text-text-secondary text-[11px]">
+                        {t('form_eval_locations_desc')}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5 pt-1 text-[11px]">
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_cameroon')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_gabon')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_congo')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_tchad')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_rca')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_guinea')}</span>
+                      </div>
+                      <div className="p-1.5 px-2 rounded-xl bg-bg-primary border border-border-primary/80 font-bold text-text-primary flex items-center gap-2">
+                        <span>{t('form_eval_rdc')}</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-brand-primary font-bold pt-1 border-t border-border-primary/60">
+                      {t('form_eval_online_note')}
+                    </p>
+                  </div>
+
                   {/* Consignes de Paiement et Banques Partenaires */}
                   <div className="space-y-3 bg-white dark:bg-bg-secondary p-4.5 rounded-2xl border border-border-primary flex flex-col justify-between">
                     <div className="space-y-2">

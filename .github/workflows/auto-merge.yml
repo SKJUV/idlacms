@@ -12,8 +12,8 @@ jobs:
       contents: write
       pull-requests: write
 
-    # Workflow d'auto-merge réactivé pour les collaborateurs officiels
-    # if: false
+    # Auto-merge strictement désactivé selon les consignes de sécurité
+    if: false
 
     steps:
       - name: 🔍 Vérifier le statut de collaborateur officiel

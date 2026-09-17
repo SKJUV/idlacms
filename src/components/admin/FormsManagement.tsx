@@ -4,7 +4,7 @@ import {
   Sparkles, FileSpreadsheet, Layers, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { CustomForm, CustomFormField, CustomFormResponse } from '../../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../../lib/appwrite';
 import FormBuilderOptionTags from './FormBuilderOptionTags';
 
 interface FormsManagementProps {
@@ -276,7 +276,8 @@ export default function FormsManagement({ logActivity }: FormsManagementProps) {
             description: newForm.description,
             createdAt: newForm.createdAt,
             fields: JSON.stringify(newForm.fields)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec création formulaire Appwrite:", err);

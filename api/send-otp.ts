@@ -2,6 +2,7 @@ import dns from 'dns';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 try {
   dns.setDefaultResultOrder('ipv4first');
@@ -22,6 +23,12 @@ function getResendApiKey(): string {
     }
   } catch (e) {}
   return '';
+}
+
+export function getOtpSecret(): string {
+  if (process.env.APPWRITE_API_KEY) return process.env.APPWRITE_API_KEY;
+  if (process.env.RESEND_API_KEY) return process.env.RESEND_API_KEY;
+  return 'idla-secure-master-otp-secret-2026';
 }
 
 function postToResend(apiKey: string, payload: any): Promise<{ ok: boolean; status: number; data: any }> {
@@ -83,9 +90,14 @@ function escapeHtml(unsafe: string): string {
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
-  const allowedOrigins = ['https://idlaacademy.online', 'http://localhost:3000'];
+  const allowedOrigins = [
+    'https://idlaacademy.online',
+    'https://www.idlaacademy.online',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -100,12 +112,26 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, fullName, otpCode } = req.body || {};
+  const { email, fullName } = req.body || {};
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailRegex.test(email) || !fullName || !otpCode) {
-    return res.status(400).json({ error: 'Invalid or missing required fields' });
+  if (!email || !emailRegex.test(email) || !fullName) {
+    return res.status(400).json({ error: 'Adresse e-mail ou nom complet manquant ou invalide.' });
   }
+
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Génération sécurisée côté serveur d'un code OTP à 6 chiffres
+  const generatedOtp = Math.floor(100000 + crypto.randomInt(0, 900000)).toString();
+
+  // Signature HMAC avec expiration stricte de 5 minutes
+  const expiresAt = Date.now() + 5 * 60 * 1000;
+  const secret = getOtpSecret();
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(`${cleanEmail}:${generatedOtp}:${expiresAt}`)
+    .digest('hex');
+  const token = `${expiresAt}.${signature}`;
 
   const resendApiKey = getResendApiKey();
   if (!resendApiKey) {
@@ -113,11 +139,11 @@ export default async function handler(req: any, res: any) {
   }
 
   const safeFullName = escapeHtml(fullName);
-  const safeOtpCode = escapeHtml(otpCode);
+  const safeOtpCode = escapeHtml(generatedOtp);
 
   const { ok, status, data } = await postToResend(resendApiKey, {
     from: 'IDLA Admissions <Admission@idlaacademy.online>',
-    to: email,
+    to: cleanEmail,
     subject: '🔐 Votre code de vérification — Candidature IDLA',
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
@@ -128,7 +154,7 @@ export default async function handler(req: any, res: any) {
         <div style="padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
           <p>Bonjour <strong>${safeFullName}</strong>,</p>
           <p>Nous avons bien enregistré votre demande d'inscription à l'International Distance Learning Academy (IDLA).</p>
-          <p>Afin de confirmer votre identité et sécuriser votre compte, veuillez utiliser le code de vérification unique ci-dessous :</p>
+          <p>Afin de confirmer votre identité et sécuriser votre compte, veuillez utiliser le code de vérification unique ci-dessous (valable 5 minutes) :</p>
           <div style="text-align: center; margin: 32px 0;">
             <span style="display: inline-block; background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 12px 32px; color: #0f172a;">${safeOtpCode}</span>
           </div>
@@ -142,8 +168,9 @@ export default async function handler(req: any, res: any) {
   });
 
   if (!ok) {
-    return res.status(status).json({ error: data.error || data.message || 'Failed to send email via Resend' });
+    return res.status(status).json({ error: data.error || data.message || 'Échec de l\'envoi du code par e-mail.' });
   }
 
-  return res.status(200).json({ success: true });
+  // Le code OTP n'est JAMAIS renvoyé dans la réponse au client
+  return res.status(200).json({ success: true, token, expiresAt });
 }

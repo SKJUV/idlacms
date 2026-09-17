@@ -134,12 +134,15 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC' | 'teacher' | 'Enseignant';
+  role: 'Super Admin' | 'Admin' | 'Writer' | 'Marketer' | 'OC' | 'teacher' | 'Enseignant' | 'student';
   status: 'Actif' | 'Inactif' | 'Bloqué';
   lastLogin: string;
   initials: string;
   avatar?: string;
   assignedPrograms?: string[];
+  program?: string;
+  programId?: string;
+  matricule?: string;
 }
 
 export interface TeacherProfile {
@@ -186,6 +189,127 @@ export interface ScheduleSlot {
   isCompleted?: boolean;
 }
 
+// ─── Système LMD Officiel ──────────────────────────────────────────────────
+
+export type SemesterStatus = 'actif' | 'termine' | 'rattrapage_en_cours' | 'cloture';
+
+export interface Semester {
+  id: string;
+  programId: string;
+  name: string;             // Ex: "Semestre 1 (S1)"
+  number: number;           // 1 à 6
+  academicYear?: string;    // Ex: "2026-2027"
+  academicLevel?: string;   // Ex: "L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"
+  startDate?: string;       // "01 Octobre 2026"
+  endDate?: string;         // "28 Février 2027"
+  rattrapageStartDate?: string; // "01 Mars 2027"
+  rattrapageEndDate?: string;   // "15 Mars 2027"
+  status?: SemesterStatus;
+}
+
+export type UERecordStatus = 'inscrit' | 'valide' | 'non_valide' | 'rattrapage' | 'en_dette' | 'compense' | 'defaillant';
+
+export type SemesterDecision = 
+  | 'ADM'      // Admis : moyenne >= 10.00, toutes UE validées ou compensées
+  | 'ADM_COMP' // Admis par compensation annuelle
+  | 'AJAC'     // Ajourné mais Autorisé à Continuer (dettes ≤ 2 UE)
+  | 'AJ'       // Ajourné / Redoublement (dettes > 2 UE ou échec rattrapage)
+  | 'DEF'      // Défaillant (absence injustifiée ou note éliminatoire bloquante)
+  | 'EN_COURS' // En cours d'évaluation / Délibération non clôturée
+  ;
+
+export interface LmdThresholdConfig {
+  eliminatoryThreshold: number; // Note plancher en dessous de laquelle l'UE n'est pas compensable (7.00)
+  passingThreshold: number;     // Note minimale pour valider directement l'UE ou le semestre (10.00)
+  maxDebtsForAjac: number;      // Nombre maximum d'UE en dette pour autoriser le passage (2)
+}
+
+export const DEFAULT_LMD_THRESHOLDS: LmdThresholdConfig = {
+  eliminatoryThreshold: 7.0,
+  passingThreshold: 10.0,
+  maxDebtsForAjac: 2,
+};
+
+export interface TeachingUnit {
+  id: string;
+  programId: string;
+  semesterId: string;
+  code: string;             // Ex: "INF101"
+  title: string;            // Ex: "Algorithmique & Programmation"
+  teacherId?: string;
+  teacherName?: string;
+  volumeCM?: number;
+  volumeTD?: number;
+  volumeTP?: number;
+  description?: string;
+  prerequisiteUeId?: string;
+  // Cadre réglementaire LMD (M3C, pondération & compensation)
+  coefficient?: number;     // Poids dans le semestre (défaut: 3)
+  isCompensable?: boolean;  // true = compensable, false = UE verrou (mémoire, stage...)
+  bccId?: string;           // Identifiant Bloc de Compétences (anticipation phase ultérieure)
+  m3cWeightCC?: number;     // Poids Contrôle Continu en % (ex: 40)
+  m3cWeightExam?: number;   // Poids Examen Final en % (ex: 50)
+  m3cWeightTP?: number;     // Poids TP en % (ex: 10)
+}
+
+export interface StudentUERecord {
+  id: string;
+  studentEmail: string;
+  studentName?: string;
+  studentId?: string;
+  ueId: string;
+  semesterId: string;
+  programId: string;
+  sessionType: 'normale' | 'rattrapage';
+  status: UERecordStatus;
+  validatedBy?: string;
+  validatedAt?: string;
+  remarks?: string;
+  // Notes et traçabilité LMD
+  noteCC?: number;          // Note Contrôle Continu /20
+  noteExam?: number;        // Note Examen Final /20
+  noteTP?: number;          // Note Travaux Pratiques /20
+  noteFinal?: number;       // Note Session 1 calculée ou forcée /20
+  isOverridden?: boolean;   // true si noteFinal saisie directement manuellement
+  noteRattrapage?: number;  // Note obtenue à la session de rattrapage /20
+  noteBestOf?: number;      // Max(noteFinal, noteRattrapage) retenue pour délibération
+  isDefaillant?: boolean;   // Absence injustifiée / défaillance bloquante
+  isCompensated?: boolean;  // true si l'UE a été validée par compensation
+  academicYear?: string;    // Année académique de rattachement (ex: "2026-2027")
+}
+
+export interface StudentSemesterResult {
+  id: string;
+  studentEmail: string;
+  studentName?: string;
+  studentId?: string;
+  programId: string;
+  semesterId: string;
+  academicYear?: string;        // Année académique de rattachement (ex: "2026-2027")
+  moyenneSemestre?: number;     // Moyenne pondérée du semestre /20
+  totalCoefficients: number;    // Somme des coefficients des UE du semestre
+  uesValidees: number;
+  uesNonValidees: number;
+  uesCompensees: number;
+  uesDefaillantes: number;
+  decision: SemesterDecision;
+  isCompensationApplied: boolean;
+  deliberatedBy?: string;
+  deliberatedAt?: string;
+  remarks?: string;
+}
+
+export interface CourseResource {
+  id: string;
+  ueId: string;
+  title: string;
+  type: 'video' | 'pdf';
+  contentUrl?: string;
+  fileId?: string;
+  fileName?: string;
+  orderIndex: number;
+}
+
 export interface EquivalenceChecklist {
   previousTranscriptsVerified: boolean;
   previousDiplomaVerified: boolean;
@@ -198,6 +322,7 @@ export interface PreRegistration {
   name: string;
   email: string;
   program?: string;
+  programId?: string;
   dateApplied: string;
   status: 'In Review' | 'New' | 'Accepted' | 'Rejected';
   initials: string;

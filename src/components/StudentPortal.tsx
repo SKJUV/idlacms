@@ -11,10 +11,12 @@ import {
   ShareIcon, GlobeIcon, CameraIcon, PencilIcon, UsersIcon, SettingsIcon,
   SendIcon, MessageSquareIcon, UploadIcon, FileTextIcon, GraduationCapIcon,
 } from './Icons';
-import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query } from '../lib/appwrite';
+import { account, databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, Query, Permission, Role } from '../lib/appwrite';
+import { dbAdapter } from '../lib/dbAdapter';
 import {
   CourseEnrollment, AssignmentDeadline, Certificate,
   StudentProfile, CourseCatalogItem, AcademicSession, DEFAULT_ACADEMIC_SESSIONS,
+  Semester, TeachingUnit, StudentUERecord, CourseResource, StudentSemesterResult,
 } from '../types';
 import { Paperclip, Video, FileText, Download, ExternalLink, Gift, Copy, Check } from 'lucide-react';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../lib/admissionLetter';
@@ -118,6 +120,14 @@ export default function StudentPortal({
   const [applications, setApplications] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
   const [teachersSchedules, setTeachersSchedules] = useState<any[]>([]);
+
+  // ── Cursus LMD & Ressources Pédagogiques Réelles ──
+  const [studentLmdRecords, setStudentLmdRecords] = useState<StudentUERecord[]>([]);
+  const [studentTeachingUnits, setStudentTeachingUnits] = useState<TeachingUnit[]>([]);
+  const [studentSemesters, setStudentSemesters] = useState<Semester[]>([]);
+  const [studentSemesterResults, setStudentSemesterResults] = useState<StudentSemesterResult[]>([]);
+  const [studentUeResources, setStudentUeResources] = useState<Record<string, CourseResource[]>>({});
+  const [lmdLoading, setLmdLoading] = useState(false);
 
   // ── Suivi de candidature et messagerie intégrés ──
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -419,6 +429,46 @@ export default function StudentPortal({
             console.warn("Erreur chargement emplois du temps:", err);
           }
         }
+
+        // ── Charger le Cursus LMD de l'étudiant ──
+        try {
+          setLmdLoading(true);
+          const [userRecords, userDelibs] = await Promise.all([
+            dbAdapter.studentUeRecords.list({ studentEmail: userEmail }),
+            dbAdapter.studentSemesterResults.list({ studentEmail: userEmail }),
+          ]);
+          setStudentLmdRecords(userRecords);
+          setStudentSemesterResults(userDelibs);
+
+          const acceptedApp = loadedApps.find((a: any) => (a.status || '').toLowerCase() === 'accepted' && a.program);
+          let progId = acceptedApp?.programId || '';
+          if (!progId && acceptedApp?.program) {
+            progId = (await dbAdapter.programs.resolveProgramId(acceptedApp.program)) || '';
+          }
+
+          if (progId) {
+            const [sems, ues] = await Promise.all([
+              dbAdapter.semesters.list(progId),
+              dbAdapter.teachingUnits.list(progId),
+            ]);
+            setStudentSemesters(sems);
+            setStudentTeachingUnits(ues);
+
+            // Charger les ressources de chaque UE
+            const resMap: Record<string, CourseResource[]> = {};
+            for (const u of ues) {
+              try {
+                const rList = await dbAdapter.courseResources.list(u.id);
+                if (rList.length > 0) resMap[u.id] = rList;
+              } catch (e) {}
+            }
+            setStudentUeResources(resMap);
+          }
+        } catch (lmdErr) {
+          console.warn("Erreur chargement cursus LMD étudiant:", lmdErr);
+        } finally {
+          setLmdLoading(false);
+        }
       } catch (err) {
         console.warn("Erreur lors de l'initialisation du portail étudiant :", err);
       } finally {
@@ -631,7 +681,8 @@ export default function StudentPortal({
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.messages,
           ID.unique(),
-          { applicationId: selectedAppId, sender: 'candidate', text, createdAt: new Date().toISOString() }
+          { applicationId: selectedAppId, sender: 'candidate', text, createdAt: new Date().toISOString() },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement du message sur Appwrite:", err);
@@ -648,7 +699,8 @@ export default function StudentPortal({
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.messages,
             ID.unique(),
-            { applicationId: selectedAppId, sender: 'advisor', text: replyText, createdAt: new Date().toISOString() }
+            { applicationId: selectedAppId, sender: 'advisor', text: replyText, createdAt: new Date().toISOString() },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         } catch (err) {
           console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);
@@ -719,7 +771,8 @@ export default function StudentPortal({
             sender: 'candidate', 
             text: payloadStr, 
             createdAt: nowIso
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement du message de classe sur Appwrite:", err);
@@ -759,7 +812,8 @@ export default function StudentPortal({
               mimeType: file.type,
               uploadedBy: 'candidate',
               uploadedAt: new Date().toISOString(),
-            }
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         }
 
@@ -876,7 +930,8 @@ export default function StudentPortal({
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
-              payload
+              payload,
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           } catch (e: any) {
             delete payload.motivation;
@@ -884,7 +939,8 @@ export default function StudentPortal({
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
-              payload
+              payload,
+              [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
             );
           }
           newAppId = createdDoc.$id || createdDoc.id;
@@ -925,7 +981,8 @@ export default function StudentPortal({
                   mimeType: item.file.type,
                   uploadedBy: 'candidate',
                   uploadedAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
               newUploadedDocsList.push({
                 name: docName,
@@ -2603,6 +2660,217 @@ export default function StudentPortal({
                           </form>
                         </div>
                       </div>
+
+                      {/* ── Cursus LMD de l'Étudiant & Supports Pédagogiques (Vidéos & PDF) ── */}
+                      {app.status === 'Accepted' && studentTeachingUnits.length > 0 && (
+                        <div className="bg-bg-secondary border border-border-primary rounded-2xl p-6 shadow-sm space-y-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-primary pb-4">
+                            <div>
+                              <h3 className="font-sans font-bold text-base text-text-primary flex items-center gap-2">
+                                <GraduationCapIcon className="w-5 h-5 text-brand-primary" /> Mon Cursus Semestriel &amp; Unités d'Enseignement (LMD)
+                              </h3>
+                              <p className="text-xs text-text-secondary mt-0.5">
+                                Suivi officiel de vos matières, statuts d'inscription, volumes horaires et supports de cours (vidéos / PDF).
+                              </p>
+                            </div>
+                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
+                              Matricule : {app.matricule || 'En cours d\'attribution'}
+                            </span>
+                          </div>
+
+                          <div className="space-y-6">
+                            {(studentSemesters.length > 0 ? studentSemesters : [{ id: 's1', number: 1, name: 'Semestre 1 (S1)', status: 'actif' as const }]).map((sem) => {
+                              const semUes = studentTeachingUnits.filter((u) => !u.semesterId || u.semesterId === sem.id);
+                              if (semUes.length === 0) return null;
+
+                              const semDelib = studentSemesterResults.find((sr) => sr.semesterId === sem.id);
+
+                              return (
+                                <div key={sem.id} className="space-y-4">
+                                  {/* Semester Header with Official Deliberation Verdict */}
+                                  <div className="bg-bg-primary px-4 py-3 rounded-2xl border border-border-primary space-y-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 font-bold text-xs text-text-primary">
+                                        <BookOpenIcon className="w-4 h-4 text-brand-primary" />
+                                        <span>{sem.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary">
+                                          {semUes.length} matière(s)
+                                        </span>
+                                        {semDelib && (
+                                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                            semDelib.decision === 'ADM' || semDelib.decision === 'ADM_COMP'
+                                              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                              : semDelib.decision === 'AJAC'
+                                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                              : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                          }`}>
+                                            {semDelib.decision === 'ADM' && '✅ ADMIS (Semestre validé)'}
+                                            {semDelib.decision === 'ADM_COMP' && '⚖️ ADMIS PAR COMPENSATION'}
+                                            {semDelib.decision === 'AJAC' && '⚠️ PASSAGE CONDITIONNEL (AJAC)'}
+                                            {semDelib.decision === 'AJ' && '❌ AJOURNÉ (Redoublement)'}
+                                            {semDelib.decision === 'DEF' && '⛔ DÉFAILLANT'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {semDelib && (
+                                      <div className="pt-2 border-t border-border-primary/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+                                        <div className="flex items-center gap-4">
+                                          <div>
+                                            <span className="text-[10px] text-text-secondary uppercase font-bold block">Moyenne Semestre</span>
+                                            <span className="font-mono font-extrabold text-brand-primary text-sm">
+                                              {semDelib.moyenneSemestre !== undefined ? `${semDelib.moyenneSemestre.toFixed(2)}/20` : '—'}
+                                            </span>
+                                          </div>
+                                          <div className="h-6 w-px bg-border-primary"></div>
+                                          <div className="flex items-center gap-2 text-[11px]">
+                                            <span className="text-emerald-600 font-bold">{semDelib.uesValidees} validée(s)</span>
+                                            {semDelib.uesCompensees > 0 && <span className="text-amber-600 font-bold">• {semDelib.uesCompensees} compensée(s)</span>}
+                                            {semDelib.uesNonValidees > 0 && <span className="text-rose-600 font-bold">• {semDelib.uesNonValidees} dette(s)</span>}
+                                          </div>
+                                        </div>
+                                        <span className="text-[10px] text-text-secondary italic">
+                                          Délibéré le {semDelib.deliberatedAt} par {semDelib.deliberatedBy}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {semUes.map((ue) => {
+                                      const rec = studentLmdRecords.find((r) => r.ueId === ue.id);
+                                      const status = rec?.status || 'inscrit';
+                                      const resources = studentUeResources[ue.id] || [];
+
+                                      const statusBadge = () => {
+                                        if (status === 'valide') return { label: 'Validé', cls: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
+                                        if (status === 'compense') return { label: 'Compensé', cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
+                                        if (status === 'rattrapage') return { label: 'Rattrapage', cls: 'bg-sky-500/10 text-sky-600 border-sky-500/20' };
+                                        if (status === 'en_dette') return { label: 'En dette', cls: 'bg-rose-500/10 text-rose-600 border-rose-500/20' };
+                                        if (status === 'defaillant') return { label: 'Défaillant', cls: 'bg-rose-500/20 text-rose-700 border-rose-500/40' };
+                                        return { label: 'Inscrit', cls: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20' };
+                                      };
+
+                                      const badge = statusBadge();
+                                      const hasNotes = rec && (rec.noteFinal !== undefined || rec.noteCC !== undefined || rec.noteExam !== undefined || rec.noteBestOf !== undefined);
+
+                                      return (
+                                        <div key={ue.id} className="bg-bg-primary border border-border-primary rounded-xl p-4 space-y-3 shadow-sm">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-primary/10 text-brand-primary">
+                                                  {ue.code}
+                                                </span>
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-bg-secondary border border-border-primary text-text-secondary">
+                                                  Coeff. {ue.coefficient ?? 3}
+                                                </span>
+                                                {ue.isCompensable === false && (
+                                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 border border-rose-500/30">
+                                                    Verrou
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <h4 className="font-bold text-xs text-text-primary mt-1.5">{ue.title}</h4>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                                              {badge.label}
+                                            </span>
+                                          </div>
+
+                                          {/* Volume horaire CM / TD / TP */}
+                                          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">CM</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeCM || 0}h</span>
+                                            </div>
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">TD</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeTD || 0}h</span>
+                                            </div>
+                                            <div className="bg-bg-secondary p-1.5 rounded border border-border-primary/50">
+                                              <span className="text-text-secondary block">TP</span>
+                                              <span className="font-bold text-text-primary">{ue.volumeTP || 0}h</span>
+                                            </div>
+                                          </div>
+
+                                          {/* Évaluations & Notes M3C */}
+                                          {hasNotes && (
+                                            <div className="bg-bg-secondary/60 rounded-lg p-2.5 border border-border-primary/60 space-y-2 text-xs">
+                                              <div className="flex items-center justify-between text-[11px]">
+                                                <span className="font-bold text-text-secondary">Sous-notes M3C :</span>
+                                                <div className="flex items-center gap-2 font-mono text-[10px]">
+                                                  {rec.noteCC !== undefined && <span>CC: <strong>{rec.noteCC}/20</strong></span>}
+                                                  {rec.noteExam !== undefined && <span>Ex: <strong>{rec.noteExam}/20</strong></span>}
+                                                  {rec.noteTP !== undefined && <span>TP: <strong>{rec.noteTP}/20</strong></span>}
+                                                </div>
+                                              </div>
+
+                                              <div className="flex items-center justify-between pt-1 border-t border-border-primary/40">
+                                                <div>
+                                                  <span className="text-[10px] text-text-secondary block font-bold uppercase">Note Retenue</span>
+                                                  {rec.noteRattrapage !== undefined && (
+                                                    <span className="text-[9px] text-amber-500 block">Session 2 : {rec.noteRattrapage}/20</span>
+                                                  )}
+                                                </div>
+                                                <div className="text-right">
+                                                  <span className="font-mono font-extrabold text-sm text-text-primary">
+                                                    {rec.noteBestOf !== undefined
+                                                      ? `${rec.noteBestOf.toFixed(2)}/20`
+                                                      : rec.noteFinal !== undefined
+                                                      ? `${rec.noteFinal.toFixed(2)}/20`
+                                                      : '—'}
+                                                  </span>
+                                                  {rec.isCompensated && (
+                                                    <span className="text-[9px] text-amber-600 block font-semibold">Compensée au jury</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {/* Ressources pédagogiques (Vidéos & PDF) */}
+                                          {resources.length > 0 && (
+                                            <div className="pt-2 border-t border-border-primary/50 space-y-1.5">
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block">
+                                                Supports ({resources.length})
+                                              </span>
+                                              <div className="space-y-1">
+                                                {resources.map((res) => (
+                                                  <a
+                                                    key={res.id}
+                                                    href={res.contentUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-between p-1.5 rounded bg-bg-secondary hover:bg-brand-primary/10 text-[11px] text-brand-primary font-medium transition-all group"
+                                                  >
+                                                    <div className="flex items-center gap-1.5 truncate">
+                                                      {res.type === 'video' ? (
+                                                        <Video className="w-3.5 h-3.5 shrink-0 text-brand-primary" />
+                                                      ) : (
+                                                        <FileText className="w-3.5 h-3.5 shrink-0 text-brand-primary" />
+                                                      )}
+                                                      <span className="truncate">{res.title}</span>
+                                                    </div>
+                                                    <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover:opacity-100" />
+                                                  </a>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()

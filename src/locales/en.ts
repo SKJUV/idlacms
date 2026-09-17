@@ -79,8 +79,18 @@ export const en: Record<TranslationKeys, string> = {
 
   // Form Page & Application Form
   form_hero_badge: "Official Application Form",
-  form_pdf_receipt_info: "Instant PDF Receipt",
+  form_pdf_receipt_info: "Official Registration Form PDF",
   form_notice_title: "Official Notice & Application Procedure",
+  form_eval_locations_title: "Evaluation Centers & Locations (Central Africa)",
+  form_eval_locations_desc: "The examination and evaluation centers for the IDLA Direct Concours are hosted in the following Central African countries:",
+  form_eval_cameroon: "🇨🇲 Cameroon",
+  form_eval_gabon: "🇬🇦 Gabon",
+  form_eval_congo: "🇨🇬 Congo (Brazzaville)",
+  form_eval_tchad: "🇹🇩 Chad",
+  form_eval_rca: "🇨🇫 Central African Republic",
+  form_eval_guinea: "🇬🇶 Equatorial Guinea",
+  form_eval_rdc: "🇨🇩 DRC (Congo-Kinshasa)",
+  form_eval_online_note: "100% Online session available for candidates across the region and worldwide.",
   form_fee_title: "Examination Fee Payment (10,000 FCFA)",
   form_fee_desc: "The application fee of 10,000 FCFA must be paid through one of our partner banking institutions:",
   form_bank_uba: "🏦 UBA (United Bank for Africa)",
@@ -92,13 +102,14 @@ export const en: Record<TranslationKeys, string> = {
   form_submission_physical: "📍 Physical submission:",
   form_submission_physical_address: "Tradex New Road Bastos",
   form_submit_btn: "Submit Official Application",
-  form_submitting: "Generating PDF Receipt & Submitting...",
+  form_submitting: "Generating Registration Form PDF & Submitting...",
   form_success_title: "Application Submitted Successfully!",
-  form_success_desc: "Your information has been successfully recorded. Your official registration receipt (PDF) has been sent by email to your address and to the IDLA academic admissions team.",
+  form_success_desc: "Your information has been successfully recorded. Your official registration form (PDF) has been sent by email to your address and to the IDLA academic admissions team.",
   form_ref_number: "Application Reference:",
   form_status: "Dossier Status:",
   form_status_analyzing: "Under Review",
-  form_download_pdf: "Download PDF Receipt",
+  form_download_pdf: "Download Registration Form (to attach to application)",
+  form_modalites_programmes: "Program Guidelines & Modalities",
 
   // Dossier Documents List (FR/EN)
   doc_1: "Duly completed registration form.",
@@ -118,7 +129,7 @@ export const en: Record<TranslationKeys, string> = {
   // Public Portal Sections
   hero_tag: "International Academy of Law & Technology",
   hero_title: "Empower Your Future with Academic Excellence at IDLA",
-  hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance.",
+  hero_subtitle: "High-level international degree programs in Law, Cybersecurity, Artificial Intelligence, Business & International Finance, etc...",
   hero_btn_explore: "Explore Degree Programs",
   hero_btn_apply: "Apply Now",
 

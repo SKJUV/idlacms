@@ -6,6 +6,7 @@ import AdminSidebar from './components/AdminSidebar';
 import EntranceModal from './components/EntranceModal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
+import { dbAdapter } from './lib/dbAdapter';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -40,6 +41,7 @@ export type ActiveTab =
   | 'admin-teachers'
   | 'admin-add-user'
   | 'admin-programmes'
+  | 'admin-academic'
   | 'admin-testimonials'
   | 'admin-news'
   | 'admin-preregistrations'
@@ -63,8 +65,8 @@ const STUDENT_TABS: ActiveTab[] = [
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
-  'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations', 'admin-marketing',
-  'admin-email-automation', 'admin-settings', 'admin-profile',
+  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations',
+  'admin-marketing', 'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
   'teacher-dashboard', 'teacher-schedule', 'teacher-students', 'teacher-profile',
@@ -92,6 +94,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-add-user': '/admin/utilisateurs/nouveau',
   'admin-teachers': '/admin/enseignants',
   'admin-programmes': '/admin/programmes',
+  'admin-academic': '/admin/structure-academique',
   'admin-testimonials': '/admin/temoignages',
   'admin-news': '/admin/actualites',
   'admin-preregistrations': '/admin/pre-inscriptions',
@@ -113,6 +116,10 @@ const tabFromPath = (pathname: string): ActiveTab => {
 
   // On n'écrase plus l'onglet par 'home' si c'est une route protégée.
   // On laisse la vérification de session gérer l'accès plus tard.
+
+  if (clean === '/candidat' || clean === '/candidat/dossier') {
+    return 'student-login';
+  }
 
   const found = Object.entries(TAB_TO_PATH).find(([_, path]) => {
     const cleanPath = path.replace(/\/+$/, '') || '/';
@@ -493,6 +500,12 @@ export default function App() {
             );
           }
         }
+
+        // Fetch Donations
+        try {
+          const dons = await dbAdapter.donations.list();
+          setDonations(dons);
+        } catch (e) {}
       } catch (err: any) {
         console.error("Impossible d'accéder au serveur Appwrite:", err);
         if (localPrograms.length > 0) setPrograms(localPrograms);
@@ -575,7 +588,7 @@ export default function App() {
                     price: lp.price,
                     procedures: lp.procedures,
                   },
-                  [Permission.read(AppwriteRole.any())]
+                  [Permission.read(AppwriteRole.any()), Permission.update(AppwriteRole.any()), Permission.delete(AppwriteRole.any())]
                 );
               } catch (e: any) {
                 if (e?.code !== 409) {
@@ -633,16 +646,25 @@ export default function App() {
     ]);
   };
 
-  const handleSubmitDonation = (d: Pick<Donation, 'donor' | 'email' | 'amount' | 'message'>) => {
-    setDonations((curr) => [
-      {
+  const handleSubmitDonation = async (d: Pick<Donation, 'donor' | 'email' | 'amount' | 'message'>) => {
+    try {
+      const created = await dbAdapter.donations.create({
         ...d,
-        id: `don-${Date.now()}`,
         date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
         status: 'Nouveau',
-      },
-      ...curr,
-    ]);
+      });
+      setDonations((curr) => [created, ...curr]);
+    } catch (e) {
+      setDonations((curr) => [
+        {
+          ...d,
+          id: `don-${Date.now()}`,
+          date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
+          status: 'Nouveau',
+        },
+        ...curr,
+      ]);
+    }
   };
 
   const handleLogout = () => {

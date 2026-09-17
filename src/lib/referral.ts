@@ -1,5 +1,5 @@
 import { ReferralCode } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from './appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from './appwrite';
 
 const LOCAL_STORAGE_KEY = 'idla_admin_referral_codes';
 
@@ -153,7 +153,8 @@ export async function persistReferralCode(refData: Omit<ReferralCode, 'id' | 'cr
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.referrals,
           ID.unique(),
-          payload
+          payload,
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
         refCode.id = doc.$id;
         saveLocalReferralCode(refCode);

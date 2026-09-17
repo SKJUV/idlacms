@@ -19,14 +19,18 @@ import {
   UploadCloudIcon,
   LockIcon,
   FileTextIcon,
+  DownloadIcon,
   ShareIcon,
   CopyIcon,
+  AwardIcon,
+  MailIcon,
 } from './Icons';
 import { Program, NewsArticle, Testimonial, CustomForm, CustomFormResponse } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 import { useLanguage } from '../context/LanguageContext';
+import { downloadMScFEPolicyPdf } from '../lib/scholarshipPolicyPdf';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -60,6 +64,562 @@ export const EVENT_REGISTRATION_FORM: CustomForm = {
     { id: 'deja_participe', label: 'Avez-vous déjà participé à nos événements ?', type: 'radio', required: true, options: ['Oui', 'Non'] },
   ]
 };
+
+/**
+ * Renders a raw text description with proper formatting:
+ * - Detects ARTICLE / section headers (lines starting with ARTICLE, all-caps lines)
+ * - Detects bullet points (•, -, ●, ▶)
+ * - Detects separator lines (━, ═, ─, ──)
+ * - Renders normal paragraphs with proper spacing
+ */
+/**
+ * Utility to linkify raw URLs and emails in text strings
+ */
+function linkifyText(str: string): React.ReactNode[] {
+  const regex = /(https?:\/\/[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+  const parts = str.split(regex);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-primary font-semibold hover:underline inline-flex items-center gap-1 break-all"
+        >
+          <span>{part}</span>
+          <span className="text-[10px]">↗</span>
+        </a>
+      );
+    }
+    if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(part)) {
+      return (
+        <a
+          key={i}
+          href={`mailto:${part}`}
+          className="text-brand-primary font-semibold hover:underline inline-flex items-center gap-1"
+        >
+          <MailIcon className="w-3.5 h-3.5 inline shrink-0" />
+          <span>{part}</span>
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+/**
+ * Extracts a clean, informative text summary for the news feed cards,
+ * skipping institutional header banners, separators, and title lines.
+ */
+function getArticlePreview(text: string): string {
+  if (!text) return '';
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !/^[━═─—–\-]{4,}$/.test(l));
+  const meaningfulLine = lines.find(l => 
+    !l.startsWith('INTERNATIONAL DISTANCE LEARNING') &&
+    !l.startsWith('OFFICIAL SCHOLARSHIP') &&
+    !l.startsWith('Academic Year') &&
+    !l.startsWith('ARTICLE') &&
+    l.length > 25
+  );
+  return meaningfulLine || lines[0] || '';
+}
+
+/**
+ * FormattedDescription:
+ * Renders rich academic and event articles with structured typography,
+ * detecting institutional headers, multi-article sections, coverage matrices,
+ * financial highlights, and student commitment blocks.
+ */
+function FormattedDescription({ text, className = '' }: { text: string; className?: string }) {
+  if (!text) return null;
+
+  // ── Step 1: Parse raw text into structured semantic blocks ──
+  interface Block {
+    type: 'preamble' | 'article_header' | 'coverage_row' | 'numbered_item' | 'bullet' | 'total_highlight' | 'signature_block' | 'cta' | 'paragraph';
+    lines?: string[];
+    num?: string;
+    title?: string;
+    description?: string;
+    category?: string;
+    isCovered?: boolean;
+    party?: string;
+    detail?: string;
+    text?: string;
+    subLines?: string[];
+  }
+
+  const lines = text.split('\n');
+  const rawBlocks: Block[] = [];
+  let i = 0;
+
+  // Detect official institutional header
+  if (lines[0] && lines[0].includes('INTERNATIONAL DISTANCE LEARNING ACADEMY')) {
+    const preambleLines: string[] = [];
+    while (i < lines.length && !lines[i].includes('━━━━') && !lines[i].startsWith('ARTICLE')) {
+      const t = lines[i].trim();
+      if (t) preambleLines.push(t);
+      i++;
+    }
+    rawBlocks.push({ type: 'preamble', lines: preambleLines });
+  }
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+
+    if (!trimmed || /^[━═─—–\-]{4,}$/.test(trimmed)) {
+      i++;
+      continue;
+    }
+
+    // Article Header: ARTICLE 1: ...
+    const artMatch = trimmed.match(/^ARTICLE\s+(\d+)[:\s–—]+(.*)/i);
+    if (artMatch) {
+      rawBlocks.push({ type: 'article_header', num: artMatch[1], title: artMatch[2].trim() });
+      i++;
+      continue;
+    }
+
+    // Total Highlight Card
+    if (trimmed.startsWith('TOTAL ANNUAL DEPOSIT DUE:') || trimmed.startsWith('TOTAL :') || trimmed.startsWith('TOTAL ANNUEL')) {
+      rawBlocks.push({ type: 'total_highlight', text: trimmed });
+      i++;
+      continue;
+    }
+
+    // CTA / Admissions Callout
+    if (/^POUR CANDIDATER/i.test(trimmed)) {
+      const ctaLines = [trimmed];
+      i++;
+      while (i < lines.length && lines[i].trim()) {
+        ctaLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'cta', lines: ctaLines });
+      continue;
+    }
+
+    // Student Signature / Acknowledgment Box
+    if (trimmed.startsWith('Student Signature:') || trimmed.startsWith('Full Name:') || trimmed.startsWith('Date:')) {
+      const sigLines = [trimmed];
+      i++;
+      while (i < lines.length && (lines[i].trim().startsWith('Student Signature:') || lines[i].trim().startsWith('Full Name:') || lines[i].trim().startsWith('Date:'))) {
+        sigLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'signature_block', lines: sigLines });
+      continue;
+    }
+
+    // Numbered item: 1. ... or 2. ...
+    const numMatch = trimmed.match(/^(\d+)\.\s+([^:]+):?(.*)/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const title = numMatch[2].trim();
+      const rest = numMatch[3].trim();
+      i++;
+      const descLines = rest ? [rest] : [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !lines[i].trim().startsWith('•') &&
+        !lines[i].trim().startsWith('- ') &&
+        !/^\d+\./.test(lines[i].trim()) &&
+        !lines[i].includes('━━━━') &&
+        !lines[i].startsWith('TOTAL') &&
+        !lines[i].startsWith('ARTICLE') &&
+        !lines[i].startsWith('Student Signature')
+      ) {
+        descLines.push(lines[i].trim());
+        i++;
+      }
+      rawBlocks.push({ type: 'numbered_item', num, title, description: descLines.join(' ') });
+      continue;
+    }
+
+    // Bullet point: • ...
+    if (trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('● ')) {
+      const bulletText = trimmed.replace(/^[•\-●]\s*/, '').trim();
+      i++;
+      const subLines: string[] = [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !lines[i].trim().startsWith('•') &&
+        !lines[i].trim().startsWith('- ') &&
+        !lines[i].trim().startsWith('● ') &&
+        !/^\d+\./.test(lines[i].trim()) &&
+        !lines[i].includes('━━━━') &&
+        !lines[i].startsWith('TOTAL') &&
+        !lines[i].startsWith('ARTICLE') &&
+        !lines[i].startsWith('Student Signature')
+      ) {
+        if (lines[i].startsWith('  ') || lines[i].startsWith('\t') || lines[i].includes('Responsible Party') || lines[i].includes('COVERED')) {
+          subLines.push(lines[i].trim());
+          i++;
+        } else {
+          break;
+        }
+      }
+
+      // Check if this bullet belongs to a Scholarship Coverage Matrix
+      const isCoverage = subLines.some(l => /COVERED/i.test(l)) || /COVERED/i.test(bulletText);
+      if (isCoverage) {
+        const category = bulletText.replace(/:$/, '').trim();
+        const allText = [bulletText, ...subLines].join(' ');
+        const isCovered = /100%\s*COVERED/i.test(allText);
+        let party = "Étudiant / Candidat";
+        if (allText.includes('IDLA') || allText.includes('Scholarship Fund') || allText.includes('WQ')) {
+          party = 'IDLA - WQ / Fonds de Bourse';
+        }
+        const detail = isCovered ? '100% Pris en charge (38 612 USD / an)' : 'Non couvert';
+        rawBlocks.push({ type: 'coverage_row', category, isCovered, party, detail });
+      } else {
+        rawBlocks.push({ type: 'bullet', text: bulletText, subLines });
+      }
+      continue;
+    }
+
+    // Normal paragraph
+    const pLines = [trimmed];
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].trim().startsWith('•') &&
+      !lines[i].trim().startsWith('- ') &&
+      !lines[i].trim().startsWith('● ') &&
+      !/^\d+\./.test(lines[i].trim()) &&
+      !lines[i].includes('━━━━') &&
+      !lines[i].startsWith('ARTICLE') &&
+      !lines[i].startsWith('TOTAL') &&
+      !lines[i].startsWith('POUR CANDIDATER') &&
+      !lines[i].startsWith('Student Signature')
+    ) {
+      pLines.push(lines[i].trim());
+      i++;
+    }
+    rawBlocks.push({ type: 'paragraph', text: pLines.join(' ') });
+  }
+
+  // ── Step 2: Render semantic blocks with cohesive styling ──
+  const renderedElements: React.ReactNode[] = [];
+  let k = 0;
+
+  for (let idx = 0; idx < rawBlocks.length; idx++) {
+    const block = rawBlocks[idx];
+
+    // Preamble: Official IDLA Header Banner
+    if (block.type === 'preamble') {
+      renderedElements.push(
+        <div
+          key={`preamble-${k++}`}
+          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-700/60 my-2"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3.5 mb-3.5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-brand-primary/25 border border-brand-primary/40 flex items-center justify-center font-black text-xs text-sky-400">
+                IDLA
+              </div>
+              <div>
+                <div className="text-[11px] font-extrabold tracking-widest text-sky-400 uppercase">
+                  International Distance Learning Academy
+                </div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                  Document Officiel Académique
+                </div>
+              </div>
+            </div>
+            <span className="bg-white/10 text-white border border-white/15 text-[10.5px] font-bold px-3 py-1 rounded-full backdrop-blur-xs">
+              Année Académique 2026 / 2027
+            </span>
+          </div>
+          <h3 className="font-bold text-base md:text-lg text-white tracking-tight leading-snug">
+            OFFICIAL SCHOLARSHIP COVERAGE & LOCAL CHARGES POLICY
+          </h3>
+          <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+            Cadre réglementaire officiel de prise en charge d'excellence et modalités de contribution aux infrastructures technologiques locales du campus de Yaoundé.
+          </p>
+        </div>
+      );
+      continue;
+    }
+
+    // Article Section Header (ARTICLE 1, 2, 3, 4...)
+    if (block.type === 'article_header') {
+      renderedElements.push(
+        <div key={`art-${k++}`} className="pt-5 pb-1 border-t border-border-primary/60 first:border-t-0 first:pt-0">
+          <div className="flex flex-wrap items-center gap-2.5 mb-2">
+            <span className="bg-brand-primary text-white text-[11px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider shadow-xs">
+              Article {block.num}
+            </span>
+            <h3 className="text-[15px] md:text-base font-bold text-text-primary tracking-tight">
+              {block.title}
+            </h3>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Coverage Matrix Rows (group consecutive coverage rows into one table)
+    if (block.type === 'coverage_row') {
+      const matrixRows: Block[] = [block];
+      while (idx + 1 < rawBlocks.length && rawBlocks[idx + 1].type === 'coverage_row') {
+        idx++;
+        matrixRows.push(rawBlocks[idx]);
+      }
+
+      renderedElements.push(
+        <div
+          key={`coverage-matrix-${k++}`}
+          className="bg-bg-primary/50 dark:bg-slate-900/40 rounded-2xl border border-border-primary/80 overflow-hidden shadow-xs my-3 divide-y divide-border-primary/40"
+        >
+          <div className="bg-slate-100/90 dark:bg-slate-800/90 px-4 py-2.5 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+            <span>Poste de Frais / Catégorie</span>
+            <div className="flex items-center gap-6">
+              <span>Statut Prise en Charge</span>
+              <span className="hidden sm:inline">Partie Responsable</span>
+            </div>
+          </div>
+          {matrixRows.map((r, rIdx) => (
+            <div
+              key={rIdx}
+              className={`p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-colors ${
+                r.isCovered ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 'hover:bg-bg-primary/80'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    r.isCovered ? 'bg-emerald-500 ring-4 ring-emerald-500/20' : 'bg-slate-400'
+                  }`}
+                />
+                <span className="font-bold text-xs md:text-sm text-text-primary">
+                  {r.category}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:self-auto self-start pl-4.5 sm:pl-0">
+                <span
+                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                    r.isCovered
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                      : 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  {r.isCovered ? '✓ 100% Couvert ($38 612 USD/an)' : '✗ Non couvert'}
+                </span>
+                <span className="text-[11px] text-text-secondary font-medium hidden sm:inline">
+                  • {r.party}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered Item (e.g., "1. Administrative Fees ...")
+    if (block.type === 'numbered_item') {
+      // Check if title has a price tag e.g. "($265.42 USD TTC / 150,000 FCFA)"
+      const priceMatch = block.title?.match(/\(([^)]+)\)/);
+      const cleanTitle = block.title?.replace(/\s*\([^)]+\)/, '').trim() || block.title;
+      const priceTag = priceMatch ? priceMatch[1] : null;
+
+      renderedElements.push(
+        <div
+          key={`num-${k++}`}
+          className="bg-bg-primary/60 dark:bg-slate-900/40 border border-border-primary/80 rounded-xl p-4 space-y-2 my-2.5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-brand-primary/15 border border-brand-primary/30 text-brand-primary font-black text-xs flex items-center justify-center shrink-0">
+                {block.num}
+              </span>
+              <span className="font-bold text-sm text-text-primary">
+                {cleanTitle}
+              </span>
+            </div>
+            {priceTag && (
+              <span className="text-[11px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
+                {priceTag}
+              </span>
+            )}
+          </div>
+          {block.description && (
+            <p className="text-[13.5px] leading-relaxed text-text-secondary pl-8">
+              {linkifyText(block.description)}
+            </p>
+          )}
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet Items (group consecutive bullets)
+    if (block.type === 'bullet') {
+      const bulletsList: Block[] = [block];
+      while (idx + 1 < rawBlocks.length && rawBlocks[idx + 1].type === 'bullet') {
+        idx++;
+        bulletsList.push(rawBlocks[idx]);
+      }
+
+      renderedElements.push(
+        <ul key={`bullets-${k++}`} className="space-y-2.5 my-2.5 pl-1">
+          {bulletsList.map((b, bIdx) => {
+            const rawB = b.text || '';
+            const colonIdx = rawB.indexOf(':');
+            const hasColon = colonIdx > 0 && colonIdx < 50;
+            const label = hasColon ? rawB.slice(0, colonIdx).trim() : null;
+            const content = hasColon ? rawB.slice(colonIdx + 1).trim() : rawB;
+
+            return (
+              <li key={bIdx} className="flex items-start gap-3 text-[13.5px] leading-[1.7] text-text-secondary">
+                <span className="text-brand-primary mt-1 shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-brand-primary" />
+                </span>
+                <div>
+                  {label ? (
+                    <>
+                      <strong className="font-bold text-text-primary mr-1.5">{label} :</strong>
+                      <span>{linkifyText(content)}</span>
+                    </>
+                  ) : (
+                    <span>{linkifyText(rawB)}</span>
+                  )}
+                  {b.subLines && b.subLines.length > 0 && (
+                    <div className="mt-1 space-y-1 text-xs text-text-secondary pl-2 border-l-2 border-border-primary">
+                      {b.subLines.map((sub, sIdx) => (
+                        <p key={sIdx}>{linkifyText(sub)}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      );
+      continue;
+    }
+
+    // Total Highlight Card
+    if (block.type === 'total_highlight') {
+      renderedElements.push(
+        <div
+          key={`total-${k++}`}
+          className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border-l-4 border-amber-500 rounded-r-2xl p-4 my-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+              <AwardIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Montant Total Annuel Exigible</span>
+            </div>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Dépôt obligatoire d'infrastructure locale (Campus IDLA Yaoundé)
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <div className="text-lg font-black text-amber-800 dark:text-amber-300">
+              400 000 FCFA
+            </div>
+            <div className="text-[11px] font-semibold text-text-secondary">
+              (ou 707,79 USD TTC / an)
+            </div>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Student Acknowledgment & Signature Box
+    if (block.type === 'signature_block') {
+      renderedElements.push(
+        <div
+          key={`sig-${k++}`}
+          className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 md:p-5 my-4 space-y-3.5"
+        >
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-primary">
+            <FileTextIcon className="w-4 h-4 text-brand-primary" />
+            <span>Cadre Officiel d'Engagement & Signature du Candidat</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Nom complet légal
+              </span>
+              <span className="text-xs text-text-secondary italic">Conforme à la pièce d'identité</span>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Date d'engagement
+              </span>
+              <span className="text-xs text-text-secondary font-mono">____ / ____ / 2026</span>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-border-primary">
+              <span className="text-[10px] font-bold text-text-secondary block uppercase tracking-wider">
+                Signature candidat
+              </span>
+              <span className="text-xs text-text-secondary italic">Mention manuscrite "Lu et approuvé"</span>
+            </div>
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // CTA / Admissions
+    if (block.type === 'cta') {
+      const ctaBody = block.lines?.slice(1).join(' ') || '';
+      renderedElements.push(
+        <div
+          key={`cta-${k++}`}
+          className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6"
+        >
+          <div className="space-y-1">
+            <h4 className="font-bold text-sm text-brand-primary flex items-center gap-2">
+              <GraduationCapIcon className="w-4 h-4" />
+              <span>Candidature & Service des Admissions</span>
+            </h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {ctaBody ? linkifyText(ctaBody) : "Déposez votre dossier en ligne ou contactez le pôle académique pour toute question d'éligibilité."}
+            </p>
+          </div>
+          <a
+            href="mailto:admissions@idlaacademy.online"
+            className="inline-flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm shrink-0"
+          >
+            <MailIcon className="w-3.5 h-3.5" />
+            <span>admissions@idlaacademy.online</span>
+          </a>
+        </div>
+      );
+      continue;
+    }
+
+    // Default: Standard Paragraph
+    if (block.type === 'paragraph') {
+      renderedElements.push(
+        <p
+          key={`p-${k++}`}
+          className="text-[13.5px] leading-[1.75] text-[#334155] dark:text-slate-300 font-normal"
+          style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
+        >
+          {linkifyText(block.text || '')}
+        </p>
+      );
+    }
+  }
+
+  return (
+    <div className={`space-y-3.5 ${className}`} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+      {renderedElements}
+    </div>
+  );
+}
 
 export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, programs, news, testimonials, onSubmitTestimonial, onSubmitDonation }: PublicPortalProps) {
   const { t, language } = useLanguage();
@@ -124,6 +684,23 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const [activeFormModal, setActiveFormModal] = useState<CustomForm | null>(null);
   const [activeFormValues, setActiveFormValues] = useState<Record<string, any>>({});
   const [formSubmittedSuccess, setFormSubmittedSuccess] = useState(false);
+  const [modalPdfBase64, setModalPdfBase64] = useState<string>('');
+  const [modalRefNum, setModalRefNum] = useState<string>('');
+
+  const handleDownloadModalPdf = () => {
+    if (!modalPdfBase64) return;
+    const byteCharacters = atob(modalPdfBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Fiche_Inscription_IDLA_${modalRefNum || '2026'}.pdf`;
+    link.click();
+  };
 
   const handleOpenFormModal = async (formId: string) => {
     window.history.pushState({}, '', `/formulaire?id=${formId}`);
@@ -168,7 +745,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       }
     }
 
-    const respondentName = activeFormValues['Nom complet'] || activeFormValues['Nom & Prénom'] || activeFormValues['Nom'] || activeFormValues['Nom de famille'] || 'Candidat IDLA';
+    const respondentName = 
+      activeFormValues['1. Full Legal Name / Nom complet légal'] ||
+      activeFormValues['Nom complet'] || 
+      activeFormValues['Nom & Prénom'] || 
+      activeFormValues['Nom'] || 
+      activeFormValues['Nom de famille'] || 
+      Object.entries(activeFormValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+      'Candidat IDLA';
     
     // Détection stricte de l'adresse email
     const emailKey = Object.keys(activeFormValues).find(
@@ -215,7 +799,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             respondentEmail: newResponse.respondentEmail,
             submittedAt: newResponse.submittedAt,
             data: JSON.stringify(newResponse.data)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de l'enregistrement de la réponse sur Appwrite:", err);
@@ -230,28 +815,31 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     // Génération du PDF et envoi par email
     try {
       const pdfBase64 = generateFormPdfBase64(activeFormModal, activeFormValues, refNum);
+      setModalPdfBase64(pdfBase64);
+      setModalRefNum(refNum);
+
       const emailBodyHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-          <div style="background-color: #166534; color: white; padding: 24px; text-align: center;">
+          <div style="background-color: #0284c7; color: white; padding: 24px; text-align: center;">
             <h2 style="margin: 0; font-size: 20px;">IDLA ACADEMY</h2>
-            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Récépissé Officiel</p>
+            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Confirmation d'Inscription & Fiche Officielle</p>
           </div>
           <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
             <p>Bonjour <strong>${respondentName}</strong>,</p>
             <p>Votre candidature pour le formulaire <strong>${activeFormModal.title}</strong> a bien été transmise et enregistrée.</p>
-            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #166534; display: inline-block; margin: 10px 0;">
+            <div style="background-color: #f1f5f9; padding: 12px 16px; border-radius: 8px; font-weight: bold; color: #0284c7; display: inline-block; margin: 10px 0;">
               Référence du dossier : ${refNum}
             </div>
-            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle et votre récépissé en format PDF</strong>.</p>
+            <p>Veuillez trouver <strong>ci-joint votre fiche d'inscription officielle en format PDF</strong> à conserver et à joindre à votre dossier.</p>
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <h4 style="color: #166534; margin-bottom: 8px;">Détails des informations soumises :</h4>
+            <h4 style="color: #0284c7; margin-bottom: 8px;">Détails des informations soumises :</h4>
             <ul style="padding-left: 20px; font-size: 13px; color: #334155;">
               ${Object.entries(activeFormValues).map(([k, v]) => `<li><strong>${k} :</strong> ${Array.isArray(v) ? v.join(', ') : v}</li>`).join('')}
             </ul>
           </div>
           <div style="background-color: #f8fafc; text-align: center; padding: 16px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #166534; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
-            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #166534;">admissions@idlaacademy.online</a>
+            IDLA Academy — <a href="https://www.idlaacademy.online" style="color: #0284c7; font-weight: bold; text-decoration: none;">www.idlaacademy.online</a><br />
+            Assistance admissions : <a href="mailto:admissions@idlaacademy.online" style="color: #0284c7;">admissions@idlaacademy.online</a>
           </div>
         </div>
       `;
@@ -261,11 +849,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: [respondentEmail, 'admissions@idlaacademy.online', 'idlaacademy@gmail.com'],
-          subject: `[Récépissé IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
+          subject: `[Fiche Inscription IDLA ${refNum}] Confirmation d'inscription - ${activeFormModal.title}`,
           html: emailBodyHtml,
           attachments: [
             {
-              filename: `Recepisse_Inscription_IDLA_${refNum}.pdf`,
+              filename: `Fiche_Inscription_IDLA_${refNum}.pdf`,
               content: pdfBase64,
             }
           ]
@@ -393,10 +981,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   // FILTER NEWS
   const filteredNews = useMemo(() => {
-    return news.filter(n => {
-      if (selectedNewsCategory === 'Tous') return true;
-      return n.category === selectedNewsCategory;
-    });
+    return news
+      .filter(n => {
+        if (selectedNewsCategory === 'Tous') return true;
+        return n.category === selectedNewsCategory;
+      })
+      .sort((a, b) => {
+        if (a.isFeatured && !b.isFeatured) return -1;
+        if (!a.isFeatured && b.isFeatured) return 1;
+        return 0;
+      });
   }, [news, selectedNewsCategory]);
 
   // FILTER TESTIMONIALS
@@ -489,60 +1083,90 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* Featured programs snippet preview */}
-        <section className="py-16 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
-          <div className="max-w-[1440px] mx-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12">
-              <div>
-                <h2 className="text-3xl font-bold text-text-primary">{t('featured_title')}</h2>
-                <p className="text-sm text-text-secondary mt-1">{t('featured_subtitle')}</p>
+        <section className="py-20 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
+          <div className="max-w-[1440px] mx-auto space-y-12">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-4 border-b border-border-primary/50">
+              <div className="space-y-3 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-bold uppercase tracking-wider">
+                  <Flame className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
+                  Cursus Universitaires d'Élite
+                </div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-text-primary tracking-tight leading-tight">
+                  {t('featured_title')}
+                </h2>
+                <p className="text-base sm:text-lg text-text-secondary leading-relaxed">
+                  {t('featured_subtitle')}
+                </p>
               </div>
               <button 
                 onClick={() => setActiveTab('programmes')}
-                className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-sky-600/10 to-blue-600/10 hover:from-sky-600 hover:to-blue-600 text-brand-primary hover:text-white font-bold text-sm tracking-wide transition-all duration-300 border border-brand-primary/30 hover:border-transparent shadow-sm hover:shadow-lg hover:shadow-sky-500/25 hover:-translate-y-0.5 cursor-pointer"
+                className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-base tracking-wide transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(2,132,199,0.5)] hover:-translate-y-1 cursor-pointer shrink-0 border border-sky-400/30"
               >
                 <span>{t('featured_view_all')}</span>
-                <span className="w-7 h-7 rounded-full bg-brand-primary/20 group-hover:bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1">
-                  <ArrowRight className="w-3.5 h-3.5" />
+                <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1.5">
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Grand Grid of Featured Programs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {activePrograms.filter(p => p.type !== 'Certification').slice(0, 3).map((p) => (
                 <div 
                   key={p.id} 
-                  className="md:col-span-4 relative bg-bg-secondary rounded-2xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-md hover:shadow-2xl hover:border-brand-primary/50 cursor-pointer transform hover:-translate-y-3 hover:scale-[1.02] hover:rotate-1 hover:z-10"
+                  className="relative bg-bg-secondary rounded-3xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-lg hover:shadow-2xl hover:border-brand-primary/60 cursor-pointer transform hover:-translate-y-3 hover:scale-[1.01]"
                   onClick={() => setActiveTab('programmes')}
                 >
-                  <div className="relative w-full overflow-hidden h-56 md:h-64">
+                  <div className="relative w-full overflow-hidden h-64 sm:h-72 md:h-80 bg-slate-900">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                       alt={p.title} 
                       src={p.image}
                     />
-                    <div className="absolute top-5 left-5 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1.5 shadow-sm">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {p.category}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div className="absolute top-5 left-5 flex flex-wrap gap-2">
+                      <div className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1.5 shadow-md">
+                        <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                        {p.category}
+                      </div>
+                      <span className="bg-brand-primary/90 backdrop-blur-md text-white text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                        {p.type}
+                      </span>
                     </div>
+                    {p.isNew && (
+                      <span className="absolute top-5 right-5 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-xs font-black px-3.5 py-1 rounded-full shadow-lg animate-pulse">
+                        Nouveau
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="p-6 md:p-8 flex flex-col flex-grow text-left">
-                    <h3 className="font-bold text-2xl text-text-primary mb-3 group-hover:text-brand-primary transition-colors leading-tight">{p.title}</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed line-clamp-3 mb-6 flex-grow">{p.description}</p>
+                  <div className="p-7 sm:p-8 md:p-9 flex flex-col flex-grow text-left space-y-4">
+                    <h3 className="font-extrabold text-2xl sm:text-3xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight">
+                      {p.title}
+                    </h3>
+                    <p className="text-sm sm:text-base text-text-secondary leading-relaxed line-clamp-3 flex-grow">
+                      {p.description}
+                    </p>
                     
-                    <div className="flex flex-col gap-3 pt-5 border-t border-border-primary/50 mt-auto">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-text-secondary text-sm font-semibold flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-brand-primary" /> {t('featured_intake')} {new Date().getFullYear()}
+                    <div className="flex flex-col gap-4 pt-6 border-t border-border-primary/50 mt-auto">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-secondary text-sm font-bold flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-brand-primary" /> {p.duration || 'Cursus complet'}
                         </span>
-                        {p.price && (
-                          <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
-                            {p.price}
-                          </div>
-                        )}
+                        <span className="text-xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20">
+                          {t('featured_intake')} {new Date().getFullYear()}
+                        </span>
                       </div>
-                      <div className="flex justify-end mt-1">
-                        <span className="inline-flex items-center gap-2 text-brand-primary text-sm font-bold group-hover:translate-x-1.5 transition-transform duration-300">
+
+                      {p.price && (
+                        <div className="text-white text-xs sm:text-sm leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-600 px-4 py-2.5 rounded-xl shadow-md w-full text-center">
+                          {p.price}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-text-secondary font-medium">Diplôme d'État & International</span>
+                        <span className="inline-flex items-center gap-2 text-brand-primary text-sm sm:text-base font-black group-hover:translate-x-1.5 transition-transform duration-300">
                           <span>{t('featured_view_details')}</span>
                           <ArrowRight className="w-4 h-4" />
                         </span>
@@ -554,7 +1178,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
 
             {/* Galerie Campus (Défilement horizontal) */}
-            <div className="mt-16 -mx-6 md:-mx-12 overflow-hidden relative group">
+            <div className="mt-20 -mx-6 md:-mx-12 overflow-hidden relative group">
               <div className="absolute top-0 left-0 w-16 md:w-32 h-full bg-gradient-to-r from-bg-secondary to-transparent z-10 pointer-events-none"></div>
               <div className="absolute top-0 right-0 w-16 md:w-32 h-full bg-gradient-to-l from-bg-secondary to-transparent z-10 pointer-events-none"></div>
               <div className="animate-scroll-x gap-4 py-4">
@@ -582,38 +1206,96 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
             </div>
 
-            {/* Nos Certifications Internationales Section */}
-            <div className="mt-16 pt-12 border-t border-border-primary space-y-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h3 className="text-4xl font-extrabold text-text-primary flex items-center gap-3">
-                    <GraduationCapIcon className="w-9 h-9 text-brand-primary" /> Nos Certifications Internationales
+            {/* Nos Certifications Internationales Section — Grand Affichage Identique aux Programmes */}
+            <div className="mt-20 pt-16 border-t border-border-primary space-y-12">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-4 border-b border-border-primary/50">
+                <div className="space-y-3 max-w-3xl">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                    <GraduationCapIcon className="w-4 h-4 text-emerald-500" />
+                    Parcours Professionnels Certifiants en 9 Mois
+                  </div>
+                  <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight leading-tight flex items-center gap-3">
+                    Nos Certifications Internationales
                   </h3>
-                  <p className="text-base text-text-secondary mt-2">
-                    Validez vos compétences avec des certifications reconnues mondialement par les leaders technologiques.
+                  <p className="text-base sm:text-lg text-text-secondary leading-relaxed">
+                    Validez vos compétences avec des parcours professionnels d'élite en 9 mois, reconnus mondialement par les leaders de l'industrie technologique et managériale.
                   </p>
                 </div>
                 <button
                   onClick={() => { setFilters((p) => ({ ...p, type: 'Certification' })); setActiveTab('programmes'); }}
-                  className="px-6 py-3 bg-brand-primary text-white font-bold text-sm rounded-xl hover:bg-brand-hover transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                  className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-base tracking-wide transition-all duration-300 shadow-lg hover:shadow-sky-500/30 hover:-translate-y-1 cursor-pointer shrink-0"
                 >
-                  Voir toutes les certifications
+                  <span>Voir toutes les certifications</span>
+                  <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1.5">
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </span>
                 </button>
               </div>
 
-              {/* Grid of Certification shortcuts */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Grand Grid of Certification Cards matching Program Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 {activePrograms.filter(p => p.type === 'Certification').slice(0, 4).map((p) => (
                   <div 
                     key={p.id}
                     onClick={() => { setFilters((f) => ({ ...f, type: 'Certification' })); setActiveTab('programmes'); }}
-                    className="p-7 bg-bg-secondary border border-border-primary hover:border-brand-primary rounded-2xl transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                    className="relative bg-bg-secondary rounded-3xl border border-border-primary overflow-hidden flex flex-col transition-all duration-500 group shadow-md hover:shadow-2xl hover:border-brand-primary/60 cursor-pointer transform hover:-translate-y-2 hover:scale-[1.01]"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
-                      <GraduationCapIcon className="w-6 h-6" />
+                    <div className="relative w-full overflow-hidden h-56 sm:h-64 bg-slate-900">
+                      <img 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                        alt={p.title} 
+                        src={p.image}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                      <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                        <div className="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20 flex items-center gap-1 shadow-md">
+                          <BookOpen className="w-3 h-3 text-sky-400" />
+                          {p.category}
+                        </div>
+                        <span className="bg-emerald-600/90 backdrop-blur-md text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                          9 Mois
+                        </span>
+                      </div>
+                      <div className="absolute bottom-3 left-4 right-4">
+                        <span className="text-[11px] font-bold text-sky-200 bg-sky-950/80 px-2.5 py-1 rounded-md border border-sky-400/30 inline-block backdrop-blur-sm">
+                          Rentrée : 1er Octobre 2026
+                        </span>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-base text-text-primary group-hover:text-brand-primary transition-colors line-clamp-1">{p.title}</h4>
-                    <p className="text-sm text-text-secondary mt-2 leading-relaxed line-clamp-2">{p.description}</p>
+
+                    <div className="p-6 flex flex-col flex-grow text-left space-y-3">
+                      <h4 className="font-extrabold text-lg sm:text-xl text-text-primary group-hover:text-brand-primary transition-colors leading-tight line-clamp-2">
+                        {p.title}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-text-secondary leading-relaxed line-clamp-3 flex-grow">
+                        {p.description}
+                      </p>
+
+                      <div className="flex flex-col gap-3 pt-4 border-t border-border-primary/50 mt-auto">
+                        <div className="flex items-center justify-between text-xs text-text-secondary font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-brand-primary" /> {p.duration || '9 mois'}
+                          </span>
+                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                            Certifiante
+                          </span>
+                        </div>
+
+                        {p.price && (
+                          <div className="text-white text-[11px] font-black bg-gradient-to-r from-brand-primary to-emerald-600 px-3 py-2 rounded-lg shadow-sm text-center">
+                            {p.price}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] text-text-secondary">Validation par projet</span>
+                          <span className="inline-flex items-center gap-1.5 text-brand-primary text-xs sm:text-sm font-bold group-hover:translate-x-1 transition-transform">
+                            <span>Postuler</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -621,38 +1303,48 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
 
-        {/* Philanthropy CTA */}
-        <section className="py-16 px-6 md:px-12 bg-bg-primary">
-          <div className="max-w-[1200px] mx-auto bg-bg-secondary rounded-3xl overflow-hidden relative border border-border-primary">
-            <div className="absolute top-0 right-0 w-1/2 h-full opacity-35 pointer-events-none">
+        {/* Philanthropy CTA / Devenir Partenaire */}
+        <section className="py-20 px-6 md:px-12 bg-bg-primary">
+          <div className="max-w-[1440px] mx-auto bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950 text-white rounded-3xl md:rounded-4xl overflow-hidden relative border border-sky-500/30 shadow-2xl">
+            {/* Real Educational Philanthropy & Scholarships Image */}
+            <div className="absolute inset-0 z-0">
               <img 
-                className="object-cover w-full h-full" 
-                alt="philanthropy background" 
-                src="https://media.istockphoto.com/id/1460172015/photo/businessmen-making-handshake-with-partner-greeting-dealing-merger-and-acquisition-business.jpg?s=2048x2048&w=is&k=20&c=C-eErNHMrUsJz7D7Y3gZZklVHbDFu7l_Oh1z9vs4BVs="
+                className="object-cover object-center w-full h-full opacity-30 md:opacity-40" 
+                alt="Philanthropie éducative et bourses d'études IDLA" 
+                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1600&auto=format&fit=crop"
               />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent"></div>
             </div>
-            <div className="relative z-10 p-8 md:p-12 lg:p-16 max-w-2xl space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-text-primary leading-tight">
+
+            <div className="relative z-10 p-8 sm:p-12 md:p-16 lg:p-20 max-w-3xl space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/40 px-4 py-1.5 rounded-full backdrop-blur-md">
+                <HeartHandshake className="w-4 h-4 text-sky-300 animate-pulse" />
+                <span className="text-sky-200 font-bold text-xs uppercase tracking-wider">Philanthropie & Mécénat Éducatif</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-md">
                 Investissez dans le Capital Humain de l'Afrique
               </h2>
-              <p className="text-text-secondary text-base leading-relaxed">
-                Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants et de développer nos infrastructures de recherche et d'enseignement d'élite.
+
+              <p className="text-slate-200 text-base sm:text-lg leading-relaxed font-medium">
+                Votre soutien permet d'offrir des bourses d'excellence aux étudiants les plus méritants, de financer l'accès au numérique et de développer nos infrastructures de recherche et d'enseignement d'élite à travers tout le continent.
               </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
+
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
                 <button
                   onClick={() => { setDonationSent(false); setShowDonationModal(true); }}
-                  className="group relative overflow-hidden bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 text-white px-7 py-3.5 rounded-xl text-sm font-bold hover:shadow-[0_0_25px_rgba(2,132,199,0.5)] transition-all duration-300 flex items-center justify-center gap-2.5 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto"
+                  className="group relative overflow-hidden bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-base font-extrabold hover:shadow-[0_0_30px_rgba(56,189,248,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 cursor-pointer w-full sm:w-auto border border-sky-300/40 shadow-xl"
                 >
-                  <HeartHandshake className="w-4 h-4 group-hover:scale-125 transition-transform duration-300" />
+                  <HeartHandshake className="w-5 h-5 group-hover:scale-125 transition-transform duration-300 text-rose-300" />
                   <span>Faire un don de soutien</span>
                   <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
                 </button>
                 <button 
                   onClick={() => setActiveTab('temoignages')}
-                  className="group px-7 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-white/10 hover:bg-white text-text-primary hover:text-[#00020e] border border-border-primary hover:border-transparent shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                  className="group px-8 py-4 rounded-2xl text-base font-bold transition-all duration-300 bg-white/10 hover:bg-white text-white hover:text-slate-950 border border-white/30 hover:border-transparent shadow-lg hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-3 cursor-pointer w-full sm:w-auto backdrop-blur-md"
                 >
                   <span>Devenir Partenaire académique</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </div>
             </div>
@@ -858,10 +1550,19 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                               </div>
                             )}
                           </div>
-                          <div className="flex justify-end mt-1">
+                          <div className="flex items-center justify-between gap-2 mt-1">
+                            {p.title?.includes('MScFE') && (
+                              <button 
+                                onClick={() => handleOpenFormModal('form-mscfe-scholarship-2026')}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-brand-primary hover:bg-brand-hover px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                              >
+                                <FileTextIcon className="w-3.5 h-3.5" />
+                                <span>Questionnaire Bourse</span>
+                              </button>
+                            )}
                             <button 
                               onClick={() => onApplyNow(p.title)}
-                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer"
+                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer ml-auto"
                             >
                               S'inscrire
                               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -990,27 +1691,55 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                           </div>
                         )}
 
-                        <p className="text-xs text-text-secondary leading-relaxed">
-                          {n.description}
+                        {/* Indicateur de document officiel multi-articles */}
+                        {n.description?.includes('ARTICLE 1') && (
+                          <div className="inline-flex items-center gap-1.5 bg-sky-500/10 text-sky-700 dark:text-sky-300 font-bold text-[11px] px-2.5 py-1 rounded-lg border border-sky-500/20 w-fit">
+                            <FileTextIcon className="w-3.5 h-3.5 text-brand-primary" />
+                            <span>Document Officiel — 4 Articles Réglementaires & Grille Tarifaire</span>
+                          </div>
+                        )}
+
+                        <p className="text-[13.5px] text-text-secondary leading-relaxed line-clamp-3 font-normal" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+                          {getArticlePreview(n.description || '')}
                         </p>
 
-                        {/* Lien rapide vers le formulaire */}
-                        {(n.formId || n.formUrl || n.category === 'Événements') && (
-                          <div className="pt-2">
+                        {/* Lien rapide vers le formulaire ou action officielle */}
+                        {(n.formId || n.formUrl || n.category === 'Événements' || n.title?.includes('MScFE')) && (
+                          <div className="pt-2 flex flex-wrap items-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (n.formUrl) {
+                                if (n.formId) {
+                                  handleOpenFormModal(n.formId);
+                                } else if (n.formUrl === '#candidature' || n.title?.includes('MScFE')) {
+                                  handleOpenFormModal('form-mscfe-scholarship-2026');
+                                } else if (n.formUrl) {
                                   window.open(n.formUrl, '_blank', 'noopener,noreferrer');
-                                } else if (n.formId || n.formUrl || n.category === 'Événements') {
-                                  handleOpenFormModal(n.formId || (n.category === 'Événements' ? 'system_event_registration' : '6a86f5cc003484813061'));
+                                } else if (n.category === 'Événements') {
+                                  handleOpenFormModal('system_event_registration');
                                 }
                               }}
                               className="inline-flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer border border-brand-primary/20"
                             >
                               <FileTextIcon className="w-4 h-4" />
-                              {n.category === 'Événements' ? "S'inscrire à l'événement" : "Accéder au formulaire"}
+                              {n.title?.includes('MScFE')
+                                ? "Remplir le questionnaire MScFE"
+                                : (n.category === 'Événements' ? "S'inscrire à l'événement" : "Accéder au formulaire")}
                             </button>
+
+                            {(n.id === 'news-mscfe-scholarship-policy' || n.title?.includes('MScFE')) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadMScFEPolicyPdf();
+                                }}
+                                className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-text-primary text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer border border-border-primary"
+                                title="Télécharger la politique officielle en PDF"
+                              >
+                                <DownloadIcon className="w-3.5 h-3.5 text-brand-primary" />
+                                <span>Politique Officielle (PDF)</span>
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1115,7 +1844,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
               {/* Contenu scrollable */}
               <div className="overflow-y-auto flex-1 p-6 md:p-8 space-y-5">
-                <h2 className="font-sans font-bold text-2xl text-[#00020e] dark:text-white leading-tight">
+                <h2 className="font-bold text-xl md:text-2xl text-[#00020e] dark:text-white leading-snug tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
                   {selectedArticle.title}
                 </h2>
                 {selectedArticle.category === 'Événements' && (selectedArticle.startDate || selectedArticle.endDate) && (
@@ -1123,11 +1852,53 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     📅 Du {selectedArticle.startDate || '?'} au {selectedArticle.endDate || '?'}
                   </div>
                 )}
-                <p className="text-[#45464e] dark:text-gray-300 text-sm leading-relaxed">
-                  {selectedArticle.description}
-                </p>
-                {/* Dynamic attached form banner inside article */}
-                {(selectedArticle.formId || selectedArticle.category === 'Événements') && (
+                <FormattedDescription text={selectedArticle.description || ''} />
+
+                {/* Bannière d'action dédiée pour la Bourse MScFE ou formulaire rattaché */}
+                {(selectedArticle.formUrl === '#candidature' || selectedArticle.id === 'news-mscfe-scholarship-policy' || selectedArticle.title?.includes('MScFE')) ? (
+                  <div className="bg-gradient-to-br from-brand-primary/10 via-brand-primary/5 to-transparent border border-brand-primary/30 rounded-2xl p-6 space-y-4 mt-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5 text-brand-primary font-bold text-base">
+                        <GraduationCapIcon className="w-5 h-5" />
+                        <span>Candidature & Documents Officiels MScFE</span>
+                      </div>
+                      <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                        Bourse 100% (38 612 USD)
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      Postulez directement à la bourse d'excellence IDLA & WQ ($38 612 USD pris en charge) ou téléchargez la politique officielle certifiée avec grille tarifaire complète et engagement étudiant.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <button
+                        onClick={() => {
+                          setSelectedArticle(null);
+                          handleOpenFormModal(selectedArticle.formId || 'form-mscfe-scholarship-2026');
+                        }}
+                        className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
+                      >
+                        <FileTextIcon className="w-4 h-4" />
+                        <span>Remplir le Questionnaire Bourse (MScFE)</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedArticle(null);
+                          onApplyNow('MSc in Financial Engineering (MScFE)');
+                        }}
+                        className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        <span>Candidature Standard</span>
+                      </button>
+                      <button
+                        onClick={() => downloadMScFEPolicyPdf()}
+                        className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        <DownloadIcon className="w-4 h-4 text-brand-primary" />
+                        <span>Télécharger la Politique Officielle (PDF)</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (selectedArticle.formId || selectedArticle.category === 'Événements') ? (
                   <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-2xl p-5 space-y-3 mt-4">
                     {(() => {
                       const isEvent = selectedArticle.category === 'Événements';
@@ -1163,9 +1934,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       );
                     })()}
                   </div>
-                )}
+                ) : null}
 
-                {selectedArticle.formUrl && (
+                {selectedArticle.formUrl && selectedArticle.formUrl !== '#candidature' && !selectedArticle.title?.includes('MScFE') && (
                   <div className="bg-sky-500/10 border border-sky-500/30 rounded-2xl p-5 space-y-3 mt-4">
                     <div className="flex items-center gap-2 text-sky-600 font-bold text-sm">
                       <FileTextIcon className="w-5 h-5" />
@@ -1236,10 +2007,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       href="https://cloud.appwrite.io/v1/storage/buckets/documents/files/dossier_concours_idla_2026/view?project=6a44f36c002ed43aca9a"
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
+                    >
+                      <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || 'Modalités des programmes'}
+                    </a>
+                    <button
+                      onClick={handleDownloadModalPdf}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer shadow-lg flex items-center gap-2"
                     >
-                      <FileTextIcon className="w-4 h-4" /> Consulter le PDF Officiel
-                    </a>
+                      <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || "Fiche d'inscription à télécharger (à joindre au dossier)"}
+                    </button>
                     <button
                       onClick={() => setActiveFormModal(null)}
                       className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-bold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer"

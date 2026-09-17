@@ -12,6 +12,7 @@ import {
 import { Mail, MessageSquare, Send, Users, ExternalLink, StickyNote, ChevronDown, PlusCircle, BookOpen, Zap } from 'lucide-react';
 import { PreRegistration, DEFAULT_ACADEMIC_SESSIONS } from '../../types';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from '../../lib/appwrite';
+import { dbAdapter } from '../../lib/dbAdapter';
 import { downloadAdmissionLetterPdf, generateMatricule } from '../../lib/admissionLetter';
 import EmailAutomationModal from './EmailAutomationModal';
 
@@ -79,23 +80,36 @@ export default function PreRegistrations({
     }
   }, [preRegistrations]);
 
-  // Handlers statut
+  // Handlers statut avec Auto-Inscription LMD
   const handleApprovePreRegistration = async (id: string) => {
     const target = preRegistrations.find((p) => p.id === id);
     const assignedMatricule = target?.matricule || generateMatricule(target?.email || target?.id || id);
 
+    // 1. Résolution de l'identifiant unique du programme (programId)
+    let resolvedProgId = target?.programId || '';
+    if (!resolvedProgId && target?.program && target.program !== 'Inscription seule') {
+      try {
+        resolvedProgId = (await dbAdapter.programs.resolveProgramId(target.program)) || '';
+      } catch (e) {}
+    }
+
     setPreRegistrations((curr) =>
-      curr.map((p) => (p.id === id ? { ...p, status: 'Accepted', matricule: assignedMatricule } : p))
+      curr.map((p) => (p.id === id ? { ...p, status: 'Accepted', matricule: assignedMatricule, programId: resolvedProgId } : p))
     );
     setConfirmAction(null);
+
+    // 2. Mise à jour de l'application dans la DB
     if (isAppwriteDbConfigured()) {
       try {
-        await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, {
+        const updateData: any = {
           status: 'Accepted',
           matricule: assignedMatricule,
-        });
+        };
+        if (resolvedProgId) updateData.programId = resolvedProgId;
 
-        // Sync or create cmsUsers record for student portal login with matricule
+        await databases.updateDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.applications, id, updateData);
+
+        // Sync or create cmsUsers record for student portal login with matricule & programId
         if (APPWRITE_CONFIG.collections.cmsUsers && target?.email) {
           try {
             const userRes = await databases.listDocuments(
@@ -112,6 +126,7 @@ export default function PreRegistrations({
                   role: 'student',
                   matricule: assignedMatricule,
                   program: target.program,
+                  programId: resolvedProgId,
                 }
               );
             } else {
@@ -125,12 +140,39 @@ export default function PreRegistrations({
                   role: 'student',
                   matricule: assignedMatricule,
                   program: target.program,
+                  programId: resolvedProgId,
                   createdAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
             }
           } catch (uErr) {
             console.warn("Échec mise à jour / création cmsUsers lors de l'approbation:", uErr);
+          }
+        }
+
+        // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du semestre LMD approprié
+        if (resolvedProgId && target?.email) {
+          try {
+            const targetLevel = target.entryLevel || (target.motivation ? target.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
+            if (ues.length > 0) {
+              await dbAdapter.studentUeRecords.bulkEnroll(
+                ues.map((u) => ({
+                  studentEmail: target.email,
+                  studentName: target.name || 'Étudiant',
+                  ueId: u.id,
+                  semesterId: semesterId,
+                  programId: resolvedProgId,
+                  sessionType: 'normale',
+                  status: 'inscrit',
+                  validatedBy: 'Admin (Admission)',
+                  validatedAt: new Date().toISOString(),
+                }))
+              );
+            }
+          } catch (lmdErr) {
+            console.warn("Auto-inscription LMD student_ue_records:", lmdErr);
           }
         }
 
@@ -211,9 +253,18 @@ export default function PreRegistrations({
     const newMsg = { sender: 'advisor', text, time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) };
     setChatMessages((curr) => [...curr, newMsg]);
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-      await databases.createDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.messages, ID.unique(), {
-        applicationId: selectedAppIdForChat, sender: 'advisor', text, createdAt: new Date().toISOString(),
-      }).catch(console.error);
+      await databases.createDocument(
+        APPWRITE_CONFIG.databaseId, 
+        APPWRITE_CONFIG.collections.messages, 
+        ID.unique(), 
+        {
+          applicationId: selectedAppIdForChat, 
+          sender: 'advisor', 
+          text, 
+          createdAt: new Date().toISOString(),
+        },
+        [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+      ).catch(console.error);
     }
   };
 
@@ -230,6 +281,11 @@ export default function PreRegistrations({
     if (!selected || !manualEnrollProgram) return;
     setIsEnrollingManual(true);
     try {
+      let resolvedProgId = '';
+      try {
+        resolvedProgId = (await dbAdapter.programs.resolveProgramId(manualEnrollProgram)) || '';
+      } catch (e) {}
+
       const blankApp = candidateApps.find((a) => !a.program || a.program === 'Inscription seule');
       let updatedOrNewId = `app_${Date.now()}`;
       if (blankApp) {
@@ -240,6 +296,7 @@ export default function PreRegistrations({
               ? {
                   ...p,
                   program: manualEnrollProgram,
+                  programId: resolvedProgId,
                   motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
                   status: 'Accepted',
                 }
@@ -248,15 +305,18 @@ export default function PreRegistrations({
         );
         if (isAppwriteDbConfigured()) {
           try {
+            const upData: any = {
+              program: manualEnrollProgram,
+              motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+              status: 'Accepted',
+            };
+            if (resolvedProgId) upData.programId = resolvedProgId;
+
             await databases.updateDocument(
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               blankApp.id,
-              {
-                program: manualEnrollProgram,
-                motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
-                status: 'Accepted',
-              }
+              upData
             );
           } catch (e) {
             console.error('Erreur inscription manuelle Appwrite DB:', e);
@@ -267,6 +327,7 @@ export default function PreRegistrations({
           ...selected,
           id: updatedOrNewId,
           program: manualEnrollProgram,
+          programId: resolvedProgId,
           motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
           status: 'Accepted' as const,
           dateApplied: new Date().toISOString(),
@@ -274,22 +335,25 @@ export default function PreRegistrations({
         setPreRegistrations((curr) => [newApp, ...curr]);
         if (isAppwriteDbConfigured()) {
           try {
+            const createData: any = {
+              firstName: selected.name.split(' ')[0] || selected.name,
+              lastName: selected.name.split(' ').slice(1).join(' ') || '',
+              name: selected.name,
+              email: selected.email,
+              phone: selected.phone || '',
+              program: manualEnrollProgram,
+              dateApplied: new Date().toISOString(),
+              status: 'Accepted',
+              motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
+              initials: selected.initials,
+            };
+            if (resolvedProgId) createData.programId = resolvedProgId;
+
             await databases.createDocument(
               APPWRITE_CONFIG.databaseId,
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
-              {
-                firstName: selected.name.split(' ')[0] || selected.name,
-                lastName: selected.name.split(' ').slice(1).join(' ') || '',
-                name: selected.name,
-                email: selected.email,
-                phone: selected.phone || '',
-                program: manualEnrollProgram,
-                dateApplied: new Date().toISOString(),
-                status: 'Accepted',
-                motivation: `${manualEnrollSession} | Inscription manuelle par l'administrateur`,
-                initials: selected.initials,
-              },
+              createData,
               [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
             );
           } catch (e) {
@@ -297,6 +361,32 @@ export default function PreRegistrations({
           }
         }
       }
+
+      // Auto-inscription LMD au semestre adéquat
+      if (resolvedProgId && selected.email) {
+        try {
+          const targetLevel = selected.entryLevel || (selected.motivation ? selected.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
+          if (ues.length > 0) {
+            await dbAdapter.studentUeRecords.bulkEnroll(
+              ues.map((u) => ({
+                studentEmail: selected.email,
+                studentName: selected.name || 'Étudiant',
+                ueId: u.id,
+                semesterId: semesterId,
+                programId: resolvedProgId,
+                sessionType: 'normale',
+                status: 'inscrit',
+                validatedBy: 'Admin (Manuel)',
+                validatedAt: new Date().toISOString(),
+              }))
+            );
+          }
+        } catch (lmdErr) {
+          console.warn("Auto-inscription LMD manuel student_ue_records:", lmdErr);
+        }
+      }
+
       logActivity(
         'registration',
         'Super Admin',

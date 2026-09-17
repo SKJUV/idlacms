@@ -77,8 +77,18 @@ export const fr = {
 
   // Form Page & Application Form
   form_hero_badge: "Formulaire de Candidature Officiel",
-  form_pdf_receipt_info: "Récépissé PDF Immédiat",
+  form_pdf_receipt_info: "Fiche d'inscription officielle PDF",
   form_notice_title: "Notice Officielle & Procédure de Candidature",
+  form_eval_locations_title: "Lieux & Centres d'Évaluation (Afrique Centrale)",
+  form_eval_locations_desc: "Les centres d'examen et d'évaluation du Concours Direct IDLA sont ouverts dans les pays suivants de la zone Afrique Centrale :",
+  form_eval_cameroon: "🇨🇲 Cameroun",
+  form_eval_gabon: "🇬🇦 Gabon",
+  form_eval_congo: "🇨🇬 Congo (Brazzaville)",
+  form_eval_tchad: "🇹🇩 Tchad",
+  form_eval_rca: "🇨🇫 République Centrafricaine",
+  form_eval_guinea: "🇬🇶 Guinée Équatoriale",
+  form_eval_rdc: "🇨🇩 RDC (Congo-Kinshasa)",
+  form_eval_online_note: "Session 100% En Ligne disponible pour les candidats de la sous-région et de l'international.",
   form_fee_title: "Règlement des Frais de Concours (10 000 FCFA)",
   form_fee_desc: "Le règlement des 10 000 FCFA de frais d'étude de dossier s'effectue auprès de l'un de nos établissements bancaires partenaires :",
   form_bank_uba: "🏦 UBA (United Bank for Africa)",
@@ -90,13 +100,14 @@ export const fr = {
   form_submission_physical: "📍 Dépôt Du Dossier Physique :",
   form_submission_physical_address: "Tradex Nouvelle Route Bastos",
   form_submit_btn: "Transmettre ma Candidature Officielle",
-  form_submitting: "Génération Récépissé PDF & Envoi en cours...",
+  form_submitting: "Génération de la Fiche d'Inscription PDF & Envoi...",
   form_success_title: "Candidature Transmise avec Succès !",
-  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre récépissé officiel d'inscription (PDF) a été transmis par e-mail à votre adresse et à l'administration académique IDLA.",
+  form_success_desc: "Vos informations ont été enregistrées avec succès. Votre fiche d'inscription officielle (PDF) a été transmise par e-mail à votre adresse et à l'administration académique IDLA.",
   form_ref_number: "Référence dossier :",
   form_status: "Statut du dossier :",
   form_status_analyzing: "En cours d'analyse",
-  form_download_pdf: "Télécharger mon Récépissé PDF",
+  form_download_pdf: "Fiche d'inscription à télécharger (à joindre au dossier)",
+  form_modalites_programmes: "Modalités des programmes",
 
   // Dossier Documents List (FR/EN)
   doc_1: "Formulaire d'inscription dûment complété.",
@@ -116,7 +127,7 @@ export const fr = {
   // Public Portal Sections
   hero_tag: "Académie Internationale de Droit & de Technologie",
   hero_title: "Formez-vous aux Métiers d'Avenir avec l'Excellence IDLA",
-  hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance.",
+  hero_subtitle: "Des formations diplômantes internationales de haut niveau en Droit, Cybersécurité, Intelligence Artificielle, Business & Finance, etc ...",
   hero_btn_explore: "Découvrir nos Filières",
   hero_btn_apply: "S'inscrire",
 
