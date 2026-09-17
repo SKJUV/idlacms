@@ -1728,17 +1728,30 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                             </button>
 
                             {(n.id === 'news-mscfe-scholarship-policy' || n.title?.includes('MScFE')) && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  downloadMScFEPolicyPdf();
-                                }}
-                                className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-text-primary text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer border border-border-primary"
-                                title="Télécharger la politique officielle en PDF"
-                              >
-                                <DownloadIcon className="w-3.5 h-3.5 text-brand-primary" />
-                                <span>Politique Officielle (PDF)</span>
-                              </button>
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadMScFEPolicyPdf('fr');
+                                  }}
+                                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-text-primary text-xs font-bold px-3 py-2 rounded-xl transition-all cursor-pointer border border-border-primary"
+                                  title="Télécharger la politique officielle en français (PDF)"
+                                >
+                                  <DownloadIcon className="w-3.5 h-3.5 text-brand-primary" />
+                                  <span>Politique (PDF FR)</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadMScFEPolicyPdf('en');
+                                  }}
+                                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-text-primary text-xs font-bold px-3 py-2 rounded-xl transition-all cursor-pointer border border-border-primary"
+                                  title="Download official policy in English (PDF)"
+                                >
+                                  <DownloadIcon className="w-3.5 h-3.5 text-sky-600" />
+                                  <span>Policy (PDF EN)</span>
+                                </button>
+                              </>
                             )}
                           </div>
                         )}
@@ -1890,11 +1903,20 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         <span>Candidature Standard</span>
                       </button>
                       <button
-                        onClick={() => downloadMScFEPolicyPdf()}
+                        onClick={() => downloadMScFEPolicyPdf('fr')}
                         className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                        title="Télécharger la politique officielle en français (PDF)"
                       >
                         <DownloadIcon className="w-4 h-4 text-brand-primary" />
-                        <span>Télécharger la Politique Officielle (PDF)</span>
+                        <span>Politique Officielle (PDF FR)</span>
+                      </button>
+                      <button
+                        onClick={() => downloadMScFEPolicyPdf('en')}
+                        className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                        title="Download official policy in English (PDF)"
+                      >
+                        <DownloadIcon className="w-4 h-4 text-sky-600" />
+                        <span>Official Policy (PDF EN)</span>
                       </button>
                     </div>
                   </div>
