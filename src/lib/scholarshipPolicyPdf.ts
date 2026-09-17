@@ -8,6 +8,10 @@ export function downloadMScFEPolicyPdf(): void {
   const filename = 'IDLA_Official_Scholarship_Policy_MScFE_2026_2027.pdf';
 
   try {
+    if (!MSCFE_POLICY_PDF_BASE64 || MSCFE_POLICY_PDF_BASE64.length === 0) {
+      throw new Error('Embedded policy PDF base64 is empty');
+    }
+
     // 1. Convert embedded base64 to Blob for instantaneous offline-ready download
     const binary = atob(MSCFE_POLICY_PDF_BASE64);
     const len = binary.length;
@@ -27,7 +31,7 @@ export function downloadMScFEPolicyPdf(): void {
 
     setTimeout(() => {
       URL.revokeObjectURL(blobUrl);
-    }, 2000);
+    }, 30000);
   } catch (err) {
     // 2. Fallback to static public file if atob/Blob fails
     console.warn('[IDLA Policy PDF] Fallback to static public file:', err);
