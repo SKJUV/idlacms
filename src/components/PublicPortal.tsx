@@ -1943,9 +1943,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                 : "Veuillez remplir ce formulaire pour valider votre participation à cet événement."
                               : "Veuillez compléter ce formulaire officiel pour soumettre votre demande ou faire enregistrer vos informations."}
                           </p>
-                          {!isExpired && (
+                          {!isExpired && (selectedArticle.formId || isEvent) && (
                             <button
-                              onClick={() => handleOpenFormModal(selectedArticle.formId || (isEvent ? 'system_event_registration' : '6a86f5cc003484813061'))}
+                              onClick={() => {
+                                const targetForm = selectedArticle.formId || (isEvent ? 'system_event_registration' : '');
+                                if (targetForm) handleOpenFormModal(targetForm);
+                              }}
                               className="bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer flex items-center gap-2"
                             >
                               <FileTextIcon className="w-4 h-4" />

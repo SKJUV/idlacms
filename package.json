@@ -16,7 +16,8 @@
     "seed:certifications": "tsx scripts/seed-certifications.ts",
     "seed:programs": "tsx scripts/seed-programs.ts",
     "lmd:setup": "node scripts/setup-lmd-collections.cjs",
-    "setup:mscfe": "node scripts/create-mscfe-program-and-form.mjs"
+    "setup:mscfe": "node scripts/create-mscfe-program-and-form.mjs",
+    "restore:concours": "node scripts/restore-concours-campaign.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
