@@ -325,12 +325,12 @@ const mscfeFormFields = [
     required: true,
     options: [
       "Oui, je suis prêt(e) à régler l'intégralité des 400 000 FCFA (707,79 USD TTC) dès l'inscription.",
-      "Oui, je demande le paiement selon l'échéancier approuvé par l'IDLA (350 000 FCFA à l'inscription + 80 000 FCFA au 31 décembre 2026).",
+      "Oui, je demande le paiement selon l'échéancier approuvé par l'IDLA (200 000 FCFA à l'inscription + 200 000 FCFA au 31 décembre 2026).",
       "Non, je ne suis pas en mesure de couvrir les frais annuels de soutien local et administratif."
     ],
     options_en: [
       "Yes, I am fully prepared to pay 400,000 FCFA ($707.79 USD incl. tax) in full upon registration.",
-      "Yes, I request to pay via IDLA's approved installment plan (350,000 FCFA initial deposit + 80,000 FCFA due 31st December 2026).",
+      "Yes, I request to pay via IDLA's approved installment plan (200,000 FCFA initial deposit + 200,000 FCFA due 31st December 2026).",
       "No, I am unable to cover the annual support, administrative, and international charges."
     ],
     helpText: "Dépôt obligatoire pour l'énergie solaire 24/7, la fibre optique, les labs Cisco, English for IT et le coaching Yaoundé.",
@@ -397,7 +397,7 @@ const programData = {
   price: '38 612 USD (Bourse 100% Quant Foundation) — Dépôt local 400 000 FCFA/an (707,79 USD TTC)',
   procedures: 
     "Admission sur dossier d'excellence et questionnaire de qualification MScFE en ligne (Lien : /formulaire?id=form-mscfe-scholarship-2026). " +
-    "Frais académiques pris en charge à 100%. Dépôt annuel obligatoire de 400 000 FCFA (ou échelonnement : 350 000 FCFA à l'inscription + 80 000 FCFA au 31 décembre 2026) " +
+    "Frais académiques pris en charge à 100%. Dépôt annuel obligatoire de 400 000 FCFA (ou échelonnement : 200 000 FCFA à l'inscription + 200 000 FCFA au 31 décembre 2026) " +
     "couvrant les infrastructures de haute technologie du campus IDLA de Yaoundé."
 };
 
