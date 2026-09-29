@@ -16,6 +16,7 @@ const AdminPortal = lazy(() => import('./components/AdminPortal'));
 const TeacherPortal = lazy(() => import('./components/TeacherPortal'));
 const PasswordReset = lazy(() => import('./components/PasswordReset'));
 const FormPage = lazy(() => import('./components/FormPage'));
+const AmbassadorForm = lazy(() => import('./components/AmbassadorForm'));
 
 export type ActiveTab =
   | 'home'
@@ -24,6 +25,7 @@ export type ActiveTab =
   | 'temoignages'
   | 'formulaire'
   | 'candidature'
+  | 'ambassadeur'
   | 'success'
   | 'student-login'
   | 'student-dashboard'
@@ -77,6 +79,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   temoignages: '/temoignages',
   formulaire: '/formulaire',
   candidature: '/candidature',
+  ambassadeur: '/ambassadeur',
   success: '/candidature/confirmation',
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
@@ -858,6 +861,16 @@ export default function App() {
           <FormPage
             onBack={() => setActiveTab('actualites')}
             newsList={news}
+            programs={programs}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        )}
+
+        {/* AMBASSADOR REGISTRATION FORM */}
+        {activeTab === 'ambassadeur' && (
+          <AmbassadorForm
+            onBack={() => setActiveTab('home')}
             programs={programs}
             theme={theme}
             setTheme={setTheme}
