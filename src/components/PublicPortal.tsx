@@ -31,6 +31,7 @@ import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 import { useLanguage } from '../context/LanguageContext';
 import { downloadMScFEPolicyPdf } from '../lib/scholarshipPolicyPdf';
+import { Gift, Share2, Users, Star, Shield } from 'lucide-react';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
@@ -1346,6 +1347,62 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <span>Devenir Partenaire académique</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                 </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Ambassador Program CTA */}
+        <section className="py-16 px-6 md:px-12 bg-gradient-to-br from-brand-primary/5 via-bg-primary to-emerald-500/5 border-t border-border-primary">
+          <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center gap-10">
+            <div className="flex-1 space-y-5">
+              <div className="inline-flex items-center gap-2 bg-brand-primary/10 border border-brand-primary/30 px-3.5 py-1.5 rounded-full">
+                <Gift className="w-4 h-4 text-brand-primary" />
+                <span className="text-brand-primary font-extrabold text-xs uppercase tracking-wider">
+                  {language === 'en' ? 'Ambassador & Referral Program' : 'Programme Ambassadeur & Parrainage'}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary leading-tight">
+                {language === 'en'
+                  ? 'Become an Official IDLA Ambassador'
+                  : 'Devenez Ambassadeur Officiel IDLA'}
+              </h2>
+              <p className="text-sm text-text-secondary leading-relaxed max-w-xl">
+                {language === 'en'
+                  ? 'Get your personalized referral link, recommend future students, and track your referrals in real time. Your network enrollees benefit from waived application fees.'
+                  : 'Obtenez votre lien de parrainage personnalisé, recommandez de futurs étudiants et suivez vos filleuls en temps réel. Les candidats inscrits via votre lien bénéficient des frais de dossier offerts.'}
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  onClick={() => setActiveTab('ambassadeur')}
+                  className="group bg-brand-primary hover:bg-brand-hover text-white px-7 py-3.5 rounded-2xl text-sm font-extrabold transition-all shadow-lg hover:shadow-xl flex items-center gap-2.5 cursor-pointer hover:-translate-y-0.5"
+                >
+                  <Gift className="w-4 h-4" />
+                  {language === 'en' ? 'Register as Ambassador' : "S'inscrire comme Ambassadeur"}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-shrink-0 grid grid-cols-2 gap-4 max-w-xs">
+              <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 text-center space-y-1.5">
+                <Share2 className="w-6 h-6 text-brand-primary mx-auto" />
+                <p className="text-xs font-extrabold text-text-primary">{language === 'en' ? 'Unique Link' : 'Lien Unique'}</p>
+                <p className="text-[10px] text-text-secondary">{language === 'en' ? 'Auto-generated' : 'Auto-généré'}</p>
+              </div>
+              <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 text-center space-y-1.5">
+                <Users className="w-6 h-6 text-emerald-600 mx-auto" />
+                <p className="text-xs font-extrabold text-text-primary">{language === 'en' ? 'Live Tracking' : 'Suivi en Direct'}</p>
+                <p className="text-[10px] text-text-secondary">{language === 'en' ? 'Real-time stats' : 'Stats temps réel'}</p>
+              </div>
+              <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 text-center space-y-1.5">
+                <Star className="w-6 h-6 text-amber-500 mx-auto" />
+                <p className="text-xs font-extrabold text-text-primary">{language === 'en' ? 'Rewards' : 'Avantages'}</p>
+                <p className="text-[10px] text-text-secondary">{language === 'en' ? 'For referrals' : 'Pour filleuls'}</p>
+              </div>
+              <div className="bg-bg-secondary border border-border-primary rounded-2xl p-5 text-center space-y-1.5">
+                <Shield className="w-6 h-6 text-sky-500 mx-auto" />
+                <p className="text-xs font-extrabold text-text-primary">{language === 'en' ? 'Official' : 'Officiel'}</p>
+                <p className="text-[10px] text-text-secondary">{language === 'en' ? 'Verified status' : 'Statut vérifié'}</p>
               </div>
             </div>
           </div>
