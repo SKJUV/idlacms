@@ -61,103 +61,149 @@ const mscfeFormFields = [
   // SECTION 1: PERSONAL & APPLICANT INFORMATION
   {
     id: 'full_legal_name',
-    label: '1. Full Legal Name / Nom complet légal',
+    label: '1. Nom complet légal',
+    label_en: '1. Full Legal Name',
     type: 'text',
     required: true,
-    placeholder: 'Ex: John Doe / Jean Dupont',
-    helpText: "Nom officiel complet tel qu'indiqué sur la pièce d'identité ou le passeport."
+    placeholder: 'Ex: Jean Dupont',
+    placeholder_en: 'Ex: John Doe',
+    helpText: "Nom officiel complet tel qu'indiqué sur la pièce d'identité ou le passeport.",
+    helpText_en: "Full official name as displayed on your government-issued ID or passport."
   },
   {
     id: 'date_of_birth',
-    label: '2. Date of Birth / Date de naissance',
+    label: '2. Date de naissance',
+    label_en: '2. Date of Birth',
     type: 'date',
     required: true,
     minAge: 18,
-    helpText: 'Date de naissance (JJ/MM/AAAA) — Âge minimum : 18 ans.'
+    helpText: 'Date de naissance (JJ/MM/AAAA) — Âge minimum : 18 ans.',
+    helpText_en: 'Date of birth (DD/MM/YYYY) — Minimum age: 18 years old.'
   },
   {
     id: 'gender',
-    label: '3. Gender / Sexe',
+    label: '3. Sexe',
+    label_en: '3. Gender',
     type: 'radio',
     required: true,
     options: [
-      'Male / Homme',
-      'Female / Femme',
-      'Prefer not to say / Préfère ne pas préciser'
+      'Homme',
+      'Femme',
+      'Préfère ne pas préciser'
+    ],
+    options_en: [
+      'Male',
+      'Female',
+      'Prefer not to say'
     ]
   },
   {
     id: 'email_address',
-    label: '4. Email Address / Adresse e-mail officielle',
+    label: '4. Adresse e-mail officielle',
+    label_en: '4. Official Email Address',
     type: 'text',
     required: true,
     placeholder: 'candidat@domaine.com',
-    helpText: "Adresse e-mail valide pour la réception du récépissé PDF et des convocations."
+    placeholder_en: 'applicant@domain.com',
+    helpText: "Adresse e-mail valide pour la réception du récépissé PDF et des convocations.",
+    helpText_en: "Valid email address to receive your PDF receipt and official communications."
   },
   {
     id: 'phone_whatsapp',
-    label: '5. Phone Number (WhatsApp) / Numéro WhatsApp',
+    label: '5. Numéro WhatsApp',
+    label_en: '5. Phone Number (WhatsApp)',
     type: 'text',
     required: true,
     placeholder: '+237 6XX XX XX XX',
-    helpText: 'Numéro joignable avec indicatif pays pour les échanges académiques.'
+    placeholder_en: '+237 6XX XX XX XX',
+    helpText: 'Numéro joignable avec indicatif pays pour les échanges académiques.',
+    helpText_en: 'Reachable phone number with country code for academic communications.'
   },
   {
     id: 'country_city',
-    label: '6. Country of Residence & City / Pays et Ville de résidence',
+    label: '6. Pays et Ville de résidence',
+    label_en: '6. Country of Residence & City',
     type: 'text',
     required: true,
-    placeholder: 'Ex: Cameroun, Yaoundé'
+    placeholder: 'Ex: Cameroun, Yaoundé',
+    placeholder_en: 'Ex: Cameroon, Yaounde'
   },
 
   // SECTION 2: ACADEMIC BACKGROUND & ELIGIBILITY
   {
     id: 'highest_degree',
-    label: '7. Highest Degree Completed / Plus haut diplôme obtenu',
+    label: '7. Plus haut diplôme obtenu',
+    label_en: '7. Highest Degree Completed',
     type: 'select',
     required: true,
     options: [
+      'Licence / Bachelor of Science (B.Sc.)',
+      'Master / Master II (M.Sc.)',
+      "Diplôme d'Ingénieur",
+      'Doctorat (Ph.D.)',
+      'Autre'
+    ],
+    options_en: [
       'Bachelor of Science (B.Sc.) / Licence',
       'Master’s Degree (M.Sc. / Master II)',
-      "Engineering Degree (Diplôme d'Ingénieur)",
+      "Engineering Degree",
       'Doctorate (Ph.D.)',
-      'Other / Autre'
+      'Other'
     ]
   },
   {
     id: 'academic_specialization',
-    label: '8. Field of Academic Specialization / Domaine de spécialisation',
+    label: '8. Domaine de spécialisation académique',
+    label_en: '8. Field of Academic Specialization',
     type: 'select',
     required: true,
     options: [
+      'Mathématiques / Mathématiques Appliquées',
+      'Informatique / Génie Logiciel / IT',
+      'Télécommunications & Réseaux',
+      'Physique / Sciences de l’Ingénieur',
+      'Économie / Finance / Analyse Quantitative',
+      'Autre'
+    ],
+    options_en: [
       'Mathematics / Applied Mathematics',
       'Computer Science / Software Engineering / IT',
       'Telecommunications & Networks',
       'Physics / Engineering Sciences',
       'Economics / Finance / Quantitative Analysis',
-      'Other / Autre'
+      'Other'
     ]
   },
   {
     id: 'university_attended',
-    label: '9. Name of University / Institution Attended / Université ou École fréquentée',
+    label: '9. Université ou École fréquentée',
+    label_en: '9. University or Institution Attended',
     type: 'text',
     required: true,
-    placeholder: 'Ex: Université de Yaoundé I, École Nationale Supérieure Polytechnique...'
+    placeholder: 'Ex: Université de Yaoundé I, École Nationale Supérieure Polytechnique...',
+    placeholder_en: 'Ex: University of Yaounde I, National Advanced School of Engineering...'
   },
   {
     id: 'gpa_distinction',
-    label: '10. Final Graduation GPA or Distinction / Moyenne finale ou Mention',
+    label: '10. Moyenne finale ou Mention obtenue',
+    label_en: '10. Final Graduation GPA or Distinction',
     type: 'text',
     required: true,
-    placeholder: 'Ex: 3.7/4.0, Mention Très Bien, 15.5/20...'
+    placeholder: 'Ex: 3.7/4.0, Mention Très Bien, 15.5/20...',
+    placeholder_en: 'Ex: 3.7/4.0, First Class Honours, Magna Cum Laude, 15.5/20...'
   },
   {
     id: 'transcript_status',
-    label: '11. Academic Transcript Status / Statut des relevés de notes',
+    label: '11. Statut des relevés de notes officiels',
+    label_en: '11. Academic Transcript Status',
     type: 'radio',
     required: true,
     options: [
+      'Je dispose de mes relevés officiels prêts à être transmis.',
+      'Je peux obtenir mes relevés officiels de mon université avant la fin du Cours 560 (Marchés Financiers).',
+      'Je ne peux pas fournir de relevés de notes officiels.'
+    ],
+    options_en: [
       'I have my official transcripts ready for submission.',
       'I can obtain my official transcripts from my university prior to completing Course 560 (Financial Markets).',
       'I cannot provide official transcripts.'
@@ -167,18 +213,30 @@ const mscfeFormFields = [
   // SECTION 3: MATHEMATICAL & PROGRAMMING PROFICIENCY
   {
     id: 'math_proficiency',
-    label: '12. Proficiency in Higher Mathematics (Calculus, Linear Algebra, Probability, Statistics)',
+    label: '12. Niveau en Mathématiques Supérieures (Calcul, Algèbre Linéaire, Probabilités, Statistiques)',
+    label_en: '12. Proficiency in Higher Mathematics (Calculus, Linear Algebra, Probability, Statistics)',
     type: 'radio',
     required: true,
-    options: ['Beginner', 'Intermediate', 'Advanced / Expert'],
-    helpText: 'Calcul différentiel/intégral, algèbre linéaire, probabilités et modélisation stochastique.'
+    options: ['Débutant', 'Intermédiaire', 'Avancé / Expert'],
+    options_en: ['Beginner', 'Intermediate', 'Advanced / Expert'],
+    helpText: 'Calcul différentiel/intégral, algèbre linéaire, probabilités et modélisation stochastique.',
+    helpText_en: 'Calculus, linear algebra, probability theory, and stochastic modeling.'
   },
   {
     id: 'programming_languages',
-    label: '13. Programming Languages Proficiency / Langages maîtrisés',
+    label: '13. Langages de programmation maîtrisés',
+    label_en: '13. Programming Languages Proficiency',
     type: 'checkbox',
     required: true,
     options: [
+      'Python',
+      'C++ / C#',
+      'R',
+      'MATLAB',
+      'SQL / Gestion de bases de données',
+      'Aucun (Prêt à apprendre)'
+    ],
+    options_en: [
       'Python',
       'C++ / C#',
       'R',
@@ -189,10 +247,17 @@ const mscfeFormFields = [
   },
   {
     id: 'english_proficiency',
-    label: '14. English Language Proficiency Level / Niveau de maîtrise de l\'anglais',
+    label: "14. Niveau de maîtrise de l'anglais",
+    label_en: '14. English Language Proficiency Level',
     type: 'radio',
     required: true,
     options: [
+      'Langue maternelle / Courant',
+      'Compétence technique avancée',
+      'Intermédiaire (Prêt à suivre le module obligatoire Cisco "English for IT")',
+      'Basique / Débutant'
+    ],
+    options_en: [
       'Native / Fluent',
       'Advanced Technical Proficiency',
       'Intermediate (Willing to complete the compulsory Cisco "English for IT" module)',
@@ -203,20 +268,31 @@ const mscfeFormFields = [
   // SECTION 4: INFRASTRUCTURE & CAMPUS COMMITMENT
   {
     id: 'access_strategy',
-    label: '15. Platform & Laboratory Access Strategy / Modalité d\'accès aux infrastructures',
+    label: "15. Modalité d'accès aux infrastructures et au campus",
+    label_en: '15. Platform & Laboratory Access Strategy',
     type: 'radio',
     required: true,
     options: [
+      "J'utiliserai le campus et hub IDLA de Yaoundé (énergie solaire 24/7, labs Cisco, fibre optique, cours en direct, services de support).",
+      "Je travaillerai à distance avec mon équipement personnel et participerai aux cours virtuels et aux examens surveillés."
+    ],
+    options_en: [
       "I will utilize IDLA's Yaoundé Campus And Hub (24/7 powered Cisco hardware labs, Fiber internet, live lectures, support services).",
-      'I will work remotely using my personal setup and attend virtual classes and labs for proctored exams.'
+      "I will work remotely using my personal setup and attend virtual classes and labs for proctored exams."
     ]
   },
   {
     id: 'time_commitment',
-    label: '16. Time Commitment / Disponibilité hebdomadaire dédiée',
+    label: '16. Disponibilité hebdomadaire dédiée aux études',
+    label_en: '16. Weekly Time Commitment',
     type: 'radio',
     required: true,
     options: [
+      '10–15 heures / semaine',
+      '15–20 heures / semaine',
+      '20+ heures / semaine (Recommandé)'
+    ],
+    options_en: [
       '10–15 hours / week',
       '15–20 hours / week',
       '20+ hours / week (Recommended)'
@@ -226,54 +302,78 @@ const mscfeFormFields = [
   // SECTION 5: PROGRAM HOSTING, QUANT FOUNDATION & FINANCIAL COMMITMENT
   {
     id: 'hosting_acknowledgment',
-    label: '17. Program Hosting & Institutional Acknowledgment / Reconnaissance du cadre IDLA',
+    label: "17. Reconnaissance du cadre académique IDLA & Quant Foundation",
+    label_en: '17. Program Hosting & Institutional Acknowledgment',
     type: 'radio',
     required: true,
     options: [
-      'I understand that IDLA offers, hosts, and manages the MScFE program locally in Cameroon, while the Quant Foundation covers academic tuition.',
+      "Je comprends que l'IDLA dispense, héberge et gère localement le programme MScFE au Cameroun, tandis que Quant Foundation prend en charge la bourse académique.",
+      'Non'
+    ],
+    options_en: [
+      "I understand that IDLA offers, hosts, and manages the MScFE program locally in Cameroon, while the Quant Foundation covers academic tuition.",
       'No'
     ],
-    helpText: 'Frais académiques ($38 612 USD/an) pris en charge à 100% par Quant Foundation. Infrastructures et coaching assurés par IDLA.'
+    helpText: 'Frais académiques ($38 612 USD/an) pris en charge à 100% par Quant Foundation. Infrastructures et coaching assurés par IDLA.',
+    helpText_en: 'Academic tuition ($38,612 USD/year) covered 100% by Quant Foundation. Physical infrastructure and on-site coaching provided by IDLA.'
   },
   {
     id: 'financial_commitment',
-    label: '18. Financial Commitment (Support, Administrative & International Charges)',
+    label: '18. Engagement financier (Frais de soutien local, administratif et international)',
+    label_en: '18. Financial Commitment (Support, Administrative & International Charges)',
     type: 'radio',
     required: true,
     options: [
-      'Yes, I am fully prepared to pay 400,000 FCFA ($707.79 USD TTC) in full upon registration.',
-      "Yes, I request to pay via IDLA's approved installment plan (350,000 FCFA initial deposit + 80,000 FCFA due 31st December 2026).",
-      'No, I am unable to cover the annual support, administrative, and international charges.'
+      "Oui, je suis prêt(e) à régler l'intégralité des 400 000 FCFA (707,79 USD TTC) dès l'inscription.",
+      "Oui, je demande le paiement selon l'échéancier approuvé par l'IDLA (350 000 FCFA à l'inscription + 80 000 FCFA au 31 décembre 2026).",
+      "Non, je ne suis pas en mesure de couvrir les frais annuels de soutien local et administratif."
     ],
-    helpText: 'Dépôt obligatoire pour l\'énergie solaire 24/7, la fibre optique, les labs Cisco, English for IT et le coaching Yaoundé.'
+    options_en: [
+      "Yes, I am fully prepared to pay 400,000 FCFA ($707.79 USD incl. tax) in full upon registration.",
+      "Yes, I request to pay via IDLA's approved installment plan (350,000 FCFA initial deposit + 80,000 FCFA due 31st December 2026).",
+      "No, I am unable to cover the annual support, administrative, and international charges."
+    ],
+    helpText: "Dépôt obligatoire pour l'énergie solaire 24/7, la fibre optique, les labs Cisco, English for IT et le coaching Yaoundé.",
+    helpText_en: "Mandatory deposit for 24/7 solar power, dedicated fiber optic internet, Cisco labs, English for IT, and local coaching in Yaoundé."
   },
 
   // SECTION 6: MOTIVATION & APPLICANT DECLARATION
   {
     id: 'motivation_statement',
-    label: '19. Motivation Statement / Déclaration de motivation (Max 250 mots)',
+    label: '19. Déclaration de motivation (Max 250 mots)',
+    label_en: '19. Motivation Statement (Max 250 words)',
     type: 'textarea',
     required: true,
-    placeholder: 'Briefly explain why you are applying for the MScFE program at IDLA and how this degree aligns with your career goals (Max 250 words)...',
-    helpText: 'Décrivez votre intérêt pour la finance quantitative et votre projet professionnel.'
+    placeholder: "Expliquez brièvement pourquoi vous postulez au programme MScFE à l'IDLA et comment ce diplôme s'aligne avec vos objectifs professionnels...",
+    placeholder_en: "Briefly explain why you are applying for the MScFE program at IDLA and how this degree aligns with your career goals (Max 250 words)...",
+    helpText: 'Décrivez votre intérêt pour la finance quantitative et votre projet professionnel.',
+    helpText_en: 'Describe your interest in quantitative finance and your long-term career goals.'
   },
   {
     id: 'applicant_declaration',
-    label: '20. Applicant Declaration & Certification / Déclaration sur l\'honneur',
+    label: "20. Déclaration et certification sur l'honneur",
+    label_en: '20. Applicant Declaration & Certification',
     type: 'radio',
     required: true,
     options: [
-      'I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the annual support, administrative, and international charges of 400,000 FCFA ($707.79 USD TTC) will result in forfeiture of my scholarship seat.',
-      'I do not agree'
+      "Je certifie que toutes les informations fournies dans cette candidature sont exactes et complètes. Je comprends que l'IDLA héberge et gère localement le programme MScFE et que le défaut de règlement des frais annuels de soutien local et administratif de 400 000 FCFA (707,79 USD TTC) entraînera la révocation de ma bourse.",
+      "Je ne suis pas d'accord"
+    ],
+    options_en: [
+      "I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the annual support, administrative, and international charges of 400,000 FCFA ($707.79 USD incl. tax) will result in forfeiture of my scholarship seat.",
+      "I do not agree"
     ]
   },
   {
     id: 'applicant_signature',
-    label: '21. Applicant Signature & Date / Signature électronique & Date',
+    label: '21. Signature électronique du candidat & Date',
+    label_en: '21. Applicant Electronic Signature & Date',
     type: 'text',
     required: true,
-    placeholder: 'Ex: John Doe — 16/09/2026',
-    helpText: 'Indiquez votre nom complet officiel et la date de soumission.'
+    placeholder: 'Ex: Jean Dupont — 27/09/2026',
+    placeholder_en: 'Ex: John Doe — 27/09/2026',
+    helpText: 'Indiquez votre nom complet officiel et la date de soumission.',
+    helpText_en: 'Type your official full legal name and date of submission.'
   }
 ];
 
@@ -319,9 +419,16 @@ async function main() {
       existingForm = await withRetry(() => databases.getDocument(DB_ID, 'custom_forms', FORM_ID));
     } catch (e) {}
 
+    const formDescription_en = 
+      "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\n" +
+      "Excellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\n" +
+      "Mandatory annual local support & administrative fee: 400,000 FCFA ($707.79 USD incl. tax) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).";
+
     const formPayload = {
-      title: 'MSc in Financial Engineering (MScFE) — Application & Qualification Questionnaire',
+      title: 'Questionnaire Officiel de Qualification Bourse MScFE',
+      title_en: 'Official MScFE Scholarship Qualification Questionnaire',
       description: formDescription.slice(0, 1990),
+      description_en: formDescription_en.slice(0, 1990),
       createdAt: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
       fields: JSON.stringify(mscfeFormFields)
     };

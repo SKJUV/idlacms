@@ -1557,7 +1557,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                 className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-brand-primary hover:bg-brand-hover px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
                               >
                                 <FileTextIcon className="w-3.5 h-3.5" />
-                                <span>Questionnaire Bourse</span>
+                                <span>{t('mscfe_scholarship_questionnaire')}</span>
                               </button>
                             )}
                             <button 
@@ -1723,8 +1723,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                             >
                               <FileTextIcon className="w-4 h-4" />
                               {n.title?.includes('MScFE')
-                                ? "Remplir le questionnaire MScFE"
-                                : (n.category === 'Événements' ? "S'inscrire à l'événement" : "Accéder au formulaire")}
+                                ? t('mscfe_fill_questionnaire')
+                                : (n.category === 'Événements' ? (language === 'en' ? 'Register for Event' : "S'inscrire à l'événement") : (language === 'en' ? 'Access Form' : 'Accéder au formulaire'))}
                             </button>
 
                             {(n.id === 'news-mscfe-scholarship-policy' || n.title?.includes('MScFE')) && (
@@ -1738,7 +1738,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   title="Télécharger la politique officielle en français (PDF)"
                                 >
                                   <DownloadIcon className="w-3.5 h-3.5 text-brand-primary" />
-                                  <span>Politique (PDF FR)</span>
+                                  <span>{t('mscfe_policy_btn_fr')}</span>
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -1749,7 +1749,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   title="Download official policy in English (PDF)"
                                 >
                                   <DownloadIcon className="w-3.5 h-3.5 text-sky-600" />
-                                  <span>Policy (PDF EN)</span>
+                                  <span>{t('mscfe_policy_btn_en')}</span>
                                 </button>
                               </>
                             )}
@@ -1873,14 +1873,14 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5 text-brand-primary font-bold text-base">
                         <GraduationCapIcon className="w-5 h-5" />
-                        <span>Candidature & Documents Officiels MScFE</span>
+                        <span>{t('mscfe_candidature_docs')}</span>
                       </div>
                       <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
-                        Bourse 100% (38 612 USD)
+                        {t('mscfe_scholarship_badge')}
                       </span>
                     </div>
                     <p className="text-xs text-text-secondary leading-relaxed">
-                      Postulez directement à la bourse d'excellence IDLA & WQ ($38 612 USD pris en charge) ou téléchargez la politique officielle certifiée avec grille tarifaire complète et engagement étudiant.
+                      {t('mscfe_scholarship_desc')}
                     </p>
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       <button
@@ -1891,7 +1891,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
                       >
                         <FileTextIcon className="w-4 h-4" />
-                        <span>Remplir le Questionnaire Bourse (MScFE)</span>
+                        <span>{t('mscfe_fill_scholarship')}</span>
                       </button>
                       <button
                         onClick={() => {
@@ -1900,7 +1900,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         }}
                         className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
                       >
-                        <span>Candidature Standard</span>
+                        <span>{t('mscfe_standard_candidature')}</span>
                       </button>
                       <button
                         onClick={() => downloadMScFEPolicyPdf('fr')}
@@ -1908,7 +1908,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         title="Télécharger la politique officielle en français (PDF)"
                       >
                         <DownloadIcon className="w-4 h-4 text-brand-primary" />
-                        <span>Politique Officielle (PDF FR)</span>
+                        <span>{t('mscfe_policy_pdf_fr')}</span>
                       </button>
                       <button
                         onClick={() => downloadMScFEPolicyPdf('en')}
@@ -1916,7 +1916,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                         title="Download official policy in English (PDF)"
                       >
                         <DownloadIcon className="w-4 h-4 text-sky-600" />
-                        <span>Official Policy (PDF EN)</span>
+                        <span>{t('mscfe_policy_pdf_en')}</span>
                       </button>
                     </div>
                   </div>

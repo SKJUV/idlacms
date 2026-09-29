@@ -11,6 +11,7 @@ import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'l
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
 import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
 import { ReferralCode } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, email: string, tempPass?: string) => void;
@@ -21,6 +22,7 @@ interface ApplicationFormProps {
 }
 
 export default function ApplicationForm({ onSuccess, onBackToHome, programs, initialProgram, isLocked = !!initialProgram }: ApplicationFormProps) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -839,7 +841,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                             href="/formulaire?id=form-mscfe-scholarship-2026"
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
                           >
-                            <span>→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE</span>
+                            <span>{t('mscfe_access_questionnaire')}</span>
                           </a>
                         </div>
                       )}

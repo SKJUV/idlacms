@@ -23,6 +23,16 @@ interface FormPageProps {
 export default function FormPage({ formId: initialFormId, onBack, newsList = [], programs = [], theme = 'light', setTheme }: FormPageProps) {
   const { t, language } = useLanguage();
   const [form, setForm] = useState<CustomForm | null>(null);
+
+  const loc = <T,>(frVal: T, enVal?: T): T => (language === 'en' && enVal != null && enVal !== '') ? enVal : frVal;
+
+  const isMScFE = form?.id === 'form-mscfe-scholarship-2026' || form?.title?.toLowerCase().includes('mscfe');
+  const formTitle = (language === 'en' && (form?.title_en || (isMScFE && t('mscfe_form_title'))))
+    ? (form?.title_en || t('mscfe_form_title'))
+    : form?.title || '';
+  const formDescription = (language === 'en' && (form?.description_en || (isMScFE && t('mscfe_form_desc'))))
+    ? (form?.description_en || t('mscfe_form_desc'))
+    : form?.description || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -109,7 +119,9 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             setForm({
               id: doc.$id,
               title: doc.title,
+              title_en: doc.title_en || undefined,
               description: doc.description || '',
+              description_en: doc.description_en || undefined,
               createdAt: doc.createdAt,
               fields: JSON.parse(doc.fields || '[]')
             });
@@ -154,19 +166,28 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     // Validate age constraints on all date fields
     for (const f of form.fields) {
       if (f.type === 'date' && (f.minAge != null || f.maxAge != null)) {
-        const dateVal = formValues[f.label];
+        const dateVal = formValues[f.id] ?? formValues[f.label];
         if (dateVal) {
           const today = new Date();
           const birth = new Date(dateVal);
           let age = today.getFullYear() - birth.getFullYear();
           const monthDiff = today.getMonth() - birth.getMonth();
           if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+          const fieldName = (language === 'en' && f.label_en) ? f.label_en : f.label;
           if (f.minAge != null && age < f.minAge) {
-            setEmailError(`⚠️ Le champ « ${f.label} » exige un âge minimum de ${f.minAge} ans. L'âge calculé (${age} ans) est insuffisant.`);
+            const msg = t('form_age_field_error')
+              .replace('{field}', fieldName)
+              .replace('{min}', String(f.minAge))
+              .replace('{age}', String(age));
+            setEmailError(`⚠️ ${msg}`);
             return;
           }
           if (f.maxAge != null && age > f.maxAge) {
-            setEmailError(`⚠️ Le champ « ${f.label} » exige un âge maximum de ${f.maxAge} ans. L'âge calculé (${age} ans) dépasse la limite.`);
+            const msg = t('form_age_field_max_error')
+              .replace('{field}', fieldName)
+              .replace('{max}', String(f.maxAge))
+              .replace('{age}', String(age));
+            setEmailError(`⚠️ ${msg}`);
             return;
           }
         }
@@ -174,13 +195,17 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     }
 
     const respondentName = 
+      formValues['full_legal_name'] ||
+      formValues['1. Nom complet légal'] ||
       formValues['1. Full Legal Name / Nom complet légal'] ||
+      formValues['1. Full Legal Name'] ||
+      formValues['Nom complet légal'] ||
       formValues['Nom complet'] || 
       formValues['Nom & Prénom'] || 
       formValues['Nom'] || 
       formValues['Nom de famille'] || 
       Object.entries(formValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
-      'Candidat IDLA';
+      (language === 'en' ? 'IDLA Candidate' : 'Candidat IDLA');
 
     // Strict Email Detection
     const emailKey = Object.keys(formValues).find(
@@ -190,7 +215,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!respondentEmail || !emailRegex.test(respondentEmail)) {
-      setEmailError("⚠️ Veuillez renseigner une adresse e-mail exacte et valide (ex: candidat@gmail.com). Votre fiche officielle PDF et votre récépissé de validation y seront transmis.");
+      setEmailError(t('form_email_invalid_error'));
       return;
     }
 
@@ -322,7 +347,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       <div className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center p-6">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-bold text-text-secondary">Chargement du formulaire officiel IDLA Academy...</p>
+          <p className="text-sm font-bold text-text-secondary">{t('form_loading')}</p>
         </div>
       </div>
     );
@@ -333,13 +358,13 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       <div className="min-h-screen bg-bg-primary text-text-primary flex items-center justify-center p-6">
         <div className="bg-bg-secondary p-8 rounded-3xl border border-border-primary max-w-md text-center space-y-4 shadow-xl">
           <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
-          <h3 className="text-lg font-bold text-text-primary">Formulaire Non Accessible</h3>
-          <p className="text-xs text-text-secondary">{error || "Le formulaire demandé est introuvable."}</p>
+          <h3 className="text-lg font-bold text-text-primary">{t('form_not_found_title')}</h3>
+          <p className="text-xs text-text-secondary">{error || t('form_not_found_desc')}</p>
           <button
             onClick={onBack}
             className="bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer"
           >
-            ← Retour au portail
+            {t('form_back_portal')}
           </button>
         </div>
       </div>
@@ -347,7 +372,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   }
 
   // Parse Fee from Description
-  const desc = form.description || '';
+  const desc = formDescription || '';
   const feeMatch = desc.match(/(\d[\d\s]*\d)\s*FCFA/i);
   const feeAmount = feeMatch ? feeMatch[1] : null;
 
@@ -362,7 +387,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               className="p-2 rounded-xl bg-bg-primary hover:bg-brand-primary/10 text-text-secondary hover:text-brand-primary border border-border-primary transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
             >
               <ArrowLeftIcon className="w-4 h-4" />
-              <span>Retour</span>
+              <span>{language === 'en' ? 'Back' : 'Retour'}</span>
             </button>
             <div className="h-5 w-[1px] bg-border-primary hidden sm:block" />
             <div className="flex items-center gap-2">
@@ -382,17 +407,17 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="p-2 rounded-xl bg-bg-primary hover:bg-border-primary/50 text-text-secondary hover:text-text-primary border border-border-primary transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                title={theme === 'dark' ? 'Passer en Mode Clair' : 'Passer en Mode Sombre'}
+                title={theme === 'dark' ? t('form_theme_light') : t('form_theme_dark')}
               >
                 {theme === 'dark' ? (
                   <>
                     <SunIcon className="w-4 h-4 text-amber-400" />
-                    <span className="hidden sm:inline text-text-primary">Clair</span>
+                    <span className="hidden sm:inline text-text-primary">{t('form_theme_light_btn')}</span>
                   </>
                 ) : (
                   <>
                     <MoonIcon className="w-4 h-4 text-slate-700" />
-                    <span className="hidden sm:inline text-text-primary">Sombre</span>
+                    <span className="hidden sm:inline text-text-primary">{t('form_theme_dark_btn')}</span>
                   </>
                 )}
               </button>
@@ -409,7 +434,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
           <span>/</span>
           <span>{t('nav_forms')}</span>
           <span>/</span>
-          <span className="text-brand-primary truncate">{form.title}</span>
+          <span className="text-brand-primary truncate">{formTitle}</span>
         </div>
 
         {/* Hero Section du Formulaire */}
@@ -427,10 +452,10 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
-              {form.title}
+              {formTitle}
             </h1>
-            <p className="text-sm text-text-secondary mt-2 leading-relaxed max-w-3xl">
-              {form.description}
+            <p className="text-sm text-text-secondary mt-2 leading-relaxed max-w-3xl whitespace-pre-line">
+              {formDescription}
             </p>
           </div>
         </div>
@@ -444,25 +469,25 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Enregistrement Confirmé
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t('form_success_badge')}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
-                Candidature Transmise avec Succès !
+                {t('form_success_heading')}
               </h2>
               <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed pt-1">
-                Vos informations ont été enregistrées avec succès. Le document des modalités du programme a été ouvert et votre fiche d'inscription officielle a été transmise par e-mail.
+                {t('form_success_body')}
               </p>
             </div>
 
             <div className="bg-bg-primary p-5 rounded-2xl border border-border-primary max-w-md mx-auto space-y-2 text-left text-xs font-semibold">
               <div className="flex justify-between border-b border-border-primary/60 pb-2">
-                <span className="text-text-secondary">Référence dossier :</span>
+                <span className="text-text-secondary">{t('form_dossier_ref')}</span>
                 <span className="font-extrabold text-brand-primary">{receiptRef}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-secondary">Statut du dossier :</span>
+                <span className="text-text-secondary">{t('form_dossier_status')}</span>
                 <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> En cours d'analyse
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t('form_status_in_progress')}
                 </span>
               </div>
             </div>
@@ -474,19 +499,19 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 rel="noopener noreferrer"
                 className="bg-brand-primary hover:bg-brand-hover text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || 'Modalités des programmes'}
+                <FileTextIcon className="w-4 h-4" /> {t('form_modalites_programmes') || (language === 'en' ? 'Program Terms & Conditions' : 'Modalités des programmes')}
               </a>
               <button
                 onClick={handleDownloadPdf}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg flex items-center gap-2 cursor-pointer"
               >
-                <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || "Fiche d'inscription à télécharger (à joindre au dossier)"}
+                <DownloadIcon className="w-4 h-4" /> {t('form_download_pdf') || (language === 'en' ? 'Download Registration PDF' : "Fiche d'inscription à télécharger")}
               </button>
               <button
                 onClick={onBack}
                 className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer"
               >
-                Retourner à l'accueil
+                {t('form_back_home')}
               </button>
             </div>
           </div>
@@ -502,7 +527,18 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             {/* Render Fields in Clean Sections */}
             <div className="space-y-6">
               {form.fields.map((f, idx) => {
-                const val = formValues[f.label] || '';
+                const val = formValues[f.id] ?? formValues[f.label] ?? '';
+                const fieldLabel = loc(f.label, f.label_en);
+                const fieldHelp = loc(f.helpText, f.helpText_en);
+                const fieldPlaceholder = loc(f.placeholder, f.placeholder_en);
+
+                const updateVal = (newVal: any) => {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    [f.id]: newVal,
+                    [f.label]: newVal
+                  }));
+                };
 
                 // Filtrage automatique des diplômes académiques (exclut les Certifications)
                 const degreePrograms = (programs || []).filter(p => p.type !== 'Certification' && p.category !== 'Certification');
@@ -511,6 +547,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 const isProgramField = f.label.toLowerCase().includes('filière') || f.label.toLowerCase().includes('programme') || f.label.toLowerCase().includes('formation');
 
                 let availableOptions = f.options || [];
+                let availableOptionsEn = f.options_en || [];
 
                 // Si c'est un champ de filières et qu'il n'a pas d'options explicites, prendre la liste des diplômes académiques
                 if (isProgramField && degreeTitles.length > 0 && (availableOptions.length === 0 || availableOptions.some(o => o.includes('Génie') || o.includes('Informatique')))) {
@@ -521,7 +558,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                 let selectedLevelVal = '';
                 if (f.cascadeParentId) {
                   const parentField = form.fields.find((p) => p.id === f.cascadeParentId);
-                  if (parentField) selectedLevelVal = String(formValues[parentField.label] || '');
+                  if (parentField) selectedLevelVal = String(formValues[parentField.id] ?? formValues[parentField.label] ?? '');
                 }
                 if (!selectedLevelVal) {
                   const levelKey = Object.keys(formValues).find(k => k.toLowerCase().includes('niveau'));
@@ -554,13 +591,13 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                         <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 w-5 h-5 rounded-full flex items-center justify-center">
                           {idx + 1}
                         </span>
-                        <span>{f.label} {f.required && <span className="text-rose-500">*</span>}</span>
+                        <span>{fieldLabel} {f.required && <span className="text-rose-500">*</span>}</span>
                       </span>
-                      {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">Obligatoire</span>}
+                      {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{t('form_field_required')}</span>}
                     </label>
 
-                    {f.helpText && (
-                      <p className="text-[11px] text-text-secondary italic pl-6">{f.helpText}</p>
+                    {fieldHelp && (
+                      <p className="text-[11px] text-text-secondary italic pl-6">{fieldHelp}</p>
                     )}
 
                     <div className="pl-6 pt-1">
@@ -570,8 +607,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           type="text"
                           required={f.required}
                           value={val}
-                          placeholder={f.placeholder || ''}
-                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                          placeholder={fieldPlaceholder || ''}
+                          onChange={(e) => updateVal(e.target.value)}
                           className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
@@ -582,8 +619,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           rows={3}
                           required={f.required}
                           value={val}
-                          placeholder={f.placeholder || ''}
-                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                          placeholder={fieldPlaceholder || ''}
+                          onChange={(e) => updateVal(e.target.value)}
                           className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
@@ -594,8 +631,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           type="number"
                           required={f.required}
                           value={val}
-                          placeholder={f.placeholder || ''}
-                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                          placeholder={fieldPlaceholder || ''}
+                          onChange={(e) => updateVal(e.target.value)}
                           className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
@@ -616,8 +653,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           let age = today.getFullYear() - birth.getFullYear();
                           const monthDiff = today.getMonth() - birth.getMonth();
                           if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
-                          if (f.minAge != null && age < f.minAge) ageError = `Le candidat doit avoir au moins ${f.minAge} ans.`;
-                          if (f.maxAge != null && age > f.maxAge) ageError = `Le candidat ne doit pas dépasser ${f.maxAge} ans.`;
+                          if (f.minAge != null && age < f.minAge) ageError = t('form_age_min_error').replace('{min}', String(f.minAge));
+                          if (f.maxAge != null && age > f.maxAge) ageError = t('form_age_max_error').replace('{max}', String(f.maxAge));
                         }
 
                         return (
@@ -628,7 +665,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                               value={val}
                               max={maxDate}
                               min={minDate}
-                              onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                              onChange={(e) => updateVal(e.target.value)}
                               className={`w-full p-3 rounded-xl border bg-white dark:bg-bg-secondary text-text-primary text-xs font-semibold outline-none focus:ring-2 transition-all shadow-sm ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
                             />
                             {ageError && (
@@ -639,10 +676,10 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                             {(f.minAge != null || f.maxAge != null) && !ageError && (
                               <p className="text-[10px] text-text-secondary italic">
                                 {f.minAge != null && f.maxAge != null
-                                  ? `Âge requis : entre ${f.minAge} et ${f.maxAge} ans.`
+                                  ? t('form_age_range_desc').replace('{min}', String(f.minAge)).replace('{max}', String(f.maxAge))
                                   : f.minAge != null
-                                  ? `Âge minimum requis : ${f.minAge} ans.`
-                                  : `Âge maximum autorisé : ${f.maxAge} ans.`}
+                                  ? t('form_age_min_desc').replace('{min}', String(f.minAge))
+                                  : t('form_age_max_desc').replace('{max}', String(f.maxAge))}
                               </p>
                             )}
                           </div>
@@ -654,32 +691,36 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                         <select
                           required={f.required}
                           value={val}
-                          onChange={(e) => setFormValues({ ...formValues, [f.label]: e.target.value })}
+                          onChange={(e) => updateVal(e.target.value)}
                           className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-extrabold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         >
                           <option value="">
                             {isProgramField && !selectedLevelVal
-                              ? "-- Veuillez d'abord sélectionner votre Niveau d'études ci-dessus --"
+                              ? t('form_select_level_first')
                               : isProgramField && selectedLevelVal
-                              ? `-- Sélectionnez votre filière (${availableOptions.length} éligibles) --`
-                              : "-- Sélectionnez une option --"}
+                              ? `${t('form_select_program_prefix')} (${availableOptions.length} ${t('form_select_program_eligible')}) --`
+                              : t('form_select_placeholder')}
                           </option>
-                          {availableOptions.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
+                          {availableOptions.map((opt, optIdx) => {
+                            const optLabel = (language === 'en' && availableOptionsEn[optIdx]) ? availableOptionsEn[optIdx] : opt;
+                            return (
+                              <option key={opt} value={opt}>{optLabel}</option>
+                            );
+                          })}
                         </select>
                       )}
 
                       {/* Radio Chips */}
                       {f.type === 'radio' && (
                         <div className="flex flex-wrap gap-2.5 pt-1">
-                          {availableOptions.map((opt) => {
+                          {availableOptions.map((opt, optIdx) => {
                             const selected = val === opt;
+                            const optLabel = (language === 'en' && availableOptionsEn[optIdx]) ? availableOptionsEn[optIdx] : opt;
                             return (
                               <button
                                 key={opt}
                                 type="button"
-                                onClick={() => setFormValues({ ...formValues, [f.label]: opt })}
+                                onClick={() => updateVal(opt)}
                                 className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 ${
                                   selected
                                     ? 'bg-brand-primary text-white border-brand-primary shadow-md'
@@ -689,7 +730,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                                 <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-white bg-white' : 'border-text-secondary'}`}>
                                   {selected && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
                                 </div>
-                                <span>{opt}</span>
+                                <span>{optLabel}</span>
                               </button>
                             );
                           })}
@@ -699,16 +740,17 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                       {/* Checkbox Chips */}
                       {f.type === 'checkbox' && (
                         <div className="flex flex-wrap gap-2.5 pt-1">
-                          {availableOptions.map((opt) => {
+                          {availableOptions.map((opt, optIdx) => {
                             const currArr: string[] = Array.isArray(val) ? val : [];
                             const checked = currArr.includes(opt);
+                            const optLabel = (language === 'en' && availableOptionsEn[optIdx]) ? availableOptionsEn[optIdx] : opt;
                             return (
                               <button
                                 key={opt}
                                 type="button"
                                 onClick={() => {
                                   const next = checked ? currArr.filter((item) => item !== opt) : [...currArr, opt];
-                                  setFormValues({ ...formValues, [f.label]: next });
+                                  updateVal(next);
                                 }}
                                 className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 ${
                                   checked
@@ -719,7 +761,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                                 <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${checked ? 'border-white bg-white' : 'border-text-secondary'}`}>
                                   {checked && <CheckCircle2 className="w-3 h-3 text-brand-primary" />}
                                 </div>
-                                <span>{opt}</span>
+                                <span>{optLabel}</span>
                               </button>
                             );
                           })}
@@ -734,7 +776,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              setFormValues({ ...formValues, [f.label]: `${file.name} (Fichier téléversé)` });
+                              updateVal(`${file.name} (${t('form_uploaded_file')})`);
                             }
                           }}
                           className="w-full text-xs text-text-secondary border border-border-primary rounded-xl p-2.5 bg-white dark:bg-bg-secondary cursor-pointer"
@@ -750,7 +792,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             {(form.id === DEFAULT_CONCOURS_FORM_ID || 
               form.id === '6a86f5cc003484813061' || 
               form.id === 'form_concours_1_3_4_b52s6y' ||
-              (form.title && form.title.toLowerCase().includes('concours'))) && (
+              (form.title && form.title.toLowerCase().includes('concours') && !form.title.toLowerCase().includes('mscfe') && form.id !== 'form-mscfe-scholarship-2026')) && (
               <div className="bg-bg-primary/80 border border-brand-primary/30 rounded-3xl p-6 space-y-5">
                 <div className="flex items-center gap-2.5 text-brand-primary font-extrabold text-sm border-b border-border-primary pb-3">
                   <FileTextIcon className="w-5 h-5 text-brand-primary" />
