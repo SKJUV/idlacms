@@ -194,6 +194,24 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }
     }
 
+    // Validate all required fields (ensures radio / checkbox / text / files are checked)
+    for (const f of form.fields) {
+      if (f.required) {
+        const fieldVal = formValues[f.id] ?? formValues[f.label];
+        const isEmpty = 
+          fieldVal === undefined || 
+          fieldVal === null || 
+          fieldVal === '' || 
+          (Array.isArray(fieldVal) && fieldVal.length === 0);
+
+        if (isEmpty) {
+          const fieldName = loc(f.label, f.label_en);
+          setEmailError(`⚠️ ${fieldName} : ${t('form_field_required') || 'Obligatoire'}`);
+          return;
+        }
+      }
+    }
+
     const respondentName = 
       formValues['full_legal_name'] ||
       formValues['1. Nom complet légal'] ||
@@ -720,7 +738,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                               <button
                                 key={opt}
                                 type="button"
-                                onClick={() => updateVal(opt)}
+                                onClick={() => updateVal(selected && availableOptions.length === 1 ? '' : opt)}
                                 className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 ${
                                   selected
                                     ? 'bg-brand-primary text-white border-brand-primary shadow-md'

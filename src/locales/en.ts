@@ -186,7 +186,7 @@ export const en: Record<TranslationKeys, string> = {
   mscfe_policy_btn_en: "Policy (PDF EN)",
   mscfe_access_questionnaire: "→ Access the Official MScFE Scholarship Qualification Questionnaire directly",
   mscfe_form_title: "Official MScFE Scholarship Qualification Questionnaire",
-  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory annual local support & administrative fee: 400,000 FCFA ($707.79 USD incl. tax) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
+  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory administrative and documentation charges/fees: $707.79 USD intax (400,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
 
   // FormPage Specifics
   form_select_placeholder: "-- Select an option --",
