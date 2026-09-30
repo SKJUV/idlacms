@@ -319,22 +319,18 @@ const mscfeFormFields = [
   },
   {
     id: 'financial_commitment',
-    label: '18. Engagement financier (Frais de soutien local, administratif et international)',
-    label_en: '18. Financial Commitment (Support, Administrative & International Charges)',
+    label: '18. Engagement financier (frais administratifs et de documentation)',
+    label_en: '18. Financial Commitment (administrative and documentation charges/fees)',
     type: 'radio',
     required: true,
     options: [
-      "Oui, je suis prêt(e) à régler l'intégralité des 400 000 FCFA (707,79 USD TTC) dès l'inscription.",
-      "Oui, je demande le paiement selon l'échéancier approuvé par l'IDLA (200 000 FCFA à l'inscription + 200 000 FCFA au 31 décembre 2026).",
-      "Non, je ne suis pas en mesure de couvrir les frais annuels de soutien local et administratif."
+      "Oui, je suis prêt(e) à régler les 707,79 USD TTC (400 000 FCFA) de frais administratifs et de documentation."
     ],
     options_en: [
-      "Yes, I am fully prepared to pay 400,000 FCFA ($707.79 USD incl. tax) in full upon registration.",
-      "Yes, I request to pay via IDLA's approved installment plan (200,000 FCFA initial deposit + 200,000 FCFA due 31st December 2026).",
-      "No, I am unable to cover the annual support, administrative, and international charges."
+      "Yes, I am fully prepared to pay $707.79 USD intax my documentation fee/fees."
     ],
-    helpText: "Dépôt obligatoire pour l'énergie solaire 24/7, la fibre optique, les labs Cisco, English for IT et le coaching Yaoundé.",
-    helpText_en: "Mandatory deposit for 24/7 solar power, dedicated fiber optic internet, Cisco labs, English for IT, and local coaching in Yaoundé."
+    helpText: "Frais administratifs et de documentation obligatoires pour les infrastructures du campus de Yaoundé (énergie solaire 24/7, fibre optique, Cisco labs, English for IT et coaching).",
+    helpText_en: "Mandatory administrative and documentation fees covering 24/7 solar power, dedicated fiber optic internet, Cisco labs, English for IT, and local coaching in Yaoundé."
   },
 
   // SECTION 6: MOTIVATION & APPLICANT DECLARATION
@@ -356,11 +352,11 @@ const mscfeFormFields = [
     type: 'radio',
     required: true,
     options: [
-      "Je certifie que toutes les informations fournies dans cette candidature sont exactes et complètes. Je comprends que l'IDLA héberge et gère localement le programme MScFE et que le défaut de règlement des frais annuels de soutien local et administratif de 400 000 FCFA (707,79 USD TTC) entraînera la révocation de ma bourse.",
+      "Je certifie que toutes les informations fournies dans cette candidature sont exactes et complètes. Je comprends que l'IDLA héberge et gère localement le programme MScFE et que le défaut de règlement des frais administratifs et de documentation de 400 000 FCFA (707,79 USD TTC) entraînera la révocation de ma bourse.",
       "Je ne suis pas d'accord"
     ],
     options_en: [
-      "I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the annual support, administrative, and international charges of 400,000 FCFA ($707.79 USD incl. tax) will result in forfeiture of my scholarship seat.",
+      "I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the administrative and documentation charges/fees of 400,000 FCFA ($707.79 USD incl. tax) will result in forfeiture of my scholarship seat.",
       "I do not agree"
     ]
   },
@@ -380,7 +376,7 @@ const mscfeFormFields = [
 const formDescription = 
   "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\n" +
   "Bourse d'Excellence d'une valeur de 38 612 USD/an (100% couverte par Quant Foundation / IDLA-WQ).\n" +
-  "Dépôt annuel de soutien local & administratif obligatoire : 400 000 FCFA ($707.79 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).";
+  "Frais administratifs et de documentation obligatoires : 400 000 FCFA ($707.79 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).";
 
 // ── 2. DÉFINITION DU PROGRAMME ACADÉMIQUE ─────────────────────────────────────
 const programData = {
@@ -394,10 +390,10 @@ const programData = {
   duration: '2 ans',
   image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
   isNew: true,
-  price: '38 612 USD (Bourse 100% Quant Foundation) — Dépôt local 400 000 FCFA/an (707,79 USD TTC)',
+  price: '38 612 USD (Bourse 100% Quant Foundation) — Frais administratifs et documentation 400 000 FCFA/an (707,79 USD TTC)',
   procedures: 
     "Admission sur dossier d'excellence et questionnaire de qualification MScFE en ligne (Lien : /formulaire?id=form-mscfe-scholarship-2026). " +
-    "Frais académiques pris en charge à 100%. Dépôt annuel obligatoire de 400 000 FCFA (ou échelonnement : 200 000 FCFA à l'inscription + 200 000 FCFA au 31 décembre 2026) " +
+    "Frais académiques pris en charge à 100%. Frais administratifs et de documentation obligatoires de 400 000 FCFA ($707.79 USD TTC) " +
     "couvrant les infrastructures de haute technologie du campus IDLA de Yaoundé."
 };
 
@@ -422,7 +418,7 @@ async function main() {
     const formDescription_en = 
       "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\n" +
       "Excellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\n" +
-      "Mandatory annual local support & administrative fee: 400,000 FCFA ($707.79 USD incl. tax) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).";
+      "Mandatory administrative and documentation charges/fees: $707.79 USD intax (400,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).";
 
     const formPayload = {
       title: 'Questionnaire Officiel de Qualification Bourse MScFE',
