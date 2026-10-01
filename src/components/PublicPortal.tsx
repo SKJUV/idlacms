@@ -32,7 +32,11 @@ import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilter
 import { useLanguage } from '../context/LanguageContext';
 import { downloadMScFEPolicyPdf } from '../lib/scholarshipPolicyPdf';
 import { Gift, Share2, Users, Star, Shield, Sparkles, ExternalLink, Calendar, MapPin } from 'lucide-react';
-import { MScFEFloatingAdWidget } from './MScFEAdBanner';
+import { 
+  MScFETopBarBanner,
+  MScFEFloatingAdWidget, 
+  MScFEAdModal 
+} from './MScFEAdBanner';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -717,14 +721,29 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
-  // ── REDIRECTION DIRECTE VERS LA BOURSE ──
+  // ── MScFE SCHOLARSHIP STATES & HANDLERS ──
+  const [showMScFEAdModal, setShowMScFEAdModal] = useState(false);
+  const [dismissedMScFETopBanner, setDismissedMScFETopBanner] = useState(false);
+
   const handleGoToBourse = () => {
     setActiveTab('bourse');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleApplyMScFEScholarship = () => {
+    setShowMScFEAdModal(false);
     handleOpenFormModal('form-mscfe-scholarship-2026');
+  };
+
+  const renderTopAdBanner = () => {
+    if (dismissedMScFETopBanner) return null;
+    return (
+      <MScFETopBarBanner
+        onApply={handleApplyMScFEScholarship}
+        onViewModal={() => setShowMScFEAdModal(true)}
+        onDismiss={() => setDismissedMScFETopBanner(true)}
+      />
+    );
   };
 
   const renderFloatingAdWidget = () => {
@@ -732,7 +751,18 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     return (
       <MScFEFloatingAdWidget
         onGoToBourse={handleGoToBourse}
+        onViewModal={() => setShowMScFEAdModal(true)}
         t={t}
+      />
+    );
+  };
+
+  const renderMScFEAdModal = () => {
+    return (
+      <MScFEAdModal
+        isOpen={showMScFEAdModal}
+        onClose={() => setShowMScFEAdModal(false)}
+        onApply={handleApplyMScFEScholarship}
       />
     );
   };
@@ -1030,6 +1060,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   if (activeTab === 'home') {
     return (
       <div className="bg-bg-primary text-text-primary">
+        {renderTopAdBanner()}
+
         {/* Hero Section */}
         <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
           {/* Background Image */}
@@ -1170,10 +1202,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <p className="text-lg sm:text-xl font-extrabold text-amber-300 flex items-center gap-2">
                     <span>Frais de scolarité 100% couverts ($38 612 USD / an)</span>
                   </p>
-                  
-                  <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                    L'International Distance Learning Academy (IDLA) et WorldQuant University offrent une bourse d'excellence complète pour former l'élite financière et technologique de la sous-région Afrique Centrale (CEMAC - CEEAC - Cameroun).
-                  </p>
                 </div>
 
                 {/* Key Benefits Grid */}
@@ -1213,7 +1241,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <GlobeIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé</p>
+                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé, Cameroun</p>
                       <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
                     </div>
                   </div>
@@ -1709,6 +1737,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
 
         {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
@@ -1716,6 +1745,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   if (activeTab === 'bourse') {
     return (
       <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
 
         {/* BREADCRUMB */}
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 pt-6">
@@ -1724,7 +1754,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             <span>/</span>
             <span className="text-brand-primary">{t('nav_scholarships') || 'Bourses'}</span>
             <span>/</span>
-            <span className="text-text-primary">MSc in Financial Engineering (MScFE)</span>
+            <span className="text-text-primary">Master of Science in Financial Engineering (MScFE)</span>
           </div>
         </div>
 
@@ -1785,7 +1815,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
 
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
-                    Master in Financial Engineering (MScFE)
+                    Master of Science in Financial Engineering (MScFE)
                   </h1>
 
                   <p className="text-lg sm:text-xl font-extrabold text-amber-300">
@@ -1834,7 +1864,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <GlobeIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé</p>
+                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé, Cameroun</p>
                       <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
                     </div>
                   </div>
@@ -2020,14 +2050,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         </section>
+        {renderMScFEAdModal()}
       </div>
     );
   }
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-8">
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="max-w-[1440px] mx-auto space-y-8 py-10 px-6 md:px-12">
           {/* Header Title */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
             <div>
@@ -2139,6 +2171,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
@@ -2147,8 +2180,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'actualites') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-8">
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="max-w-[1440px] mx-auto space-y-8 py-10 px-6 md:px-12">
           {/* Header */}
           <div className="border-b border-border-primary/50 pb-6 space-y-2">
             <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
@@ -2447,7 +2481,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <button
                         onClick={() => {
                           setSelectedArticle(null);
-                          onApplyNow('MSc in Financial Engineering (MScFE)');
+                          onApplyNow('Master of Science in Financial Engineering (MScFE)');
                         }}
                         className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
                       >
@@ -2870,6 +2904,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
         {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
@@ -2878,8 +2913,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'temoignages') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="max-w-[1440px] mx-auto space-y-12 py-12 px-6 md:px-12">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
@@ -3118,6 +3154,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
         {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
