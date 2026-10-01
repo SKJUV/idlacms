@@ -186,7 +186,7 @@ export const en: Record<TranslationKeys, string> = {
   mscfe_policy_btn_en: "Policy (PDF EN)",
   mscfe_access_questionnaire: "→ Access the Official MScFE Scholarship Qualification Questionnaire directly",
   mscfe_form_title: "Official MScFE Scholarship Qualification Questionnaire",
-  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory administrative and documentation charges/fees: $707.79 USD intax (400,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
+  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory administrative and documentation charges/fees: $796.26 USD incl. tax (450,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
 
   // FormPage Specifics
   form_select_placeholder: "-- Select an option --",
@@ -195,7 +195,9 @@ export const en: Record<TranslationKeys, string> = {
   form_select_program_eligible: "eligible",
   form_success_badge: "Registration Confirmed",
   form_success_heading: "Application Submitted Successfully!",
-  form_success_body: "Your information has been successfully recorded. The program guidelines document has been opened and your official registration slip has been sent by email.",
+  form_success_body: "Your information has been successfully recorded. Your official registration slip has been sent by email. Join the orientation group now to stay updated on next steps.",
+  form_success_whatsapp_cta: "Join the WhatsApp Orientation Group",
+  form_success_whatsapp_desc: "Join the official group to receive onboarding instructions, updates, and connect with other admitted candidates.",
   form_dossier_ref: "Application Reference:",
   form_dossier_status: "Application Status:",
   form_status_in_progress: "Under Review",
@@ -266,6 +268,7 @@ export const en: Record<TranslationKeys, string> = {
   amb_name_required: "Please enter your full name.",
   amb_phone_required: "Please enter your WhatsApp number.",
   amb_declaration_required: "Please accept the commitment declaration.",
+  amb_download_guide_btn: "Download Official Ambassador Guide (PDF)",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. All rights reserved. Official admissions and enrollment platform.",

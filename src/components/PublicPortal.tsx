@@ -525,10 +525,10 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
           </div>
           <div className="sm:text-right">
             <div className="text-lg font-black text-amber-800 dark:text-amber-300">
-              400 000 FCFA
+              450 000 FCFA
             </div>
             <div className="text-[11px] font-semibold text-text-secondary">
-              (ou 707,79 USD TTC / an)
+              (ou 796,26 USD TTC / an)
             </div>
           </div>
         </div>
@@ -1381,6 +1381,16 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   {language === 'en' ? 'Register as Ambassador' : "S'inscrire comme Ambassadeur"}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
+                <a
+                  href={language === 'en' ? '/IDLA_Ambassador_Program_MScFE_EN.pdf' : '/IDLA_Ambassador_Program_MScFE_FR.pdf'}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary px-6 py-3.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                >
+                  <DownloadIcon className="w-4 h-4 text-brand-primary" />
+                  {t('amb_download_guide_btn')}
+                </a>
               </div>
             </div>
             <div className="flex-shrink-0 grid grid-cols-2 gap-4 max-w-xs">

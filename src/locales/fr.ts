@@ -184,7 +184,7 @@ export const fr = {
   mscfe_policy_btn_en: "Policy (PDF EN)",
   mscfe_access_questionnaire: "→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE",
   mscfe_form_title: "Questionnaire Officiel de Qualification Bourse MScFE",
-  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nBourse d'Excellence d'une valeur de 38 612 USD/an (100% couverte par Quant Foundation / IDLA-WQ).\nFrais administratifs et de documentation obligatoires : 400 000 FCFA ($707.79 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).",
+  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nBourse d'Excellence d'une valeur de 38 612 USD/an (100% couverte par Quant Foundation / IDLA-WQ).\nFrais administratifs et de documentation obligatoires : 450 000 FCFA ($796.26 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).",
 
   // FormPage Specifics
   form_select_placeholder: "-- Sélectionnez une option --",
@@ -193,7 +193,9 @@ export const fr = {
   form_select_program_eligible: "éligibles",
   form_success_badge: "Enregistrement Confirmé",
   form_success_heading: "Candidature Transmise avec Succès !",
-  form_success_body: "Vos informations ont été enregistrées avec succès. Le document des modalités du programme a été ouvert et votre fiche d'inscription officielle a été transmise par e-mail.",
+  form_success_body: "Vos informations ont été enregistrées avec succès. Votre fiche d'inscription officielle a été transmise par e-mail. Rejoignez maintenant le groupe d'orientation pour suivre les prochaines étapes.",
+  form_success_whatsapp_cta: "Rejoindre le Groupe d'Orientation WhatsApp",
+  form_success_whatsapp_desc: "Rejoignez le groupe officiel pour recevoir les consignes de la rentrée, les mises à jour et échanger avec les autres candidats admis.",
   form_dossier_ref: "Référence dossier :",
   form_dossier_status: "Statut du dossier :",
   form_status_in_progress: "En cours d'analyse",
@@ -264,6 +266,7 @@ export const fr = {
   amb_name_required: "Veuillez renseigner votre nom complet.",
   amb_phone_required: "Veuillez renseigner votre numéro WhatsApp.",
   amb_declaration_required: "Veuillez accepter la déclaration d'engagement.",
+  amb_download_guide_btn: "Télécharger le Guide Officiel Ambassadeur (PDF)",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.",
