@@ -1821,10 +1821,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <p className="text-lg sm:text-xl font-extrabold text-amber-300">
                     Bourse d'Excellence Internationale • $38 612 USD pris en charge
                   </p>
-
-                  <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                    L'International Distance Learning Academy (IDLA), en partenariat avec WorldQuant University, propose une formation de standard mondial en finance quantitative, algorithmique et intelligence artificielle pour former les futurs leaders financiers d'Afrique Centrale.
-                  </p>
                 </div>
 
                 {/* 4 Cards Grid */}
