@@ -31,10 +31,16 @@ import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilters } from './ProgramFilterBar';
 import { useLanguage } from '../context/LanguageContext';
 import { downloadMScFEPolicyPdf } from '../lib/scholarshipPolicyPdf';
-import { Gift, Share2, Users, Star, Shield } from 'lucide-react';
+import { Gift, Share2, Users, Star, Shield, Sparkles, ExternalLink, Calendar, MapPin } from 'lucide-react';
+import { 
+  MScFEInPageBanner, 
+  MScFETopBarBanner, 
+  MScFEFloatingAdWidget, 
+  MScFEAdModal 
+} from './MScFEAdBanner';
 
 interface PublicPortalProps {
-  activeTab: 'home' | 'programmes' | 'actualites' | 'temoignages';
+  activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
   setActiveTab: (tab: any) => void;
   onApplyNow: (programTitle?: string) => void;
   programs: Program[];
@@ -716,6 +722,77 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
+  // ── MScFE SCHOLARSHIP AD BANNER & POPUP MODAL STATES ──
+  const [showMScFEAdModal, setShowMScFEAdModal] = useState(false);
+  const [dismissedMScFETopBanner, setDismissedMScFETopBanner] = useState(false);
+  const [dontShowMScFEAgain, setDontShowMScFEAgain] = useState(false);
+
+  useEffect(() => {
+    // Automatically trigger promotional popup after 1.5s if not previously dismissed in this session
+    try {
+      const isPermanentlyDismissed = localStorage.getItem('idla_mscfe_ad_dismissed_permanent');
+      const isSessionDismissed = sessionStorage.getItem('idla_mscfe_ad_dismissed');
+      if (!isPermanentlyDismissed && !isSessionDismissed) {
+        const timer = setTimeout(() => {
+          setShowMScFEAdModal(true);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleCloseMScFEAdModal = () => {
+    setShowMScFEAdModal(false);
+    try {
+      sessionStorage.setItem('idla_mscfe_ad_dismissed', 'true');
+      if (dontShowMScFEAgain) {
+        localStorage.setItem('idla_mscfe_ad_dismissed_permanent', 'true');
+      }
+    } catch (e) {}
+  };
+
+  const handleApplyMScFEScholarship = () => {
+    setShowMScFEAdModal(false);
+    handleOpenFormModal('form-mscfe-scholarship-2026');
+  };
+
+  const renderTopAdBanner = () => {
+    if (dismissedMScFETopBanner) return null;
+    return (
+      <MScFETopBarBanner
+        onApply={handleApplyMScFEScholarship}
+        onViewModal={() => setShowMScFEAdModal(true)}
+        onDismiss={() => setDismissedMScFETopBanner(true)}
+        t={t}
+      />
+    );
+  };
+
+  const renderFloatingAdWidget = () => {
+    return (
+      <MScFEFloatingAdWidget
+        onApply={handleApplyMScFEScholarship}
+        onViewModal={() => setShowMScFEAdModal(true)}
+        t={t}
+      />
+    );
+  };
+
+  const renderMScFEAdModal = () => {
+    return (
+      <MScFEAdModal
+        isOpen={showMScFEAdModal}
+        onClose={handleCloseMScFEAdModal}
+        onApply={handleApplyMScFEScholarship}
+        onDownloadPolicy={downloadMScFEPolicyPdf}
+        dontShowAgain={dontShowMScFEAgain}
+        setDontShowAgain={setDontShowMScFEAgain}
+        t={t}
+      />
+    );
+  };
+
+
   const [formEmailError, setFormEmailError] = useState('');
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
@@ -1008,6 +1085,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   if (activeTab === 'home') {
     return (
       <div className="bg-bg-primary text-text-primary">
+        {renderTopAdBanner()}
+
         {/* Hero Section */}
         <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
           {/* Background Image */}
@@ -1078,6 +1157,155 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div>
                 <div className="text-xs text-sky-200 uppercase font-bold tracking-widest mb-1">{t('stat_partners')}</div>
                 <div className="text-3xl font-bold text-white">120+</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* GRAND FORMAT AD BANNER — BOURSE MSCFE 2027 */}
+        <section className="py-14 px-6 md:px-12 bg-gradient-to-br from-slate-950 via-[#031525] to-slate-900 border-y border-sky-500/30 text-white relative overflow-hidden shadow-2xl">
+          {/* Ambient lighting glow */}
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-[1440px] mx-auto relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              
+              {/* Left Column: Visual Flyer Presentation */}
+              <div className="lg:col-span-5 flex flex-col items-center">
+                <div 
+                  onClick={() => setShowMScFEAdModal(true)}
+                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
+                >
+                  <img
+                    src="/flyer_bourse_mscfe_2027.webp"
+                    alt="Bourse d'Excellence MScFE 2027"
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600" />
+                    <span>Flyer Officiel</span>
+                  </div>
+                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 text-white">
+                      Cliquer pour agrandir
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-bold text-sky-300">
+                  <a
+                    href="/Flyer_Bourse_MScFE_2027.pdf"
+                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                  >
+                    <DownloadIcon className="w-4 h-4" />
+                    <span>{t('mscfe_flyer_download')}</span>
+                  </a>
+                  <span>•</span>
+                  <button
+                    onClick={() => setShowMScFEAdModal(true)}
+                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <FileTextIcon className="w-4 h-4" />
+                    <span>{t('mscfe_flyer_view')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: High-Impact Pitch */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 text-xs font-black uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Campagne Officielle de Bourse 2026 / 2027</span>
+                  </div>
+
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                    Master of Science in Financial Engineering (MScFE)
+                  </h2>
+
+                  <p className="text-lg sm:text-xl font-extrabold text-amber-300 flex items-center gap-2">
+                    <span>Frais de scolarité 100% couverts ($38 612 USD / an)</span>
+                  </p>
+                  
+                  <p className="text-sm text-slate-300 leading-relaxed font-normal">
+                    L'International Distance Learning Academy (IDLA) et WorldQuant University offrent une bourse d'excellence complète pour former l'élite financière et technologique de la sous-région Afrique Centrale (CEMAC - CEEAC - Cameroun).
+                  </p>
+                </div>
+
+                {/* Key Benefits Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                      <AwardIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Scolarité 100% Offerte</p>
+                      <p className="text-[11px] text-slate-300">Valeur de 38 612 USD/an intégralement couverte par le fonds de bourse.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                      <GraduationCapIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Cohorte Janvier 2027</p>
+                      <p className="text-[11px] text-slate-300">Cursus intensif de 2 ans (9 modules + Capstone) en finance quantitative & IA.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Niveau Requis</p>
+                      <p className="text-[11px] text-slate-300">Licence ou Bachelor minimum (Maths, Info, Gestion, Économie, Ingénierie).</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                      <GlobeIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé</p>
+                      <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary CTA Buttons */}
+                <div className="flex flex-wrap items-center gap-3.5 pt-3">
+                  <button
+                    onClick={handleApplyMScFEScholarship}
+                    className="group bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-600 hover:from-emerald-400 hover:to-sky-500 text-white font-black text-sm px-8 py-4 rounded-2xl transition-all shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center gap-3 cursor-pointer hover:scale-105"
+                  >
+                    <FileTextIcon className="w-5 h-5" />
+                    <span>{t('mscfe_ad_apply_now')}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                  </button>
+
+                  <a
+                    href="/Flyer_Bourse_MScFE_2027.pdf"
+                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                    className="bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                  >
+                    <DownloadIcon className="w-4 h-4 text-sky-300" />
+                    <span>{t('mscfe_flyer_download')}</span>
+                  </a>
+
+                  <button
+                    onClick={() => downloadMScFEPolicyPdf(language === 'en' ? 'en' : 'fr')}
+                    className="bg-bg-primary/40 hover:bg-bg-primary text-slate-200 hover:text-white font-bold text-xs px-5 py-4 rounded-2xl border border-white/10 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <DownloadIcon className="w-4 h-4 text-amber-300" />
+                    <span>Politique Officielle (PDF)</span>
+                  </button>
+                </div>
+
               </div>
             </div>
           </div>
@@ -1537,142 +1765,488 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         )}
+
+        {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
+      </div>
+    );
+  }
+
+  if (activeTab === 'bourse') {
+    return (
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+
+        {/* BREADCRUMB */}
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12 pt-6">
+          <div className="flex items-center gap-2 text-xs font-bold text-text-secondary">
+            <button onClick={() => setActiveTab('home')} className="hover:text-brand-primary cursor-pointer">{t('nav_home')}</button>
+            <span>/</span>
+            <span className="text-brand-primary">{t('nav_scholarships') || 'Bourses'}</span>
+            <span>/</span>
+            <span className="text-text-primary">MSc in Financial Engineering (MScFE)</span>
+          </div>
+        </div>
+
+        {/* HERO AD SHOWCASE */}
+        <section className="py-8 px-6 md:px-12">
+          <div className="max-w-[1440px] mx-auto bg-gradient-to-br from-slate-950 via-[#031525] to-slate-900 border border-sky-500/30 text-white rounded-3xl p-6 md:p-12 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+              
+              {/* Left Column: Visual Flyer */}
+              <div className="lg:col-span-5 flex flex-col items-center">
+                <div 
+                  onClick={() => setShowMScFEAdModal(true)}
+                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
+                >
+                  <img
+                    src="/flyer_bourse_mscfe_2027.webp"
+                    alt="Bourse d'Excellence MScFE 2027"
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600" />
+                    <span>Flyer Officiel</span>
+                  </div>
+                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 text-white">
+                      Cliquer pour agrandir
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-bold text-sky-300">
+                  <a
+                    href="/Flyer_Bourse_MScFE_2027.pdf"
+                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                  >
+                    <DownloadIcon className="w-4 h-4" />
+                    <span>{t('mscfe_flyer_download')}</span>
+                  </a>
+                  <span>•</span>
+                  <button
+                    onClick={() => setShowMScFEAdModal(true)}
+                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <FileTextIcon className="w-4 h-4" />
+                    <span>{t('mscfe_flyer_view')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Content */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
+                      <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600 animate-bounce" />
+                      <span>Campagne Officielle 2026 / 2027</span>
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Scolarité 100% Couverte
+                    </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                    Master in Financial Engineering (MScFE)
+                  </h1>
+
+                  <p className="text-lg sm:text-xl font-extrabold text-amber-300">
+                    Bourse d'Excellence Internationale • $38 612 USD pris en charge
+                  </p>
+
+                  <p className="text-sm text-slate-300 leading-relaxed font-normal">
+                    L'International Distance Learning Academy (IDLA), en partenariat avec WorldQuant University, propose une formation de standard mondial en finance quantitative, algorithmique et intelligence artificielle pour former les futurs leaders financiers d'Afrique Centrale.
+                  </p>
+                </div>
+
+                {/* 4 Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                      <AwardIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Scolarité 100% Offerte</p>
+                      <p className="text-[11px] text-slate-300">38 612 USD/an entièrement financés par la fondation de bourse.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                      <GraduationCapIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Cohorte Janvier 2027</p>
+                      <p className="text-[11px] text-slate-300">Programme intensif de 2 ans, 9 cours et projet Capstone professionnel.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Public Éligible</p>
+                      <p className="text-[11px] text-slate-300">Titulaire au minimum d'une Licence ou Bachelor (Sciences, Maths, Info, Éco, etc.).</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                      <GlobeIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé</p>
+                      <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary CTA Buttons */}
+                <div className="flex flex-wrap items-center gap-3.5 pt-3">
+                  <button
+                    onClick={handleApplyMScFEScholarship}
+                    className="group bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-600 hover:from-emerald-400 hover:to-sky-500 text-white font-black text-sm px-8 py-4 rounded-2xl transition-all shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 flex items-center gap-3 cursor-pointer hover:scale-105"
+                  >
+                    <FileTextIcon className="w-5 h-5" />
+                    <span>{t('mscfe_ad_apply_now')}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                  </button>
+
+                  <a
+                    href="/Flyer_Bourse_MScFE_2027.pdf"
+                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                    className="bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                  >
+                    <DownloadIcon className="w-4 h-4 text-sky-300" />
+                    <span>{t('mscfe_flyer_download')}</span>
+                  </a>
+
+                  <button
+                    onClick={() => downloadMScFEPolicyPdf(language === 'en' ? 'en' : 'fr')}
+                    className="bg-bg-primary/40 hover:bg-bg-primary text-slate-200 hover:text-white font-bold text-xs px-5 py-4 rounded-2xl border border-white/10 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <DownloadIcon className="w-4 h-4 text-amber-300" />
+                    <span>Politique Officielle (PDF)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SCOPE & FINANCIAL COVERAGE TABLE */}
+        <section className="py-12 px-6 md:px-12 bg-bg-secondary border-t border-border-primary">
+          <div className="max-w-[1200px] mx-auto space-y-8">
+            <div className="text-center max-w-3xl mx-auto space-y-2">
+              <span className="inline-block px-3 py-1 bg-brand-light text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">
+                Transparence Financière
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
+                Grille de Prise en Charge Officielle 2026 / 2027
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary">
+                Détail certifié des frais couverts par la bourse d'excellence et des charges administratives locales.
+              </p>
+            </div>
+
+            <div className="bg-bg-primary rounded-3xl border border-border-primary overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className="bg-bg-secondary border-b border-border-primary text-text-primary uppercase text-[11px] font-black">
+                    <tr>
+                      <th className="py-4 px-6">Poste de Charge</th>
+                      <th className="py-4 px-6">Montant Réel</th>
+                      <th className="py-4 px-6">Statut de Prise en Charge</th>
+                      <th className="py-4 px-6 text-right">Reste Étudiant</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-primary/60 font-medium">
+                    <tr className="hover:bg-bg-secondary/40 transition-colors">
+                      <td className="py-4 px-6 font-bold text-text-primary">Frais de Scolarité Académique (Tuition)</td>
+                      <td className="py-4 px-6 text-text-secondary">$38 612 USD / an</td>
+                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">100% Couvert (IDLA-WQ)</span></td>
+                      <td className="py-4 px-6 text-right font-black text-emerald-600">0 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-bg-secondary/40 transition-colors">
+                      <td className="py-4 px-6 font-bold text-text-primary">Frais d'Inscription Officielle au Programme</td>
+                      <td className="py-4 px-6 text-text-secondary">Inclus</td>
+                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">100% Couvert</span></td>
+                      <td className="py-4 px-6 text-right font-black text-emerald-600">0 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-bg-secondary/40 transition-colors">
+                      <td className="py-4 px-6 font-bold text-text-primary">Simulateurs & Laboratoires Cisco</td>
+                      <td className="py-4 px-6 text-text-secondary">Inclus</td>
+                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">100% Couvert</span></td>
+                      <td className="py-4 px-6 text-right font-black text-emerald-600">0 FCFA</td>
+                    </tr>
+                    <tr className="bg-amber-500/5 hover:bg-amber-500/10 transition-colors">
+                      <td className="py-4 px-6 font-bold text-text-primary">
+                        Frais Administratifs & Documentation Campus Yaoundé
+                        <span className="block text-[10px] text-text-secondary font-normal mt-0.5">Accès 24/7 énergie solaire, fibre dédiée, laboratoires Cisco, certification English for IT et coaching.</span>
+                      </td>
+                      <td className="py-4 px-6 font-bold text-amber-700 dark:text-amber-300">450 000 FCFA</td>
+                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">Charge Locale Obligatoire</span></td>
+                      <td className="py-4 px-6 text-right font-black text-amber-700 dark:text-amber-300">450 000 FCFA <span className="block text-[10px] text-text-secondary font-semibold">($796.26 USD TTC / an)</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CURRICULUM SYLLABUS OVERVIEW */}
+        <section className="py-16 px-6 md:px-12 bg-bg-primary">
+          <div className="max-w-[1200px] mx-auto space-y-10">
+            <div className="text-center max-w-3xl mx-auto space-y-2">
+              <span className="inline-block px-3 py-1 bg-brand-light text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">
+                Excellence Pédagogique
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary">
+                Structure du Cursus MScFE (2 Ans)
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary">
+                9 cours intensifs et un projet Capstone préparant aux standards des places financières mondiales.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="bg-bg-secondary p-5 rounded-2xl border border-border-primary space-y-3">
+                <span className="text-[10px] font-black uppercase text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded-md">Semestre 1</span>
+                <h3 className="font-extrabold text-sm text-text-primary">Fondements Quantitatifs</h3>
+                <ul className="text-xs text-text-secondary space-y-1.5 list-disc pl-4">
+                  <li>Marchés Financiers & Produits Dérivés</li>
+                  <li>Calcul Stochastique & Probabilités</li>
+                  <li>Programmation Python pour la Finance</li>
+                </ul>
+              </div>
+
+              <div className="bg-bg-secondary p-5 rounded-2xl border border-border-primary space-y-3">
+                <span className="text-[10px] font-black uppercase text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded-md">Semestre 2</span>
+                <h3 className="font-extrabold text-sm text-text-primary">Modélisation & Économétrie</h3>
+                <ul className="text-xs text-text-secondary space-y-1.5 list-disc pl-4">
+                  <li>Économétrie Financière & Séries Temporelles</li>
+                  <li>Évaluation d'Actifs & Portefeuilles</li>
+                  <li>Méthodes Numériques & Simulations</li>
+                </ul>
+              </div>
+
+              <div className="bg-bg-secondary p-5 rounded-2xl border border-border-primary space-y-3">
+                <span className="text-[10px] font-black uppercase text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded-md">Semestre 3</span>
+                <h3 className="font-extrabold text-sm text-text-primary">IA & Machine Learning</h3>
+                <ul className="text-xs text-text-secondary space-y-1.5 list-disc pl-4">
+                  <li>Machine Learning Appliqué à la Finance</li>
+                  <li>Deep Learning & NLP en Finance</li>
+                  <li>Trading Algorithmique & Microstructure</li>
+                </ul>
+              </div>
+
+              <div className="bg-bg-secondary p-5 rounded-2xl border border-border-primary space-y-3">
+                <span className="text-[10px] font-black uppercase text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded-md">Semestre 4</span>
+                <h3 className="font-extrabold text-sm text-text-primary">Gestion des Risques & Capstone</h3>
+                <ul className="text-xs text-text-secondary space-y-1.5 list-disc pl-4">
+                  <li>Gestion Avancée des Risques Financiers</li>
+                  <li>Projet Capstone de Fin d'Études</li>
+                  <li>Soutenance & Certification Internationale</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Final Call to Action */}
+            <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 rounded-3xl p-8 sm:p-12 text-center text-white space-y-5 shadow-xl">
+              <h3 className="text-2xl sm:text-3xl font-black">
+                Prêt(e) à Rejoindre l'Élite Financière Mondiale ?
+              </h3>
+              <p className="text-xs sm:text-sm text-sky-100 max-w-xl mx-auto">
+                Les places pour la cohorte Janvier 2027 sont limitées et soumises à la sélection par le jury académique. Soumettez votre dossier dès aujourd'hui.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 pt-2">
+                <button
+                  onClick={handleApplyMScFEScholarship}
+                  className="bg-white text-slate-900 hover:bg-slate-100 font-black text-sm px-8 py-4 rounded-2xl transition-all shadow-xl hover:scale-105 cursor-pointer flex items-center gap-2"
+                >
+                  <FileTextIcon className="w-5 h-5 text-brand-primary" />
+                  <span>Accéder au Formulaire de Candidature</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <a
+                  href="/Flyer_Bourse_MScFE_2027.pdf"
+                  download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                  className="bg-white/15 hover:bg-white/25 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <DownloadIcon className="w-4 h-4" />
+                  <span>Télécharger le Flyer (PDF)</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-8">
-          {/* Header Title */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary">Catalogue des Diplômes & Formations</h1>
-              <p className="text-xs text-text-secondary mt-1">Explorez l'offre académique de l'IDLA par filières, niveaux et spécialités.</p>
-            </div>
-            <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3.5 py-1.5 rounded-full shrink-0">
-              {filteredPrograms.length} programme{filteredPrograms.length > 1 ? 's' : ''} disponible{filteredPrograms.length > 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {/* Sidebar & Content Layout (Style Hugging Face) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Sidebar Left (Col 3) */}
-            <div className="lg:col-span-3 shrink-0">
-              <ProgramFilterBar
-                filters={filters}
-                onFilterChange={setFilters}
-                onReset={() => setFilters(INITIAL_FILTER_STATE)}
-                totalResults={filteredPrograms.length}
-                layout="sidebar"
-              />
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="py-10 px-6 md:px-12">
+          <div className="max-w-[1440px] mx-auto space-y-8">
+            {/* Header Title */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary">Catalogue des Diplômes & Formations</h1>
+                <p className="text-xs text-text-secondary mt-1">Explorez l'offre académique de l'IDLA par filières, niveaux et spécialités.</p>
+              </div>
+              <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3.5 py-1.5 rounded-full shrink-0">
+                {filteredPrograms.length} programme{filteredPrograms.length > 1 ? 's' : ''} disponible{filteredPrograms.length > 1 ? 's' : ''}
+              </span>
             </div>
 
-            {/* Main Content Grid (Col 9) */}
-            <div className="lg:col-span-9 space-y-6">
-              {filteredPrograms.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredPrograms.map((p) => (
-                    <div key={p.id} className="bg-bg-secondary rounded-xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
-                      <div className="h-48 w-full relative">
-                        <img 
-                          className="w-full h-full object-cover" 
-                          alt={p.title} 
-                          src={p.image}
-                        />
-                        {p.isNew && (
-                          <span className="absolute top-4 right-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                            Nouveau
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="p-6 flex flex-col flex-grow space-y-4">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>{p.category}</span>
-                          </div>
-                          <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-primary/20">
-                            {p.type}
-                          </span>
+            {/* OFFICIAL AD BANNER DISPLAY CARD */}
+            <MScFEInPageBanner
+              onApply={handleApplyMScFEScholarship}
+              onViewModal={() => setShowMScFEAdModal(true)}
+              t={t}
+            />
+
+            {/* Sidebar & Content Layout (Style Hugging Face) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Sidebar Left (Col 3) */}
+              <div className="lg:col-span-3 shrink-0">
+                <ProgramFilterBar
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  onReset={() => setFilters(INITIAL_FILTER_STATE)}
+                  totalResults={filteredPrograms.length}
+                  layout="sidebar"
+                />
+              </div>
+
+              {/* Main Content Grid (Col 9) */}
+              <div className="lg:col-span-9 space-y-6">
+                {filteredPrograms.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filteredPrograms.map((p) => (
+                      <div key={p.id} className="bg-bg-secondary rounded-xl border border-border-primary overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300 group shadow-sm">
+                        <div className="h-48 w-full relative">
+                          <img 
+                            className="w-full h-full object-cover" 
+                            alt={p.title} 
+                            src={p.image}
+                          />
+                          {p.isNew && (
+                            <span className="absolute top-4 right-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                              Nouveau
+                            </span>
+                          )}
                         </div>
-
-                        <h3 className="font-bold text-base text-text-primary line-clamp-2">{p.title}</h3>
                         
-                        <p className="text-xs text-text-secondary leading-relaxed flex-grow line-clamp-3">
-                          {p.description}
-                        </p>
-
-                        <div className="flex flex-col gap-3 pt-4 border-t border-border-primary/50 mt-auto">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
-                              <Clock className="w-3.5 h-3.5 text-brand-primary" />
-                              <span>{p.duration}</span>
+                        <div className="p-6 flex flex-col flex-grow space-y-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-brand-primary font-bold text-xs">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>{p.category}</span>
                             </div>
-                            {p.price && (
-                              <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
-                                {p.price}
-                              </div>
-                            )}
+                            <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-primary/20">
+                              {p.type}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            {p.title?.includes('MScFE') && (
+
+                          <h3 className="font-bold text-base text-text-primary line-clamp-2">{p.title}</h3>
+                          
+                          <p className="text-xs text-text-secondary leading-relaxed flex-grow line-clamp-3">
+                            {p.description}
+                          </p>
+
+                          <div className="flex flex-col gap-3 pt-4 border-t border-border-primary/50 mt-auto">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-1 text-text-secondary text-xs font-semibold">
+                                <Clock className="w-3.5 h-3.5 text-brand-primary" />
+                                <span>{p.duration}</span>
+                              </div>
+                              {p.price && (
+                                <div className="text-white text-[11px] leading-tight font-black bg-gradient-to-r from-brand-primary to-emerald-500 px-3 py-2 rounded-md shadow-md w-full">
+                                  {p.price}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              {p.title?.includes('MScFE') && (
+                                <button 
+                                  onClick={() => handleOpenFormModal('form-mscfe-scholarship-2026')}
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-brand-primary hover:bg-brand-hover px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                                >
+                                  <FileTextIcon className="w-3.5 h-3.5" />
+                                  <span>{t('mscfe_scholarship_questionnaire')}</span>
+                                </button>
+                              )}
                               <button 
-                                onClick={() => handleOpenFormModal('form-mscfe-scholarship-2026')}
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-brand-primary hover:bg-brand-hover px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer"
+                                onClick={() => onApplyNow(p.title)}
+                                className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer ml-auto"
                               >
-                                <FileTextIcon className="w-3.5 h-3.5" />
-                                <span>{t('mscfe_scholarship_questionnaire')}</span>
+                                S'inscrire
+                                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                               </button>
-                            )}
-                            <button 
-                              onClick={() => onApplyNow(p.title)}
-                              className="flex items-center gap-1 text-xs font-bold text-brand-primary group-hover:underline cursor-pointer ml-auto"
-                            >
-                              S'inscrire
-                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-bg-secondary p-12 text-center rounded-2xl border border-border-primary space-y-3">
-                  <Search className="w-12 h-12 text-text-secondary/40 mx-auto" />
-                  <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond aux filtres sélectionnés.</p>
-                  <button 
-                    onClick={() => setFilters(INITIAL_FILTER_STATE)}
-                    className="text-brand-primary text-xs font-bold hover:underline cursor-pointer"
-                  >
-                    Réinitialiser tous les filtres
-                  </button>
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-bg-secondary p-12 text-center rounded-2xl border border-border-primary space-y-3">
+                    <Search className="w-12 h-12 text-text-secondary/40 mx-auto" />
+                    <p className="text-text-secondary font-semibold text-sm">Aucun programme ne correspond aux filtres sélectionnés.</p>
+                    <button 
+                      onClick={() => setFilters(INITIAL_FILTER_STATE)}
+                      className="text-brand-primary text-xs font-bold hover:underline cursor-pointer"
+                    >
+                      Réinitialiser tous les filtres
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
       </div>
     );
   }
 
+
   if (activeTab === 'actualites') {
     return (
-      <>
-        <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-8">
-          {/* Header */}
-          <div className="border-b border-border-primary/50 pb-6 space-y-2">
-            <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
-              {t('news_section_title')}
-            </h1>
-            <p className="text-text-secondary text-xs md:text-sm max-w-3xl">
-              {t('news_section_subtitle')}
-            </p>
-          </div>
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="py-10 px-6 md:px-12">
+          <div className="max-w-[1440px] mx-auto space-y-8">
+            {/* Header */}
+            <div className="border-b border-border-primary/50 pb-6 space-y-2">
+              <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
+                {t('news_section_title')}
+              </h1>
+              <p className="text-text-secondary text-xs md:text-sm max-w-3xl">
+                {t('news_section_subtitle')}
+              </p>
+            </div>
+
+            {/* OFFICIAL AD BANNER DISPLAY CARD */}
+            <MScFEInPageBanner
+              onApply={handleApplyMScFEScholarship}
+              onViewModal={() => setShowMScFEAdModal(true)}
+              t={t}
+            />
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Sidebar filter de côté (Même logique qu'avant) */}
@@ -2385,14 +2959,20 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         )}
-      </>
+        {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
+      </div>
     );
   }
 
+
+
   if (activeTab === 'temoignages') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
-        <div className="max-w-[1440px] mx-auto space-y-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen">
+        {renderTopAdBanner()}
+        <div className="py-12 px-6 md:px-12">
+          <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
@@ -2630,6 +3210,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         )}
+        {renderFloatingAdWidget()}
+        {renderMScFEAdModal()}
+        </div>
       </div>
     );
   }

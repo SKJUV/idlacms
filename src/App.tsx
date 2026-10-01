@@ -20,6 +20,7 @@ const AmbassadorForm = lazy(() => import('./components/AmbassadorForm'));
 
 export type ActiveTab =
   | 'home'
+  | 'bourse'
   | 'programmes'
   | 'actualites'
   | 'temoignages'
@@ -59,7 +60,7 @@ export type ActiveTab =
 
 export type Role = 'guest' | 'student' | 'admin' | 'teacher';
 
-const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
+const PUBLIC_TABS: ActiveTab[] = ['home', 'bourse', 'programmes', 'actualites', 'temoignages'];
 const STUDENT_TABS: ActiveTab[] = [
   'student-login', 'student-dashboard', 'student-schedule', 'student-chat', 'student-programs', 'student-catalog',
   'student-profile', 'student-settings',
@@ -74,6 +75,7 @@ const TEACHER_TABS: ActiveTab[] = [
 ];
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
+  bourse: '/bourse',
   programmes: '/programmes',
   actualites: '/actualites',
   temoignages: '/temoignages',

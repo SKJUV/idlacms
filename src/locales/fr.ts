@@ -1,6 +1,7 @@
 export const fr = {
   // Navigation & Header
   nav_home: "Accueil",
+  nav_scholarships: "Bourses",
   nav_programs: "Filières & Cursus",
   nav_news: "Actualités & Concours",
   nav_testimonials: "Réussites & Alumni",
@@ -185,6 +186,18 @@ export const fr = {
   mscfe_access_questionnaire: "→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE",
   mscfe_form_title: "Questionnaire Officiel de Qualification Bourse MScFE",
   mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nBourse d'Excellence d'une valeur de 38 612 USD/an (100% couverte par Quant Foundation / IDLA-WQ).\nFrais administratifs et de documentation obligatoires : 450 000 FCFA ($796.26 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).",
+  mscfe_flyer_download: "Télécharger le Flyer Officiel (PDF)",
+  mscfe_flyer_view: "Voir le Flyer Publicitaire",
+  mscfe_ad_banner_badge: "Bourse d'Excellence 2027",
+  mscfe_ad_banner_title: "Master en Sciences d'Ingénierie Financière (MScFE)",
+  mscfe_ad_banner_highlight: "Frais de scolarité 100% couverts ($38 612 USD)",
+  mscfe_ad_banner_subtitle: "Sous-région Afrique Centrale (CEMAC - CEEAC - Cameroun) • Cohorte Janvier 2027",
+  mscfe_ad_apply_now: "Postuler à la Bourse Dès Maintenant",
+  mscfe_ad_modal_tag: "Campagne Officielle • Cohorte Janvier 2027",
+  mscfe_ad_modal_title: "Bourse d'Étude Internationale MScFE",
+  mscfe_ad_modal_desc: "Une formation d'élite combinant finance quantitative, intelligence artificielle, modélisation mathématique et programmation de pointe. Ouverte aux titulaires au minimum d'une Licence ou d'un Bachelor.",
+  mscfe_ad_dont_show_again: "Ne plus afficher durant cette session",
+  mscfe_ad_close: "Fermer l'annonce",
 
   // FormPage Specifics
   form_select_placeholder: "-- Sélectionnez une option --",

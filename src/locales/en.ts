@@ -3,6 +3,7 @@ import { TranslationKeys } from './fr';
 export const en: Record<TranslationKeys, string> = {
   // Navigation & Header
   nav_home: "Home",
+  nav_scholarships: "Scholarships",
   nav_programs: "Degree Programs",
   nav_news: "News & Admissions",
   nav_testimonials: "Alumni & Success Stories",
@@ -187,6 +188,18 @@ export const en: Record<TranslationKeys, string> = {
   mscfe_access_questionnaire: "→ Access the Official MScFE Scholarship Qualification Questionnaire directly",
   mscfe_form_title: "Official MScFE Scholarship Qualification Questionnaire",
   mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory administrative and documentation charges/fees: $796.26 USD incl. tax (450,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
+  mscfe_flyer_download: "Download Official Flyer (PDF)",
+  mscfe_flyer_view: "View Scholarship Flyer",
+  mscfe_ad_banner_badge: "2027 Excellence Scholarship",
+  mscfe_ad_banner_title: "Master of Science in Financial Engineering (MScFE)",
+  mscfe_ad_banner_highlight: "100% Tuition Covered ($38,612 USD)",
+  mscfe_ad_banner_subtitle: "Central Africa Sub-region (CEMAC - ECCAS - Cameroon) • January 2027 Cohort",
+  mscfe_ad_apply_now: "Apply for Scholarship Now",
+  mscfe_ad_modal_tag: "Official Intake • January 2027 Cohort",
+  mscfe_ad_modal_title: "International MScFE Scholarship Award",
+  mscfe_ad_modal_desc: "A world-class elite curriculum combining quantitative finance, AI, financial engineering and advanced data analytics. Open to candidates holding at least a Bachelor's degree or equivalent.",
+  mscfe_ad_dont_show_again: "Don't show again this session",
+  mscfe_ad_close: "Close announcement",
 
   // FormPage Specifics
   form_select_placeholder: "-- Select an option --",

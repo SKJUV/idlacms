@@ -28,17 +28,18 @@ export default function Header({
   setTheme,
 }: HeaderProps) {
   const { t } = useLanguage();
-  const isPublicTab = ['home', 'programmes', 'actualites', 'temoignages', 'candidature', 'success'].includes(activeTab);
+  const isPublicTab = ['home', 'bourse', 'programmes', 'actualites', 'temoignages', 'candidature', 'success'].includes(activeTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!isPublicTab) return null;
 
   const navItems = [
     { key: 'home', label: t('nav_home') },
+    { key: 'bourse', label: t('nav_scholarships') || 'Bourses', badge: '100%' },
     { key: 'programmes', label: t('nav_programs') },
     { key: 'actualites', label: t('nav_news') },
     { key: 'temoignages', label: t('nav_testimonials') },
-  ] as const;
+  ];
 
   return (
     <header className="bg-bg-secondary text-text-primary sticky top-0 left-0 w-full z-50 border-b border-border-primary shadow-sm backdrop-blur-md bg-opacity-95">
@@ -67,13 +68,18 @@ export default function Header({
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key as ActiveTab)}
-              className={`font-sans text-sm font-semibold pb-1 border-b-2 transition-all cursor-pointer ${
+              className={`font-sans text-sm font-semibold pb-1 border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                 activeTab === item.key
-                  ? 'border-brand-primary text-brand-primary'
+                  ? 'border-brand-primary text-brand-primary font-bold'
                   : 'border-transparent text-text-secondary hover:text-brand-primary'
               }`}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.badge && (
+                <span className="px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  {item.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -165,13 +171,18 @@ export default function Header({
                     setActiveTab(item.key as ActiveTab);
                     setMobileMenuOpen(false);
                   }}
-                  className={`rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition-all cursor-pointer ${
+                  className={`rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition-all cursor-pointer flex items-center justify-between ${
                     activeTab === item.key
                       ? 'bg-brand-light text-brand-primary font-bold'
                       : 'text-text-secondary hover:bg-bg-primary hover:text-text-primary'
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               ))}
 
