@@ -32,12 +32,7 @@ import ProgramFilterBar, { FilterState, INITIAL_FILTER_STATE, applyProgramFilter
 import { useLanguage } from '../context/LanguageContext';
 import { downloadMScFEPolicyPdf } from '../lib/scholarshipPolicyPdf';
 import { Gift, Share2, Users, Star, Shield, Sparkles, ExternalLink, Calendar, MapPin } from 'lucide-react';
-import { 
-  MScFEInPageBanner, 
-  MScFETopBarBanner, 
-  MScFEFloatingAdWidget, 
-  MScFEAdModal 
-} from './MScFEAdBanner';
+import { MScFEFloatingAdWidget } from './MScFEAdBanner';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -722,71 +717,21 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     }
   }, []);
 
-  // ── MScFE SCHOLARSHIP AD BANNER & POPUP MODAL STATES ──
-  const [showMScFEAdModal, setShowMScFEAdModal] = useState(false);
-  const [dismissedMScFETopBanner, setDismissedMScFETopBanner] = useState(false);
-  const [dontShowMScFEAgain, setDontShowMScFEAgain] = useState(false);
-
-  useEffect(() => {
-    // Automatically trigger promotional popup after 1.5s if not previously dismissed in this session
-    try {
-      const isPermanentlyDismissed = localStorage.getItem('idla_mscfe_ad_dismissed_permanent');
-      const isSessionDismissed = sessionStorage.getItem('idla_mscfe_ad_dismissed');
-      if (!isPermanentlyDismissed && !isSessionDismissed) {
-        const timer = setTimeout(() => {
-          setShowMScFEAdModal(true);
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
-    } catch (e) {}
-  }, []);
-
-  const handleCloseMScFEAdModal = () => {
-    setShowMScFEAdModal(false);
-    try {
-      sessionStorage.setItem('idla_mscfe_ad_dismissed', 'true');
-      if (dontShowMScFEAgain) {
-        localStorage.setItem('idla_mscfe_ad_dismissed_permanent', 'true');
-      }
-    } catch (e) {}
+  // ── REDIRECTION DIRECTE VERS LA BOURSE ──
+  const handleGoToBourse = () => {
+    setActiveTab('bourse');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleApplyMScFEScholarship = () => {
-    setShowMScFEAdModal(false);
     handleOpenFormModal('form-mscfe-scholarship-2026');
   };
 
-  const renderTopAdBanner = () => {
-    if (dismissedMScFETopBanner) return null;
-    return (
-      <MScFETopBarBanner
-        onApply={handleApplyMScFEScholarship}
-        onViewModal={() => setShowMScFEAdModal(true)}
-        onDismiss={() => setDismissedMScFETopBanner(true)}
-        t={t}
-      />
-    );
-  };
-
   const renderFloatingAdWidget = () => {
+    if (activeTab === 'bourse') return null;
     return (
       <MScFEFloatingAdWidget
-        onApply={handleApplyMScFEScholarship}
-        onViewModal={() => setShowMScFEAdModal(true)}
-        t={t}
-      />
-    );
-  };
-
-  const renderMScFEAdModal = () => {
-    return (
-      <MScFEAdModal
-        isOpen={showMScFEAdModal}
-        onClose={handleCloseMScFEAdModal}
-        onApply={handleApplyMScFEScholarship}
-        onDownloadPolicy={downloadMScFEPolicyPdf}
-        dontShowAgain={dontShowMScFEAgain}
-        setDontShowAgain={setDontShowMScFEAgain}
+        onGoToBourse={handleGoToBourse}
         t={t}
       />
     );
@@ -1085,8 +1030,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   if (activeTab === 'home') {
     return (
       <div className="bg-bg-primary text-text-primary">
-        {renderTopAdBanner()}
-
         {/* Hero Section */}
         <section className="relative min-h-[700px] flex items-center overflow-hidden border-b border-border-primary px-6 md:px-16 py-16">
           {/* Background Image */}
@@ -1171,10 +1114,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           <div className="max-w-[1440px] mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               
-              {/* Left Column: Visual Flyer Presentation */}
+              {/* Left Column: Visual Presentation */}
               <div className="lg:col-span-5 flex flex-col items-center">
                 <div 
-                  onClick={() => setShowMScFEAdModal(true)}
+                  onClick={handleGoToBourse}
                   className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
                 >
                   <img
@@ -1184,32 +1127,31 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   />
                   <div className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
                     <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600" />
-                    <span>Flyer Officiel</span>
+                    <span>Bourse d'Excellence</span>
                   </div>
                   <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center gap-2">
                     <span className="text-xs font-black uppercase tracking-wider bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 text-white">
-                      Cliquer pour agrandir
+                      Découvrir la Bourse
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-bold text-sky-300">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-sky-300">
+                  <button
+                    onClick={handleGoToBourse}
+                    className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold px-3.5 py-1.5 rounded-xl transition-all shadow cursor-pointer text-xs"
+                  >
+                    <span>Découvrir la Bourse</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
-                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
+                    download="IDLA_Document_Bourse_MScFE_2027.pdf"
                     className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
                   >
                     <DownloadIcon className="w-4 h-4" />
-                    <span>{t('mscfe_flyer_download')}</span>
+                    <span>Document PDF</span>
                   </a>
-                  <span>•</span>
-                  <button
-                    onClick={() => setShowMScFEAdModal(true)}
-                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <FileTextIcon className="w-4 h-4" />
-                    <span>{t('mscfe_flyer_view')}</span>
-                  </button>
                 </div>
               </div>
 
@@ -1767,7 +1709,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
 
         {renderFloatingAdWidget()}
-        {renderMScFEAdModal()}
       </div>
     );
   }
@@ -1775,7 +1716,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   if (activeTab === 'bourse') {
     return (
       <div className="bg-bg-primary text-text-primary min-h-screen">
-        {renderTopAdBanner()}
 
         {/* BREADCRUMB */}
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 pt-6">
@@ -1796,11 +1736,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
               
-              {/* Left Column: Visual Flyer */}
+              {/* Left Column: Visual Presentation */}
               <div className="lg:col-span-5 flex flex-col items-center">
                 <div 
-                  onClick={() => setShowMScFEAdModal(true)}
+                  onClick={() => window.open('/Flyer_Bourse_MScFE_2027.pdf', '_blank')}
                   className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
+                  title="Consulter le document en plein écran"
                 >
                   <img
                     src="/flyer_bourse_mscfe_2027.webp"
@@ -1809,32 +1750,24 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   />
                   <div className="absolute top-3 left-3 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
                     <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600" />
-                    <span>Flyer Officiel</span>
+                    <span>Bourse d'Excellence</span>
                   </div>
                   <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center gap-2">
                     <span className="text-xs font-black uppercase tracking-wider bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 text-white">
-                      Cliquer pour agrandir
+                      Consulter en Plein Écran (PDF)
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-bold text-sky-300">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-sky-300">
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
-                    download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
-                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                    download="IDLA_Document_Bourse_MScFE_2027.pdf"
+                    className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/15 transition-all shadow-sm"
                   >
-                    <DownloadIcon className="w-4 h-4" />
+                    <DownloadIcon className="w-4 h-4 text-sky-300" />
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
-                  <span>•</span>
-                  <button
-                    onClick={() => setShowMScFEAdModal(true)}
-                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <FileTextIcon className="w-4 h-4" />
-                    <span>{t('mscfe_flyer_view')}</span>
-                  </button>
                 </div>
               </div>
 
@@ -2081,45 +2014,33 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   className="bg-white/15 hover:bg-white/25 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <DownloadIcon className="w-4 h-4" />
-                  <span>Télécharger le Flyer (PDF)</span>
+                  <span>Télécharger le Document Officiel (PDF)</span>
                 </a>
               </div>
             </div>
           </div>
         </section>
-
-        {renderFloatingAdWidget()}
-        {renderMScFEAdModal()}
       </div>
     );
   }
 
   if (activeTab === 'programmes') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen">
-        {renderTopAdBanner()}
-        <div className="py-10 px-6 md:px-12">
-          <div className="max-w-[1440px] mx-auto space-y-8">
-            {/* Header Title */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary">Catalogue des Diplômes & Formations</h1>
-                <p className="text-xs text-text-secondary mt-1">Explorez l'offre académique de l'IDLA par filières, niveaux et spécialités.</p>
-              </div>
-              <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3.5 py-1.5 rounded-full shrink-0">
-                {filteredPrograms.length} programme{filteredPrograms.length > 1 ? 's' : ''} disponible{filteredPrograms.length > 1 ? 's' : ''}
-              </span>
+      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
+        <div className="max-w-[1440px] mx-auto space-y-8">
+          {/* Header Title */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border-primary/50 pb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary">Catalogue des Diplômes & Formations</h1>
+              <p className="text-xs text-text-secondary mt-1">Explorez l'offre académique de l'IDLA par filières, niveaux et spécialités.</p>
             </div>
+            <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-3.5 py-1.5 rounded-full shrink-0">
+              {filteredPrograms.length} programme{filteredPrograms.length > 1 ? 's' : ''} disponible{filteredPrograms.length > 1 ? 's' : ''}
+            </span>
+          </div>
 
-            {/* OFFICIAL AD BANNER DISPLAY CARD */}
-            <MScFEInPageBanner
-              onApply={handleApplyMScFEScholarship}
-              onViewModal={() => setShowMScFEAdModal(true)}
-              t={t}
-            />
-
-            {/* Sidebar & Content Layout (Style Hugging Face) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Sidebar & Content Layout (Style Hugging Face) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Sidebar Left (Col 3) */}
               <div className="lg:col-span-3 shrink-0">
                 <ProgramFilterBar
@@ -2217,36 +2138,26 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               </div>
             </div>
           </div>
-        </div>
         {renderFloatingAdWidget()}
-        {renderMScFEAdModal()}
       </div>
     );
   }
 
 
+
   if (activeTab === 'actualites') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen">
-        {renderTopAdBanner()}
-        <div className="py-10 px-6 md:px-12">
-          <div className="max-w-[1440px] mx-auto space-y-8">
-            {/* Header */}
-            <div className="border-b border-border-primary/50 pb-6 space-y-2">
-              <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
-                {t('news_section_title')}
-              </h1>
-              <p className="text-text-secondary text-xs md:text-sm max-w-3xl">
-                {t('news_section_subtitle')}
-              </p>
-            </div>
-
-            {/* OFFICIAL AD BANNER DISPLAY CARD */}
-            <MScFEInPageBanner
-              onApply={handleApplyMScFEScholarship}
-              onViewModal={() => setShowMScFEAdModal(true)}
-              t={t}
-            />
+      <div className="bg-bg-primary text-text-primary min-h-screen py-10 px-6 md:px-12">
+        <div className="max-w-[1440px] mx-auto space-y-8">
+          {/* Header */}
+          <div className="border-b border-border-primary/50 pb-6 space-y-2">
+            <h1 className="font-sans font-bold text-3xl text-text-primary flex items-center gap-2">
+              {t('news_section_title')}
+            </h1>
+            <p className="text-text-secondary text-xs md:text-sm max-w-3xl">
+              {t('news_section_subtitle')}
+            </p>
+          </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Sidebar filter de côté (Même logique qu'avant) */}
@@ -2448,7 +2359,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
             </div>
           </div>
         </div>
-      </div>
 
         {/* ── Modal article plein écran avec fond flouté ── */}
         {selectedArticle && (
@@ -2960,7 +2870,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
         {renderFloatingAdWidget()}
-        {renderMScFEAdModal()}
       </div>
     );
   }
@@ -2969,10 +2878,8 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
   if (activeTab === 'temoignages') {
     return (
-      <div className="bg-bg-primary text-text-primary min-h-screen">
-        {renderTopAdBanner()}
-        <div className="py-12 px-6 md:px-12">
-          <div className="max-w-[1440px] mx-auto space-y-12">
+      <div className="bg-bg-primary text-text-primary min-h-screen py-12 px-6 md:px-12">
+        <div className="max-w-[1440px] mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-2">
@@ -3211,8 +3118,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         )}
         {renderFloatingAdWidget()}
-        {renderMScFEAdModal()}
-        </div>
       </div>
     );
   }

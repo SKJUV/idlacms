@@ -43,7 +43,7 @@ export default function Header({
 
   return (
     <header className="bg-bg-secondary text-text-primary sticky top-0 left-0 w-full z-50 border-b border-border-primary shadow-sm backdrop-blur-md bg-opacity-95">
-      <nav className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3 w-full max-w-[1440px] mx-auto transition-all duration-200">
+      <nav className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3 w-full max-w-[1440px] mx-auto flex-nowrap">
         
         {/* LOGO & BRAND */}
         <button
@@ -63,12 +63,12 @@ export default function Header({
         </button>
 
         {/* DESKTOP NAVIGATION LINKS */}
-        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-7">
           {navItems.map((item) => (
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key as ActiveTab)}
-              className={`font-sans text-sm font-semibold pb-1 border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              className={`font-sans text-xs lg:text-[13px] xl:text-sm font-semibold pb-1 border-b-2 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === item.key
                   ? 'border-brand-primary text-brand-primary font-bold'
                   : 'border-transparent text-text-secondary hover:text-brand-primary'
@@ -85,7 +85,7 @@ export default function Header({
         </div>
 
         {/* RIGHT CONTROLS & ACTIONS */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-nowrap">
           {/* Native Language Switcher FR / EN */}
           <LanguageSwitcher />
 
@@ -110,7 +110,7 @@ export default function Header({
                   onStudentLoginClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-brand-primary px-2.5 py-1.5 transition-colors cursor-pointer shrink-0"
+                className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-brand-primary px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
                 <span className="hidden md:inline">{t('nav_student_space')}</span>
@@ -120,7 +120,7 @@ export default function Header({
                   onLogoutClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:inline-flex bg-red-50 hover:bg-red-100 text-red-600 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0"
+                className="hidden sm:inline-flex bg-red-50 hover:bg-red-100 text-red-600 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
               >
                 {t('nav_logout')}
               </button>
@@ -132,7 +132,7 @@ export default function Header({
                   onStudentLoginClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-brand-primary px-2.5 py-1.5 transition-colors cursor-pointer shrink-0"
+                className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-brand-primary px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               >
                 <GraduationCapIcon className="w-4 h-4 text-brand-primary" />
                 <span className="hidden md:inline">{t('nav_login')}</span>
@@ -142,17 +142,17 @@ export default function Header({
                   onSignUpClick();
                   setMobileMenuOpen(false);
                 }}
-                className="hidden sm:inline-flex bg-brand-primary hover:bg-brand-hover text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer shrink-0"
+                className="hidden sm:inline-flex bg-brand-primary hover:bg-brand-hover text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
               >
                 {t('nav_apply')}
               </button>
             </>
           )}
 
-          {/* 3-BARS HAMBURGER MENU BUTTON (ALWAYS VISIBLE & FRAMED ON MOBILE) */}
+          {/* 3-BARS HAMBURGER MENU BUTTON (ALWAYS VISIBLE & FRAMED ON MOBILE / TABLET) */}
           <button
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-bg-primary border border-border-primary text-text-primary hover:bg-border-primary/50 transition-all md:hidden shrink-0 shadow-xs cursor-pointer"
+            className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-bg-primary border border-border-primary text-text-primary hover:bg-border-primary/50 transition-all lg:hidden shrink-0 shadow-xs cursor-pointer"
             aria-label="Ouvrir le menu"
           >
             {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
@@ -161,7 +161,7 @@ export default function Header({
 
         {/* MOBILE SLIDE-DOWN DRAWER MENU */}
         {mobileMenuOpen && (
-          <div className="w-full border-t border-border-primary pt-3 pb-2 mt-2 md:hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="w-full border-t border-border-primary pt-3 pb-2 mt-2 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex flex-col gap-2">
               {/* Navigation Links */}
               {navItems.map((item) => (
