@@ -43,8 +43,8 @@ export default function Header({
 
   return (
     <header className="bg-bg-secondary text-text-primary sticky top-0 left-0 w-full z-50 border-b border-border-primary shadow-sm backdrop-blur-md bg-opacity-95">
-      <nav className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3 w-full max-w-[1440px] mx-auto flex-nowrap">
-        
+      <nav className="w-full max-w-[1440px] mx-auto">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3">
         {/* LOGO & BRAND */}
         <button
           onClick={() => {
@@ -153,15 +153,24 @@ export default function Header({
           <button
             onClick={() => setMobileMenuOpen((value) => !value)}
             className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-bg-primary border border-border-primary text-text-primary hover:bg-border-primary/50 transition-all lg:hidden shrink-0 shadow-xs cursor-pointer"
-            aria-label="Ouvrir le menu"
+            aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
           </button>
         </div>
+        </div>
 
-        {/* MOBILE SLIDE-DOWN DRAWER MENU */}
+        {/* MOBILE FULL-WIDTH MENU */}
         {mobileMenuOpen && (
-          <div className="w-full border-t border-border-primary pt-3 pb-2 mt-2 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <>
+          <button
+            type="button"
+            className="fixed inset-0 top-[57px] bg-black/40 z-40 lg:hidden cursor-pointer"
+            aria-label="Fermer le menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="relative z-50 w-full border-t border-border-primary px-3 sm:px-6 pt-3 pb-4 bg-bg-secondary lg:hidden">
             <div className="flex flex-col gap-2">
               {/* Navigation Links */}
               {navItems.map((item) => (
@@ -240,6 +249,7 @@ export default function Header({
               </div>
             </div>
           </div>
+          </>
         )}
       </nav>
     </header>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Flame, 
   Sparkles, 
@@ -9,6 +9,9 @@ import {
   ChevronUp, 
   Globe
 } from 'lucide-react';
+
+const isMobileViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
 
 interface TopBarBannerProps {
   onApply: () => void;
@@ -29,9 +32,9 @@ export const MScFETopBarBanner: React.FC<TopBarBannerProps> = ({
       aria-label="Bourse d'Excellence MScFE" 
       className="bg-gradient-to-r from-sky-700 via-blue-700 to-indigo-800 text-white py-2 px-3 sm:px-6 shadow-md border-b border-sky-400/30 sticky top-[57px] sm:top-[65px] z-40 backdrop-blur-md bg-opacity-95"
     >
-      <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-2.5 text-xs">
+      <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
         {/* Left: Badge & Description */}
-        <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider bg-amber-400 text-slate-950 shadow-sm shrink-0 animate-pulse">
             <Flame className="w-3 h-3 text-red-600 fill-red-600" />
             Bourse d'Excellence 2027
@@ -57,7 +60,8 @@ export const MScFETopBarBanner: React.FC<TopBarBannerProps> = ({
             className="bg-white/15 hover:bg-white/25 text-white font-bold px-3 py-1.5 rounded-xl transition-all text-xs flex items-center gap-1.5 cursor-pointer border border-white/20"
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Voir le Flyer Publicitaire</span>
+            <span className="hidden sm:inline">Voir le Flyer Publicitaire</span>
+            <span className="sm:hidden">Flyer</span>
           </button>
           <button
             onClick={onDismiss}
@@ -85,8 +89,23 @@ export const MScFEFloatingAdWidget: React.FC<FloatingAdWidgetProps> = ({
   onGoToBourse,
   onViewModal,
 }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(isMobileViewport);
   const [isDismissed, setIsDismissed] = useState(false);
+
+  useEffect(() => {
+    const collapseIfOther = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== 'bourse' && isMobileViewport()) {
+        setIsMinimized(true);
+      }
+    };
+    window.addEventListener('idla:expand-ad', collapseIfOther);
+    return () => window.removeEventListener('idla:expand-ad', collapseIfOther);
+  }, []);
+
+  const expand = () => {
+    setIsMinimized(false);
+    window.dispatchEvent(new CustomEvent('idla:expand-ad', { detail: 'bourse' }));
+  };
 
   if (isDismissed) return null;
 
@@ -94,18 +113,21 @@ export const MScFEFloatingAdWidget: React.FC<FloatingAdWidgetProps> = ({
     return (
       <aside 
         aria-label="Annonce Bourse d'Excellence"
-        className="fixed bottom-5 right-4 sm:right-6 z-40 animate-fade-in"
+        className="fixed bottom-3 right-2 sm:bottom-5 sm:right-6 z-40 animate-fade-in"
       >
         <button
-          onClick={() => setIsMinimized(false)}
-          className="group flex items-center gap-2 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white px-3.5 py-2 rounded-full shadow-2xl border border-sky-400/50 hover:scale-105 transition-all cursor-pointer"
+          onClick={expand}
+          className="group flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full shadow-2xl border border-sky-400/50 hover:scale-105 transition-all cursor-pointer"
           title="Afficher l'annonce de la bourse"
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
           </span>
-          <span className="text-xs font-black tracking-tight">🎓 Bourse 100% MScFE</span>
+          <span className="text-[11px] sm:text-xs font-black tracking-tight">
+            <span className="sm:hidden">Bourse</span>
+            <span className="hidden sm:inline">🎓 Bourse 100% MScFE</span>
+          </span>
           <ChevronUp className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
       </aside>
@@ -115,9 +137,9 @@ export const MScFEFloatingAdWidget: React.FC<FloatingAdWidgetProps> = ({
   return (
     <aside 
       aria-label="Bourse d'Excellence MScFE"
-      className="fixed bottom-5 right-4 sm:right-6 z-40 max-w-[210px] sm:max-w-[240px] w-full animate-fade-in"
+      className="fixed bottom-3 right-2 sm:bottom-5 sm:right-6 z-40 w-[min(46vw,168px)] sm:w-full sm:max-w-[210px] lg:max-w-[240px] animate-fade-in"
     >
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-[#031b33] to-slate-900 text-white border border-sky-400/40 shadow-[0_12px_40px_rgba(2,132,199,0.35)] p-3 space-y-2.5 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-[#031b33] to-slate-900 text-white border border-sky-400/40 shadow-[0_12px_40px_rgba(2,132,199,0.35)] p-2 sm:p-3 space-y-1.5 sm:space-y-2.5 backdrop-blur-md">
         {/* Subtle Ambient Glow */}
         <div className="absolute -top-12 -right-12 w-28 h-28 bg-sky-500/20 rounded-full blur-xl pointer-events-none" />
 
@@ -154,7 +176,7 @@ export const MScFEFloatingAdWidget: React.FC<FloatingAdWidgetProps> = ({
           <img
             src="/flyer_bourse_mscfe_2027.webp"
             alt="Bourse d'Excellence MScFE"
-            className="w-full h-auto object-cover max-h-[290px]"
+            className="w-full h-auto object-cover max-h-[120px] sm:max-h-[220px] lg:max-h-[290px]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-2.5">
             <span className="text-[11px] font-extrabold text-white bg-sky-600/90 backdrop-blur-xs px-3 py-1 rounded-lg border border-sky-400/40">
@@ -166,7 +188,7 @@ export const MScFEFloatingAdWidget: React.FC<FloatingAdWidgetProps> = ({
         {/* Single Action Button */}
         <button
           onClick={onGoToBourse}
-          className="w-full group bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-600 hover:from-emerald-400 hover:to-sky-500 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer hover:shadow-emerald-500/25"
+          className="w-full group bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-600 hover:from-emerald-400 hover:to-sky-500 text-white font-extrabold text-[11px] sm:text-xs py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer hover:shadow-emerald-500/25"
         >
           <span>Découvrir la Bourse</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
