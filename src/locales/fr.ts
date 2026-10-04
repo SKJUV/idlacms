@@ -185,7 +185,7 @@ export const fr = {
   mscfe_policy_btn_en: "Policy (PDF EN)",
   mscfe_access_questionnaire: "→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE",
   mscfe_form_title: "Questionnaire Officiel de Qualification Bourse MScFE",
-  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nBourse d'Excellence d'une valeur de 38 612 USD/an (100% couverte par Quant Foundation / IDLA-WQ).\nFrais administratifs et de documentation obligatoires : 450 000 FCFA ($796.26 USD TTC) pour l'accès 24/7 au campus de Yaoundé (énergie solaire, fibre optique, Cisco labs, English for IT, coaching).",
+  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)",
   mscfe_flyer_download: "Télécharger le Document Officiel (PDF)",
   mscfe_flyer_view: "Voir le Flyer Publicitaire",
   mscfe_ad_banner_badge: "Bourse d'Excellence 2027",

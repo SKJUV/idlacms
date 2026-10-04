@@ -38,9 +38,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   const formTitle = (language === 'en' && (form?.title_en || (isMScFE && t('mscfe_form_title'))))
     ? (form?.title_en || t('mscfe_form_title'))
     : form?.title || '';
-  const formDescription = (language === 'en' && (form?.description_en || (isMScFE && t('mscfe_form_desc'))))
-    ? (form?.description_en || t('mscfe_form_desc'))
-    : form?.description || '';
+  const formDescription = isMScFE
+    ? t('mscfe_form_desc')
+    : (language === 'en' && form?.description_en)
+      ? form.description_en
+      : form?.description || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formValues, setFormValues] = useState<Record<string, any>>({});

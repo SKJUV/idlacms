@@ -187,7 +187,7 @@ export const en: Record<TranslationKeys, string> = {
   mscfe_policy_btn_en: "Policy (PDF EN)",
   mscfe_access_questionnaire: "→ Access the Official MScFE Scholarship Qualification Questionnaire directly",
   mscfe_form_title: "Official MScFE Scholarship Qualification Questionnaire",
-  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\nExcellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\nMandatory administrative and documentation charges/fees: $796.26 USD incl. tax (450,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).",
+  mscfe_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)",
   mscfe_flyer_download: "Download Official Flyer (PDF)",
   mscfe_flyer_view: "View Scholarship Flyer",
   mscfe_ad_banner_badge: "2027 Excellence Scholarship",
