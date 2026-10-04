@@ -168,8 +168,8 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
 
   const handleShareWhatsApp = () => {
     const message = language === 'en'
-      ? `🎓 Apply to IDLA Academy using my referral link and get your application fee waived!\n\n${generatedLink}\n\nReferral code: ${generatedCode}`
-      : `🎓 Inscrivez-vous à IDLA Academy via mon lien de parrainage et bénéficiez des frais de dossier offerts !\n\n${generatedLink}\n\nCode parrain : ${generatedCode}`;
+      ? `🎓 Apply to IDLA Academy using my referral link!\n\n${generatedLink}\n\nReferral code: ${generatedCode}`
+      : `🎓 Inscrivez-vous à IDLA Academy via mon lien de parrainage !\n\n${generatedLink}\n\nCode parrain : ${generatedCode}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
