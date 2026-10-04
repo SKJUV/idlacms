@@ -31,6 +31,56 @@ function generateAmbassadorCode(fullName: string): string {
   return `IDLA-${prefix}-${suffix}`;
 }
 
+const FORM_INPUT_CLASS =
+  'form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm';
+
+interface AmbassadorFieldProps {
+  label: string;
+  helpText?: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+  index: number;
+  requiredLabel: string;
+}
+
+/**
+ * Déclaré hors du composant parent pour ne pas être recréé à chaque frappe
+ * (sinon le champ se démonte, le clavier mobile se ferme et la page remonte).
+ */
+function AmbassadorField({
+  label,
+  helpText,
+  required,
+  error,
+  children,
+  index,
+  requiredLabel,
+}: AmbassadorFieldProps) {
+  return (
+    <div className={`space-y-2 bg-bg-primary/50 p-5 rounded-2xl border transition-all ${error ? 'border-rose-500/60 bg-rose-500/5' : 'border-border-primary/60 hover:border-brand-primary/30'}`}>
+      <label className="text-xs font-bold text-text-primary flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 w-5 h-5 rounded-full flex items-center justify-center">
+            {index}
+          </span>
+          <span>{label} {required && <span className="text-rose-500">*</span>}</span>
+        </span>
+        {required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{requiredLabel}</span>}
+      </label>
+      {helpText && <p className="text-[11px] text-text-secondary italic pl-6">{helpText}</p>}
+      <div className="pl-6 pt-1">
+        {children}
+      </div>
+      {error && (
+        <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg ml-6">
+          ⚠️ {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AmbassadorForm({ onBack, programs = [], theme = 'light', setTheme }: AmbassadorFormProps) {
   const { t, language } = useLanguage();
 
@@ -119,34 +169,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // Field wrapper component
-  const FieldWrapper = ({ label, helpText, required, error, children, index }: {
-    label: string; helpText?: string; required?: boolean; error?: string;
-    children: React.ReactNode; index: number;
-  }) => (
-    <div className={`space-y-2 bg-bg-primary/50 p-5 rounded-2xl border transition-all ${error ? 'border-rose-500/60 bg-rose-500/5' : 'border-border-primary/60 hover:border-brand-primary/30'}`}>
-      <label className="text-xs font-bold text-text-primary flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 w-5 h-5 rounded-full flex items-center justify-center">
-            {index}
-          </span>
-          <span>{label} {required && <span className="text-rose-500">*</span>}</span>
-        </span>
-        {required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{t('common_required')}</span>}
-      </label>
-      {helpText && <p className="text-[11px] text-text-secondary italic pl-6">{helpText}</p>}
-      <div className="pl-6 pt-1">
-        {children}
-      </div>
-      {error && (
-        <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg ml-6">
-          ⚠️ {error}
-        </p>
-      )}
-    </div>
-  );
-
-  const inputClassName = "w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm";
+  const requiredLabel = t('common_required');
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-bg-primary text-text-primary flex flex-col font-sans">
@@ -339,76 +362,87 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
           <form onSubmit={handleSubmit} className="bg-white dark:bg-bg-secondary border border-border-primary rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
 
             {/* 1. Full Name */}
-            <FieldWrapper label={t('amb_field_fullname')} helpText={t('amb_field_fullname_help')} required error={errors.fullName} index={1}>
+            <AmbassadorField label={t('amb_field_fullname')} helpText={t('amb_field_fullname_help')} required error={errors.fullName} index={1} requiredLabel={requiredLabel}>
               <input
                 type="text"
+                name="fullName"
+                autoComplete="name"
                 value={fullName}
                 placeholder={t('amb_field_fullname_placeholder')}
                 onChange={(e) => { setFullName(e.target.value); setErrors(prev => ({ ...prev, fullName: '' })); }}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 2. Email */}
-            <FieldWrapper label={t('amb_field_email')} helpText={t('amb_field_email_help')} required error={errors.email} index={2}>
+            <AmbassadorField label={t('amb_field_email')} helpText={t('amb_field_email_help')} required error={errors.email} index={2} requiredLabel={requiredLabel}>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={email}
                 placeholder={t('amb_field_email_placeholder')}
                 onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: '' })); }}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 3. Phone */}
-            <FieldWrapper label={t('amb_field_phone')} helpText={t('amb_field_phone_help')} required error={errors.phone} index={3}>
+            <AmbassadorField label={t('amb_field_phone')} helpText={t('amb_field_phone_help')} required error={errors.phone} index={3} requiredLabel={requiredLabel}>
               <input
-                type="text"
+                type="tel"
+                name="phone"
+                autoComplete="tel"
                 value={phone}
                 placeholder={t('amb_field_phone_placeholder')}
                 onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: '' })); }}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 4. City & Country */}
-            <FieldWrapper label={t('amb_field_city')} index={4}>
+            <AmbassadorField label={t('amb_field_city')} index={4} requiredLabel={requiredLabel}>
               <input
                 type="text"
+                name="city"
+                autoComplete="address-level2"
                 value={city}
                 placeholder={t('amb_field_city_placeholder')}
                 onChange={(e) => setCity(e.target.value)}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 5. Profession */}
-            <FieldWrapper label={t('amb_field_profession')} index={5}>
+            <AmbassadorField label={t('amb_field_profession')} index={5} requiredLabel={requiredLabel}>
               <input
                 type="text"
+                name="profession"
+                autoComplete="organization-title"
                 value={profession}
                 placeholder={t('amb_field_profession_placeholder')}
                 onChange={(e) => setProfession(e.target.value)}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 6. Target Program */}
-            <FieldWrapper label={t('amb_field_target_program')} index={6}>
+            <AmbassadorField label={t('amb_field_target_program')} index={6} requiredLabel={requiredLabel}>
               <select
+                name="targetProgram"
                 value={targetProgram}
                 onChange={(e) => setTargetProgram(e.target.value)}
-                className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-extrabold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                className={FORM_INPUT_CLASS}
               >
                 <option value="">{t('amb_field_target_program_all')}</option>
                 {programs.filter(p => p.type !== 'Certification').map(p => (
                   <option key={p.id} value={p.title}>{p.title}</option>
                 ))}
               </select>
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 7. Network Size */}
-            <FieldWrapper label={t('amb_field_network')} index={7}>
+            <AmbassadorField label={t('amb_field_network')} index={7} requiredLabel={requiredLabel}>
               <div className="flex flex-wrap gap-2.5 pt-1">
                 {networkOptions.map((opt) => (
                   <button
@@ -428,32 +462,35 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
                   </button>
                 ))}
               </div>
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 8. Social Media */}
-            <FieldWrapper label={t('amb_field_social')} index={8}>
+            <AmbassadorField label={t('amb_field_social')} index={8} requiredLabel={requiredLabel}>
               <input
                 type="text"
+                name="socialLinks"
+                autoComplete="off"
                 value={socialLinks}
                 placeholder={t('amb_field_social_placeholder')}
                 onChange={(e) => setSocialLinks(e.target.value)}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 9. Motivation */}
-            <FieldWrapper label={t('amb_field_motivation')} index={9}>
+            <AmbassadorField label={t('amb_field_motivation')} index={9} requiredLabel={requiredLabel}>
               <textarea
+                name="motivation"
                 rows={3}
                 value={motivation}
                 placeholder={t('amb_field_motivation_placeholder')}
                 onChange={(e) => setMotivation(e.target.value)}
-                className={inputClassName}
+                className={FORM_INPUT_CLASS}
               />
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* 10. Declaration */}
-            <FieldWrapper label={t('amb_field_declaration')} required error={errors.declaration} index={10}>
+            <AmbassadorField label={t('amb_field_declaration')} required error={errors.declaration} index={10} requiredLabel={requiredLabel}>
               <button
                 type="button"
                 onClick={() => { setDeclarationChecked(!declarationChecked); setErrors(prev => ({ ...prev, declaration: '' })); }}
@@ -468,7 +505,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
                 </div>
                 <span className="leading-relaxed">{t('amb_field_declaration_text')}</span>
               </button>
-            </FieldWrapper>
+            </AmbassadorField>
 
             {/* Submit */}
             <div className="pt-6 border-t border-border-primary flex flex-wrap items-center justify-between gap-4">

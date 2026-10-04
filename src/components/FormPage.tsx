@@ -641,7 +641,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           value={val}
                           placeholder={fieldPlaceholder || ''}
                           onChange={(e) => updateVal(e.target.value)}
-                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          className="form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
 
@@ -653,7 +653,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           value={val}
                           placeholder={fieldPlaceholder || ''}
                           onChange={(e) => updateVal(e.target.value)}
-                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          className="form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
 
@@ -665,7 +665,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           value={val}
                           placeholder={fieldPlaceholder || ''}
                           onChange={(e) => updateVal(e.target.value)}
-                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          className="form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         />
                       )}
 
@@ -698,7 +698,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                               max={maxDate}
                               min={minDate}
                               onChange={(e) => updateVal(e.target.value)}
-                              className={`w-full p-3 rounded-xl border bg-white dark:bg-bg-secondary text-text-primary text-xs font-semibold outline-none focus:ring-2 transition-all shadow-sm ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
+                              className={`form-control w-full p-3 rounded-xl border text-sm font-semibold outline-none focus:ring-2 transition-all shadow-sm ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
                             />
                             {ageError && (
                               <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1">
@@ -724,7 +724,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                           required={f.required}
                           value={val}
                           onChange={(e) => updateVal(e.target.value)}
-                          className="w-full p-3 rounded-xl border border-border-primary bg-white dark:bg-bg-secondary text-text-primary text-xs font-extrabold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          className="form-control w-full p-3 rounded-xl border border-border-primary text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
                         >
                           <option value="">
                             {isProgramField && !selectedLevelVal

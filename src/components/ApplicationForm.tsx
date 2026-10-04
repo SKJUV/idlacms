@@ -680,7 +680,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Votre prénom"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -691,7 +691,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Votre nom de famille"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -704,7 +704,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="prenom.nom@exemple.com"
-                  className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                  className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                   required 
                 />
               </div>
@@ -717,7 +717,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+237 6 00 00 00 00"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -728,7 +728,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
                     placeholder="Votre nationalité"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                   />
                 </div>
               </div>
@@ -751,7 +751,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       verifyReferralCode(val);
                     }}
                     placeholder="ex: REF-PAUL2026"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-mono font-bold text-text-primary uppercase" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-mono font-bold uppercase" 
                   />
                 </div>
 
@@ -928,7 +928,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       value={highestDegree}
                       onChange={(e) => setHighestDegree(e.target.value)}
                       placeholder="ex: Licence en Management"
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                       required 
                     />
                   </div>
@@ -939,7 +939,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       value={graduationYear}
                       onChange={(e) => setGraduationYear(e.target.value)}
                       placeholder="2024"
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                       required 
                     />
                   </div>
@@ -960,7 +960,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Min. 8 caractères"
-                        className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                         required 
                       />
                     </div>
@@ -971,7 +971,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Saisissez à nouveau"
-                        className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                         required 
                       />
                     </div>
@@ -1192,7 +1192,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                             onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             placeholder="_ _ _ _ _ _"
                             maxLength={6}
-                            className="flex-1 text-center text-lg font-bold tracking-[0.5em] p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none text-text-primary font-mono"
+                            className="form-control flex-1 text-center text-lg font-bold tracking-[0.5em] p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none font-mono"
                           />
                           <button
                             type="button"
