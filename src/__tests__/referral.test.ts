@@ -8,7 +8,7 @@ import {
   isReferralUsable,
   getCapturedReferralProgram,
 } from '../lib/referral';
-import { getDefaultReferralProgramTitle, MSCFE_PROGRAM_TITLE } from '../lib/referralPrograms';
+import { getDefaultReferralProgramTitle, MSCFE_PROGRAM_TITLE, MSCFE_SCHOLARSHIP_FORM_ID } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
 
 const setLocation = (url: string) => {
@@ -21,13 +21,18 @@ describe('referral tracking', () => {
     setLocation('/');
   });
 
-  it('builds a path-based candidature link with the ref query', () => {
+  it('builds a scholarship form link with the ref query', () => {
     const link = buildReferralLink('idla-jea-x8k2p');
-    expect(link).toContain('/candidature?');
+    expect(link).toContain('/formulaire?');
+    expect(link).toContain(`id=${MSCFE_SCHOLARSHIP_FORM_ID}`);
     expect(link).toContain('ref=IDLA-JEA-X8K2P');
-    expect(link).toContain('program=');
-    expect(link).toContain('MScFE');
     expect(link).not.toContain('#candidature');
+    expect(link).not.toContain('/candidature?');
+  });
+
+  it('reads the referral code from /formulaire?ref=', () => {
+    setLocation(`/formulaire?id=${MSCFE_SCHOLARSHIP_FORM_ID}&ref=IDLA-JEAN-ABC12`);
+    expect(parseReferralCodeFromLocation()).toBe('IDLA-JEAN-ABC12');
   });
 
   it('reads the referral code from /candidature?ref=', () => {
@@ -41,29 +46,37 @@ describe('referral tracking', () => {
   });
 
   it('keeps the code in session after leaving the query string', () => {
-    setLocation('/candidature?ref=IDLA-KEEP-1');
+    setLocation(`/formulaire?id=${MSCFE_SCHOLARSHIP_FORM_ID}&ref=IDLA-KEEP-1`);
     expect(captureReferralFromLocation()).toBe('IDLA-KEEP-1');
     setLocation('/programmes');
     expect(captureReferralFromLocation()).toBe('IDLA-KEEP-1');
   });
 
-  it('migrates #candidature?ref= to /candidature?ref=', () => {
+  it('migrates #candidature?ref= to the scholarship form', () => {
     setLocation('/#candidature?ref=IDLA-MIG-1');
     const result = migrateLegacyReferralHash();
-    expect(result.tab).toBe('candidature');
+    expect(result.tab).toBe('formulaire');
     expect(result.code).toBe('IDLA-MIG-1');
-    expect(window.location.pathname).toBe('/candidature');
+    expect(window.location.pathname).toBe('/formulaire');
     expect(new URLSearchParams(window.location.search).get('ref')).toBe('IDLA-MIG-1');
-    expect(new URLSearchParams(window.location.search).get('program')).toContain('MScFE');
+    expect(new URLSearchParams(window.location.search).get('id')).toBe(MSCFE_SCHOLARSHIP_FORM_ID);
   });
 
-  it('adds the captured ref when opening /candidature', () => {
+  it('migrates /candidature?ref= to the scholarship form', () => {
+    setLocation('/candidature?ref=IDLA-OLD-1');
+    const result = migrateLegacyReferralHash();
+    expect(result.tab).toBe('formulaire');
+    expect(window.location.pathname).toBe('/formulaire');
+    expect(new URLSearchParams(window.location.search).get('ref')).toBe('IDLA-OLD-1');
+  });
+
+  it('adds the captured ref when opening /formulaire', () => {
     setLocation('/?ref=IDLA-HOME-1');
     captureReferralFromLocation();
-    const next = withReferralQuery('/candidature');
-    expect(next).toContain('/candidature?');
+    const next = withReferralQuery('/formulaire');
+    expect(next).toContain('/formulaire?');
     expect(next).toContain('ref=IDLA-HOME-1');
-    expect(next).toContain('MScFE');
+    expect(next).toContain(MSCFE_SCHOLARSHIP_FORM_ID);
   });
 
   it('rejects expired or paused codes', () => {
@@ -84,7 +97,7 @@ describe('referral tracking', () => {
 
   it('defaults the referral destination to MScFE', () => {
     expect(getDefaultReferralProgramTitle()).toBe(MSCFE_PROGRAM_TITLE);
-    setLocation('/candidature?ref=IDLA-HOME-1');
+    setLocation(`/formulaire?id=${MSCFE_SCHOLARSHIP_FORM_ID}&ref=IDLA-HOME-1`);
     captureReferralFromLocation();
     expect(getCapturedReferralProgram()).toBe(MSCFE_PROGRAM_TITLE);
   });

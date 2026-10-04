@@ -7,6 +7,7 @@ import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 import { dbAdapter } from './lib/dbAdapter';
 import { captureReferralFromLocation, getCapturedReferralProgram, migrateLegacyReferralHash } from './lib/referral';
+import { buildScholarshipReferralPath, MSCFE_SCHOLARSHIP_FORM_ID } from './lib/referralPrograms';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -49,6 +50,7 @@ export type ActiveTab =
   | 'admin-news'
   | 'admin-preregistrations'
   | 'admin-forms'
+  | 'admin-scholarship-referrals'
   | 'admin-donations'
   | 'admin-marketing'
   | 'admin-email-automation'
@@ -68,7 +70,7 @@ const STUDENT_TABS: ActiveTab[] = [
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
-  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations',
+  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-scholarship-referrals', 'admin-donations',
   'admin-marketing', 'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
@@ -104,6 +106,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-news': '/admin/actualites',
   'admin-preregistrations': '/admin/pre-inscriptions',
   'admin-forms': '/admin/formulaires',
+  'admin-scholarship-referrals': '/admin/bourse-parrainage',
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-email-automation': '/admin/relances',
@@ -362,7 +365,7 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Synchronise URL with current view (conserve ?ref= / ?program= sur la candidature)
+  // Synchronise l’URL (conserve id + ref sur le formulaire de bourse)
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
@@ -372,9 +375,15 @@ export default function App() {
     const candidatureProgram = selectedApplicationProgram || referralProgram;
 
     if (currentPath !== cleanTarget) {
+      if (activeTab === 'formulaire') {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get('id')) params.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
+        if (captured) params.set('ref', captured);
+        window.history.pushState({ tab: activeTab }, '', `${target}?${params.toString()}`);
+        return;
+      }
       const params = new URLSearchParams();
       if (activeTab === 'candidature') {
-        if (captured) params.set('ref', captured);
         if (candidatureProgram) params.set('program', candidatureProgram);
       }
       const qs = params.toString();
@@ -382,15 +391,15 @@ export default function App() {
       return;
     }
 
-    if (activeTab === 'candidature') {
+    if (activeTab === 'formulaire') {
       const params = new URLSearchParams(window.location.search);
       let changed = false;
-      if (captured && !params.get('ref')) {
-        params.set('ref', captured);
+      if (!params.get('id')) {
+        params.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
         changed = true;
       }
-      if (candidatureProgram && !params.get('program')) {
-        params.set('program', candidatureProgram);
+      if (captured && !params.get('ref')) {
+        params.set('ref', captured);
         changed = true;
       }
       if (changed) {
@@ -676,15 +685,18 @@ export default function App() {
 
   const handleApplyToProgram = (programTitle?: string) => {
     const captured = captureReferralFromLocation();
-    const destination = captured ? getCapturedReferralProgram() : programTitle;
-    setSelectedApplicationProgram(destination);
+    if (captured) {
+      const next = buildScholarshipReferralPath(captured);
+      window.history.pushState({ tab: 'formulaire' }, '', next);
+      setActiveTab('formulaire');
+      return;
+    }
+    setSelectedApplicationProgram(programTitle);
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams();
-      if (destination) params.set('program', destination);
-      if (captured) params.set('ref', captured);
+      if (programTitle) params.set('program', programTitle);
       const qs = params.toString();
-      const newUrl = qs ? `/candidature?${qs}` : '/candidature';
-      window.history.pushState({ tab: 'candidature' }, '', newUrl);
+      window.history.pushState({ tab: 'candidature' }, '', qs ? `/candidature?${qs}` : '/candidature');
     }
     setActiveTab('candidature');
   };

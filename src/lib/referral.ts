@@ -1,6 +1,6 @@
 import { ReferralCode } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from './appwrite';
-import { getReferralDestinationTitle } from './referralPrograms';
+import { buildScholarshipReferralPath, getReferralDestinationTitle, MSCFE_SCHOLARSHIP_FORM_ID } from './referralPrograms';
 
 const LOCAL_STORAGE_KEY = 'idla_admin_referral_codes';
 const SESSION_REF_KEY = 'idla_referral_code';
@@ -59,17 +59,12 @@ export function getCapturedReferralProgram(): string {
 }
 
 /**
- * Construit l'URL canonique de parrainage vers le programme éligible.
+ * Construit l'URL canonique de parrainage vers le formulaire de bourse MScFE.
  */
-export function buildReferralLink(code: string, programTitle?: string): string {
+export function buildReferralLink(code: string, _programTitle?: string): string {
   if (!code) return '';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online';
-  const program = getReferralDestinationTitle(programTitle);
-  const params = new URLSearchParams({
-    ref: code.trim().toUpperCase(),
-    program,
-  });
-  return `${origin}/candidature?${params.toString()}`;
+  return `${origin}${buildScholarshipReferralPath(code)}`;
 }
 
 /**
@@ -122,24 +117,30 @@ export function getCapturedReferralCode(): string | null {
 }
 
 /**
- * Si l’ancien format /#candidature?ref= est utilisé, redirige vers /candidature?ref=.
+ * Ancien /#candidature?ref= ou /candidature?ref= → formulaire de bourse.
  */
-export function migrateLegacyReferralHash(): { tab: 'candidature' | 'ambassadeur' | null; code: string | null } {
+export function migrateLegacyReferralHash(): { tab: 'formulaire' | 'ambassadeur' | null; code: string | null } {
   if (typeof window === 'undefined') {
     return { tab: null, code: null };
   }
 
+  const fromUrl = parseReferralCodeFromLocation();
   const code = captureReferralFromLocation();
   const hashPath = (window.location.hash || '').replace(/^#\/?/, '').split('?')[0];
+  const pathName = window.location.pathname.replace(/\/+$/, '') || '/';
 
-  if (hashPath === 'candidature' || hashPath === 'ambassadeur') {
-    const path = hashPath === 'candidature' ? '/candidature' : '/ambassadeur';
+  if (hashPath === 'ambassadeur') {
     const qs = new URLSearchParams(window.location.search);
     if (code && !qs.get('ref')) qs.set('ref', code);
-    if (code && !qs.get('program')) qs.set('program', getCapturedReferralProgram());
-    const next = qs.toString() ? `${path}?${qs.toString()}` : path;
-    window.history.replaceState({ tab: hashPath }, '', next);
-    return { tab: hashPath, code };
+    const next = qs.toString() ? `/ambassadeur?${qs.toString()}` : '/ambassadeur';
+    window.history.replaceState({ tab: 'ambassadeur' }, '', next);
+    return { tab: 'ambassadeur', code };
+  }
+
+  if (hashPath === 'candidature' || (pathName === '/candidature' && fromUrl)) {
+    const next = buildScholarshipReferralPath(code);
+    window.history.replaceState({ tab: 'formulaire' }, '', next);
+    return { tab: 'formulaire', code };
   }
 
   return { tab: null, code };
@@ -147,10 +148,14 @@ export function migrateLegacyReferralHash(): { tab: 'candidature' | 'ambassadeur
 
 export function withReferralQuery(path: string): string {
   const code = getCapturedReferralCode();
-  if (!code || !path.startsWith('/candidature')) return path;
+  if (!code) return path;
+  if (path.startsWith('/candidature')) {
+    return buildScholarshipReferralPath(code);
+  }
+  if (!path.startsWith('/formulaire')) return path;
   const url = new URL(path, typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online');
+  if (!url.searchParams.get('id')) url.searchParams.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
   if (!url.searchParams.get('ref')) url.searchParams.set('ref', code);
-  if (!url.searchParams.get('program')) url.searchParams.set('program', getCapturedReferralProgram());
   return `${url.pathname}${url.search}`;
 }
 

@@ -2,6 +2,25 @@ import { ReferralProgram } from '../types';
 
 export const MSCFE_PROGRAM_TITLE = 'Master of Science in Financial Engineering (MScFE)';
 export const MSCFE_PROGRAM_SLUG = 'mscfe';
+export const MSCFE_SCHOLARSHIP_FORM_ID = 'form-mscfe-scholarship-2026';
+
+export function buildScholarshipReferralPath(code?: string | null): string {
+  const params = new URLSearchParams({ id: MSCFE_SCHOLARSHIP_FORM_ID });
+  if (code?.trim()) params.set('ref', code.trim().toUpperCase());
+  return `/formulaire?${params.toString()}`;
+}
+
+export function isScholarshipFormResponse(formId?: string, formTitle?: string): boolean {
+  const id = (formId || '').toLowerCase();
+  const title = (formTitle || '').toLowerCase();
+  return (
+    id === MSCFE_SCHOLARSHIP_FORM_ID.toLowerCase() ||
+    id.includes('mscfe') ||
+    id.includes('scholarship') ||
+    title.includes('mscfe') ||
+    title.includes('bourse')
+  );
+}
 
 const STORAGE_KEY = 'idla_referral_programs';
 

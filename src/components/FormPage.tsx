@@ -11,7 +11,8 @@ import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { EVENT_REGISTRATION_FORM } from './PublicPortal';
 import OfficialDocLinks from './OfficialDocLinks';
-import { getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
+import { Gift } from 'lucide-react';
+import { captureReferralFromLocation, getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
 
 interface FormPageProps {
   formId?: string;
@@ -43,6 +44,13 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   const [isSuccess, setIsSuccess] = useState(false);
   const [receiptRef, setReceiptRef] = useState('');
   const [pdfBase64Data, setPdfBase64Data] = useState('');
+  const [capturedReferral, setCapturedReferral] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? captureReferralFromLocation() : null
+  );
+
+  useEffect(() => {
+    setCapturedReferral(captureReferralFromLocation());
+  }, []);
 
   // Constant default form ID for Concours
   const DEFAULT_CONCOURS_FORM_ID = '6a86f5cc003484813061';
@@ -129,8 +137,21 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             });
             setLoading(false);
 
-            if (typeof window !== 'undefined' && !window.location.search.includes('id=')) {
-              window.history.replaceState({}, '', `${window.location.pathname}?id=${doc.$id}`);
+            if (typeof window !== 'undefined') {
+              const params = new URLSearchParams(window.location.search);
+              let changed = false;
+              if (!params.get('id')) {
+                params.set('id', doc.$id);
+                changed = true;
+              }
+              const ref = captureReferralFromLocation();
+              if (ref && !params.get('ref')) {
+                params.set('ref', ref);
+                changed = true;
+              }
+              if (changed) {
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+              }
             }
             return;
           }
@@ -255,9 +276,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       respondentEmail,
       data: {
         ...formValues,
-        referralCode: getCapturedReferralCode() || undefined,
+        referralCode: capturedReferral || getCapturedReferralCode() || undefined,
       }
     };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('idla_form_responses') || '[]');
+      localStorage.setItem('idla_form_responses', JSON.stringify([newResponse, ...existing]));
+    } catch {}
 
     // Store in Appwrite Cloud DB
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses) {
@@ -484,6 +510,12 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             <p className="text-sm text-text-secondary mt-2 leading-relaxed max-w-3xl whitespace-pre-line">
               {formDescription}
             </p>
+            {capturedReferral && (
+              <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-3 py-2 rounded-xl">
+                <Gift className="w-3.5 h-3.5 shrink-0" />
+                {language === 'en' ? 'Referral code captured' : 'Code parrainage enregistré'} ({capturedReferral})
+              </div>
+            )}
             {isMScFE && (
               <div className="pt-4">
                 <p className="text-[11px] font-bold text-text-secondary mb-2">
