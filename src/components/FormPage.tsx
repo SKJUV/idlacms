@@ -11,6 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { EVENT_REGISTRATION_FORM } from './PublicPortal';
 import OfficialDocLinks from './OfficialDocLinks';
+import { getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
 
 interface FormPageProps {
   formId?: string;
@@ -252,7 +253,10 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }),
       respondentName,
       respondentEmail,
-      data: formValues
+      data: {
+        ...formValues,
+        referralCode: getCapturedReferralCode() || undefined,
+      }
     };
 
     // Store in Appwrite Cloud DB
@@ -275,6 +279,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       } catch (err) {
         console.error("Erreur enregistrement réponse Appwrite:", err);
       }
+    }
+
+    const capturedRef = getCapturedReferralCode();
+    if (capturedRef) {
+      registerReferralCodeUsage(capturedRef).catch(() => {});
     }
 
     // PDF & Dual Email Send

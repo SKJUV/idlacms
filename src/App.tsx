@@ -6,6 +6,7 @@ import AdminSidebar from './components/AdminSidebar';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 import { dbAdapter } from './lib/dbAdapter';
+import { captureReferralFromLocation, migrateLegacyReferralHash } from './lib/referral';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -135,9 +136,21 @@ const tabFromPath = (pathname: string): ActiveTab => {
 
 export default function App() {
   const { warning: showWarningToast } = useToast();
-  const [activeTab, setActiveTab] = useState<ActiveTab>(() =>
-    typeof window !== 'undefined' ? tabFromPath(window.location.pathname) : 'home'
-  );
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const migrated = migrateLegacyReferralHash();
+    if (migrated.tab) return migrated.tab;
+    captureReferralFromLocation();
+    return tabFromPath(window.location.pathname);
+  });
+
+  useEffect(() => {
+    const migrated = migrateLegacyReferralHash();
+    captureReferralFromLocation();
+    if (migrated.tab && migrated.tab !== activeTab) {
+      setActiveTab(migrated.tab);
+    }
+  }, []);
   const [role, setRole] = useState<Role>('guest');
   const [isSessionChecking, setIsSessionChecking] = useState(true);
 
@@ -337,20 +350,36 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Synchronise URL with current view
+  // Synchronise URL with current view (conserve ?ref= / ?program= sur la candidature)
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
     const cleanTarget = target.replace(/\/+$/, '') || '/';
-    
+    const captured = captureReferralFromLocation();
+
     if (currentPath !== cleanTarget) {
-      window.history.pushState({ tab: activeTab }, '', target);
+      const params = new URLSearchParams();
+      if (activeTab === 'candidature' && captured) params.set('ref', captured);
+      const qs = params.toString();
+      window.history.pushState({ tab: activeTab }, '', qs ? `${target}?${qs}` : target);
+      return;
+    }
+
+    if (activeTab === 'candidature' && captured) {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get('ref')) {
+        params.set('ref', captured);
+        window.history.replaceState({ tab: activeTab }, '', `${target}?${params.toString()}`);
+      }
     }
   }, [activeTab]);
 
   // Back/Forward browser navigation support
   useEffect(() => {
-    const onPopState = () => setActiveTab(tabFromPath(window.location.pathname));
+    const onPopState = () => {
+      captureReferralFromLocation();
+      setActiveTab(tabFromPath(window.location.pathname));
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -631,9 +660,12 @@ export default function App() {
   const handleApplyToProgram = (programTitle?: string) => {
     setSelectedApplicationProgram(programTitle);
     if (typeof window !== 'undefined') {
-      const newUrl = programTitle
-        ? `${window.location.origin}/candidature?program=${encodeURIComponent(programTitle)}`
-        : `${window.location.origin}/candidature`;
+      const captured = captureReferralFromLocation();
+      const params = new URLSearchParams();
+      if (programTitle) params.set('program', programTitle);
+      if (captured) params.set('ref', captured);
+      const qs = params.toString();
+      const newUrl = qs ? `/candidature?${qs}` : '/candidature';
       window.history.pushState({ tab: 'candidature' }, '', newUrl);
     }
     setActiveTab('candidature');

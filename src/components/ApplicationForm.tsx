@@ -9,7 +9,7 @@ import {
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
-import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
+import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage, isReferralUsable } from '../lib/referral';
 import { ReferralCode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import OfficialDocLinks from './OfficialDocLinks';
@@ -162,15 +162,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       return;
     }
 
-    if (matched.status !== 'Active') {
+    const usable = isReferralUsable(matched);
+    if (usable.ok === false) {
       setValidatedReferral(null);
-      setReferralCheckMsg('Ce code de parrainage est temporairement en pause.');
-      return;
-    }
-
-    if (matched.maxUses && matched.currentUses >= matched.maxUses) {
-      setValidatedReferral(null);
-      setReferralCheckMsg('La limite d\'utilisations de ce code parrain a été atteinte.');
+      setReferralCheckMsg(usable.reason);
       return;
     }
 
@@ -572,6 +567,9 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             dateApplied: new Date().toISOString(),
             declarationChecked,
             initials,
+            sponsorCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+            referralCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+            sponsorEmail: validatedReferral?.sponsorEmail || undefined,
           };
           const existingLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
           const filtered = existingLocal.filter((a: any) => a.email !== cleanEmail || a.program);

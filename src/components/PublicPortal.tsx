@@ -39,6 +39,7 @@ import {
 } from './MScFEAdBanner';
 import OfficialDocLinks from './OfficialDocLinks';
 import { AmbassadorFloatingAdWidget } from './AmbassadorAdBanner';
+import { getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -765,7 +766,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   };
 
   const renderAmbassadorFloatingWidget = () => {
-    if (activeTab === 'ambassadeur') return null;
     return (
       <AmbassadorFloatingAdWidget onRegister={handleRegisterAmbassador} />
     );
@@ -848,7 +848,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
       }),
       respondentName,
       respondentEmail,
-      data: activeFormValues
+      data: {
+        ...activeFormValues,
+        referralCode: getCapturedReferralCode() || undefined,
+      }
     };
 
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.formResponses) {
@@ -877,6 +880,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         const existing: CustomFormResponse[] = JSON.parse(localStorage.getItem('idla_form_responses') || '[]');
         localStorage.setItem('idla_form_responses', JSON.stringify([newResponse, ...existing]));
       } catch (err) {}
+    }
+
+    const capturedRef = getCapturedReferralCode();
+    if (capturedRef) {
+      registerReferralCodeUsage(capturedRef).catch(() => {});
     }
 
     // Génération du PDF et envoi par email
