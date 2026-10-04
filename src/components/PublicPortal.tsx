@@ -38,7 +38,7 @@ import {
   MScFEAdModal 
 } from './MScFEAdBanner';
 import OfficialDocLinks from './OfficialDocLinks';
-import { AmbassadorAdModal } from './AmbassadorAdBanner';
+import { AmbassadorFloatingAdWidget } from './AmbassadorAdBanner';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -726,7 +726,6 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   // ── MScFE SCHOLARSHIP STATES & HANDLERS ──
   const [showMScFEAdModal, setShowMScFEAdModal] = useState(false);
   const [dismissedMScFETopBanner, setDismissedMScFETopBanner] = useState(false);
-  const [showAmbassadorAdModal, setShowAmbassadorAdModal] = useState(false);
 
   const handleGoToBourse = () => {
     setActiveTab('bourse');
@@ -738,28 +737,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     handleOpenFormModal('form-mscfe-scholarship-2026');
   };
 
-  useEffect(() => {
-    if (activeTab !== 'home') return;
-    try {
-      if (sessionStorage.getItem('idla_ambassador_ad_seen') === '1') return;
-    } catch {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setShowAmbassadorAdModal(true);
-    }, 1600);
-    return () => window.clearTimeout(timer);
-  }, [activeTab]);
-
-  const handleCloseAmbassadorAd = () => {
-    setShowAmbassadorAdModal(false);
-    try {
-      sessionStorage.setItem('idla_ambassador_ad_seen', '1');
-    } catch {}
-  };
-
   const handleRegisterAmbassador = () => {
-    handleCloseAmbassadorAd();
     setActiveTab('ambassadeur');
     window.scrollTo({ top: 0 });
   };
@@ -786,23 +764,22 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     );
   };
 
+  const renderAmbassadorFloatingWidget = () => {
+    if (activeTab === 'ambassadeur') return null;
+    return (
+      <AmbassadorFloatingAdWidget
+        onRegister={handleRegisterAmbassador}
+        language={language === 'en' ? 'en' : 'fr'}
+      />
+    );
+  };
+
   const renderMScFEAdModal = () => {
     return (
       <MScFEAdModal
         isOpen={showMScFEAdModal}
         onClose={() => setShowMScFEAdModal(false)}
         onApply={handleApplyMScFEScholarship}
-      />
-    );
-  };
-
-  const renderAmbassadorAdModal = () => {
-    return (
-      <AmbassadorAdModal
-        isOpen={showAmbassadorAdModal}
-        onClose={handleCloseAmbassadorAd}
-        onRegister={handleRegisterAmbassador}
-        language={language === 'en' ? 'en' : 'fr'}
       />
     );
   };
@@ -1762,7 +1739,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorAdModal()}
+        {renderAmbassadorFloatingWidget()}
       </div>
     );
   }
@@ -2066,7 +2043,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
         {renderMScFEAdModal()}
-        {renderAmbassadorAdModal()}
+        {renderAmbassadorFloatingWidget()}
       </div>
     );
   }
@@ -2188,7 +2165,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorAdModal()}
+        {renderAmbassadorFloatingWidget()}
       </div>
     );
   }
@@ -2922,7 +2899,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorAdModal()}
+        {renderAmbassadorFloatingWidget()}
       </div>
     );
   }
@@ -3173,7 +3150,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorAdModal()}
+        {renderAmbassadorFloatingWidget()}
       </div>
     );
   }
