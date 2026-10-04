@@ -6,7 +6,9 @@ import {
   migrateLegacyReferralHash,
   withReferralQuery,
   isReferralUsable,
+  getCapturedReferralProgram,
 } from '../lib/referral';
+import { getDefaultReferralProgramTitle, MSCFE_PROGRAM_TITLE } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
 
 const setLocation = (url: string) => {
@@ -21,7 +23,10 @@ describe('referral tracking', () => {
 
   it('builds a path-based candidature link with the ref query', () => {
     const link = buildReferralLink('idla-jea-x8k2p');
-    expect(link).toBe(`${window.location.origin}/candidature?ref=IDLA-JEA-X8K2P`);
+    expect(link).toContain('/candidature?');
+    expect(link).toContain('ref=IDLA-JEA-X8K2P');
+    expect(link).toContain('program=');
+    expect(link).toContain('MScFE');
     expect(link).not.toContain('#candidature');
   });
 
@@ -49,12 +54,16 @@ describe('referral tracking', () => {
     expect(result.code).toBe('IDLA-MIG-1');
     expect(window.location.pathname).toBe('/candidature');
     expect(new URLSearchParams(window.location.search).get('ref')).toBe('IDLA-MIG-1');
+    expect(new URLSearchParams(window.location.search).get('program')).toContain('MScFE');
   });
 
   it('adds the captured ref when opening /candidature', () => {
     setLocation('/?ref=IDLA-HOME-1');
     captureReferralFromLocation();
-    expect(withReferralQuery('/candidature')).toBe('/candidature?ref=IDLA-HOME-1');
+    const next = withReferralQuery('/candidature');
+    expect(next).toContain('/candidature?');
+    expect(next).toContain('ref=IDLA-HOME-1');
+    expect(next).toContain('MScFE');
   });
 
   it('rejects expired or paused codes', () => {
@@ -71,5 +80,12 @@ describe('referral tracking', () => {
     expect(isReferralUsable({ ...base, expiresAt: '2020-01-01' }).ok).toBe(false);
     expect(isReferralUsable({ ...base, maxUses: 1, currentUses: 1 }).ok).toBe(false);
     expect(isReferralUsable(base).ok).toBe(true);
+  });
+
+  it('defaults the referral destination to MScFE', () => {
+    expect(getDefaultReferralProgramTitle()).toBe(MSCFE_PROGRAM_TITLE);
+    setLocation('/candidature?ref=IDLA-HOME-1');
+    captureReferralFromLocation();
+    expect(getCapturedReferralProgram()).toBe(MSCFE_PROGRAM_TITLE);
   });
 });

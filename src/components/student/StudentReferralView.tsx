@@ -12,7 +12,7 @@ export default function StudentReferralView({ myReferralCode }: StudentReferralV
 
   const handleCopyLink = () => {
     if (!myReferralCode) return;
-    navigator.clipboard.writeText(buildReferralLink(myReferralCode.code));
+    navigator.clipboard.writeText(buildReferralLink(myReferralCode.code, myReferralCode.targetProgram));
     setCopiedReferralLink(true);
     setTimeout(() => setCopiedReferralLink(false), 2500);
   };
@@ -52,7 +52,7 @@ export default function StudentReferralView({ myReferralCode }: StudentReferralV
 
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
             <div className="flex-1 w-full bg-bg-secondary border border-border-primary rounded-xl px-3.5 py-2.5 text-xs font-mono text-text-primary truncate">
-              {buildReferralLink(myReferralCode.code)}
+              {buildReferralLink(myReferralCode.code, myReferralCode.targetProgram)}
             </div>
             <button
               onClick={handleCopyLink}

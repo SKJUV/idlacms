@@ -1,8 +1,10 @@
 import { ReferralCode } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from './appwrite';
+import { getReferralDestinationTitle } from './referralPrograms';
 
 const LOCAL_STORAGE_KEY = 'idla_admin_referral_codes';
 const SESSION_REF_KEY = 'idla_referral_code';
+const SESSION_PROGRAM_KEY = 'idla_referral_program';
 
 const readSessionCode = (): string | null => {
   if (typeof window === 'undefined') return null;
@@ -21,13 +23,53 @@ const writeSessionCode = (code: string) => {
   } catch {}
 };
 
+const readSessionProgram = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem(SESSION_PROGRAM_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const writeSessionProgram = (title: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(SESSION_PROGRAM_KEY, title);
+  } catch {}
+};
+
+const parseProgramFromLocation = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const hash = window.location.hash || '';
+  const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
+  const hashParams = hashQuery ? new URLSearchParams(hashQuery) : null;
+  return params.get('program') || params.get('filiere') || hashParams?.get('program') || hashParams?.get('filiere');
+};
+
 /**
- * Construit l'URL canonique de parrainage (route réelle /candidature).
+ * Programme de destination du parrainage (catalogue admin, MScFE par défaut).
  */
-export function buildReferralLink(code: string): string {
+export function getCapturedReferralProgram(): string {
+  const fromUrl = parseProgramFromLocation();
+  const resolved = getReferralDestinationTitle(fromUrl || readSessionProgram());
+  writeSessionProgram(resolved);
+  return resolved;
+}
+
+/**
+ * Construit l'URL canonique de parrainage vers le programme éligible.
+ */
+export function buildReferralLink(code: string, programTitle?: string): string {
   if (!code) return '';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online';
-  return `${origin}/candidature?ref=${encodeURIComponent(code.trim().toUpperCase())}`;
+  const program = getReferralDestinationTitle(programTitle);
+  const params = new URLSearchParams({
+    ref: code.trim().toUpperCase(),
+    program,
+  });
+  return `${origin}/candidature?${params.toString()}`;
 }
 
 /**
@@ -60,9 +102,12 @@ export function captureReferralFromLocation(): string | null {
   const fromUrl = parseReferralCodeFromLocation();
   if (fromUrl) {
     writeSessionCode(fromUrl);
+    getCapturedReferralProgram();
     return fromUrl;
   }
-  return readSessionCode();
+  const stored = readSessionCode();
+  if (stored) getCapturedReferralProgram();
+  return stored;
 }
 
 /**
@@ -91,6 +136,7 @@ export function migrateLegacyReferralHash(): { tab: 'candidature' | 'ambassadeur
     const path = hashPath === 'candidature' ? '/candidature' : '/ambassadeur';
     const qs = new URLSearchParams(window.location.search);
     if (code && !qs.get('ref')) qs.set('ref', code);
+    if (code && !qs.get('program')) qs.set('program', getCapturedReferralProgram());
     const next = qs.toString() ? `${path}?${qs.toString()}` : path;
     window.history.replaceState({ tab: hashPath }, '', next);
     return { tab: hashPath, code };
@@ -104,6 +150,7 @@ export function withReferralQuery(path: string): string {
   if (!code || !path.startsWith('/candidature')) return path;
   const url = new URL(path, typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online');
   if (!url.searchParams.get('ref')) url.searchParams.set('ref', code);
+  if (!url.searchParams.get('program')) url.searchParams.set('program', getCapturedReferralProgram());
   return `${url.pathname}${url.search}`;
 }
 
@@ -201,7 +248,7 @@ export async function persistReferralCode(refData: Omit<ReferralCode, 'id' | 'cr
     code: codeFormatted,
     sponsorEmail: refData.sponsorEmail,
     sponsorName: refData.sponsorName,
-    targetProgram: refData.targetProgram || 'Tous les programmes',
+    targetProgram: getReferralDestinationTitle(refData.targetProgram),
     discountReward: refData.discountReward || 'Frais de dossier offerts',
     maxUses: refData.maxUses,
     currentUses: refData.currentUses || 0,

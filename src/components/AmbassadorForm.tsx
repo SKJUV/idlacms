@@ -7,6 +7,7 @@ import { Gift, Copy, Check, Share2, Users, Star, Shield, MessageCircle } from 'l
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { persistReferralCode, buildReferralLink } from '../lib/referral';
+import { getDefaultReferralProgramTitle, getEnabledReferralPrograms } from '../lib/referralPrograms';
 import { Program } from '../types';
 import OfficialDocLinks from './OfficialDocLinks';
 
@@ -91,7 +92,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [profession, setProfession] = useState('');
-  const [targetProgram, setTargetProgram] = useState('');
+  const [targetProgram, setTargetProgram] = useState(getDefaultReferralProgramTitle());
   const [networkSize, setNetworkSize] = useState('');
   const [socialLinks, setSocialLinks] = useState('');
   const [motivation, setMotivation] = useState('');
@@ -137,7 +138,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
         code,
         sponsorEmail: email.trim().toLowerCase(),
         sponsorName: fullName.trim(),
-        targetProgram: targetProgram || t('amb_field_target_program_all'),
+        targetProgram: targetProgram || getDefaultReferralProgramTitle(),
         discountReward: language === 'en' ? 'Application fee waived' : 'Frais de dossier offerts',
         maxUses: undefined,
         currentUses: 0,
@@ -145,7 +146,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
       });
 
       // 3. Build the personalized referral link
-      const link = buildReferralLink(code);
+      const link = buildReferralLink(code, targetProgram || getDefaultReferralProgramTitle());
 
       setGeneratedCode(code);
       setGeneratedLink(link);
@@ -420,8 +421,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
                 onChange={(e) => setTargetProgram(e.target.value)}
                 className={FORM_INPUT_CLASS}
               >
-                <option value="">{t('amb_field_target_program_all')}</option>
-                {programs.filter(p => p.type !== 'Certification').map(p => (
+                {getEnabledReferralPrograms().map(p => (
                   <option key={p.id} value={p.title}>{p.title}</option>
                 ))}
               </select>

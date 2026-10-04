@@ -368,6 +368,14 @@ export interface ReferralCode {
   createdAt: string;
 }
 
+export interface ReferralProgram {
+  id: string;
+  title: string;
+  slug: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
 export interface ActivityLog {
   id: string;
   type: 'registration' | 'article' | 'error' | 'alumni';

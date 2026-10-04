@@ -6,7 +6,7 @@ import AdminSidebar from './components/AdminSidebar';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 import { dbAdapter } from './lib/dbAdapter';
-import { captureReferralFromLocation, migrateLegacyReferralHash } from './lib/referral';
+import { captureReferralFromLocation, getCapturedReferralProgram, migrateLegacyReferralHash } from './lib/referral';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -143,12 +143,24 @@ export default function App() {
     captureReferralFromLocation();
     return tabFromPath(window.location.pathname);
   });
+  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('program') || params.get('filiere') || undefined;
+    if (captureReferralFromLocation()) {
+      return getCapturedReferralProgram();
+    }
+    return fromUrl;
+  });
 
   useEffect(() => {
     const migrated = migrateLegacyReferralHash();
-    captureReferralFromLocation();
+    const captured = captureReferralFromLocation();
     if (migrated.tab && migrated.tab !== activeTab) {
       setActiveTab(migrated.tab);
+    }
+    if (captured) {
+      setSelectedApplicationProgram(getCapturedReferralProgram());
     }
   }, []);
   const [role, setRole] = useState<Role>('guest');
@@ -356,23 +368,36 @@ export default function App() {
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
     const cleanTarget = target.replace(/\/+$/, '') || '/';
     const captured = captureReferralFromLocation();
+    const referralProgram = captured ? getCapturedReferralProgram() : undefined;
+    const candidatureProgram = selectedApplicationProgram || referralProgram;
 
     if (currentPath !== cleanTarget) {
       const params = new URLSearchParams();
-      if (activeTab === 'candidature' && captured) params.set('ref', captured);
+      if (activeTab === 'candidature') {
+        if (captured) params.set('ref', captured);
+        if (candidatureProgram) params.set('program', candidatureProgram);
+      }
       const qs = params.toString();
       window.history.pushState({ tab: activeTab }, '', qs ? `${target}?${qs}` : target);
       return;
     }
 
-    if (activeTab === 'candidature' && captured) {
+    if (activeTab === 'candidature') {
       const params = new URLSearchParams(window.location.search);
-      if (!params.get('ref')) {
+      let changed = false;
+      if (captured && !params.get('ref')) {
         params.set('ref', captured);
+        changed = true;
+      }
+      if (candidatureProgram && !params.get('program')) {
+        params.set('program', candidatureProgram);
+        changed = true;
+      }
+      if (changed) {
         window.history.replaceState({ tab: activeTab }, '', `${target}?${params.toString()}`);
       }
     }
-  }, [activeTab]);
+  }, [activeTab, selectedApplicationProgram]);
 
   // Back/Forward browser navigation support
   useEffect(() => {
@@ -649,20 +674,13 @@ export default function App() {
     setActiveTab('success');
   };
 
-  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('program') || params.get('filiere') || undefined;
-    }
-    return undefined;
-  });
-
   const handleApplyToProgram = (programTitle?: string) => {
-    setSelectedApplicationProgram(programTitle);
+    const captured = captureReferralFromLocation();
+    const destination = captured ? getCapturedReferralProgram() : programTitle;
+    setSelectedApplicationProgram(destination);
     if (typeof window !== 'undefined') {
-      const captured = captureReferralFromLocation();
       const params = new URLSearchParams();
-      if (programTitle) params.set('program', programTitle);
+      if (destination) params.set('program', destination);
       if (captured) params.set('ref', captured);
       const qs = params.toString();
       const newUrl = qs ? `/candidature?${qs}` : '/candidature';

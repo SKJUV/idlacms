@@ -9,7 +9,8 @@ import {
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
-import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage, isReferralUsable } from '../lib/referral';
+import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage, isReferralUsable, getCapturedReferralProgram } from '../lib/referral';
+import { findProgramInCatalog } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import OfficialDocLinks from './OfficialDocLinks';
@@ -92,8 +93,12 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     return programs.filter((p) => p.type === selectedProgramType);
   }, [programs, selectedProgramType]);
 
+  const referralProgramTitle = initialProgram || (parseReferralCodeFromUrl() ? getCapturedReferralProgram() : '');
+  const programLocked = isLocked || Boolean(referralProgramTitle);
+
   // Sync selected program when selectedProgramType changes
   useEffect(() => {
+    if (programLocked && selectedProgram) return;
     if (filteredPrograms.length > 0) {
       const alreadyValid = filteredPrograms.some((p) => p.title === selectedProgram);
       if (!alreadyValid) {
@@ -102,18 +107,19 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     } else {
       setSelectedProgram('');
     }
-  }, [selectedProgramType, filteredPrograms]);
+  }, [selectedProgramType, filteredPrograms, programLocked, selectedProgram]);
 
-  // Set initial program type if initialProgram is provided
+  // Set initial / referral program (MScFE by défaut si lien de parrainage)
   useEffect(() => {
-    if (initialProgram && programs.length > 0) {
-      const matched = programs.find((p) => p.title === initialProgram);
-      if (matched) {
-        setSelectedProgramType(matched.type);
-        setSelectedProgram(matched.title);
-      }
+    if (!referralProgramTitle) return;
+    const matched = findProgramInCatalog(programs, referralProgramTitle);
+    if (matched) {
+      setSelectedProgramType(matched.type || 'Master');
+      setSelectedProgram(matched.title);
+    } else {
+      setSelectedProgram(referralProgramTitle);
     }
-  }, [initialProgram, programs]);
+  }, [referralProgramTitle, programs]);
 
   // Pre-fill student info if logged in and skip OTP + step 1
   useEffect(() => {
@@ -781,10 +787,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Type de Programme *</label>
                 <select 
                   value={selectedProgramType}
-                  disabled={isLocked}
+                  disabled={programLocked}
                   onChange={(e) => setSelectedProgramType(e.target.value)}
                   className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
-                    isLocked 
+                    programLocked 
                       ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
                       : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
                   }`}
@@ -800,10 +806,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Programme académique ciblé *</label>
                 <select 
                   value={selectedProgram}
-                  disabled={isLocked}
+                  disabled={programLocked}
                   onChange={(e) => setSelectedProgram(e.target.value)}
                   className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
-                    isLocked 
+                    programLocked 
                       ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
                       : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
                   }`}
@@ -815,8 +821,15 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                   ) : (
                     <option value={selectedProgram || ''}>{selectedProgram || "Aucun programme disponible pour ce type"}</option>
                   )}
+                  {selectedProgram && !filteredPrograms.some((p) => p.title === selectedProgram) && (
+                    <option value={selectedProgram}>{selectedProgram}</option>
+                  )}
                 </select>
-                <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
+                <p className="text-[11px] text-text-secondary">
+                  {programLocked
+                    ? 'Ce lien de parrainage ouvre uniquement le programme indiqué ci-dessus.'
+                    : "Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles."}
+                </p>
               </div>
 
               {/* Affichage des procédures d'admission du programme si renseignées */}

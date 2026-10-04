@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Megaphone, Pencil, Trash2, Share2, Copy, Check, Users, Gift, Link, Sparkles, Filter, UserCheck } from 'lucide-react';
-import { Campaign, ReferralCode, User, PreRegistration } from '../../types';
+import { Plus, Megaphone, Pencil, Trash2, Share2, Copy, Check, Users, Gift, Link, Sparkles, Filter, UserCheck, GraduationCap } from 'lucide-react';
+import { Campaign, ReferralCode, ReferralProgram, User, PreRegistration } from '../../types';
 import { loadAllReferralCodes, persistReferralCode, buildReferralLink } from '../../lib/referral';
+import {
+  getDefaultReferralProgramTitle,
+  getLocalReferralPrograms,
+  upsertReferralProgram,
+  setReferralProgramEnabled,
+  removeReferralProgram,
+} from '../../lib/referralPrograms';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query } from '../../lib/appwrite';
 
 interface MarketingProps {
@@ -21,7 +28,7 @@ export default function Marketing({
   usersList = [],
   preRegistrations = [],
 }: MarketingProps) {
-  const [activeTab, setActiveTab] = useState<'campaigns' | 'referrals'>('referrals');
+  const [activeTab, setActiveTab] = useState<'campaigns' | 'referrals' | 'programs'>('referrals');
 
   // ── States Campagnes ──
   const [showAddCampaignForm, setShowAddCampaignForm] = useState(false);
@@ -44,7 +51,9 @@ export default function Marketing({
   const [refCodeStr, setRefCodeStr] = useState('');
   const [sponsorName, setSponsorName] = useState('');
   const [sponsorEmail, setSponsorEmail] = useState('');
-  const [targetProgram, setTargetProgram] = useState('Tous les programmes');
+  const [targetProgram, setTargetProgram] = useState(getDefaultReferralProgramTitle());
+  const [referralPrograms, setReferralPrograms] = useState<ReferralProgram[]>(() => getLocalReferralPrograms());
+  const [newReferralProgramTitle, setNewReferralProgramTitle] = useState('');
   const [discountReward, setDiscountReward] = useState('10% de réduction sur les frais');
   const [maxUsesStr, setMaxUsesStr] = useState('10');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -196,7 +205,7 @@ export default function Marketing({
     setRefCodeStr('');
     setSponsorName('');
     setSponsorEmail('');
-    setTargetProgram('Tous les programmes');
+    setTargetProgram(getDefaultReferralProgramTitle());
     setDiscountReward('10% de réduction sur les frais');
     setMaxUsesStr('10');
     setEditingReferralId(null);
@@ -214,7 +223,7 @@ export default function Marketing({
     setRefCodeStr(r.code);
     setSponsorName(r.sponsorName);
     setSponsorEmail(r.sponsorEmail);
-    setTargetProgram(r.targetProgram || 'Tous les programmes');
+    setTargetProgram(r.targetProgram || getDefaultReferralProgramTitle());
     setDiscountReward(r.discountReward || 'Frais de dossier offerts');
     setMaxUsesStr(r.maxUses ? String(r.maxUses) : '');
     setShowAddReferralForm(true);
@@ -260,11 +269,21 @@ export default function Marketing({
     setReferralCodes(curr => curr.map(c => c.id === updated.id ? updated : c));
   };
 
-  const handleCopyLink = (code: string) => {
-    const link = buildReferralLink(code);
+  const handleCopyLink = (code: string, program?: string) => {
+    const link = buildReferralLink(code, program);
     navigator.clipboard.writeText(link);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2500);
+  };
+
+  const handleAddReferralProgram = (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = newReferralProgramTitle.trim();
+    if (!title) return;
+    upsertReferralProgram(title);
+    setReferralPrograms(getLocalReferralPrograms());
+    setNewReferralProgramTitle('');
+    setTargetProgram(title);
   };
 
   return (
@@ -297,6 +316,14 @@ export default function Marketing({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" /> Campagnes Média
+          </button>
+          <button
+            onClick={() => setActiveTab('programs')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'programs' ? 'bg-[#006c49] text-white shadow-sm' : 'text-slate-600 hover:text-[#00020e]'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5" /> Programmes de parrainage
           </button>
         </div>
       </div>
@@ -448,8 +475,7 @@ export default function Marketing({
                     onChange={(e) => setTargetProgram(e.target.value)}
                     className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium bg-white"
                   >
-                    <option value="Tous les programmes">Tous les programmes</option>
-                    {programs.map(p => (
+                    {referralPrograms.filter(p => p.enabled).map(p => (
                       <option key={p.id} value={p.title}>{p.title}</option>
                     ))}
                   </select>
@@ -540,7 +566,7 @@ export default function Marketing({
                     </tr>
                   ) : (
                     referralCodes.map((r) => {
-                      const link = buildReferralLink(r.code);
+                      const link = buildReferralLink(r.code, r.targetProgram);
                       const isMaxReached = r.maxUses ? r.currentUses >= r.maxUses : false;
                       return (
                         <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
@@ -550,7 +576,7 @@ export default function Marketing({
                                 {r.code}
                               </span>
                               <button
-                                onClick={() => handleCopyLink(r.code)}
+                                onClick={() => handleCopyLink(r.code, r.targetProgram)}
                                 title="Copier le lien de parrainage"
                                 className="text-slate-400 hover:text-[#006c49] p-1 rounded transition-colors cursor-pointer"
                               >
@@ -589,7 +615,7 @@ export default function Marketing({
                           <td className="p-3.5">
                             <div className="flex justify-center items-center gap-1.5">
                               <button
-                                onClick={() => handleCopyLink(r.code)}
+                                onClick={() => handleCopyLink(r.code, r.targetProgram)}
                                 title="Copier le lien canonique"
                                 className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded cursor-pointer transition-colors"
                               >
@@ -611,6 +637,95 @@ export default function Marketing({
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'programs' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-sans font-bold text-base text-[#00020e]">Programmes ouverts au parrainage</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Un lien de parrainage n’ouvre que ces programmes. Aujourd’hui seul le MScFE est actif ; vous pouvez en ajouter d’autres ici.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleAddReferralProgram}
+            className="bg-white border border-[#c6c6cf] rounded-2xl p-5 space-y-3 shadow-sm"
+          >
+            <p className="text-xs font-bold text-slate-600 uppercase">Ajouter un programme de parrainage</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select
+                value={newReferralProgramTitle}
+                onChange={(e) => setNewReferralProgramTitle(e.target.value)}
+                className="flex-1 p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium bg-white"
+              >
+                <option value="">— Choisir un programme existant —</option>
+                {programs
+                  .filter(p => !referralPrograms.some(rp => rp.title === p.title))
+                  .map(p => (
+                    <option key={p.id} value={p.title}>{p.title}</option>
+                  ))}
+              </select>
+              <input
+                type="text"
+                value={newReferralProgramTitle}
+                onChange={(e) => setNewReferralProgramTitle(e.target.value)}
+                placeholder="ou saisir le titre exact, ex. MScFE"
+                className="flex-1 p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-[#006c49] outline-none text-xs font-medium"
+              />
+              <button
+                type="submit"
+                className="bg-[#006c49] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" /> Ajouter
+              </button>
+            </div>
+          </form>
+
+          <div className="bg-white border border-[#c6c6cf] rounded-2xl overflow-hidden shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase">
+                  <th className="p-4">Programme</th>
+                  <th className="p-4">Identifiant</th>
+                  <th className="p-4">Statut</th>
+                  <th className="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#c6c6cf]/20">
+                {referralPrograms.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/40">
+                    <td className="p-4 font-semibold text-[#00020e]">{p.title}</td>
+                    <td className="p-4 font-mono text-slate-500">{p.slug}</td>
+                    <td className="p-4">
+                      <button
+                        type="button"
+                        onClick={() => setReferralPrograms(setReferralProgramEnabled(p.id, !p.enabled))}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer ${
+                          p.enabled
+                            ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
+                            : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+                        }`}
+                      >
+                        ● {p.enabled ? 'Ouvert au parrainage' : 'Fermé'}
+                      </button>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setReferralPrograms(removeReferralProgram(p.id))}
+                        title="Retirer de la liste"
+                        className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
