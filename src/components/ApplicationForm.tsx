@@ -757,12 +757,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 {validatedReferral && (
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <p className="font-bold">Code Parrainage Valide ({validatedReferral.code})</p>
-                      <p className="text-[11px] opacity-90">
-                        Recommandé par <strong>{validatedReferral.sponsorName}</strong> • Avantage : <strong className="underline">{validatedReferral.discountReward || 'Frais de dossier offerts'}</strong>
-                      </p>
-                    </div>
+                    <p className="font-bold">Code Parrainage Valide ({validatedReferral.code})</p>
                   </div>
                 )}
 
