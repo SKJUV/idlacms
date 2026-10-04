@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   ArrowLeftIcon, CheckCircle2Icon as CheckCircle2,
-  SendIcon as Send, GraduationCapIcon, SunIcon, MoonIcon, DownloadIcon
+  SendIcon as Send, GraduationCapIcon, SunIcon, MoonIcon
 } from './Icons';
 import { Gift, Copy, Check, Share2, Users, Star, Shield, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { persistReferralCode, buildReferralLink } from '../lib/referral';
 import { Program } from '../types';
+import OfficialDocLinks from './OfficialDocLinks';
 
 interface AmbassadorFormProps {
   onBack: () => void;
@@ -239,16 +240,10 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
               {t('amb_page_desc')}
             </p>
             <div className="pt-3">
-              <a
-                href={language === 'en' ? '/IDLA_Ambassador_Program_MScFE_EN.pdf' : '/IDLA_Ambassador_Program_MScFE_FR.pdf'}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white/90 dark:bg-bg-secondary/90 hover:bg-white dark:hover:bg-bg-secondary text-text-primary border border-brand-primary/40 hover:border-brand-primary font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer hover:shadow"
-              >
-                <DownloadIcon className="w-4 h-4 text-brand-primary" />
-                <span>{t('amb_download_guide_btn')}</span>
-              </a>
+              <p className="text-[11px] font-bold text-text-secondary mb-2">
+                {language === 'en' ? 'Official guides — French & English' : 'Guides officiels — français et anglais'}
+              </p>
+              <OfficialDocLinks variant="ambassador" />
             </div>
           </div>
 
@@ -339,16 +334,7 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
               >
                 <MessageCircle className="w-4 h-4" /> {t('amb_share_whatsapp')}
               </button>
-              <a
-                href={language === 'en' ? '/IDLA_Ambassador_Program_MScFE_EN.pdf' : '/IDLA_Ambassador_Program_MScFE_FR.pdf'}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <DownloadIcon className="w-4 h-4 text-brand-primary" />
-                <span>{t('amb_download_guide_btn')}</span>
-              </a>
+              <OfficialDocLinks variant="ambassador" />
               <button
                 onClick={onBack}
                 className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all cursor-pointer"

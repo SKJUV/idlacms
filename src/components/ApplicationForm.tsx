@@ -12,6 +12,7 @@ import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwrite
 import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
 import { ReferralCode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import OfficialDocLinks from './OfficialDocLinks';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, email: string, tempPass?: string) => void;
@@ -836,13 +837,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       </div>
                       <p className="leading-relaxed text-[11px] text-text-secondary">{matchedProg.procedures}</p>
                       {matchedProg.title?.includes('MScFE') && (
-                        <div className="pt-1.5">
+                        <div className="pt-1.5 space-y-2">
                           <a 
                             href="/formulaire?id=form-mscfe-scholarship-2026"
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
                           >
                             <span>{t('mscfe_access_questionnaire')}</span>
                           </a>
+                          <OfficialDocLinks variant="mscfe" compact />
                         </div>
                       )}
                     </div>

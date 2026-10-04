@@ -10,6 +10,7 @@ import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { EVENT_REGISTRATION_FORM } from './PublicPortal';
+import OfficialDocLinks from './OfficialDocLinks';
 
 interface FormPageProps {
   formId?: string;
@@ -474,6 +475,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             <p className="text-sm text-text-secondary mt-2 leading-relaxed max-w-3xl whitespace-pre-line">
               {formDescription}
             </p>
+            {isMScFE && (
+              <div className="pt-4">
+                <p className="text-[11px] font-bold text-text-secondary mb-2">
+                  {language === 'en' ? 'Official policy documents — French & English' : 'Documents officiels de politique — français et anglais'}
+                </p>
+                <OfficialDocLinks variant="mscfe" />
+              </div>
+            )}
           </div>
         </div>
 

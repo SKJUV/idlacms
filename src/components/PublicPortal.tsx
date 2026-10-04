@@ -37,6 +37,8 @@ import {
   MScFEFloatingAdWidget, 
   MScFEAdModal 
 } from './MScFEAdBanner';
+import OfficialDocLinks from './OfficialDocLinks';
+import { AmbassadorAdModal } from './AmbassadorAdBanner';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -724,6 +726,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   // ── MScFE SCHOLARSHIP STATES & HANDLERS ──
   const [showMScFEAdModal, setShowMScFEAdModal] = useState(false);
   const [dismissedMScFETopBanner, setDismissedMScFETopBanner] = useState(false);
+  const [showAmbassadorAdModal, setShowAmbassadorAdModal] = useState(false);
 
   const handleGoToBourse = () => {
     setActiveTab('bourse');
@@ -733,6 +736,32 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const handleApplyMScFEScholarship = () => {
     setShowMScFEAdModal(false);
     handleOpenFormModal('form-mscfe-scholarship-2026');
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'home') return;
+    try {
+      if (sessionStorage.getItem('idla_ambassador_ad_seen') === '1') return;
+    } catch {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setShowAmbassadorAdModal(true);
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [activeTab]);
+
+  const handleCloseAmbassadorAd = () => {
+    setShowAmbassadorAdModal(false);
+    try {
+      sessionStorage.setItem('idla_ambassador_ad_seen', '1');
+    } catch {}
+  };
+
+  const handleRegisterAmbassador = () => {
+    handleCloseAmbassadorAd();
+    setActiveTab('ambassadeur');
+    window.scrollTo({ top: 0 });
   };
 
   const renderTopAdBanner = () => {
@@ -763,6 +792,17 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         isOpen={showMScFEAdModal}
         onClose={() => setShowMScFEAdModal(false)}
         onApply={handleApplyMScFEScholarship}
+      />
+    );
+  };
+
+  const renderAmbassadorAdModal = () => {
+    return (
+      <AmbassadorAdModal
+        isOpen={showAmbassadorAdModal}
+        onClose={handleCloseAmbassadorAd}
+        onRegister={handleRegisterAmbassador}
+        language={language === 'en' ? 'en' : 'fr'}
       />
     );
   };
@@ -1267,13 +1307,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
 
-                  <button
-                    onClick={() => downloadMScFEPolicyPdf(language === 'en' ? 'en' : 'fr')}
-                    className="bg-bg-primary/40 hover:bg-bg-primary text-slate-200 hover:text-white font-bold text-xs px-5 py-4 rounded-2xl border border-white/10 transition-all flex items-center gap-2 cursor-pointer"
-                  >
-                    <DownloadIcon className="w-4 h-4 text-amber-300" />
-                    <span>Politique Officielle (PDF)</span>
-                  </button>
+                  <OfficialDocLinks variant="mscfe" compact />
                 </div>
 
               </div>
@@ -1579,16 +1613,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   {language === 'en' ? 'Register as Ambassador' : "S'inscrire comme Ambassadeur"}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
-                <a
-                  href={language === 'en' ? '/IDLA_Ambassador_Program_MScFE_EN.pdf' : '/IDLA_Ambassador_Program_MScFE_FR.pdf'}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-bg-primary hover:bg-border-primary/50 text-text-primary border border-border-primary px-6 py-3.5 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
-                >
-                  <DownloadIcon className="w-4 h-4 text-brand-primary" />
-                  {t('amb_download_guide_btn')}
-                </a>
+                <OfficialDocLinks variant="ambassador" />
               </div>
             </div>
             <div className="flex-shrink-0 grid grid-cols-2 gap-4 max-w-xs">
@@ -1738,6 +1763,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
+        {renderAmbassadorAdModal()}
       </div>
     );
   }
@@ -1886,13 +1912,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
 
-                  <button
-                    onClick={() => downloadMScFEPolicyPdf(language === 'en' ? 'en' : 'fr')}
-                    className="bg-bg-primary/40 hover:bg-bg-primary text-slate-200 hover:text-white font-bold text-xs px-5 py-4 rounded-2xl border border-white/10 transition-all flex items-center gap-2 cursor-pointer"
-                  >
-                    <DownloadIcon className="w-4 h-4 text-amber-300" />
-                    <span>Politique Officielle (PDF)</span>
-                  </button>
+                  <OfficialDocLinks variant="mscfe" compact />
                 </div>
               </div>
             </div>
@@ -2047,6 +2067,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
         {renderMScFEAdModal()}
+        {renderAmbassadorAdModal()}
       </div>
     );
   }
@@ -2168,6 +2189,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
+        {renderAmbassadorAdModal()}
       </div>
     );
   }
@@ -2901,6 +2923,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
+        {renderAmbassadorAdModal()}
       </div>
     );
   }
@@ -3151,6 +3174,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
+        {renderAmbassadorAdModal()}
       </div>
     );
   }
