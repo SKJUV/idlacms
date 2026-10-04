@@ -282,6 +282,14 @@ export const en: Record<TranslationKeys, string> = {
   amb_phone_required: "Please enter your WhatsApp number.",
   amb_declaration_required: "Please accept the commitment declaration.",
   amb_download_guide_btn: "Download Official Ambassador Guide (PDF)",
+  amb_ad_title: "Ambassador",
+  amb_ad_tagline: "Become an IDLA ambassador and earn 50,000 FCFA for every student you refer.",
+  amb_ad_cta: "Become Ambassador",
+  amb_ad_alt: "IDLA ambassador program poster: Become an IDLA ambassador and earn 50,000 FCFA for every student you refer.",
+  amb_ad_open: "Show ambassador announcement",
+  amb_ad_minimize: "Minimize",
+  amb_ad_close: "Close",
+  amb_ad_register: "Register as ambassador",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. All rights reserved. Official admissions and enrollment platform.",

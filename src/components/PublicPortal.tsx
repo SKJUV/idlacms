@@ -767,10 +767,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   const renderAmbassadorFloatingWidget = () => {
     if (activeTab === 'ambassadeur') return null;
     return (
-      <AmbassadorFloatingAdWidget
-        onRegister={handleRegisterAmbassador}
-        language={language === 'en' ? 'en' : 'fr'}
-      />
+      <AmbassadorFloatingAdWidget onRegister={handleRegisterAmbassador} />
     );
   };
 

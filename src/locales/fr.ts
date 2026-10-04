@@ -280,6 +280,14 @@ export const fr = {
   amb_phone_required: "Veuillez renseigner votre numéro WhatsApp.",
   amb_declaration_required: "Veuillez accepter la déclaration d'engagement.",
   amb_download_guide_btn: "Télécharger le Guide Officiel Ambassadeur (PDF)",
+  amb_ad_title: "Ambassadeur",
+  amb_ad_tagline: "Deviens ambassadeur IDLA et gagne 50 000 FCFA sur chaque étudiant parrainé.",
+  amb_ad_cta: "Devenir Ambassadeur",
+  amb_ad_alt: "Affiche du programme ambassadeur IDLA : Deviens ambassadeur IDLA et gagne 50 000 FCFA sur chaque étudiant parrainé.",
+  amb_ad_open: "Afficher l’annonce ambassadeur",
+  amb_ad_minimize: "Réduire",
+  amb_ad_close: "Fermer",
+  amb_ad_register: "S’inscrire comme ambassadeur",
 
   // Footer
   footer_rights: "© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.",
