@@ -368,8 +368,8 @@ const mscfeFormFields = [
     required: true,
     placeholder: 'Ex: Jean Dupont — 27/09/2026',
     placeholder_en: 'Ex: John Doe — 27/09/2026',
-    helpText: 'Indiquez votre nom complet officiel et la date de soumission.',
-    helpText_en: 'Type your official full legal name and date of submission.'
+    helpText: 'Rempli automatiquement avec votre nom officiel et la date de soumission.',
+    helpText_en: 'Filled automatically with your official full name and the submission date.'
   }
 ];
 

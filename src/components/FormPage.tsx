@@ -13,6 +13,11 @@ import { EVENT_REGISTRATION_FORM } from './PublicPortal';
 import OfficialDocLinks from './OfficialDocLinks';
 import { Gift } from 'lucide-react';
 import { captureReferralFromLocation, getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
+import {
+  applyAutomaticSignature,
+  getApplicantLegalName,
+  isElectronicSignatureField,
+} from '../lib/formSignature';
 
 interface FormPageProps {
   formId?: string;
@@ -51,6 +56,16 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   useEffect(() => {
     setCapturedReferral(captureReferralFromLocation());
   }, []);
+
+  useEffect(() => {
+    if (!form) return;
+    const next = applyAutomaticSignature(form.fields, formValues);
+    const changed = form.fields.some((field) => {
+      if (!isElectronicSignatureField(field)) return false;
+      return next[field.id] !== (formValues[field.id] ?? formValues[field.label] ?? '');
+    });
+    if (changed) setFormValues(next);
+  }, [form, formValues]);
 
   // Constant default form ID for Concours
   const DEFAULT_CONCOURS_FORM_ID = '6a86f5cc003484813061';
@@ -186,10 +201,13 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     if (!form) return;
     setEmailError('');
 
+    const values = applyAutomaticSignature(form.fields, formValues);
+    if (values !== formValues) setFormValues(values);
+
     // Validate age constraints on all date fields
     for (const f of form.fields) {
       if (f.type === 'date' && (f.minAge != null || f.maxAge != null)) {
-        const dateVal = formValues[f.id] ?? formValues[f.label];
+        const dateVal = values[f.id] ?? values[f.label];
         if (dateVal) {
           const today = new Date();
           const birth = new Date(dateVal);
@@ -220,7 +238,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
     // Validate all required fields (ensures radio / checkbox / text / files are checked)
     for (const f of form.fields) {
       if (f.required) {
-        const fieldVal = formValues[f.id] ?? formValues[f.label];
+        const fieldVal = values[f.id] ?? values[f.label];
         const isEmpty = 
           fieldVal === undefined || 
           fieldVal === null || 
@@ -235,24 +253,15 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }
     }
 
-    const respondentName = 
-      formValues['full_legal_name'] ||
-      formValues['1. Nom complet légal'] ||
-      formValues['1. Full Legal Name / Nom complet légal'] ||
-      formValues['1. Full Legal Name'] ||
-      formValues['Nom complet légal'] ||
-      formValues['Nom complet'] || 
-      formValues['Nom & Prénom'] || 
-      formValues['Nom'] || 
-      formValues['Nom de famille'] || 
-      Object.entries(formValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+    const respondentName =
+      getApplicantLegalName(values) ||
       (language === 'en' ? 'IDLA Candidate' : 'Candidat IDLA');
 
     // Strict Email Detection
-    const emailKey = Object.keys(formValues).find(
+    const emailKey = Object.keys(values).find(
       k => k.toLowerCase().includes('email') || k.toLowerCase().includes('e-mail') || k.toLowerCase().includes('courriel')
     );
-    const respondentEmail = emailKey ? String(formValues[emailKey]).trim() : '';
+    const respondentEmail = emailKey ? String(values[emailKey]).trim() : '';
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!respondentEmail || !emailRegex.test(respondentEmail)) {
@@ -275,7 +284,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       respondentName,
       respondentEmail,
       data: {
-        ...formValues,
+        ...values,
         referralCode: capturedReferral || getCapturedReferralCode() || undefined,
       }
     };
@@ -314,7 +323,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
 
     // PDF & Dual Email Send
     try {
-      const pdfB64 = generateFormPdfBase64(form, formValues, refNum);
+      const pdfB64 = generateFormPdfBase64(form, values, refNum);
       setPdfBase64Data(pdfB64);
 
       const emailBodyHtml = `
@@ -334,7 +343,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
             <h4 style="color: #166534; margin-bottom: 10px;">Récapitulatif des informations enregistrées :</h4>
             <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-              ${Object.entries(formValues).map(([k, v], i) => `
+              ${Object.entries(values).map(([k, v], i) => `
                 <tr style="background-color: ${i % 2 === 0 ? '#f8fafc' : '#ffffff'};">
                   <td style="padding: 8px 12px; font-weight: bold; width: 40%; color: #475569;">${k}</td>
                   <td style="padding: 8px 12px; color: #0f172a;">${Array.isArray(v) ? v.join(', ') : v}</td>
@@ -611,8 +620,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
               {form.fields.map((f, idx) => {
                 const val = formValues[f.id] ?? formValues[f.label] ?? '';
                 const fieldLabel = loc(f.label, f.label_en);
-                const fieldHelp = loc(f.helpText, f.helpText_en);
-                const fieldPlaceholder = loc(f.placeholder, f.placeholder_en);
+                const isSignature = isElectronicSignatureField(f);
+                const fieldHelp = isSignature ? t('form_signature_help') : loc(f.helpText, f.helpText_en);
+                const fieldPlaceholder = isSignature
+                  ? t('form_signature_placeholder')
+                  : loc(f.placeholder, f.placeholder_en);
 
                 const updateVal = (newVal: any) => {
                   setFormValues((prev) => ({
@@ -675,7 +687,11 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                         </span>
                         <span>{fieldLabel} {f.required && <span className="text-rose-500">*</span>}</span>
                       </span>
-                      {f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{t('form_field_required')}</span>}
+                      {isSignature ? (
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase font-semibold">{t('form_signature_auto')}</span>
+                      ) : (
+                        f.required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{t('form_field_required')}</span>
+                      )}
                     </label>
 
                     {fieldHelp && (
@@ -687,11 +703,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                       {f.type === 'text' && (
                         <input
                           type="text"
-                          required={f.required}
+                          required={f.required && !isSignature}
+                          readOnly={isSignature}
                           value={val}
                           placeholder={fieldPlaceholder || ''}
-                          onChange={(e) => updateVal(e.target.value)}
-                          className="form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm"
+                          onChange={isSignature ? undefined : (e) => updateVal(e.target.value)}
+                          className={`form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm ${
+                            isSignature ? 'cursor-default bg-emerald-500/5 border-emerald-500/20' : ''
+                          }`}
                         />
                       )}
 
