@@ -37,7 +37,7 @@ export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProp
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400" />
           </span>
           <span className="text-xs font-black tracking-tight">
-            {isEn ? 'Ambassador Program' : 'Programme Ambassadeur'}
+            {isEn ? 'Ambassador' : 'Ambassadeur'}
           </span>
           <ChevronUp className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
@@ -57,7 +57,7 @@ export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProp
           <div className="flex items-center gap-1">
             <Gift className="w-3 h-3 text-amber-400" />
             <span className="uppercase tracking-wider font-extrabold text-[9.5px]">
-              {isEn ? 'Ambassador Program' : 'Programme Ambassadeur'}
+              {isEn ? 'Ambassador' : 'Ambassadeur'}
             </span>
           </div>
           <div className="flex items-center gap-0.5 text-slate-400">
@@ -88,7 +88,7 @@ export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProp
           title={isEn ? 'Register as ambassador' : "S'inscrire comme ambassadeur"}
         >
           <img
-            src="/flyer_ambassadeur_idla.webp"
+            src="/flyer_ambassadeur_idla.webp?v=2"
             alt={isEn ? 'IDLA Ambassador Program' : 'Programme Ambassadeur IDLA'}
             className="w-full h-auto object-cover max-h-[290px]"
           />
