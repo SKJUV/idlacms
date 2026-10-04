@@ -118,3 +118,8 @@ export function findProgramInCatalog<T extends { title: string; type?: string }>
 ): T | undefined {
   return programs.find(p => titlesMatch(p.title, title));
 }
+
+export function getReferralProgramShortLabel(title: string): string {
+  if (/mscfe/i.test(title)) return 'MScFE';
+  return title;
+}

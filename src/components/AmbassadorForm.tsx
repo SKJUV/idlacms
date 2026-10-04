@@ -7,7 +7,7 @@ import { Gift, Copy, Check, Share2, Users, Star, Shield, MessageCircle } from 'l
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { persistReferralCode, buildReferralLink } from '../lib/referral';
-import { getDefaultReferralProgramTitle, getEnabledReferralPrograms } from '../lib/referralPrograms';
+import { getDefaultReferralProgramTitle, getEnabledReferralPrograms, getReferralProgramShortLabel } from '../lib/referralPrograms';
 import { Program } from '../types';
 import OfficialDocLinks from './OfficialDocLinks';
 
@@ -34,7 +34,7 @@ function generateAmbassadorCode(fullName: string): string {
 }
 
 const FORM_INPUT_CLASS =
-  'form-control w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm';
+  'form-control w-full min-w-0 max-w-full p-3 rounded-xl border border-border-primary text-sm font-medium outline-none focus:ring-2 focus:ring-brand-primary transition-all shadow-sm whitespace-normal';
 
 interface AmbassadorFieldProps {
   label: string;
@@ -60,22 +60,24 @@ function AmbassadorField({
   requiredLabel,
 }: AmbassadorFieldProps) {
   return (
-    <div className={`space-y-2 bg-bg-primary/50 p-5 rounded-2xl border transition-all ${error ? 'border-rose-500/60 bg-rose-500/5' : 'border-border-primary/60 hover:border-brand-primary/30'}`}>
-      <label className="text-xs font-bold text-text-primary flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 w-5 h-5 rounded-full flex items-center justify-center">
+    <div className={`space-y-2 bg-bg-primary/50 p-4 sm:p-5 rounded-2xl border transition-all min-w-0 ${error ? 'border-rose-500/60 bg-rose-500/5' : 'border-border-primary/60 hover:border-brand-primary/30'}`}>
+      <label className="text-xs font-bold text-text-primary flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
+        <span className="flex items-start gap-2 min-w-0">
+          <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">
             {index}
           </span>
-          <span>{label} {required && <span className="text-rose-500">*</span>}</span>
+          <span className="min-w-0 whitespace-normal break-words leading-snug">
+            {label} {required && <span className="text-rose-500">*</span>}
+          </span>
         </span>
-        {required && <span className="text-[10px] text-text-secondary uppercase font-semibold">{requiredLabel}</span>}
+        {required && <span className="text-[10px] text-text-secondary uppercase font-semibold shrink-0 pl-7 sm:pl-0">{requiredLabel}</span>}
       </label>
-      {helpText && <p className="text-[11px] text-text-secondary italic pl-6">{helpText}</p>}
-      <div className="pl-6 pt-1">
+      {helpText && <p className="text-[11px] text-text-secondary italic pl-7 sm:pl-6 whitespace-normal break-words leading-snug">{helpText}</p>}
+      <div className="pt-1 min-w-0 sm:pl-6">
         {children}
       </div>
       {error && (
-        <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg ml-6">
+        <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg sm:ml-6 whitespace-normal break-words">
           ⚠️ {error}
         </p>
       )}
@@ -415,36 +417,49 @@ export default function AmbassadorForm({ onBack, programs = [], theme = 'light',
 
             {/* 6. Target Program */}
             <AmbassadorField label={t('amb_field_target_program')} index={6} requiredLabel={requiredLabel}>
-              <select
-                name="targetProgram"
-                value={targetProgram}
-                onChange={(e) => setTargetProgram(e.target.value)}
-                className={FORM_INPUT_CLASS}
-              >
-                {getEnabledReferralPrograms().map(p => (
-                  <option key={p.id} value={p.title}>{p.title}</option>
-                ))}
-              </select>
+              {getEnabledReferralPrograms().length <= 1 ? (
+                <div className={`${FORM_INPUT_CLASS} leading-snug`}>
+                  <span className="block font-bold">{getReferralProgramShortLabel(targetProgram)}</span>
+                  <span className="block text-[11px] font-medium text-text-secondary break-words whitespace-normal">
+                    {targetProgram}
+                  </span>
+                </div>
+              ) : (
+                <select
+                  name="targetProgram"
+                  value={targetProgram}
+                  onChange={(e) => setTargetProgram(e.target.value)}
+                  className={FORM_INPUT_CLASS}
+                >
+                  {getEnabledReferralPrograms().map(p => (
+                    <option key={p.id} value={p.title}>
+                      {getReferralProgramShortLabel(p.title) === p.title
+                        ? p.title
+                        : `${getReferralProgramShortLabel(p.title)} — ${p.title}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </AmbassadorField>
 
             {/* 7. Network Size */}
             <AmbassadorField label={t('amb_field_network')} index={7} requiredLabel={requiredLabel}>
-              <div className="flex flex-wrap gap-2.5 pt-1">
+              <div className="flex flex-col sm:flex-wrap sm:flex-row gap-2 pt-1">
                 {networkOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setNetworkSize(opt.value)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 ${
+                    className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-2 min-w-0 ${
                       networkSize === opt.value
                         ? 'bg-brand-primary text-white border-brand-primary shadow-md'
                         : 'bg-white dark:bg-bg-secondary text-text-primary border-border-primary hover:border-brand-primary/50'
                     }`}
                   >
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${networkSize === opt.value ? 'border-white bg-white' : 'border-text-secondary'}`}>
+                    <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${networkSize === opt.value ? 'border-white bg-white' : 'border-text-secondary'}`}>
                       {networkSize === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
                     </div>
-                    <span>{opt.fr}</span>
+                    <span className="whitespace-normal break-words text-left leading-snug">{opt.fr}</span>
                   </button>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-bg-primary: var(--bg-primary);
@@ -31,8 +32,8 @@
   --primary-hover: #0369a1; /* Sky 700 */
   --primary-light: #f0f9ff;
 
-  --field-bg: #f1f5f9;
-  --field-text: #1e293b;
+  --field-bg: #ffffff;
+  --field-text: #0f172a;
   --field-placeholder: #64748b;
   --field-caret: #0369a1;
 }
@@ -50,8 +51,8 @@
   --primary-hover: #7dd3fc; /* Sky 300 */
   --primary-light: #0c4a6e;
 
-  --field-bg: #0b1220;
-  --field-text: #e2e8f0;
+  --field-bg: #1e293b;
+  --field-text: #f1f5f9;
   --field-placeholder: #94a3b8;
   --field-caret: #38bdf8;
 }
@@ -86,28 +87,49 @@ a {
 
 /*
  * Champs homogènes clair / sombre.
- * color-scheme suit le thème pour éviter un texte natif inversé (blanc sur clair, etc.).
+ * Sur mobile (Android/iOS), color-scheme peint les widgets natifs en noir
+ * et ignore le background CSS. appearance: none force nos couleurs.
  */
 form {
   overflow-anchor: none;
 }
 
-form input[type="text"],
-form input[type="email"],
-form input[type="tel"],
-form input[type="number"],
-form input[type="date"],
-form input[type="password"],
-form input[type="search"],
-form input[type="url"],
-form textarea,
-form select,
-.form-control {
-  color-scheme: inherit;
-  background-color: var(--field-bg);
-  color: var(--field-text);
+html form input[type="text"],
+html form input[type="email"],
+html form input[type="tel"],
+html form input[type="number"],
+html form input[type="date"],
+html form input[type="password"],
+html form input[type="search"],
+html form input[type="url"],
+html form textarea,
+html form select,
+html .form-control {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--field-bg) !important;
+  background-image: none;
+  color: var(--field-text) !important;
+  -webkit-text-fill-color: var(--field-text) !important;
   caret-color: var(--field-caret);
-  border-color: var(--border-color);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+form select,
+select.form-control {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+}
+
+:root.dark form select,
+:root.dark select.form-control {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 
 form input[type="text"]::placeholder,
