@@ -51,7 +51,8 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* auto: évite que le clavier mobile / le focus fasse remonter la page */
+  scroll-behavior: auto;
   background-color: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -71,6 +72,56 @@ textarea,
 a {
   font: inherit;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+/*
+ * Champs de saisie lisibles sur mobile (clair et sombre).
+ * Texte ardoise doux sur fond gris très clair — ni blanc invisible, ni noir agressif.
+ * color-scheme: light empêche Safari / Chrome d'imposer un texte blanc natif.
+ */
+form {
+  overflow-anchor: none;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="tel"],
+form input[type="number"],
+form input[type="date"],
+form input[type="password"],
+form input[type="search"],
+form input[type="url"],
+form textarea,
+form select,
+.form-control {
+  color-scheme: light;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  caret-color: #0369a1;
+}
+
+form input[type="text"]::placeholder,
+form input[type="email"]::placeholder,
+form input[type="tel"]::placeholder,
+form input[type="number"]::placeholder,
+form input[type="password"]::placeholder,
+form input[type="search"]::placeholder,
+form input[type="url"]::placeholder,
+form textarea::placeholder,
+.form-control::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+form input[type="text"]:-webkit-autofill,
+form input[type="email"]:-webkit-autofill,
+form input[type="tel"]:-webkit-autofill,
+form input[type="password"]:-webkit-autofill,
+form textarea:-webkit-autofill,
+.form-control:-webkit-autofill {
+  -webkit-text-fill-color: #1e293b;
+  -webkit-box-shadow: 0 0 0 1000px #f1f5f9 inset;
+  caret-color: #0369a1;
 }
 
 img {
