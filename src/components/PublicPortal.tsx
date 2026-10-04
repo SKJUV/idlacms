@@ -1178,8 +1178,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         </section>
 
         {/* GRAND FORMAT AD BANNER — BOURSE MSCFE 2027 */}
-        <section className="py-14 px-6 md:px-12 bg-gradient-to-br from-slate-950 via-[#031525] to-slate-900 border-y border-sky-500/30 text-white relative overflow-hidden shadow-2xl">
-          {/* Ambient lighting glow */}
+        <section className="campaign-panel py-14 px-6 md:px-12 border-y relative overflow-hidden">
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -1190,7 +1189,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div className="lg:col-span-5 flex flex-col items-center">
                 <div 
                   onClick={handleGoToBourse}
-                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
+                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-300/70 dark:border-sky-400/40 shadow-xl transition-all duration-500 transform hover:-translate-y-2"
                 >
                   <img
                     src="/flyer_bourse_mscfe_2027.webp"
@@ -1208,7 +1207,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-sky-300">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-brand-primary">
                   <button
                     onClick={handleGoToBourse}
                     className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold px-3.5 py-1.5 rounded-xl transition-all shadow cursor-pointer text-xs"
@@ -1219,7 +1218,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
                     download="IDLA_Document_Bourse_MScFE_2027.pdf"
-                    className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 hover:text-brand-hover transition-colors"
                   >
                     <DownloadIcon className="w-4 h-4" />
                     <span>Document PDF</span>
@@ -1230,59 +1229,59 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               {/* Right Column: High-Impact Pitch */}
               <div className="lg:col-span-7 space-y-6">
                 <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 text-xs font-black uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-light border border-brand-primary/25 text-brand-primary text-xs font-black uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     <span>Campagne Officielle de Bourse 2026 / 2027</span>
                   </div>
 
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight leading-tight">
                     Master of Science in Financial Engineering (MScFE)
                   </h2>
 
-                  <p className="text-lg sm:text-xl font-extrabold text-amber-300 flex items-center gap-2">
+                  <p className="text-lg sm:text-xl font-extrabold campaign-accent flex items-center gap-2">
                     <span>Frais de scolarité 100% couverts ($38 612 USD / an)</span>
                   </p>
                 </div>
 
                 {/* Key Benefits Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                       <AwardIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Scolarité 100% Offerte</p>
-                      <p className="text-[11px] text-slate-300">Valeur de 38 612 USD/an intégralement couverte par le fonds de bourse.</p>
+                      <p className="text-xs font-black text-text-primary">Scolarité 100% Offerte</p>
+                      <p className="text-[11px] text-text-secondary">Valeur de 38 612 USD/an intégralement couverte par le fonds de bourse.</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                       <GraduationCapIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Cohorte Janvier 2027</p>
-                      <p className="text-[11px] text-slate-300">Cursus intensif de 2 ans (9 modules + Capstone) en finance quantitative & IA.</p>
+                      <p className="text-xs font-black text-text-primary">Cohorte Janvier 2027</p>
+                      <p className="text-[11px] text-text-secondary">Cursus intensif de 2 ans (9 modules + Capstone) en finance quantitative & IA.</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                       <Shield className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Niveau Requis</p>
-                      <p className="text-[11px] text-slate-300">Licence ou Bachelor minimum (Maths, Info, Gestion, Économie, Ingénierie).</p>
+                      <p className="text-xs font-black text-text-primary">Niveau Requis</p>
+                      <p className="text-[11px] text-text-secondary">Licence ou Bachelor minimum (Maths, Info, Gestion, Économie, Ingénierie).</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                       <GlobeIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé, Cameroun</p>
-                      <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
+                      <p className="text-xs font-black text-text-primary">Campus IDLA Yaoundé, Cameroun</p>
+                      <p className="text-[11px] text-text-secondary">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
                     </div>
                   </div>
                 </div>
@@ -1301,9 +1300,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
                     download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
-                    className="bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                    className="bg-bg-secondary hover:bg-brand-light text-text-primary font-extrabold text-xs px-6 py-4 rounded-2xl border border-border-primary transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
                   >
-                    <DownloadIcon className="w-4 h-4 text-sky-300" />
+                    <DownloadIcon className="w-4 h-4 text-brand-primary" />
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
 
@@ -1786,7 +1785,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {/* HERO AD SHOWCASE */}
         <section className="py-8 px-6 md:px-12">
-          <div className="max-w-[1440px] mx-auto bg-gradient-to-br from-slate-950 via-[#031525] to-slate-900 border border-sky-500/30 text-white rounded-3xl p-6 md:p-12 shadow-2xl relative overflow-hidden">
+          <div className="campaign-panel max-w-[1440px] mx-auto border rounded-3xl p-6 md:p-12 shadow-lg relative overflow-hidden">
             <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -1796,7 +1795,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               <div className="lg:col-span-5 flex flex-col items-center">
                 <div 
                   onClick={() => window.open('/Flyer_Bourse_MScFE_2027.pdf', '_blank')}
-                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(2,132,199,0.3)] transition-all duration-500 transform hover:-translate-y-2 hover:shadow-[0_0_70px_rgba(2,132,199,0.5)]"
+                  className="relative group cursor-pointer max-w-sm rounded-3xl overflow-hidden border-2 border-sky-300/70 dark:border-sky-400/40 shadow-xl transition-all duration-500 transform hover:-translate-y-2"
                   title="Consulter le document en plein écran"
                 >
                   <img
@@ -1815,13 +1814,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-sky-300">
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-xs font-bold text-brand-primary">
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
                     download="IDLA_Document_Bourse_MScFE_2027.pdf"
-                    className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/15 transition-all shadow-sm"
+                    className="inline-flex items-center gap-1.5 bg-bg-secondary hover:bg-brand-light text-text-primary px-4 py-2 rounded-xl border border-border-primary transition-all shadow-sm"
                   >
-                    <DownloadIcon className="w-4 h-4 text-sky-300" />
+                    <DownloadIcon className="w-4 h-4 text-brand-primary" />
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
                 </div>
@@ -1835,59 +1834,59 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                       <Flame className="w-3.5 h-3.5 text-red-600 fill-red-600 animate-bounce" />
                       <span>Campagne Officielle 2026 / 2027</span>
                     </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                       Scolarité 100% Couverte
                     </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight leading-tight">
                     Master of Science in Financial Engineering (MScFE)
                   </h1>
 
-                  <p className="text-lg sm:text-xl font-extrabold text-amber-300">
+                  <p className="text-lg sm:text-xl font-extrabold campaign-accent">
                     Bourse d'Excellence Internationale • $38 612 USD pris en charge
                   </p>
                 </div>
 
                 {/* 4 Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                       <AwardIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Scolarité 100% Offerte</p>
-                      <p className="text-[11px] text-slate-300">38 612 USD/an entièrement financés par la fondation de bourse.</p>
+                      <p className="text-xs font-black text-text-primary">Scolarité 100% Offerte</p>
+                      <p className="text-[11px] text-text-secondary">38 612 USD/an entièrement financés par la fondation de bourse.</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                       <GraduationCapIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Cohorte Janvier 2027</p>
-                      <p className="text-[11px] text-slate-300">Programme intensif de 2 ans, 9 cours et projet Capstone professionnel.</p>
+                      <p className="text-xs font-black text-text-primary">Cohorte Janvier 2027</p>
+                      <p className="text-[11px] text-text-secondary">Programme intensif de 2 ans, 9 cours et projet Capstone professionnel.</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                       <Shield className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Public Éligible</p>
-                      <p className="text-[11px] text-slate-300">Titulaire au minimum d'une Licence ou Bachelor (Sciences, Maths, Info, Éco, etc.).</p>
+                      <p className="text-xs font-black text-text-primary">Public Éligible</p>
+                      <p className="text-[11px] text-text-secondary">Titulaire au minimum d'une Licence ou Bachelor (Sciences, Maths, Info, Éco, etc.).</p>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="campaign-card rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                       <GlobeIcon className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-white">Campus IDLA Yaoundé, Cameroun</p>
-                      <p className="text-[11px] text-slate-300">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
+                      <p className="text-xs font-black text-text-primary">Campus IDLA Yaoundé, Cameroun</p>
+                      <p className="text-[11px] text-text-secondary">24/7 énergie solaire, fibre dédiée, laboratoires Cisco et coaching académique.</p>
                     </div>
                   </div>
                 </div>
@@ -1906,9 +1905,9 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                   <a
                     href="/Flyer_Bourse_MScFE_2027.pdf"
                     download="IDLA_Flyer_Bourse_MScFE_2027.pdf"
-                    className="bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs px-6 py-4 rounded-2xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
+                    className="bg-bg-secondary hover:bg-brand-light text-text-primary font-extrabold text-xs px-6 py-4 rounded-2xl border border-border-primary transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow"
                   >
-                    <DownloadIcon className="w-4 h-4 text-sky-300" />
+                    <DownloadIcon className="w-4 h-4 text-brand-primary" />
                     <span>{t('mscfe_flyer_download')}</span>
                   </a>
 

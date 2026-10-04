@@ -48,7 +48,7 @@ export default function OfficialDocLinks({ variant, compact = false }: OfficialD
           download={doc.download}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 bg-bg-primary hover:bg-border-primary/40 text-text-primary border border-border-primary font-bold text-[11px] px-3 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-1.5 bg-bg-secondary hover:bg-brand-light text-text-primary border border-border-primary font-bold text-[11px] px-3.5 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
         >
           <DownloadIcon className="w-3.5 h-3.5 text-brand-primary" />
           <span>{doc.label}</span>

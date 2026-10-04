@@ -177,6 +177,31 @@ img {
   100% { transform: translateX(-50%); }
 }
 
+/* Panneau campagne (bourse / MScFE) — suit le thème clair/sombre */
+.campaign-panel {
+  background: linear-gradient(135deg, #e0f2fe 0%, var(--bg-secondary) 48%, #ecfdf5 100%);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+:root.dark .campaign-panel {
+  background: linear-gradient(135deg, #0b0f19 0%, #161e2e 52%, #0c4a6e 100%);
+}
+
+.campaign-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+:root.dark .campaign-card {
+  background: rgba(11, 15, 25, 0.55);
+}
+
+.campaign-accent {
+  color: #b45309;
+}
+:root.dark .campaign-accent {
+  color: #fcd34d;
+}
+
 @layer utilities {
   .animate-float {
     animation: float 4s ease-in-out infinite;
