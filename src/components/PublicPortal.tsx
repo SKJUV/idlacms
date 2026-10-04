@@ -1706,24 +1706,24 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               ) : (
                 <form onSubmit={submitDonation} className="p-6 space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Votre nom / organisation *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Votre nom / organisation *</label>
                     <input type="text" value={dDonor} onChange={(e) => setDDonor(e.target.value)} placeholder="ex: Fondation Total"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Email *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Email *</label>
                     <input type="email" value={dEmail} onChange={(e) => setDEmail(e.target.value)} placeholder="ex: contact@exemple.com"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Montant du don (FCFA) *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Montant du don (FCFA) *</label>
                     <input type="number" min="1" value={dAmount} onChange={(e) => setDAmount(e.target.value)} placeholder="ex: 100000"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Message (facultatif)</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Message (facultatif)</label>
                     <textarea value={dMessage} onChange={(e) => setDMessage(e.target.value)} rows={2} placeholder="Affectation souhaitée, mot d'encouragement…"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                   </div>
                   <button type="submit" className="w-full bg-brand-primary text-white py-3 rounded-lg font-bold text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" /> Envoyer mon don
@@ -2692,7 +2692,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   value={val}
                                   placeholder={f.placeholder || ''}
                                   onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                  className="form-control w-full p-2.5 rounded-lg border border-border-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
                                 />
                               )}
 
@@ -2704,7 +2704,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   value={val}
                                   placeholder={f.placeholder || ''}
                                   onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                  className="form-control w-full p-2.5 rounded-lg border border-border-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
                                 />
                               )}
 
@@ -2716,7 +2716,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   value={val}
                                   placeholder={f.placeholder || ''}
                                   onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
+                                  className="form-control w-full p-2.5 rounded-lg border border-border-primary text-xs outline-none focus:ring-2 focus:ring-brand-primary"
                                 />
                               )}
 
@@ -2751,7 +2751,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                       max={maxDate}
                                       min={minDate}
                                       onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                      className={`w-full p-2.5 rounded-lg border bg-bg-primary text-text-primary text-xs outline-none focus:ring-2 transition-all ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
+                                      className={`form-control w-full p-2.5 rounded-lg border text-xs outline-none focus:ring-2 transition-all ${ageError ? 'border-rose-500 focus:ring-rose-500' : 'border-border-primary focus:ring-brand-primary'}`}
                                     />
                                     {ageError && (
                                       <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1">
@@ -2777,7 +2777,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                                   required={f.required}
                                   value={val}
                                   onChange={(e) => setActiveFormValues({ ...activeFormValues, [f.label]: e.target.value })}
-                                  className="w-full p-2.5 rounded-lg border border-border-primary bg-bg-primary text-text-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
+                                  className="form-control w-full p-2.5 rounded-lg border border-border-primary text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary"
                                 >
                                   <option value="">-- Sélectionnez une option --</option>
                                   {availableOptions.map((opt) => (
@@ -2994,26 +2994,26 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
               ) : (
                 <form onSubmit={submitTestimonial} className="p-6 space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Nom complet *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Nom complet *</label>
                     <input type="text" value={tName} onChange={(e) => setTName(e.target.value)} placeholder="ex: Aïcha Diallo"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Fonction</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase">Fonction</label>
                       <input type="text" value={tRole} onChange={(e) => setTRole(e.target.value)} placeholder="ex: Data Analyst"
-                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Promotion</label>
+                      <label className="text-xs font-bold text-text-secondary uppercase">Promotion</label>
                       <input type="text" value={tPromo} onChange={(e) => setTPromo(e.target.value)} placeholder="ex: Promo 2022"
-                        className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Votre témoignage *</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Votre témoignage *</label>
                     <textarea value={tText} onChange={(e) => setTText(e.target.value)} rows={4} placeholder="Racontez votre expérience à l'IDLA…"
-                      className="w-full p-2.5 rounded-lg border border-[#c6c6cf] focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm" required />
                   </div>
                   <button type="submit" className="w-full bg-brand-primary text-white py-3 rounded-lg font-bold text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" /> Soumettre mon témoignage

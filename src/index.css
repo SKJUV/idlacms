@@ -30,6 +30,11 @@
   --primary-color: #0284c7; /* Sky 600 */
   --primary-hover: #0369a1; /* Sky 700 */
   --primary-light: #f0f9ff;
+
+  --field-bg: #f1f5f9;
+  --field-text: #1e293b;
+  --field-placeholder: #64748b;
+  --field-caret: #0369a1;
 }
 
 :root.dark {
@@ -44,6 +49,11 @@
   --primary-color: #38bdf8; /* Sky 400 */
   --primary-hover: #7dd3fc; /* Sky 300 */
   --primary-light: #0c4a6e;
+
+  --field-bg: #0b1220;
+  --field-text: #e2e8f0;
+  --field-placeholder: #94a3b8;
+  --field-caret: #38bdf8;
 }
 
 * {
@@ -75,9 +85,8 @@ a {
 }
 
 /*
- * Champs de saisie lisibles sur mobile (clair et sombre).
- * Texte ardoise doux sur fond gris très clair — ni blanc invisible, ni noir agressif.
- * color-scheme: light empêche Safari / Chrome d'imposer un texte blanc natif.
+ * Champs homogènes clair / sombre.
+ * color-scheme suit le thème pour éviter un texte natif inversé (blanc sur clair, etc.).
  */
 form {
   overflow-anchor: none;
@@ -94,10 +103,11 @@ form input[type="url"],
 form textarea,
 form select,
 .form-control {
-  color-scheme: light;
-  background-color: #f1f5f9;
-  color: #1e293b;
-  caret-color: #0369a1;
+  color-scheme: inherit;
+  background-color: var(--field-bg);
+  color: var(--field-text);
+  caret-color: var(--field-caret);
+  border-color: var(--border-color);
 }
 
 form input[type="text"]::placeholder,
@@ -109,8 +119,13 @@ form input[type="search"]::placeholder,
 form input[type="url"]::placeholder,
 form textarea::placeholder,
 .form-control::placeholder {
-  color: #64748b;
+  color: var(--field-placeholder);
   opacity: 1;
+}
+
+form select option {
+  background-color: var(--field-bg);
+  color: var(--field-text);
 }
 
 form input[type="text"]:-webkit-autofill,
@@ -119,9 +134,9 @@ form input[type="tel"]:-webkit-autofill,
 form input[type="password"]:-webkit-autofill,
 form textarea:-webkit-autofill,
 .form-control:-webkit-autofill {
-  -webkit-text-fill-color: #1e293b;
-  -webkit-box-shadow: 0 0 0 1000px #f1f5f9 inset;
-  caret-color: #0369a1;
+  -webkit-text-fill-color: var(--field-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset;
+  caret-color: var(--field-caret);
 }
 
 img {

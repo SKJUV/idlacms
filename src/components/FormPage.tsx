@@ -820,7 +820,7 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
                               updateVal(`${file.name} (${t('form_uploaded_file')})`);
                             }
                           }}
-                          className="w-full text-xs text-text-secondary border border-border-primary rounded-xl p-2.5 bg-white dark:bg-bg-secondary cursor-pointer"
+                          className="form-control w-full text-xs border border-border-primary rounded-xl p-2.5 cursor-pointer"
                         />
                       )}
                     </div>
