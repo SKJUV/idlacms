@@ -135,7 +135,7 @@ export default function ScholarshipReferrals() {
           Candidatures Bourse, CCNA & Parrainage
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Dossiers remplis via le formulaire de bourse MScFE ou la formation CCNA. Le code parrain est collé ici.
+          Dossiers remplis via les questionnaires de qualification MScFE et CCNA. Le code parrain est collé ici, pas sur l’inscription programme.
         </p>
       </div>
 

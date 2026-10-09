@@ -10,7 +10,7 @@ import {
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
 import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage, isReferralUsable, getCapturedReferralProgram } from '../lib/referral';
-import { findProgramInCatalog } from '../lib/referralPrograms';
+import { CCNA_FORM_ID, findProgramInCatalog } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import OfficialDocLinks from './OfficialDocLinks';
@@ -851,6 +851,16 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                             <span>{t('mscfe_access_questionnaire')}</span>
                           </a>
                           <OfficialDocLinks variant="mscfe" compact />
+                        </div>
+                      )}
+                      {/ccna|cisco/i.test(matchedProg.title || '') && (
+                        <div className="pt-1.5">
+                          <a
+                            href={`/formulaire?id=${CCNA_FORM_ID}`}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
+                          >
+                            <span>{t('ccna_access_questionnaire')}</span>
+                          </a>
                         </div>
                       )}
                     </div>

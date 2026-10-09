@@ -14,7 +14,7 @@ import OfficialDocLinks from './OfficialDocLinks';
 import { Gift } from 'lucide-react';
 import { captureReferralFromLocation, getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
 import { CCNA_FORM_ID } from '../lib/referralPrograms';
-import { CCNA_REGISTRATION_FORM } from '../data/ccnaForm';
+import { CCNA_QUALIFICATION_FORM } from '../data/ccnaForm';
 import {
   applyAutomaticSignature,
   getApplicantLegalName,
@@ -37,14 +37,19 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
   const loc = <T,>(frVal: T, enVal?: T): T => (language === 'en' && enVal != null && enVal !== '') ? enVal : frVal;
 
   const isMScFE = form?.id === 'form-mscfe-scholarship-2026' || form?.title?.toLowerCase().includes('mscfe');
-  const formTitle = (language === 'en' && (form?.title_en || (isMScFE && t('mscfe_form_title'))))
-    ? (form?.title_en || t('mscfe_form_title'))
-    : form?.title || '';
+  const isCCNA = form?.id === CCNA_FORM_ID || form?.title?.toLowerCase().includes('ccna');
+  const formTitle = isCCNA
+    ? t('ccna_form_title')
+    : (language === 'en' && (form?.title_en || (isMScFE && t('mscfe_form_title'))))
+      ? (form?.title_en || t('mscfe_form_title'))
+      : form?.title || '';
   const formDescription = isMScFE
     ? t('mscfe_form_desc')
-    : (language === 'en' && form?.description_en)
-      ? form.description_en
-      : form?.description || '';
+    : isCCNA
+      ? t('ccna_form_desc')
+      : (language === 'en' && form?.description_en)
+        ? form.description_en
+        : form?.description || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -96,6 +101,12 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       // 0. Formulaire d'événement système
       if (targetFormId === 'system_event_registration') {
         setForm(EVENT_REGISTRATION_FORM);
+        setLoading(false);
+        return;
+      }
+
+      if (targetFormId === CCNA_FORM_ID || targetFormId.toLowerCase().includes('ccna')) {
+        setForm(CCNA_QUALIFICATION_FORM);
         setLoading(false);
         return;
       }
@@ -191,12 +202,6 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
           }
         }
       } catch (e) {}
-
-      if (targetFormId === CCNA_FORM_ID || targetFormId.toLowerCase().includes('ccna')) {
-        setForm(CCNA_REGISTRATION_FORM);
-        setLoading(false);
-        return;
-      }
 
       setError('Formulaire introuvable ou indisponible.');
       setLoading(false);
