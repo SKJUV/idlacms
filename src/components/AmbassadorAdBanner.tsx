@@ -7,6 +7,7 @@ const isMobileViewport = () =>
 
 interface AmbassadorFloatingAdWidgetProps {
   onRegister: () => void;
+  embedded?: boolean;
 }
 
 /**
@@ -15,11 +16,15 @@ interface AmbassadorFloatingAdWidgetProps {
  */
 export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProps> = ({
   onRegister,
+  embedded = false,
 }) => {
   const { t, language } = useLanguage();
   const [isMinimized, setIsMinimized] = useState(isMobileViewport);
   const [isDismissed, setIsDismissed] = useState(false);
   const lang = language === 'en' ? 'en' : 'fr';
+  const positionClass = embedded
+    ? 'relative'
+    : 'fixed bottom-3 left-2 sm:bottom-5 sm:left-6';
 
   useEffect(() => {
     const collapseIfOther = (event: Event) => {
@@ -43,7 +48,7 @@ export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProp
       <aside
         lang={lang}
         aria-label={t('amb_ad_title')}
-        className="fixed bottom-3 left-2 sm:bottom-5 sm:left-6 z-40 animate-fade-in"
+        className={`${positionClass} z-40 animate-fade-in`}
       >
         <button
           type="button"
@@ -67,7 +72,7 @@ export const AmbassadorFloatingAdWidget: React.FC<AmbassadorFloatingAdWidgetProp
     <aside
       lang={lang}
       aria-label={t('amb_ad_title')}
-      className="fixed bottom-3 left-2 sm:bottom-5 sm:left-6 z-40 w-[min(46vw,168px)] sm:w-full sm:max-w-[210px] lg:max-w-[240px] animate-fade-in"
+      className={`${positionClass} z-40 w-[min(46vw,168px)] sm:w-full sm:max-w-[210px] lg:max-w-[240px] animate-fade-in`}
     >
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-[#031b33] to-slate-900 text-white border border-emerald-400/40 shadow-[0_12px_40px_rgba(16,185,129,0.28)] p-2 sm:p-3 space-y-1.5 sm:space-y-2.5 backdrop-blur-md">
         <div className="absolute -top-12 -left-12 w-28 h-28 bg-emerald-500/20 rounded-full blur-xl pointer-events-none" aria-hidden="true" />

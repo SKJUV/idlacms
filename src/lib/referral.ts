@@ -1,6 +1,15 @@
 import { ReferralCode } from '../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Query, Permission, Role } from './appwrite';
-import { buildScholarshipReferralPath, getReferralDestinationTitle, MSCFE_SCHOLARSHIP_FORM_ID } from './referralPrograms';
+import {
+  buildCampaignReferralPath,
+  buildScholarshipReferralPath,
+  CCNA_FORM_ID,
+  CCNA_PROGRAM_TITLE,
+  getReferralDestinationTitle,
+  getReferralFormId,
+  MSCFE_PROGRAM_TITLE,
+  MSCFE_SCHOLARSHIP_FORM_ID,
+} from './referralPrograms';
 
 const LOCAL_STORAGE_KEY = 'idla_admin_referral_codes';
 const SESSION_REF_KEY = 'idla_referral_code';
@@ -45,6 +54,9 @@ const parseProgramFromLocation = (): string | null => {
   const hash = window.location.hash || '';
   const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
   const hashParams = hashQuery ? new URLSearchParams(hashQuery) : null;
+  const formId = params.get('id') || hashParams?.get('id');
+  if (formId === CCNA_FORM_ID) return CCNA_PROGRAM_TITLE;
+  if (formId === MSCFE_SCHOLARSHIP_FORM_ID) return MSCFE_PROGRAM_TITLE;
   return params.get('program') || params.get('filiere') || hashParams?.get('program') || hashParams?.get('filiere');
 };
 
@@ -59,12 +71,12 @@ export function getCapturedReferralProgram(): string {
 }
 
 /**
- * Construit l'URL canonique de parrainage vers le formulaire de bourse MScFE.
+ * Construit l'URL canonique de parrainage vers le formulaire de la campagne (MScFE ou CCNA).
  */
-export function buildReferralLink(code: string, _programTitle?: string): string {
+export function buildReferralLink(code: string, programTitle?: string): string {
   if (!code) return '';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online';
-  return `${origin}${buildScholarshipReferralPath(code)}`;
+  return `${origin}${buildCampaignReferralPath(code, programTitle)}`;
 }
 
 /**
@@ -150,11 +162,11 @@ export function withReferralQuery(path: string): string {
   const code = getCapturedReferralCode();
   if (!code) return path;
   if (path.startsWith('/candidature')) {
-    return buildScholarshipReferralPath(code);
+    return buildCampaignReferralPath(code, getCapturedReferralProgram());
   }
   if (!path.startsWith('/formulaire')) return path;
   const url = new URL(path, typeof window !== 'undefined' ? window.location.origin : 'https://idlaacademy.online');
-  if (!url.searchParams.get('id')) url.searchParams.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
+  if (!url.searchParams.get('id')) url.searchParams.set('id', getReferralFormId(getCapturedReferralProgram()));
   if (!url.searchParams.get('ref')) url.searchParams.set('ref', code);
   return `${url.pathname}${url.search}`;
 }

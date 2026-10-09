@@ -292,6 +292,17 @@ export const fr = {
   amb_ad_close: "Fermer",
   amb_ad_register: "S’inscrire comme ambassadeur",
 
+  ccna_ad_title: "CCNA",
+  ccna_ad_tagline: "Formation CCNA pour tous, à partir de 50 000 FCFA.",
+  ccna_ad_cta: "S’inscrire au CCNA",
+  ccna_ad_alt: "Affiche IDLA : Formation CCNA pour tous, à partir de 50 000 FCFA.",
+  ccna_ad_open: "Afficher l’annonce CCNA",
+  ccna_ad_minimize: "Réduire",
+  ccna_ad_close: "Fermer",
+  ccna_ad_register: "S’inscrire à la formation CCNA",
+  ccna_form_title: "Inscription Formation CCNA",
+  ccna_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Formation Cisco CCNA pour tous",
+
   // Footer
   footer_rights: "© 2026 IDLA Academy. Tous droits réservés. Plateforme officielle d'admission et d'inscription.",
 };

@@ -646,7 +646,7 @@ export default function Marketing({
           <div>
             <h3 className="font-sans font-bold text-base text-[#00020e]">Programmes ouverts au parrainage</h3>
             <p className="text-xs text-slate-500 mt-1">
-              Un lien de parrainage n’ouvre que ces programmes. Aujourd’hui seul le MScFE est actif ; vous pouvez en ajouter d’autres ici.
+              Un lien de parrainage ouvre le formulaire de la campagne choisie (MScFE ou CCNA). Vous pouvez en ajouter d’autres ici.
             </p>
           </div>
 

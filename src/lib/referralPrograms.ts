@@ -4,10 +4,33 @@ export const MSCFE_PROGRAM_TITLE = 'Master of Science in Financial Engineering (
 export const MSCFE_PROGRAM_SLUG = 'mscfe';
 export const MSCFE_SCHOLARSHIP_FORM_ID = 'form-mscfe-scholarship-2026';
 
-export function buildScholarshipReferralPath(code?: string | null): string {
-  const params = new URLSearchParams({ id: MSCFE_SCHOLARSHIP_FORM_ID });
+export const CCNA_PROGRAM_TITLE = 'Cisco CCNA — Formation pour tous';
+export const CCNA_PROGRAM_SLUG = 'ccna';
+export const CCNA_FORM_ID = 'form-ccna-2026';
+
+export function buildFormReferralPath(formId: string, code?: string | null): string {
+  const params = new URLSearchParams({ id: formId });
   if (code?.trim()) params.set('ref', code.trim().toUpperCase());
   return `/formulaire?${params.toString()}`;
+}
+
+export function isCcnaProgram(title?: string | null, formId?: string | null): boolean {
+  const t = (title || '').toLowerCase();
+  const id = (formId || '').toLowerCase();
+  return id === CCNA_FORM_ID || id.includes('ccna') || t.includes('ccna') || t.includes('cisco');
+}
+
+export function getReferralFormId(programTitle?: string | null, formId?: string | null): string {
+  if (isCcnaProgram(programTitle, formId)) return CCNA_FORM_ID;
+  return MSCFE_SCHOLARSHIP_FORM_ID;
+}
+
+export function buildScholarshipReferralPath(code?: string | null): string {
+  return buildFormReferralPath(MSCFE_SCHOLARSHIP_FORM_ID, code);
+}
+
+export function buildCampaignReferralPath(code?: string | null, programTitle?: string | null): string {
+  return buildFormReferralPath(getReferralFormId(programTitle), code);
 }
 
 export function isScholarshipFormResponse(formId?: string, formTitle?: string): boolean {
@@ -22,6 +45,16 @@ export function isScholarshipFormResponse(formId?: string, formTitle?: string): 
   );
 }
 
+export function isCcnaFormResponse(formId?: string, formTitle?: string): boolean {
+  const id = (formId || '').toLowerCase();
+  const title = (formTitle || '').toLowerCase();
+  return id === CCNA_FORM_ID || id.includes('ccna') || title.includes('ccna');
+}
+
+export function isTrackedReferralFormResponse(formId?: string, formTitle?: string): boolean {
+  return isScholarshipFormResponse(formId, formTitle) || isCcnaFormResponse(formId, formTitle);
+}
+
 const STORAGE_KEY = 'idla_referral_programs';
 
 export const DEFAULT_REFERRAL_PROGRAMS: ReferralProgram[] = [
@@ -31,6 +64,13 @@ export const DEFAULT_REFERRAL_PROGRAMS: ReferralProgram[] = [
     slug: MSCFE_PROGRAM_SLUG,
     enabled: true,
     createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'refprog_ccna',
+    title: CCNA_PROGRAM_TITLE,
+    slug: CCNA_PROGRAM_SLUG,
+    enabled: true,
+    createdAt: '2026-10-09T00:00:00.000Z',
   },
 ];
 
@@ -49,6 +89,7 @@ const titlesMatch = (a: string, b: string): boolean => {
   if (!left || !right) return false;
   if (left === right) return true;
   if (left.includes('mscfe') && right.includes('mscfe')) return true;
+  if ((left.includes('ccna') || left.includes('cisco')) && (right.includes('ccna') || right.includes('cisco'))) return true;
   return false;
 };
 
@@ -140,5 +181,6 @@ export function findProgramInCatalog<T extends { title: string; type?: string }>
 
 export function getReferralProgramShortLabel(title: string): string {
   if (/mscfe/i.test(title)) return 'MScFE';
+  if (/ccna|cisco/i.test(title)) return 'CCNA';
   return title;
 }

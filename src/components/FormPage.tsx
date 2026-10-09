@@ -13,6 +13,8 @@ import { EVENT_REGISTRATION_FORM } from './PublicPortal';
 import OfficialDocLinks from './OfficialDocLinks';
 import { Gift } from 'lucide-react';
 import { captureReferralFromLocation, getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
+import { CCNA_FORM_ID } from '../lib/referralPrograms';
+import { CCNA_REGISTRATION_FORM } from '../data/ccnaForm';
 import {
   applyAutomaticSignature,
   getApplicantLegalName,
@@ -189,6 +191,12 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
           }
         }
       } catch (e) {}
+
+      if (targetFormId === CCNA_FORM_ID || targetFormId.toLowerCase().includes('ccna')) {
+        setForm(CCNA_REGISTRATION_FORM);
+        setLoading(false);
+        return;
+      }
 
       setError('Formulaire introuvable ou indisponible.');
       setLoading(false);

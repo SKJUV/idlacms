@@ -86,10 +86,19 @@ export default function AdminPortal({
 
   // Marketing campaigns state with local persistence
   const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    const ccnaCampaign: Campaign = {
+      id: 'camp_ccna_2026',
+      name: 'Formation CCNA pour tous',
+      channel: 'Widget + Flyer + Parrainage',
+      status: 'Active',
+      reach: 0,
+    };
     try {
-      return JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+      const stored: Campaign[] = JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+      if (stored.some(c => c.id === ccnaCampaign.id || /ccna/i.test(c.name))) return stored;
+      return [ccnaCampaign, ...stored];
     } catch {
-      return [];
+      return [ccnaCampaign];
     }
   });
 

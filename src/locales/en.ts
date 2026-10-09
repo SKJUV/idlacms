@@ -294,6 +294,17 @@ export const en: Record<TranslationKeys, string> = {
   amb_ad_close: "Close",
   amb_ad_register: "Register as ambassador",
 
+  ccna_ad_title: "CCNA",
+  ccna_ad_tagline: "CCNA training for everyone, starting at 50,000 FCFA.",
+  ccna_ad_cta: "Enroll in CCNA",
+  ccna_ad_alt: "IDLA poster: CCNA training for everyone, starting at 50,000 FCFA.",
+  ccna_ad_open: "Show CCNA announcement",
+  ccna_ad_minimize: "Minimize",
+  ccna_ad_close: "Close",
+  ccna_ad_register: "Register for CCNA training",
+  ccna_form_title: "CCNA Training Registration",
+  ccna_form_desc: "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Cisco CCNA training for everyone",
+
   // Footer
   footer_rights: "© 2026 IDLA Academy. All rights reserved. Official admissions and enrollment platform.",
 };

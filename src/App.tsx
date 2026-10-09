@@ -7,7 +7,7 @@ import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 import { dbAdapter } from './lib/dbAdapter';
 import { captureReferralFromLocation, getCapturedReferralProgram, migrateLegacyReferralHash } from './lib/referral';
-import { buildScholarshipReferralPath, MSCFE_SCHOLARSHIP_FORM_ID } from './lib/referralPrograms';
+import { buildCampaignReferralPath, getReferralFormId } from './lib/referralPrograms';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -365,7 +365,7 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Synchronise l’URL (conserve id + ref sur le formulaire de bourse)
+  // Synchronise l’URL (conserve id + ref sur le formulaire de campagne)
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
@@ -373,11 +373,12 @@ export default function App() {
     const captured = captureReferralFromLocation();
     const referralProgram = captured ? getCapturedReferralProgram() : undefined;
     const candidatureProgram = selectedApplicationProgram || referralProgram;
+    const defaultFormId = getReferralFormId(referralProgram);
 
     if (currentPath !== cleanTarget) {
       if (activeTab === 'formulaire') {
         const params = new URLSearchParams(window.location.search);
-        if (!params.get('id')) params.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
+        if (!params.get('id')) params.set('id', defaultFormId);
         if (captured) params.set('ref', captured);
         window.history.pushState({ tab: activeTab }, '', `${target}?${params.toString()}`);
         return;
@@ -395,7 +396,7 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       let changed = false;
       if (!params.get('id')) {
-        params.set('id', MSCFE_SCHOLARSHIP_FORM_ID);
+        params.set('id', defaultFormId);
         changed = true;
       }
       if (captured && !params.get('ref')) {
@@ -686,7 +687,7 @@ export default function App() {
   const handleApplyToProgram = (programTitle?: string) => {
     const captured = captureReferralFromLocation();
     if (captured) {
-      const next = buildScholarshipReferralPath(captured);
+      const next = buildCampaignReferralPath(captured, programTitle || getCapturedReferralProgram());
       window.history.pushState({ tab: 'formulaire' }, '', next);
       setActiveTab('formulaire');
       return;

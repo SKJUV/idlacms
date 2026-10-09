@@ -3,7 +3,7 @@ import { Gift, Users, Search, Eye, ArrowLeft, Mail } from 'lucide-react';
 import { CustomFormResponse, ReferralCode } from '../../types';
 import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured } from '../../lib/appwrite';
 import { loadAllReferralCodes } from '../../lib/referral';
-import { isScholarshipFormResponse } from '../../lib/referralPrograms';
+import { isCcnaFormResponse, isTrackedReferralFormResponse } from '../../lib/referralPrograms';
 
 const referralFromResponse = (r: CustomFormResponse): string => {
   const raw = r.data?.referralCode || r.data?.sponsorCode || r.data?.ref;
@@ -46,7 +46,7 @@ export default function ScholarshipReferrals() {
           list = [];
         }
       }
-      setResponses(list.filter(r => isScholarshipFormResponse(r.formId, r.formTitle)));
+      setResponses(list.filter(r => isTrackedReferralFormResponse(r.formId, r.formTitle)));
       setCodes(await loadAllReferralCodes());
       setLoading(false);
     };
@@ -130,12 +130,12 @@ export default function ScholarshipReferrals() {
   return (
     <div className="space-y-6">
       <div className="bg-white p-5 rounded-2xl border border-[#c6c6cf] shadow-sm">
-        <h2 className="font-sans font-bold text-xl text-[#00020e] flex items-center gap-2">
+          <h2 className="font-sans font-bold text-xl text-[#00020e] flex items-center gap-2">
           <Gift className="w-5 h-5 text-[#006c49]" />
-          Candidatures Bourse & Parrainage
+          Candidatures Bourse, CCNA & Parrainage
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Dossiers remplis via le formulaire de bourse MScFE. Le code parrain est collé ici, pas sur l’inscription programme.
+          Dossiers remplis via le formulaire de bourse MScFE ou la formation CCNA. Le code parrain est collé ici.
         </p>
       </div>
 
@@ -190,6 +190,7 @@ export default function ScholarshipReferrals() {
           <thead>
             <tr className="bg-slate-50 text-slate-400 border-b border-[#c6c6cf]/30 font-bold uppercase text-[10px]">
               <th className="p-3.5">Candidat</th>
+              <th className="p-3.5">Campagne</th>
               <th className="p-3.5">Code parrain</th>
               <th className="p-3.5">Parrain</th>
               <th className="p-3.5">Date</th>
@@ -198,10 +199,10 @@ export default function ScholarshipReferrals() {
           </thead>
           <tbody className="divide-y divide-[#c6c6cf]/20">
             {loading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-slate-400">Chargement…</td></tr>
+              <tr><td colSpan={6} className="p-8 text-center text-slate-400">Chargement…</td></tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-12 text-center text-slate-400">
+                <td colSpan={6} className="p-12 text-center text-slate-400">
                   <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                   Aucun dossier bourse pour ce filtre.
                 </td>
@@ -216,6 +217,7 @@ export default function ScholarshipReferrals() {
                       <p className="font-bold text-[#00020e]">{r.respondentName || '—'}</p>
                       <p className="text-[10px] text-slate-400">{r.respondentEmail}</p>
                     </td>
+                    <td className="p-3.5 text-slate-600">{isCcnaFormResponse(r.formId, r.formTitle) ? 'CCNA' : 'Bourse MScFE'}</td>
                     <td className="p-3.5 font-mono font-bold text-[#006c49]">{code || '—'}</td>
                     <td className="p-3.5 text-slate-600">{sponsor?.sponsorName || '—'}</td>
                     <td className="p-3.5 text-slate-500">{r.submittedAt}</td>

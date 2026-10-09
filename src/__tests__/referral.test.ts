@@ -8,7 +8,7 @@ import {
   isReferralUsable,
   getCapturedReferralProgram,
 } from '../lib/referral';
-import { getDefaultReferralProgramTitle, MSCFE_PROGRAM_TITLE, MSCFE_SCHOLARSHIP_FORM_ID } from '../lib/referralPrograms';
+import { CCNA_FORM_ID, CCNA_PROGRAM_TITLE, getDefaultReferralProgramTitle, MSCFE_PROGRAM_TITLE, MSCFE_SCHOLARSHIP_FORM_ID } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
 
 const setLocation = (url: string) => {
@@ -28,6 +28,14 @@ describe('referral tracking', () => {
     expect(link).toContain('ref=IDLA-JEA-X8K2P');
     expect(link).not.toContain('#candidature');
     expect(link).not.toContain('/candidature?');
+  });
+
+  it('builds a CCNA form link for the CCNA campaign', () => {
+    const link = buildReferralLink('idla-emm-3ayvp', CCNA_PROGRAM_TITLE);
+    expect(link).toContain('/formulaire?');
+    expect(link).toContain(`id=${CCNA_FORM_ID}`);
+    expect(link).toContain('ref=IDLA-EMM-3AYVP');
+    expect(link).not.toContain(MSCFE_SCHOLARSHIP_FORM_ID);
   });
 
   it('reads the referral code from /formulaire?ref=', () => {

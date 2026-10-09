@@ -39,7 +39,9 @@ import {
 } from './MScFEAdBanner';
 import OfficialDocLinks from './OfficialDocLinks';
 import { AmbassadorFloatingAdWidget } from './AmbassadorAdBanner';
+import { CCNAFloatingAdWidget } from './CCNAAdBanner';
 import { getCapturedReferralCode, registerReferralCodeUsage } from '../lib/referral';
+import { buildCampaignReferralPath, CCNA_PROGRAM_TITLE } from '../lib/referralPrograms';
 
 interface PublicPortalProps {
   activeTab: 'home' | 'bourse' | 'programmes' | 'actualites' | 'temoignages';
@@ -712,7 +714,10 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
   };
 
   const handleOpenFormModal = async (formId: string) => {
-    window.history.pushState({}, '', `/formulaire?id=${formId}`);
+    const ref = getCapturedReferralCode();
+    const params = new URLSearchParams({ id: formId });
+    if (ref) params.set('ref', ref);
+    window.history.pushState({}, '', `/formulaire?${params.toString()}`);
     setActiveTab('formulaire' as any);
   };
 
@@ -743,6 +748,13 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     window.scrollTo({ top: 0 });
   };
 
+  const handleApplyCCNA = () => {
+    const ref = getCapturedReferralCode();
+    const next = buildCampaignReferralPath(ref, CCNA_PROGRAM_TITLE);
+    window.history.pushState({ tab: 'formulaire' }, '', next);
+    setActiveTab('formulaire' as any);
+  };
+
   const renderTopAdBanner = () => {
     if (dismissedMScFETopBanner) return null;
     return (
@@ -765,9 +777,12 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
     );
   };
 
-  const renderAmbassadorFloatingWidget = () => {
+  const renderLeftFloatingStack = () => {
     return (
-      <AmbassadorFloatingAdWidget onRegister={handleRegisterAmbassador} />
+      <div className="fixed bottom-3 left-2 sm:bottom-5 sm:left-6 z-40 flex flex-col-reverse items-start gap-2">
+        <AmbassadorFloatingAdWidget embedded onRegister={handleRegisterAmbassador} />
+        <CCNAFloatingAdWidget embedded onApply={handleApplyCCNA} />
+      </div>
     );
   };
 
@@ -1744,7 +1759,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
 
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorFloatingWidget()}
+        {renderLeftFloatingStack()}
       </div>
     );
   }
@@ -2048,7 +2063,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         </section>
         {renderMScFEAdModal()}
-        {renderAmbassadorFloatingWidget()}
+        {renderLeftFloatingStack()}
       </div>
     );
   }
@@ -2170,7 +2185,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
           </div>
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorFloatingWidget()}
+        {renderLeftFloatingStack()}
       </div>
     );
   }
@@ -2904,7 +2919,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorFloatingWidget()}
+        {renderLeftFloatingStack()}
       </div>
     );
   }
@@ -3155,7 +3170,7 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
         )}
         {renderFloatingAdWidget()}
         {renderMScFEAdModal()}
-        {renderAmbassadorFloatingWidget()}
+        {renderLeftFloatingStack()}
       </div>
     );
   }
