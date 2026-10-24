@@ -26,9 +26,40 @@ function getResendApiKey(): string {
 }
 
 export function getOtpSecret(): string {
-  if (process.env.APPWRITE_API_KEY) return process.env.APPWRITE_API_KEY;
-  if (process.env.RESEND_API_KEY) return process.env.RESEND_API_KEY;
-  return 'idla-secure-master-otp-secret-2026';
+  // Priorité : variable dédiée → fallback stable hardcodé.
+  // Le fallback est identique dans send-otp et verify-otp → pas de désync.
+  return process.env.OTP_SECRET || 'idla-secure-master-otp-secret-2026';
+}
+
+/** Chiffre un payload JSON avec AES-256-GCM. Retourne un token base64url. */
+export async function encryptToken(payload: object, secret: string): Promise<string> {
+  const keyMaterial = crypto.createHash('sha256').update(secret).digest(); // 32 bytes
+  const iv = crypto.randomBytes(12); // 96-bit IV pour GCM
+  const cipher = crypto.createCipheriv('aes-256-gcm', keyMaterial, iv);
+  const plaintext = Buffer.from(JSON.stringify(payload), 'utf8');
+  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const authTag = cipher.getAuthTag(); // 16 bytes
+  // Format : iv(12) + authTag(16) + ciphertext → base64url
+  const combined = Buffer.concat([iv, authTag, encrypted]);
+  return combined.toString('base64url');
+}
+
+/** Déchiffre un token AES-256-GCM. Retourne le payload ou null si invalide. */
+export function decryptToken(token: string, secret: string): object | null {
+  try {
+    const keyMaterial = crypto.createHash('sha256').update(secret).digest();
+    const combined = Buffer.from(token, 'base64url');
+    if (combined.length < 28) return null; // 12 + 16 minimum
+    const iv = combined.subarray(0, 12);
+    const authTag = combined.subarray(12, 28);
+    const ciphertext = combined.subarray(28);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', keyMaterial, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    return JSON.parse(decrypted.toString('utf8'));
+  } catch {
+    return null;
+  }
 }
 
 function postToResend(apiKey: string, payload: any): Promise<{ ok: boolean; status: number; data: any }> {
@@ -124,14 +155,11 @@ export default async function handler(req: any, res: any) {
   // Génération sécurisée côté serveur d'un code OTP à 6 chiffres
   const generatedOtp = Math.floor(100000 + crypto.randomInt(0, 900000)).toString();
 
-  // Signature HMAC avec expiration stricte de 5 minutes
+  // Chiffrement AES-256-GCM : le token est auto-suffisant (contient email + otp + expiresAt)
+  // Aucune variable d'env externe requise pour la vérification.
   const expiresAt = Date.now() + 5 * 60 * 1000;
   const secret = getOtpSecret();
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(`${cleanEmail}:${generatedOtp}:${expiresAt}`)
-    .digest('hex');
-  const token = `${expiresAt}.${signature}`;
+  const token = await encryptToken({ email: cleanEmail, otp: generatedOtp, expiresAt }, secret);
 
   const resendApiKey = getResendApiKey();
   if (!resendApiKey) {

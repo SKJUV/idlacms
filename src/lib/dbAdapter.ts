@@ -101,8 +101,8 @@ export const dbAdapter = {
             },
             [
               Permission.read(Role.any()),
-              Permission.update(Role.any()),
-              Permission.delete(Role.any()),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -128,8 +128,8 @@ export const dbAdapter = {
             updates as any,
             [
               Permission.read(Role.any()),
-              Permission.update(Role.any()),
-              Permission.delete(Role.any()),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -229,9 +229,10 @@ export const dbAdapter = {
             newId,
             docData,
             [
-              Permission.read(Role.any()),
-              Permission.update(Role.any()),
-              Permission.delete(Role.any()),
+              Permission.create(Role.any()),
+              Permission.read(Role.label('admin')),
+              Permission.update(Role.label('admin')),
+              Permission.delete(Role.label('admin')),
             ]
           );
         } catch (err) {
@@ -334,9 +335,8 @@ export const dbAdapter = {
             time: new Date().toISOString(),
           },
           [
-            Permission.read(Role.any()),
-            Permission.update(Role.any()),
-            Permission.delete(Role.any()),
+            Permission.read(Role.label('admin')),
+            Permission.create(Role.users()),
           ]
         );
       } catch (e) {
