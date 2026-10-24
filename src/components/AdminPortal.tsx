@@ -24,12 +24,13 @@ import CmsSettings from './admin/CmsSettings';
 import TeachersManagement from './admin/TeachersManagement';
 import EmailAutomationSection from './admin/EmailAutomationSection';
 import FormsManagement from './admin/FormsManagement';
+import ScholarshipReferrals from './admin/ScholarshipReferrals';
 import AcademicStructure from './admin/AcademicStructure';
 
 type AdminTab =
   | 'admin-login' | 'admin-dashboard' | 'admin-users' | 'admin-add-user' | 'admin-programmes'
   | 'admin-academic'
-  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-forms' | 'admin-donations' | 'admin-marketing'
+  | 'admin-testimonials' | 'admin-news' | 'admin-preregistrations' | 'admin-forms' | 'admin-scholarship-referrals' | 'admin-donations' | 'admin-marketing'
   | 'admin-settings' | 'admin-teachers' | 'admin-profile' | 'admin-email-automation';
 
 interface AdminPortalProps {
@@ -85,10 +86,19 @@ export default function AdminPortal({
 
   // Marketing campaigns state with local persistence
   const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    const ccnaCampaign: Campaign = {
+      id: 'camp_ccna_2026',
+      name: 'Formation CCNA pour tous',
+      channel: 'Widget + Flyer + Parrainage',
+      status: 'Active',
+      reach: 0,
+    };
     try {
-      return JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+      const stored: Campaign[] = JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+      if (stored.some(c => c.id === ccnaCampaign.id || /ccna/i.test(c.name))) return stored;
+      return [ccnaCampaign, ...stored];
     } catch {
-      return [];
+      return [ccnaCampaign];
     }
   });
 
@@ -663,6 +673,10 @@ export default function AdminPortal({
         <FormsManagement
           logActivity={logActivity}
         />
+      )}
+
+      {view === 'admin-scholarship-referrals' && (
+        <ScholarshipReferrals />
       )}
 
       {view === 'admin-donations' && (

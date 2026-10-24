@@ -9,8 +9,11 @@ import {
 } from './Icons';
 import { Mail, ShieldCheck, RefreshCw, AlertCircle, CheckCircle2, Gift } from 'lucide-react';
 import { databases, storage, APPWRITE_CONFIG, isAppwriteDbConfigured, isAppwriteStorageConfigured, ID, account, Query, Permission, Role } from '../lib/appwrite';
-import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage } from '../lib/referral';
+import { parseReferralCodeFromUrl, loadAllReferralCodes, registerReferralCodeUsage, isReferralUsable, getCapturedReferralProgram } from '../lib/referral';
+import { CCNA_FORM_ID, findProgramInCatalog } from '../lib/referralPrograms';
 import { ReferralCode } from '../types';
+import { useLanguage } from '../context/LanguageContext';
+import OfficialDocLinks from './OfficialDocLinks';
 
 interface ApplicationFormProps {
   onSuccess: (candidateName: string, email: string, tempPass?: string) => void;
@@ -21,6 +24,7 @@ interface ApplicationFormProps {
 }
 
 export default function ApplicationForm({ onSuccess, onBackToHome, programs, initialProgram, isLocked = !!initialProgram }: ApplicationFormProps) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,8 +93,12 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     return programs.filter((p) => p.type === selectedProgramType);
   }, [programs, selectedProgramType]);
 
+  const referralProgramTitle = initialProgram || (parseReferralCodeFromUrl() ? getCapturedReferralProgram() : '');
+  const programLocked = isLocked || Boolean(referralProgramTitle);
+
   // Sync selected program when selectedProgramType changes
   useEffect(() => {
+    if (programLocked && selectedProgram) return;
     if (filteredPrograms.length > 0) {
       const alreadyValid = filteredPrograms.some((p) => p.title === selectedProgram);
       if (!alreadyValid) {
@@ -99,18 +107,19 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
     } else {
       setSelectedProgram('');
     }
-  }, [selectedProgramType, filteredPrograms]);
+  }, [selectedProgramType, filteredPrograms, programLocked, selectedProgram]);
 
-  // Set initial program type if initialProgram is provided
+  // Set initial / referral program (MScFE by défaut si lien de parrainage)
   useEffect(() => {
-    if (initialProgram && programs.length > 0) {
-      const matched = programs.find((p) => p.title === initialProgram);
-      if (matched) {
-        setSelectedProgramType(matched.type);
-        setSelectedProgram(matched.title);
-      }
+    if (!referralProgramTitle) return;
+    const matched = findProgramInCatalog(programs, referralProgramTitle);
+    if (matched) {
+      setSelectedProgramType(matched.type || 'Master');
+      setSelectedProgram(matched.title);
+    } else {
+      setSelectedProgram(referralProgramTitle);
     }
-  }, [initialProgram, programs]);
+  }, [referralProgramTitle, programs]);
 
   // Pre-fill student info if logged in and skip OTP + step 1
   useEffect(() => {
@@ -159,15 +168,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
       return;
     }
 
-    if (matched.status !== 'Active') {
+    const usable = isReferralUsable(matched);
+    if (usable.ok === false) {
       setValidatedReferral(null);
-      setReferralCheckMsg('Ce code de parrainage est temporairement en pause.');
-      return;
-    }
-
-    if (matched.maxUses && matched.currentUses >= matched.maxUses) {
-      setValidatedReferral(null);
-      setReferralCheckMsg('La limite d\'utilisations de ce code parrain a été atteinte.');
+      setReferralCheckMsg(usable.reason);
       return;
     }
 
@@ -569,6 +573,9 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
             dateApplied: new Date().toISOString(),
             declarationChecked,
             initials,
+            sponsorCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+            referralCode: sponsorCodeInput ? sponsorCodeInput.trim().toUpperCase() : undefined,
+            sponsorEmail: validatedReferral?.sponsorEmail || undefined,
           };
           const existingLocal = JSON.parse(localStorage.getItem('idla_local_applications') || '[]');
           const filtered = existingLocal.filter((a: any) => a.email !== cleanEmail || a.program);
@@ -678,7 +685,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Votre prénom"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -689,7 +696,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Votre nom de famille"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -702,7 +709,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="prenom.nom@exemple.com"
-                  className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                  className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                   required 
                 />
               </div>
@@ -715,7 +722,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+237 6 00 00 00 00"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                     required 
                   />
                 </div>
@@ -726,7 +733,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
                     placeholder="Votre nationalité"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                   />
                 </div>
               </div>
@@ -749,19 +756,14 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       verifyReferralCode(val);
                     }}
                     placeholder="ex: REF-PAUL2026"
-                    className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-mono font-bold text-text-primary uppercase" 
+                    className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-mono font-bold uppercase" 
                   />
                 </div>
 
                 {validatedReferral && (
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <p className="font-bold">Code Parrainage Valide ({validatedReferral.code})</p>
-                      <p className="text-[11px] opacity-90">
-                        Recommandé par <strong>{validatedReferral.sponsorName}</strong> • Avantage : <strong className="underline">{validatedReferral.discountReward || 'Frais de dossier offerts'}</strong>
-                      </p>
-                    </div>
+                    <p className="font-bold">Code Parrainage Valide ({validatedReferral.code})</p>
                   </div>
                 )}
 
@@ -785,10 +787,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Type de Programme *</label>
                 <select 
                   value={selectedProgramType}
-                  disabled={isLocked}
+                  disabled={programLocked}
                   onChange={(e) => setSelectedProgramType(e.target.value)}
                   className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
-                    isLocked 
+                    programLocked 
                       ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
                       : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
                   }`}
@@ -804,10 +806,10 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                 <label className="text-xs font-bold text-text-secondary uppercase">Programme académique ciblé *</label>
                 <select 
                   value={selectedProgram}
-                  disabled={isLocked}
+                  disabled={programLocked}
                   onChange={(e) => setSelectedProgram(e.target.value)}
                   className={`w-full p-2.5 rounded-lg border text-sm font-semibold outline-none transition-all ${
-                    isLocked 
+                    programLocked 
                       ? 'bg-bg-secondary/70 border-border-primary/60 text-text-secondary cursor-not-allowed opacity-90' 
                       : 'bg-bg-primary border-border-primary focus:ring-2 focus:ring-brand-primary text-text-primary'
                   }`}
@@ -819,8 +821,15 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                   ) : (
                     <option value={selectedProgram || ''}>{selectedProgram || "Aucun programme disponible pour ce type"}</option>
                   )}
+                  {selectedProgram && !filteredPrograms.some((p) => p.title === selectedProgram) && (
+                    <option value={selectedProgram}>{selectedProgram}</option>
+                  )}
                 </select>
-                <p className="text-[11px] text-text-secondary">Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles.</p>
+                <p className="text-[11px] text-text-secondary">
+                  {programLocked
+                    ? 'Ce lien de parrainage ouvre uniquement le programme indiqué ci-dessus.'
+                    : "Sélectionnez la filière d'élite correspondant à vos aspirations professionnelles."}
+                </p>
               </div>
 
               {/* Affichage des procédures d'admission du programme si renseignées */}
@@ -834,12 +843,23 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       </div>
                       <p className="leading-relaxed text-[11px] text-text-secondary">{matchedProg.procedures}</p>
                       {matchedProg.title?.includes('MScFE') && (
-                        <div className="pt-1.5">
+                        <div className="pt-1.5 space-y-2">
                           <a 
                             href="/formulaire?id=form-mscfe-scholarship-2026"
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
                           >
-                            <span>→ Accéder directement au Questionnaire Officiel de Qualification Bourse MScFE</span>
+                            <span>{t('mscfe_access_questionnaire')}</span>
+                          </a>
+                          <OfficialDocLinks variant="mscfe" compact />
+                        </div>
+                      )}
+                      {/ccna|cisco/i.test(matchedProg.title || '') && (
+                        <div className="pt-1.5">
+                          <a
+                            href={`/formulaire?id=${CCNA_FORM_ID}`}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 dark:text-sky-400 hover:underline"
+                          >
+                            <span>{t('ccna_access_questionnaire')}</span>
                           </a>
                         </div>
                       )}
@@ -926,7 +946,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       value={highestDegree}
                       onChange={(e) => setHighestDegree(e.target.value)}
                       placeholder="ex: Licence en Management"
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                       required 
                     />
                   </div>
@@ -937,7 +957,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                       value={graduationYear}
                       onChange={(e) => setGraduationYear(e.target.value)}
                       placeholder="2024"
-                      className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                      className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                       required 
                     />
                   </div>
@@ -958,7 +978,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Min. 8 caractères"
-                        className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                         required 
                       />
                     </div>
@@ -969,7 +989,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Saisissez à nouveau"
-                        className="w-full p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium text-text-primary" 
+                        className="form-control w-full p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary outline-none text-sm font-medium" 
                         required 
                       />
                     </div>
@@ -1190,7 +1210,7 @@ export default function ApplicationForm({ onSuccess, onBackToHome, programs, ini
                             onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             placeholder="_ _ _ _ _ _"
                             maxLength={6}
-                            className="flex-1 text-center text-lg font-bold tracking-[0.5em] p-2.5 rounded-lg bg-bg-primary border border-border-primary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none text-text-primary font-mono"
+                            className="form-control flex-1 text-center text-lg font-bold tracking-[0.5em] p-2.5 rounded-lg border border-border-primary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none font-mono"
                           />
                           <button
                             type="button"

@@ -65,7 +65,7 @@ describe('PublicPortal Component - Homepage Integrity Tests', () => {
     renderPublicPortal();
     expect(screen.getByText(/L'Excellence IDLA|Academic Excellence at IDLA/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Découvrir nos Filières|Explore Degree Programs/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /S'inscrire|Apply Now/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /S'inscrire|Apply Now/i }).length).toBeGreaterThan(0);
   });
 
   it('renders 4 Stats Counter items', () => {
@@ -85,8 +85,8 @@ describe('PublicPortal Component - Homepage Integrity Tests', () => {
 
   it('triggers setActiveTab("programmes") when hero CTA button is clicked', () => {
     renderPublicPortal();
-    const applyBtn = screen.getByRole('button', { name: /S'inscrire|Apply Now/i });
-    fireEvent.click(applyBtn);
+    const explore = screen.getByText(/Découvrir nos Filières|Explore Degree Programs/i);
+    fireEvent.click(explore.closest('button')!);
     expect(defaultProps.setActiveTab).toHaveBeenCalledWith('programmes');
   });
 });

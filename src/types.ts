@@ -86,11 +86,15 @@ export interface FieldRule {
 export interface CustomFormField {
   id: string;
   label: string;
+  label_en?: string;
   type: 'text' | 'textarea' | 'number' | 'select' | 'radio' | 'checkbox' | 'date' | 'file';
   required: boolean;
   options?: string[];
+  options_en?: string[];
   placeholder?: string;
+  placeholder_en?: string;
   helpText?: string;
+  helpText_en?: string;
   displayRules?: FieldRule[];
   cascadeParentId?: string;
   cascadeMapping?: Record<string, string[]>;
@@ -102,7 +106,9 @@ export interface CustomFormField {
 export interface CustomForm {
   id: string;
   title: string;
+  title_en?: string;
   description: string;
+  description_en?: string;
   fields: CustomFormField[];
   createdAt: string;
 }
@@ -359,6 +365,14 @@ export interface ReferralCode {
   currentUses: number;
   expiresAt?: string;
   status: 'Active' | 'Expired' | 'Paused';
+  createdAt: string;
+}
+
+export interface ReferralProgram {
+  id: string;
+  title: string;
+  slug: string;
+  enabled: boolean;
   createdAt: string;
 }
 

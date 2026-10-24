@@ -5,6 +5,7 @@
  */
 
 import { generateMatricule } from './admissionLetter';
+import { buildCampaignReferralPath } from './referralPrograms';
 
 export const BASE_URL = 'https://idlaacademy.online';
 
@@ -668,7 +669,7 @@ En tant qu'étudiant de l'International Distance Learning Academy, vous avez la 
 Votre code parrainage individuel est : ${d.referralCode || 'IDLA-AMBASSADEUR'}
 
 Modalités du dispositif :
-1. Communiquez votre code ou votre lien personnalisé : ${BASE_URL}/candidature?ref=${d.referralCode || 'IDLA-AMBASSADEUR'}
+1. Communiquez votre code ou votre lien personnalisé : ${BASE_URL}${buildCampaignReferralPath(d.referralCode || 'IDLA-AMBASSADEUR', d.programTitle)}
 2. Les candidats recommandés bénéficient d'une exonération partielle des frais de dossier.
 3. Chaque recommandation validée par le comité d'admission vous donne droit à une gratification d'excellence.
 

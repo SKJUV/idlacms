@@ -3,10 +3,11 @@ import { useToast } from './context/ToastContext';
 import { useAppStore } from './store/useAppStore';
 import Header from './components/Header';
 import AdminSidebar from './components/AdminSidebar';
-import EntranceModal from './components/EntranceModal';
 import { Program, NewsArticle, Testimonial, Donation } from './types';
 import { account, databases, APPWRITE_CONFIG, isAppwriteDbConfigured, Query, Permission, ID, Role as AppwriteRole } from './lib/appwrite';
 import { dbAdapter } from './lib/dbAdapter';
+import { captureReferralFromLocation, getCapturedReferralProgram, migrateLegacyReferralHash } from './lib/referral';
+import { buildCampaignReferralPath, getReferralFormId } from './lib/referralPrograms';
 
 // Lazy loading des gros composants pour le Code Splitting
 const PublicPortal = lazy(() => import('./components/PublicPortal'));
@@ -17,14 +18,17 @@ const AdminPortal = lazy(() => import('./components/AdminPortal'));
 const TeacherPortal = lazy(() => import('./components/TeacherPortal'));
 const PasswordReset = lazy(() => import('./components/PasswordReset'));
 const FormPage = lazy(() => import('./components/FormPage'));
+const AmbassadorForm = lazy(() => import('./components/AmbassadorForm'));
 
 export type ActiveTab =
   | 'home'
+  | 'bourse'
   | 'programmes'
   | 'actualites'
   | 'temoignages'
   | 'formulaire'
   | 'candidature'
+  | 'ambassadeur'
   | 'success'
   | 'student-login'
   | 'student-dashboard'
@@ -46,6 +50,7 @@ export type ActiveTab =
   | 'admin-news'
   | 'admin-preregistrations'
   | 'admin-forms'
+  | 'admin-scholarship-referrals'
   | 'admin-donations'
   | 'admin-marketing'
   | 'admin-email-automation'
@@ -58,14 +63,14 @@ export type ActiveTab =
 
 export type Role = 'guest' | 'student' | 'admin' | 'teacher';
 
-const PUBLIC_TABS: ActiveTab[] = ['home', 'programmes', 'actualites', 'temoignages'];
+const PUBLIC_TABS: ActiveTab[] = ['home', 'bourse', 'programmes', 'actualites', 'temoignages'];
 const STUDENT_TABS: ActiveTab[] = [
   'student-login', 'student-dashboard', 'student-schedule', 'student-chat', 'student-programs', 'student-catalog',
   'student-profile', 'student-settings',
 ];
 const ADMIN_TABS: ActiveTab[] = [
   'admin-login', 'admin-dashboard', 'admin-users', 'admin-teachers', 'admin-add-user', 'admin-programmes',
-  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-donations',
+  'admin-academic', 'admin-testimonials', 'admin-news', 'admin-preregistrations', 'admin-forms', 'admin-scholarship-referrals', 'admin-donations',
   'admin-marketing', 'admin-email-automation', 'admin-settings', 'admin-profile',
 ];
 const TEACHER_TABS: ActiveTab[] = [
@@ -73,11 +78,13 @@ const TEACHER_TABS: ActiveTab[] = [
 ];
 const TAB_TO_PATH: Record<ActiveTab, string> = {
   home: '/',
+  bourse: '/bourse',
   programmes: '/programmes',
   actualites: '/actualites',
   temoignages: '/temoignages',
   formulaire: '/formulaire',
   candidature: '/candidature',
+  ambassadeur: '/ambassadeur',
   success: '/candidature/confirmation',
   'student-login': '/etudiant',
   'student-dashboard': '/etudiant/tableau-de-bord',
@@ -99,6 +106,7 @@ const TAB_TO_PATH: Record<ActiveTab, string> = {
   'admin-news': '/admin/actualites',
   'admin-preregistrations': '/admin/pre-inscriptions',
   'admin-forms': '/admin/formulaires',
+  'admin-scholarship-referrals': '/admin/bourse-parrainage',
   'admin-donations': '/admin/dons',
   'admin-marketing': '/admin/marketing',
   'admin-email-automation': '/admin/relances',
@@ -131,9 +139,33 @@ const tabFromPath = (pathname: string): ActiveTab => {
 
 export default function App() {
   const { warning: showWarningToast } = useToast();
-  const [activeTab, setActiveTab] = useState<ActiveTab>(() =>
-    typeof window !== 'undefined' ? tabFromPath(window.location.pathname) : 'home'
-  );
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const migrated = migrateLegacyReferralHash();
+    if (migrated.tab) return migrated.tab;
+    captureReferralFromLocation();
+    return tabFromPath(window.location.pathname);
+  });
+  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('program') || params.get('filiere') || undefined;
+    if (captureReferralFromLocation()) {
+      return getCapturedReferralProgram();
+    }
+    return fromUrl;
+  });
+
+  useEffect(() => {
+    const migrated = migrateLegacyReferralHash();
+    const captured = captureReferralFromLocation();
+    if (migrated.tab && migrated.tab !== activeTab) {
+      setActiveTab(migrated.tab);
+    }
+    if (captured) {
+      setSelectedApplicationProgram(getCapturedReferralProgram());
+    }
+  }, []);
   const [role, setRole] = useState<Role>('guest');
   const [isSessionChecking, setIsSessionChecking] = useState(true);
 
@@ -333,20 +365,56 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Synchronise URL with current view
+  // Synchronise l’URL (conserve id + ref sur le formulaire de campagne)
   useEffect(() => {
     const target = TAB_TO_PATH[activeTab];
     const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
     const cleanTarget = target.replace(/\/+$/, '') || '/';
-    
+    const captured = captureReferralFromLocation();
+    const referralProgram = captured ? getCapturedReferralProgram() : undefined;
+    const candidatureProgram = selectedApplicationProgram || referralProgram;
+    const defaultFormId = getReferralFormId(referralProgram);
+
     if (currentPath !== cleanTarget) {
-      window.history.pushState({ tab: activeTab }, '', target);
+      if (activeTab === 'formulaire') {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get('id')) params.set('id', defaultFormId);
+        if (captured) params.set('ref', captured);
+        window.history.pushState({ tab: activeTab }, '', `${target}?${params.toString()}`);
+        return;
+      }
+      const params = new URLSearchParams();
+      if (activeTab === 'candidature') {
+        if (candidatureProgram) params.set('program', candidatureProgram);
+      }
+      const qs = params.toString();
+      window.history.pushState({ tab: activeTab }, '', qs ? `${target}?${qs}` : target);
+      return;
     }
-  }, [activeTab]);
+
+    if (activeTab === 'formulaire') {
+      const params = new URLSearchParams(window.location.search);
+      let changed = false;
+      if (!params.get('id')) {
+        params.set('id', defaultFormId);
+        changed = true;
+      }
+      if (captured && !params.get('ref')) {
+        params.set('ref', captured);
+        changed = true;
+      }
+      if (changed) {
+        window.history.replaceState({ tab: activeTab }, '', `${target}?${params.toString()}`);
+      }
+    }
+  }, [activeTab, selectedApplicationProgram]);
 
   // Back/Forward browser navigation support
   useEffect(() => {
-    const onPopState = () => setActiveTab(tabFromPath(window.location.pathname));
+    const onPopState = () => {
+      captureReferralFromLocation();
+      setActiveTab(tabFromPath(window.location.pathname));
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -616,21 +684,20 @@ export default function App() {
     setActiveTab('success');
   };
 
-  const [selectedApplicationProgram, setSelectedApplicationProgram] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('program') || params.get('filiere') || undefined;
-    }
-    return undefined;
-  });
-
   const handleApplyToProgram = (programTitle?: string) => {
+    const captured = captureReferralFromLocation();
+    if (captured) {
+      const next = buildCampaignReferralPath(captured, programTitle || getCapturedReferralProgram());
+      window.history.pushState({ tab: 'formulaire' }, '', next);
+      setActiveTab('formulaire');
+      return;
+    }
     setSelectedApplicationProgram(programTitle);
     if (typeof window !== 'undefined') {
-      const newUrl = programTitle
-        ? `${window.location.origin}/candidature?program=${encodeURIComponent(programTitle)}`
-        : `${window.location.origin}/candidature`;
-      window.history.pushState({ tab: 'candidature' }, '', newUrl);
+      const params = new URLSearchParams();
+      if (programTitle) params.set('program', programTitle);
+      const qs = params.toString();
+      window.history.pushState({ tab: 'candidature' }, '', qs ? `/candidature?${qs}` : '/candidature');
     }
     setActiveTab('candidature');
   };
@@ -865,6 +932,16 @@ export default function App() {
           />
         )}
 
+        {/* AMBASSADOR REGISTRATION FORM */}
+        {activeTab === 'ambassadeur' && (
+          <AmbassadorForm
+            onBack={() => setActiveTab('home')}
+            programs={programs}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        )}
+
         {/* APPLICATION STEPPER FORM */}
         {activeTab === 'candidature' && (
           <ApplicationForm
@@ -963,18 +1040,6 @@ export default function App() {
         )}
         </Suspense>
       </main>
-
-      {/* Floating Concours Badge (Bottom Left Corner) - VISIBLE ONLY ON PUBLIC PAGES (Home, Programmes, Actualités, Témoignages, Formulaires). HIDDEN IN ACCOUNT DASHBOARDS. */}
-      {!isDashboardLayout && (PUBLIC_TABS.includes(activeTab) || activeTab === 'formulaire' || activeTab === 'candidature') && (
-        <EntranceModal
-          onOpenConcoursForm={() => {
-            const searchParams = new URLSearchParams(window.location.search);
-            searchParams.set('id', '6a86f5cc003484813061');
-            window.history.pushState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
-            setActiveTab('formulaire');
-          }}
-        />
-      )}
     </div>
   );
 }

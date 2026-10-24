@@ -8,51 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-      #google_translate_element {
-        position: fixed;
-        bottom: 15px;
-        right: 15px;
-        z-index: 9999;
-        background: white;
-        padding: 2px 5px;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        opacity: 0.2;
-        transform: scale(0.8);
-        transform-origin: bottom right;
-        transition: all 0.3s ease;
-      }
-      #google_translate_element:hover {
-        opacity: 1;
-        transform: scale(1);
-      }
-      /* Cacher la bannière supérieure de Google Translate */
-      .goog-te-banner-frame.skiptranslate,
-      .goog-te-banner-frame,
-      #goog-gt-tt,
-      .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
-      .VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc {
-        display: none !important;
-      }
-      body {
-        top: 0px !important;
-        position: static !important;
-      }
-      html {
-        height: auto !important;
-      }
-    </style>
   </head>
   <body>
-    <div id="google_translate_element"></div>
     <div id="root"></div>
-    <script type="text/javascript">
-      function googleTranslateElementInit() {
-        new google.translate.TranslateElement({pageLanguage: 'fr', includedLanguages: 'en,fr,es,ar', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
-      }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

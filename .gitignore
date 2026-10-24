@@ -33,3 +33,4 @@ backups/
 # Scripts & Local Tools
 scripts/*
 !scripts/create-mscfe-program-and-form.mjs
+!scripts/restore-concours-campaign.mjs
