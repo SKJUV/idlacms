@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { getOtpSecret, decryptToken } from './send-otp';
 
 export default async function handler(req: any, res: any) {
@@ -66,7 +67,7 @@ export default async function handler(req: any, res: any) {
   // Vérification du code OTP (comparaison en temps constant pour éviter les timing attacks)
   const otpBuf = Buffer.from(cleanOtp.padEnd(6, '\0'));
   const expectedBuf = Buffer.from(String(payload.otp).padEnd(6, '\0'));
-  if (otpBuf.length !== expectedBuf.length || !require('crypto').timingSafeEqual(otpBuf, expectedBuf)) {
+  if (otpBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(otpBuf, expectedBuf)) {
     return res.status(400).json({ 
       success: false, 
       error: 'Code de vérification incorrect. Veuillez vérifier le code reçu par e-mail et réessayer.' 

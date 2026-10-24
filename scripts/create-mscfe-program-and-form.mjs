@@ -319,18 +319,18 @@ const mscfeFormFields = [
   },
   {
     id: 'financial_commitment',
-    label: '18. Engagement financier (frais administratifs et de documentation)',
-    label_en: '18. Financial Commitment (administrative and documentation charges/fees)',
+    label: '18. Engagement financier (frais de dossier et frais administratifs)',
+    label_en: '18. Financial Commitment (application file fees and administrative fees)',
     type: 'radio',
     required: true,
     options: [
-      "Oui, je suis prêt(e) à régler les 796,26 USD TTC (450 000 FCFA) de frais administratifs et de documentation."
+      "Oui, je suis prêt(e) à régler les 450 000 FCFA (796,26 USD TTC) de frais de dossier et de frais administratifs."
     ],
     options_en: [
-      "Yes, I am fully prepared to pay $796.26 USD incl. tax (450,000 FCFA) in administrative and documentation fees."
+      "Yes, I am fully prepared to pay 450,000 FCFA ($796.26 USD incl. tax) in application file fees and administrative fees."
     ],
-    helpText: "Frais administratifs et de documentation obligatoires : 450 000 FCFA ($796.26 USD TTC) pour les infrastructures du campus de Yaoundé (énergie solaire 24/7, fibre optique, Cisco labs, English for IT et coaching).",
-    helpText_en: "Mandatory administrative and documentation fees: 450,000 FCFA ($796.26 USD incl. tax) covering 24/7 solar power, dedicated fiber optic internet, Cisco labs, English for IT, and local coaching in Yaoundé."
+    helpText: "Les 450 000 FCFA correspondent uniquement aux frais de dossier et aux frais administratifs. La scolarité et l'inscription officielle sont couvertes par la bourse.",
+    helpText_en: "The 450,000 FCFA covers application file fees and administrative fees only. Tuition and official enrollment are covered by the scholarship."
   },
 
   // SECTION 6: MOTIVATION & APPLICANT DECLARATION
@@ -352,11 +352,11 @@ const mscfeFormFields = [
     type: 'radio',
     required: true,
     options: [
-      "Je certifie que toutes les informations fournies dans cette candidature sont exactes et complètes. Je comprends que l'IDLA héberge et gère localement le programme MScFE et que le défaut de règlement des frais administratifs et de documentation de 450 000 FCFA (796,26 USD TTC) entraînera la révocation de ma bourse.",
+      "Je certifie que toutes les informations fournies dans cette candidature sont exactes et complètes. Je comprends que l'IDLA héberge et gère localement le programme MScFE et que le défaut de règlement des frais de dossier et des frais administratifs de 450 000 FCFA (796,26 USD TTC) entraînera la révocation de ma bourse.",
       "Je ne suis pas d'accord"
     ],
     options_en: [
-      "I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the administrative and documentation charges/fees of 450,000 FCFA ($796.26 USD incl. tax) will result in forfeiture of my scholarship seat.",
+      "I certify that all information provided in this application is accurate and complete. I understand that IDLA hosts and manages the MScFE program locally and that failure to settle the application file fees and administrative fees of 450,000 FCFA ($796.26 USD incl. tax) will result in forfeiture of my scholarship seat.",
       "I do not agree"
     ]
   },
@@ -388,11 +388,10 @@ const programData = {
   duration: '2 ans',
   image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80',
   isNew: true,
-  price: '38 612 USD (Bourse 100% Quant Foundation) — Frais administratifs et documentation 450 000 FCFA/an (796,26 USD TTC)',
+  price: '38 612 USD (Bourse 100% Quant Foundation) — Frais de dossier et frais administratifs 450 000 FCFA/an (796,26 USD TTC)',
   procedures: 
     "Admission sur dossier d'excellence et questionnaire de qualification MScFE en ligne (Lien : /formulaire?id=form-mscfe-scholarship-2026). " +
-    "Frais académiques pris en charge à 100%. Frais administratifs et de documentation obligatoires de 450 000 FCFA ($796.26 USD TTC) " +
-    "couvrant les infrastructures de haute technologie du campus IDLA de Yaoundé."
+    "Scolarité et inscription officielle prises en charge à 100%. Les 450 000 FCFA ($796.26 USD TTC) correspondent uniquement aux frais de dossier et aux frais administratifs."
 };
 
 // ── 3. EXÉCUTION DE LA CRÉATION & LIAISON ─────────────────────────────────────
@@ -414,9 +413,7 @@ async function main() {
     } catch (e) {}
 
     const formDescription_en = 
-      "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)\n" +
-      "Excellence Scholarship valued at $38,612 USD/year (100% covered by Quant Foundation / IDLA-WQ).\n" +
-      "Mandatory administrative and documentation charges/fees: $796.26 USD incl. tax (450,000 FCFA) for 24/7 Yaoundé campus access (solar power, fiber internet, Cisco labs, English for IT, coaching).";
+      "INTERNATIONAL DISTANCE LEARNING ACADEMY (IDLA) — Master of Science in Financial Engineering (MScFE)";
 
     const formPayload = {
       title: 'Questionnaire Officiel de Qualification Bourse MScFE',
@@ -478,11 +475,33 @@ async function main() {
     } catch (e) {}
 
     if (existingNews) {
+      let description = existingNews.description || '';
+      description = description.replace(
+        /•\s*Official Registration Fee:\s*\n\s*NOT COVERED[^\n]*/i,
+        '• Official Registration Fee:\n  100% COVERED\n  Responsible Party: IDLA - WQ / Scholarship Fund'
+      );
+      description = description.replace(
+        /ARTICLE 2:[\s\S]*?(?=\nARTICLE\s+\d+:)/i,
+        `ARTICLE 2: FRAIS DE DOSSIER ET FRAIS ADMINISTRATIFS
+
+Les 450 000 FCFA (796,26 USD TTC) par année académique correspondent uniquement aux frais de dossier et aux frais administratifs. Ils sont distincts de la scolarité académique et des frais d'inscription officielle, tous deux couverts à 100 % par la bourse.
+
+1. Frais de dossier:
+Traitement du dossier de candidature, audit documentaire et vérification des diplômes.
+
+2. Frais administratifs:
+Onboarding administratif, maintien du statut IDLA et gestion administrative du programme.
+
+TOTAL ANNUAL DEPOSIT DUE: 450 000 FCFA ($796.26 USD TTC / an)
+
+`
+      );
       await withRetry(() => databases.updateDocument(DB_ID, 'news', NEWS_ID, {
         formId: FORM_ID,
-        formUrl: `/formulaire?id=${FORM_ID}`
+        formUrl: `/formulaire?id=${FORM_ID}`,
+        description
       }));
-      console.log(`   ✅ Actualité [${NEWS_ID}] liée avec succès au formulaire [${FORM_ID}].`);
+      console.log(`   ✅ Actualité [${NEWS_ID}] mise à jour (inscription couverte, 450k = dossier + administratifs).`);
     } else {
       console.log(`   ℹ️ L'actualité [${NEWS_ID}] n'a pas été trouvée pour la mise à jour.`);
     }

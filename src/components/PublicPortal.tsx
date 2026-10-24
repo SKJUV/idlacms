@@ -137,14 +137,50 @@ function getArticlePreview(text: string): string {
   return meaningfulLine || lines[0] || '';
 }
 
+function normalizeMscfePolicyText(raw: string): string {
+  if (!raw.includes('SCHOLARSHIP') && !/Tuition-Only|Official Registration Fee/i.test(raw)) {
+    return raw;
+  }
+
+  let text = raw.replace(
+    /structured as a Tuition-Only Excellence Award\.[^\n]*/i,
+    "structured as an excellence award covering academic tuition and official enrollment. The 450,000 FCFA payable by the student covers application file fees and administrative fees only."
+  );
+
+  text = text.replace(
+    /•\s*Official Registration Fee:\s*\n\s*NOT COVERED[^\n]*/i,
+    '• Official Registration Fee:\n  100% COVERED\n  Responsible Party: IDLA - WQ / Scholarship Fund'
+  );
+
+  text = text.replace(
+    /ARTICLE 2:[\s\S]*?(?=\nARTICLE\s+\d+:)/i,
+    `ARTICLE 2: FRAIS DE DOSSIER ET FRAIS ADMINISTRATIFS
+
+Les 450 000 FCFA (796,26 USD TTC) par année académique correspondent uniquement aux frais de dossier et aux frais administratifs. Ils sont distincts de la scolarité académique et des frais d'inscription officielle, tous deux couverts à 100 % par la bourse.
+
+1. Frais de dossier:
+Traitement du dossier de candidature, audit documentaire et vérification des diplômes.
+
+2. Frais administratifs:
+Onboarding administratif, maintien du statut IDLA et gestion administrative du programme.
+
+TOTAL ANNUAL DEPOSIT DUE: 450 000 FCFA ($796.26 USD TTC / an)
+
+`
+  );
+
+  return text;
+}
+
 /**
  * FormattedDescription:
  * Renders rich academic and event articles with structured typography,
  * detecting institutional headers, multi-article sections, coverage matrices,
  * financial highlights, and student commitment blocks.
  */
-function FormattedDescription({ text, className = '' }: { text: string; className?: string }) {
-  if (!text) return null;
+function FormattedDescription({ text: rawText, className = '' }: { text: string; className?: string }) {
+  if (!rawText) return null;
+  const text = normalizeMscfePolicyText(rawText);
 
   // ── Step 1: Parse raw text into structured semantic blocks ──
   interface Block {
@@ -155,6 +191,7 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
     description?: string;
     category?: string;
     isCovered?: boolean;
+    isTuition?: boolean;
     party?: string;
     detail?: string;
     text?: string;
@@ -276,17 +313,20 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
       }
 
       // Check if this bullet belongs to a Scholarship Coverage Matrix
-      const isCoverage = subLines.some(l => /COVERED/i.test(l)) || /COVERED/i.test(bulletText);
+      const isCoverage = subLines.some(l => /COVERED|COUVERT/i.test(l)) || /COVERED|COUVERT/i.test(bulletText);
       if (isCoverage) {
         const category = bulletText.replace(/:$/, '').trim();
         const allText = [bulletText, ...subLines].join(' ');
-        const isCovered = /100%\s*COVERED/i.test(allText);
-        let party = "Étudiant / Candidat";
-        if (allText.includes('IDLA') || allText.includes('Scholarship Fund') || allText.includes('WQ')) {
-          party = 'IDLA - WQ / Fonds de Bourse';
-        }
-        const detail = isCovered ? '100% Pris en charge (38 612 USD / an)' : 'Non couvert';
-        rawBlocks.push({ type: 'coverage_row', category, isCovered, party, detail });
+        const isTuition = /tuition|scolarit/i.test(category);
+        const isRegistration = /registration|enrollment|inscription/i.test(category);
+        const explicitlyUncovered = /NOT\s*COVERED|NON\s*COUVERT|À la charge|COVERED BY THE STUDENT/i.test(allText);
+        const explicitlyCovered = /100%\s*COVERED|100\s*%\s*couvert|\bCOUVERTS?\b/i.test(allText);
+        const isCovered = isRegistration || isTuition || (explicitlyCovered && !explicitlyUncovered);
+        const party = isCovered ? 'IDLA - WQ / Fonds de Bourse' : 'Étudiant / Candidat';
+        const detail = isCovered
+          ? (isTuition ? '100% Pris en charge (38 612 USD / an)' : '100% Pris en charge')
+          : 'Non couvert';
+        rawBlocks.push({ type: 'coverage_row', category, isCovered, isTuition, party, detail });
       } else {
         rawBlocks.push({ type: 'bullet', text: bulletText, subLines });
       }
@@ -351,7 +391,7 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
             OFFICIAL SCHOLARSHIP COVERAGE & LOCAL CHARGES POLICY
           </h3>
           <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-            Cadre réglementaire officiel de prise en charge d'excellence et modalités de contribution aux infrastructures technologiques locales du campus de Yaoundé.
+            Scolarité et inscription officielles couvertes par la bourse. Les 450 000 FCFA correspondent uniquement aux frais de dossier et aux frais administratifs.
           </p>
         </div>
       );
@@ -420,7 +460,9 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
                       : 'bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
                   }`}
                 >
-                  {r.isCovered ? '✓ 100% Couvert ($38 612 USD/an)' : '✗ Non couvert'}
+                  {r.isCovered
+                    ? (r.isTuition ? '✓ 100% Couvert ($38 612 USD/an)' : '✓ 100% Couvert')
+                    : '✗ Non couvert'}
                 </span>
                 <span className="text-[11px] text-text-secondary font-medium hidden sm:inline">
                   • {r.party}
@@ -530,7 +572,7 @@ function FormattedDescription({ text, className = '' }: { text: string; classNam
               <span>Montant Total Annuel Exigible</span>
             </div>
             <p className="text-xs text-text-secondary mt-0.5">
-              Dépôt obligatoire d'infrastructure locale (Campus IDLA Yaoundé)
+              Frais de dossier et frais administratifs uniquement — hors scolarité et inscription, toutes deux couvertes
             </p>
           </div>
           <div className="sm:text-right">
@@ -1962,11 +2004,11 @@ export default function PublicPortal({ activeTab, setActiveTab, onApplyNow, prog
                     </tr>
                     <tr className="bg-amber-500/5 hover:bg-amber-500/10 transition-colors">
                       <td className="py-4 px-6 font-bold text-text-primary">
-                        Frais Administratifs & Documentation Campus Yaoundé
-                        <span className="block text-[10px] text-text-secondary font-normal mt-0.5">Accès 24/7 énergie solaire, fibre dédiée, laboratoires Cisco, certification English for IT et coaching.</span>
+                        Frais de dossier et frais administratifs
+                        <span className="block text-[10px] text-text-secondary font-normal mt-0.5">Uniquement ces deux postes. La scolarité et l'inscription officielle restent 100 % couvertes.</span>
                       </td>
                       <td className="py-4 px-6 font-bold text-amber-700 dark:text-amber-300">450 000 FCFA</td>
-                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">Charge Locale Obligatoire</span></td>
+                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">À la charge de l'étudiant</span></td>
                       <td className="py-4 px-6 text-right font-black text-amber-700 dark:text-amber-300">450 000 FCFA <span className="block text-[10px] text-text-secondary font-semibold">($796.26 USD TTC / an)</span></td>
                     </tr>
                   </tbody>
