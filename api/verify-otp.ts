@@ -1,5 +1,4 @@
-import crypto from 'crypto';
-import { getOtpSecret } from './send-otp';
+import { getOtpSecret, decryptToken } from './send-otp';
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
@@ -37,43 +36,37 @@ export default async function handler(req: any, res: any) {
   const cleanEmail = String(email).toLowerCase().trim();
   const cleanOtp = String(otpCode).trim();
 
-  const parts = String(token).split('.');
-  if (parts.length !== 2) {
+  // Déchiffrement AES-256-GCM du token — auto-suffisant, aucune variable externe
+  const secret = getOtpSecret();
+  const payload = decryptToken(String(token), secret) as any;
+
+  if (!payload) {
     return res.status(400).json({ 
       success: false, 
-      error: 'Jeton de vérification invalide ou altéré.' 
-    });
-  }
-
-  const [expiresAtStr, signature] = parts;
-  const expiresAt = parseInt(expiresAtStr, 10);
-
-  if (isNaN(expiresAt)) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Jeton de vérification corrompu.' 
+      error: 'Jeton de vérification invalide ou altéré. Veuillez redemander un code.' 
     });
   }
 
   // Vérification stricte de l'expiration
-  if (Date.now() > expiresAt) {
+  if (typeof payload.expiresAt !== 'number' || Date.now() > payload.expiresAt) {
     return res.status(400).json({ 
       success: false, 
       error: 'Le code de vérification a expiré (délai de 5 minutes dépassé). Veuillez en demander un nouveau.' 
     });
   }
 
-  // Recalcul du HMAC attendu
-  const secret = getOtpSecret();
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(`${cleanEmail}:${cleanOtp}:${expiresAt}`)
-    .digest('hex');
+  // Vérification de l'email (protection contre la réutilisation cross-utilisateur)
+  if (payload.email !== cleanEmail) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Ce code de vérification ne correspond pas à cette adresse e-mail.' 
+    });
+  }
 
-  const sigBuf = Buffer.from(signature, 'hex');
-  const expBuf = Buffer.from(expectedSignature, 'hex');
-
-  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+  // Vérification du code OTP (comparaison en temps constant pour éviter les timing attacks)
+  const otpBuf = Buffer.from(cleanOtp.padEnd(6, '\0'));
+  const expectedBuf = Buffer.from(String(payload.otp).padEnd(6, '\0'));
+  if (otpBuf.length !== expectedBuf.length || !require('crypto').timingSafeEqual(otpBuf, expectedBuf)) {
     return res.status(400).json({ 
       success: false, 
       error: 'Code de vérification incorrect. Veuillez vérifier le code reçu par e-mail et réessayer.' 
