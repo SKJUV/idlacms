@@ -142,7 +142,8 @@ export default function PreRegistrations({
                   program: target.program,
                   programId: resolvedProgId,
                   createdAt: new Date().toISOString(),
-                }
+                },
+                [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
               );
             }
           } catch (uErr) {
@@ -150,10 +151,11 @@ export default function PreRegistrations({
           }
         }
 
-        // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du Semestre 1 LMD
+        // 3. Auto-inscription de l'étudiant aux Unités d'Enseignement (UE) du semestre LMD approprié
         if (resolvedProgId && target?.email) {
           try {
-            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+            const targetLevel = target.entryLevel || (target.motivation ? target.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+            const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
             if (ues.length > 0) {
               await dbAdapter.studentUeRecords.bulkEnroll(
                 ues.map((u) => ({
@@ -251,9 +253,18 @@ export default function PreRegistrations({
     const newMsg = { sender: 'advisor', text, time: new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) };
     setChatMessages((curr) => [...curr, newMsg]);
     if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.messages) {
-      await databases.createDocument(APPWRITE_CONFIG.databaseId, APPWRITE_CONFIG.collections.messages, ID.unique(), {
-        applicationId: selectedAppIdForChat, sender: 'advisor', text, createdAt: new Date().toISOString(),
-      }).catch(console.error);
+      await databases.createDocument(
+        APPWRITE_CONFIG.databaseId, 
+        APPWRITE_CONFIG.collections.messages, 
+        ID.unique(), 
+        {
+          applicationId: selectedAppIdForChat, 
+          sender: 'advisor', 
+          text, 
+          createdAt: new Date().toISOString(),
+        },
+        [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
+      ).catch(console.error);
     }
   };
 
@@ -343,7 +354,7 @@ export default function PreRegistrations({
               APPWRITE_CONFIG.collections.applications,
               ID.unique(),
               createData,
-              [Permission.read(Role.any()), Permission.update(Role.team('admins')), Permission.delete(Role.team('admins'))]
+              [Permission.read(Role.any()), Permission.update(Role.label('admin')), Permission.delete(Role.label('admin'))]
             );
           } catch (e) {
             console.error('Erreur création inscription manuelle Appwrite DB:', e);
@@ -351,10 +362,11 @@ export default function PreRegistrations({
         }
       }
 
-      // Auto-inscription LMD
+      // Auto-inscription LMD au semestre adéquat
       if (resolvedProgId && selected.email) {
         try {
-          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId);
+          const targetLevel = selected.entryLevel || (selected.motivation ? selected.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : undefined);
+          const { semesterId, ues } = await dbAdapter.academicStructure.ensureProgramInitialized(resolvedProgId, { entryLevel: targetLevel });
           if (ues.length > 0) {
             await dbAdapter.studentUeRecords.bulkEnroll(
               ues.map((u) => ({

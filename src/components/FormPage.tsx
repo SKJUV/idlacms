@@ -5,7 +5,7 @@ import {
   GraduationCapIcon, ClockIcon, DownloadIcon, CopyIcon, SunIcon, MoonIcon
 } from './Icons';
 import { CustomForm, CustomFormResponse, NewsArticle, Program } from '../types';
-import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID } from '../lib/appwrite';
+import { databases, APPWRITE_CONFIG, isAppwriteDbConfigured, ID, Permission, Role } from '../lib/appwrite';
 import { generateFormPdfBase64 } from '../lib/pdfFormGenerator';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -173,7 +173,14 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
       }
     }
 
-    const respondentName = formValues['Nom complet'] || formValues['Nom & Prénom'] || formValues['Nom'] || formValues['Nom de famille'] || 'Candidat IDLA';
+    const respondentName = 
+      formValues['1. Full Legal Name / Nom complet légal'] ||
+      formValues['Nom complet'] || 
+      formValues['Nom & Prénom'] || 
+      formValues['Nom'] || 
+      formValues['Nom de famille'] || 
+      Object.entries(formValues).find(([k]) => /name|nom/i.test(k) && !/university|institution/i.test(k))?.[1] ||
+      'Candidat IDLA';
 
     // Strict Email Detection
     const emailKey = Object.keys(formValues).find(
@@ -218,7 +225,8 @@ export default function FormPage({ formId: initialFormId, onBack, newsList = [],
             respondentEmail: newResponse.respondentEmail,
             submittedAt: newResponse.submittedAt,
             data: JSON.stringify(newResponse.data)
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Erreur enregistrement réponse Appwrite:", err);

@@ -83,8 +83,20 @@ export default function AdminPortal({
   // Pre-registrations selected ID
   const [selectedPreRegId, setSelectedPreRegId] = useState<string | null>(null);
 
-  // Marketing campaigns state
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  // Marketing campaigns state with local persistence
+  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('idla_local_campaigns') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('idla_local_campaigns', JSON.stringify(campaigns));
+    } catch (e) {}
+  }, [campaigns]);
 
   // CMS Settings States
   const [settingsName, setSettingsName] = useState('Administrateur');
@@ -114,8 +126,9 @@ export default function AdminPortal({
             type,
             user,
             text,
-            time: "À l'instant",
-          }
+            time: new Date().toISOString(),
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Impossible de sauvegarder le log d'activité sur Appwrite:", err);
@@ -250,6 +263,8 @@ export default function AdminPortal({
           highestDegree: doc.highestDegree,
           graduationYear: doc.graduationYear,
           motivation: doc.motivation,
+          matricule: doc.matricule,
+          programId: doc.programId,
           documents: doc.files ? JSON.parse(doc.files).map((f: any) => f.name) : [],
         }));
 
@@ -284,7 +299,7 @@ export default function AdminPortal({
                 type: doc.type,
                 user: doc.user,
                 text: doc.text,
-                time: doc.time || "À l'instant",
+                time: doc.time ? (isNaN(new Date(doc.time).getTime()) ? doc.time : new Date(doc.time).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) : "À l'instant",
               }))
             );
           }
@@ -333,43 +348,58 @@ export default function AdminPortal({
     name: string,
     email: string,
     role: User['role'],
-    status: User['status']
+    status: User['status'],
+    password?: string
   ) => {
     const names = name.split(' ');
-    const initials = names.map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    const initials = names.map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'UN';
+    let createdId = Math.floor(1000 + Math.random() * 9000).toString();
 
-    const newUser: User = {
-      id: Math.floor(1000 + Math.random() * 9000).toString(),
-      name,
-      email,
-      role,
-      status,
-      lastLogin: "À l'instant",
-      initials: initials || 'UN',
-    };
-
-    setUsersList((curr) => [newUser, ...curr]);
-
-    if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
+    if (password) {
+      const resp = await fetch('/api/create-cms-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role, status }),
+      });
+      const resData = await resp.json();
+      if (!resp.ok || !resData.success) {
+        throw new Error(resData.error || "Échec lors de la création du compte dans l'authentification.");
+      }
+      if (resData.userId) {
+        createdId = resData.userId;
+      }
+    } else if (isAppwriteDbConfigured() && APPWRITE_CONFIG.collections.cmsUsers) {
       try {
         await databases.createDocument(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.cmsUsers,
-          newUser.id,
+          createdId,
           {
-            name: newUser.name,
-            email: newUser.email,
-            role: newUser.role,
-            status: newUser.status,
-            initials: newUser.initials,
+            name,
+            email,
+            role,
+            status,
+            initials,
             lastLogin: new Date().toISOString(),
-          }
+          },
+          [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
         );
       } catch (err) {
         console.error("Échec de la création de l'utilisateur sur Appwrite:", err);
       }
     }
 
+    const newUser: User = {
+      id: createdId,
+      name,
+      email,
+      role,
+      status,
+      lastLogin: "À l'instant",
+      initials,
+    };
+
+    setUsersList((curr) => [newUser, ...curr]);
     logActivity('registration', 'Super Admin', `a créé l'utilisateur CMS : ${name} (${role}).`);
   };
 

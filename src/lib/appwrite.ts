@@ -38,6 +38,7 @@ export const APPWRITE_CONFIG = {
     teachingUnits: import.meta.env.VITE_APPWRITE_COLLECTION_TEACHING_UNITS || 'teaching_units',
     studentUeRecords: import.meta.env.VITE_APPWRITE_COLLECTION_STUDENT_UE_RECORDS || 'student_ue_records',
     courseResources: import.meta.env.VITE_APPWRITE_COLLECTION_COURSE_RESOURCES || 'course_resources',
+    studentSemesterResults: import.meta.env.VITE_APPWRITE_COLLECTION_STUDENT_SEMESTER_RESULTS || 'student_semester_results',
   },
   buckets: {
     documents: import.meta.env.VITE_APPWRITE_BUCKET_DOCUMENTS || 'documents',

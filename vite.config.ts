@@ -77,6 +77,16 @@ export default defineConfig(({ mode }) => {
                   const { default: handler } = await server.ssrLoadModule('/api/send-credentials.ts');
                   return await handler(req, mockRes(res));
                 }
+                if (urlPath === '/api/verify-otp') {
+                  req.body = await parseJsonBody(req);
+                  const { default: handler } = await server.ssrLoadModule('/api/verify-otp.ts');
+                  return await handler(req, mockRes(res));
+                }
+                if (urlPath === '/api/create-cms-user') {
+                  req.body = await parseJsonBody(req);
+                  const { default: handler } = await server.ssrLoadModule('/api/create-cms-user.ts');
+                  return await handler(req, mockRes(res));
+                }
               } catch (err: any) {
                 console.error(`[Local API Error] ${urlPath}:`, err);
                 res.statusCode = 500;

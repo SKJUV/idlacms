@@ -8,6 +8,7 @@ export interface ScheduleSlot {
   course: string;
   program: string;
   teacherName: string;
+  level?: string;
 }
 
 interface StudentScheduleViewProps {
@@ -21,22 +22,51 @@ export default function StudentScheduleView({
   teachersSchedules,
   MustChangePwdBanner,
 }: StudentScheduleViewProps) {
+  const extractLevel = (text?: string): string => {
+    if (!text) return '';
+    const match = text.match(/\b(L[1-3]|M[1-2]|Licence\s*[1-3]|Master\s*[1-2])\b/i);
+    return match ? match[1].toUpperCase().replace(/\s+/, '') : '';
+  };
+
   const acceptedPrograms = applications
     .filter((a) => (a.status || '').toLowerCase() === 'accepted' && a.program)
     .map((a) => (a.program || '').trim().toLowerCase());
 
+  const studentLevels = applications
+    .filter((a) => (a.status || '').toLowerCase() === 'accepted')
+    .map((a) => {
+      const explicitLevel = a.entryLevel || (a.motivation ? a.motivation.match(/\[Niveau convoité: ([^\]]+)\]/)?.[1] : '');
+      return extractLevel(explicitLevel) || extractLevel(a.program);
+    })
+    .filter(Boolean);
+
   const mySchedules = teachersSchedules.filter((slot) => {
     if (!slot.program) return false;
     const slotProgNorm = slot.program.trim().toLowerCase();
-    return acceptedPrograms.some((ap) => ap === slotProgNorm || ap.includes(slotProgNorm) || slotProgNorm.includes(ap));
+    const matchesProgram = acceptedPrograms.some((ap) => ap === slotProgNorm || ap.includes(slotProgNorm) || slotProgNorm.includes(ap));
+    if (!matchesProgram) return false;
+
+    // Éviter d'afficher à un étudiant de L1 les cours spécifiques de L3 du même intitulé de cursus
+    if (studentLevels.length > 0) {
+      const slotLevel = extractLevel(slot.level) || extractLevel(slot.course) || extractLevel(slot.program);
+      if (slotLevel && !studentLevels.includes(slotLevel)) {
+        return false;
+      }
+    }
+
+    return true;
   });
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
-  // Détection stricte de tous les chevauchements d'horaires sur la même journée
+  // Détection des chevauchements d'horaires réels sur la même journée
   const conflicts: { day: string; time: string; courseA: string; programA: string; courseB: string; programB: string }[] = [];
   mySchedules.forEach((slot1, i) => {
     mySchedules.forEach((slot2, j) => {
       if (i < j && slot1.day === slot2.day) {
+        // Ignorer les doublons stricts du même cours
+        if (slot1.course.trim().toLowerCase() === slot2.course.trim().toLowerCase() && slot1.teacherName === slot2.teacherName) {
+          return;
+        }
         if (slot1.startTime < slot2.endTime && slot2.startTime < slot1.endTime) {
           conflicts.push({
             day: slot1.day,

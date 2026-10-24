@@ -73,23 +73,28 @@ function postToResend(apiKey: string, payload: any): Promise<{ ok: boolean; stat
 }
 
 export default async function handler(req: any, res: any) {
-  // CORS Headers
+  // CORS Headers stricts
   const allowedOrigins = [
     'https://idlaacademy.online',
+    'https://www.idlaacademy.online',
     'http://localhost:3000',
     'http://localhost:5173',
   ];
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
+  const isAllowed = !origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'));
+
+  if (origin && isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-idla-request');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  if (!isAllowed) {
+    return res.status(403).json({ error: 'Accès non autorisé : origine interdite.' });
   }
 
   if (req.method !== 'POST') {
@@ -100,7 +105,7 @@ export default async function handler(req: any, res: any) {
   const resendApiKey = getResendApiKey();
   if (!resendApiKey) {
     return res.status(500).json({ 
-      error: 'La clé RESEND_API_KEY n\'est pas configurée dans les variables d\'environnement Vercel ou .env.' 
+      error: 'La clé RESEND_API_KEY n\'est pas configurée dans les variables d\'environnement.' 
     });
   }
 
@@ -110,11 +115,28 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Champs "to" et "subject" obligatoires' });
   }
 
-  const sender = from || 'IDLA Admissions <admissions@idlaacademy.online>';
+  // Contrôle strict des destinataires (anti-spam et anti-relais ouvert)
+  const recipients: string[] = Array.isArray(to) ? to : [to];
+  if (recipients.length === 0 || recipients.length > 5) {
+    return res.status(400).json({ error: 'Nombre de destinataires invalide (maximum 5 par requête).' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  for (const r of recipients) {
+    if (typeof r !== 'string' || !emailRegex.test(r.trim())) {
+      return res.status(400).json({ error: `Adresse e-mail destinataire invalide : ${r}` });
+    }
+  }
+
+  // Sécurisation de l'expéditeur (restreint obligatoirement au domaine officiel)
+  let sender = 'IDLA Admissions <admissions@idlaacademy.online>';
+  if (from && typeof from === 'string' && from.toLowerCase().includes('@idlaacademy.online')) {
+    sender = from;
+  }
 
   const { ok, status, data } = await postToResend(resendApiKey, {
     from: sender,
-    to,
+    to: recipients,
     subject,
     ...(text ? { text } : {}),
     ...(html ? { html } : {}),
