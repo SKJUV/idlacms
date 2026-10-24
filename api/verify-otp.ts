@@ -1,5 +1,25 @@
 import crypto from 'crypto';
-import { getOtpSecret, decryptToken } from './send-otp';
+
+function getOtpSecret(): string {
+  return process.env.OTP_SECRET || 'idla-secure-master-otp-secret-2026';
+}
+
+function decryptToken(token: string, secret: string): { email?: string; otp?: string; expiresAt?: number } | null {
+  try {
+    const keyMaterial = crypto.createHash('sha256').update(secret).digest();
+    const combined = Buffer.from(token, 'base64url');
+    if (combined.length < 28) return null; // 12 bytes IV + 16 bytes auth tag minimum
+    const iv = combined.subarray(0, 12);
+    const authTag = combined.subarray(12, 28);
+    const ciphertext = combined.subarray(28);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', keyMaterial, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    return JSON.parse(decrypted.toString('utf8'));
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
@@ -35,7 +55,14 @@ export default async function handler(req: any, res: any) {
   }
 
   const cleanEmail = String(email).toLowerCase().trim();
-  const cleanOtp = String(otpCode).trim();
+  const cleanOtp = String(otpCode).replace(/\D/g, '');
+
+  if (!cleanOtp || cleanOtp.length !== 6) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Le code de vérification doit comporter exactement 6 chiffres.' 
+    });
+  }
 
   // Déchiffrement AES-256-GCM du token — auto-suffisant, aucune variable externe
   const secret = getOtpSecret();
@@ -64,10 +91,12 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  // Vérification du code OTP (comparaison en temps constant pour éviter les timing attacks)
-  const otpBuf = Buffer.from(cleanOtp.padEnd(6, '\0'));
-  const expectedBuf = Buffer.from(String(payload.otp).padEnd(6, '\0'));
-  if (otpBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(otpBuf, expectedBuf)) {
+  // Vérification du code OTP (comparaison en temps constant de hashes SHA-256 garantis 32 octets)
+  const expectedOtp = String(payload.otp).replace(/\D/g, '');
+  const otpHash = crypto.createHash('sha256').update(cleanOtp).digest();
+  const expectedHash = crypto.createHash('sha256').update(expectedOtp).digest();
+
+  if (!crypto.timingSafeEqual(otpHash, expectedHash)) {
     return res.status(400).json({ 
       success: false, 
       error: 'Code de vérification incorrect. Veuillez vérifier le code reçu par e-mail et réessayer.' 
